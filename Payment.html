@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta charset="utf-8">
+    <title>Payment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        a:visited {
+            color: inherit;
+        }
+
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+        }
+
+        .details h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .details p {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .back-button {
+            width: 300px;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="HCLOGO.png" alt="Hackers Cup Logo">
+        </div>
+        <div class="welcome-message">
+            <br>
+        </div>
+    </div>
+    
+    <div class="hotel-info">
+        <div class="hotel-photo">
+        </div>
+        <div class="details">
+            <h1>Cost is $600 which includes</h1>
+            <p>
+                <ul>
+                    <li>Golf Saturday and Sunday (including carts)</li><br>
+                    <li>2 Nights Accommodation (Friday and Saturday nights)</li><br>
+                    <li>Full buffet breakfast both days</li><br>
+                    <li>This year’s edition of Hackers Cup memorabilia.</li><br>
+                    <li>Prizes: daily winners and place getters, overall Champion, nearest to Pins, long Drives, Bradman
+                        prize, 5 year awards, 10 year awards, 15 year awards, 20 year awards and some lucky loser prizes
+                        will be on offer as part of the new Streamlined Presso Ceremony.</li><br>
+                    <li>The champions Fluro Green Jacket, the massive HC Cup and the “spirit of hackers” award will as
+                        always be highly sought after also.</li><br>
+                </ul>
+            </p>
+        </div>
+    </div>
+    <div class="hotel-info">
+        <div class="hotel-photo">
+        </div>
+        <div class="details" id="room-details">
+            <h1>Balance</h1>
+            <p id="amt-outstanding">Loading amount...</p>
+            <p id="financial-status">Loading status...</p>
+        </div>
+    </div>
+    
+    <div class="sign-out">
+        <button id="sign-out-btn" onclick="leave()">Sign Out</button>
+    </div>
+    
+    <div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+        <a href="#">
+            <img src="more-01.png" alt="More">
+            More
+        </a>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+            authDomain: "hackers-cup.firebaseapp.com",
+            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+            projectId: "hackers-cup",
+            storageBucket: "hackers-cup.appspot.com",
+            messagingSenderId: "765736070872",
+            appId: "1:765736070872:web:86a51c41916e7af75631ad",
+            measurementId: "G-6E1M14F510"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase();
+        const auth = getAuth(app);
+
+        function getDisplayName(user) {
+            const userRef = ref(database, `users/${user.uid}/displayName`);
+            onValue(userRef, (snapshot) => {
+                const displayName = snapshot.val();
+                if (displayName) {
+                    document.querySelector('.welcome-message').textContent = ``;
+                } else {
+                    const name = prompt('Please enter your display name:');
+                    if (name && name.trim() !== '') {
+                        set(userRef, name.trim())
+                            .then(() => {
+                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
+                            })
+                            .catch((error) => {
+                                console.error('Error updating display name:', error);
+                            });
+                    }
+                }
+            });
+        }
+
+        function getAmtOutstanding(user) {
+            const amtOutstandingRef = ref(database, `users/${user.uid}/amtOutstanding`);
+            onValue(amtOutstandingRef, (snapshot) => {
+                const amtOutstandingValue = snapshot.val();
+                if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
+                    document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
+                } else {
+                    document.getElementById('amt-outstanding').textContent = 'Payment not assigned yet.';
+                }
+            });
+        }
+
+        function getFinancialStatus(user) {
+            const financialStatusRef = ref(database, `users/${user.uid}/financialStatus`);
+            onValue(financialStatusRef, (snapshot) => {
+                const financialStatusValue = snapshot.val();
+                if (financialStatusValue !== null && financialStatusValue !== undefined) {
+                    document.getElementById('financial-status').textContent = `${financialStatusValue}`;
+                } else {
+                    document.getElementById('financial-status').textContent = 'Payment not assigned yet.';
+                }
+            });
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                getDisplayName(user);
+                getAmtOutstanding(user);
+                getFinancialStatus(user);
+            }
+        });
+
+        function leave() {
+            auth.signOut()
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error('Sign Out Error', error);
+                });
+        }
+
+        document.getElementById('sign-out-btn').addEventListener('click', leave);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta charset="utf-8">
+    <title>Hackers Cup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="viewport" content="initial-scale = 1.0, user-scalable = no">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Your existing CSS styles */
+        .more-panel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #ccc;
+            border-radius: 8px 8px 0 0;
+            padding: 20px;
+            display: none;
+            z-index: 999;
+            transition: bottom 0.3s ease;
+        }
+
+        .more-panel.show {
+            display: block;
+            bottom: 0;
+        }
+
+        .more-panel ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .more-panel li {
+            padding: 15px 0;
+        }
+
+        .more-panel a {
+            text-decoration: none;
+            color: #333333;
+            font-size: 1.2rem;
+        }
+
+        .more-panel a:hover {
+            color: #000000;
+        }
+
+        .more-panel .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .navbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    display: flex;
+    justify-content: space-around; /* Ensures equal spacing between items */
+    align-items: center; /* Ensures items are vertically centered */
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 10px 0;
+    box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Ensures text is centered below the icon */
+}
+
+.navbar a:hover {
+    color: #000000;
+}
+
+.navbar a img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 3px;
+}
+
+
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+            background-color: #d3d3d3;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .details p {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        a:visited {
+            color: inherit;
+        }
+
+        .countdown-box {
+            display: inline-block;
+            text-align: center;
+            margin-right: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 60px;
+        }
+
+        .countdown-box span {
+            display: block;
+        }
+
+        .countdown-label {
+            font-size: 0.6rem;
+            margin-top: 5px;
+            color: #555;
+            width: 100%;
+        }
+
+        .grid-item {
+            cursor: pointer;
+            border-radius: 12px;
+            padding: 0px;
+            margin: 0px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            max-width: 200px;
+            max-height: 200px;
+        }
+
+        .grid-item img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .grid-item:hover {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .settings-cog {
+            position: fixed;
+            height: 40px;
+            width: 40px;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .settings-panel {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 200px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .settings-option {
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        #wallpaper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-position: center;
+            background-size: cover;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-message {
+            flex: 1;
+        }
+
+        #more-link {
+            width: 100px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #user-name {
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="HCLOGO.png" alt="Hackers Cup Logo">
+        </div>
+        <div class="welcome-message">
+            <p id="user-name">Loading...<br></p>
+        </div>
+        <div class="hacker-number">
+            <p id="hacker-number">Loading hackers number...</p>
+        </div>
+    </div>
+
+    <div id="more-panel" class="more-panel">
+        <span class="close-button" onclick="toggleMorePanel()">×</span>
+        <ul>
+            <li><a href="Memorabilia.html">Memorabilia</a></li>
+            <li><a href="score.html">Score</a></li>
+            <li><a href="register.html">Register</a></li>
+            <li><a href="Podcast.html">Podcast</a></li>
+            <li><a href="Honour.html">Honour Roll</a></li>
+            <li><a href="Hotel.html">Hotel</a></li>
+            <li><a href="Venue.html">Venue</a></li>
+        </ul>
+    </div>
+
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.png' with the actual hotel photo -->
+        </div>
+        <div class="details" id="room-details">
+            <h1>Welcome to Hackers Cup 24<p>23 - 25 August 2024</p></h1>
+        </div>
+    </div>
+
+    <div id="countdown">
+        <div class="countdown-box">
+            <span id="days" class="countdown-value">00</span>
+            <span class="countdown-label">Days</span>
+        </div>
+        <div class="countdown-box">
+            <span id="hours" class="countdown-value">00</span>
+            <span class="countdown-label">Hours</span>
+        </div>
+        <div class="countdown-box">
+            <span id="minutes" class="countdown-value">00</span>
+            <span class="countdown-label">Minutes</span>
+        </div>
+        <div class="countdown-box">
+            <span id="seconds" class="countdown-value">00</span>
+            <span class="countdown-label">Seconds</span>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <div class="grid-item">
+            <a href="score.html">
+                <img src="Icon1.png" alt="Icon 1">
+            </a>
+        </div>
+        <div class="grid-item">
+            <a href="register.html">
+                <img src="Icon2.png" alt="Icon 2">
+            </a>
+        </div>
+        <div class="grid-item">
+            <a href="Podcast.html">
+                <img src="Icon3.png" alt="Icon 3">
+            </a>
+        </div>
+        <div class="grid-item">
+            <a href="Honour.html">
+                <img src="Icon4.png" alt="Icon 4">
+            </a>
+        </div>
+        <div class="grid-item">
+            <a href="Hotel.html">
+                <img src="Icon5.png" alt="Icon 5">
+            </a>
+        </div>
+        <div class="grid-item">
+            <a href="Venue.html">
+                <img src="Icon6.png" alt="Icon 6">
+            </a>
+        </div>
+    </div>
+ <img src="settings-cog.png" alt="Settings Cog" class="settings-cog" onclick="toggleSettingsPanel()">
+
+   <div class="navbar">
+    <a href="index.html">
+        <img src="home-01.png" alt="Home Icon">
+        <span>Home</span>
+    </a>
+    <a href="Payment.html">
+        <img src="payment.png" alt="Payment Icon">
+        <span>Score</span>
+    </a>
+    <a href="Schedule.html">
+        <img src="schedule.png" alt="Schedule Icon">
+        <span>Register</span>
+    </a>
+    <a id="more-link" onclick="toggleMorePanel()">
+        <img src="more-01.png" alt="More Icon">
+        <span>More</span>
+    </a>
+</div>
+
+
+   
+
+    <div class="settings-panel">
+        <div class="settings-option" onclick="toggleBackgroundImage()">Toggle Background</div>
+    </div>
+
+    <div id="wallpaper"></div>
+
+    <script>
+        // JavaScript for countdown timer
+        function updateCountdown() {
+            var countdownDate = new Date("August 23, 2024 09:00:00").getTime();
+            var now = new Date().getTime();
+            var distance = countdownDate - now;
+
+            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerHTML = days;
+            document.getElementById("hours").innerHTML = hours;
+            document.getElementById("minutes").innerHTML = minutes;
+            document.getElementById("seconds").innerHTML = seconds;
+
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                document.getElementById("countdown").innerHTML = "The event has started!";
+            }
+        }
+
+        var countdownInterval = setInterval(updateCountdown, 1000);
+
+        // JavaScript for toggling the settings panel
+        function toggleSettingsPanel() {
+            var settingsPanel = document.querySelector('.settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+
+        // JavaScript for toggling the background image
+        var backgroundImageVisible = false;
+
+        function toggleBackgroundImage() {
+            var wallpaper = document.getElementById('wallpaper');
+            if (backgroundImageVisible) {
+                wallpaper.style.backgroundImage = '';
+                backgroundImageVisible = false;
+            } else {
+                wallpaper.style.backgroundImage = 'url("background.png")';
+                backgroundImageVisible = true;
+            }
+        }
+
+        // JavaScript for toggling the more panel
+        function toggleMorePanel() {
+            var morePanel = document.getElementById('more-panel');
+            morePanel.classList.toggle('show');
+        }
+
+        // Function to fetch and display user name
+        function fetchUserName() {
+            fetch('user.json')
+                .then(response => response.json())
+                .then(data => {
+                    var userNameElement = document.getElementById('user-name');
+                    userNameElement.innerHTML = `Welcome back, ${data.userName}!`;
+                });
+        }
+
+        // Function to fetch and display number of hackers
+        function fetchHackerNumber() {
+            fetch('hackerNumber.json')
+                .then(response => response.json())
+                .then(data => {
+                    var hackerNumberElement = document.getElementById('hacker-number');
+                    hackerNumberElement.innerHTML = `Hackers: ${data.hackerNumber}`;
+                });
+        }
+
+        // Call the fetch functions when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchUserName();
+            fetchHackerNumber();
+        });
+    </script>
+</body>
+
+</html>

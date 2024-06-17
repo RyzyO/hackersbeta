@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta charset="utf-8">
+    <title>Worrigee Links Golf Club</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+<meta name = "viewport" content = "initial-scale = 1.0, user-scalable = no">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        a {
+            text-decoration: none;
+            color: inherit; 
+        }
+
+        a:visited {
+            color: inherit; 
+        }
+
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+        }
+
+        .details h1 {
+            font-size: 1.5rem; 
+            margin-bottom: 10px;
+        }
+
+        .details p {
+            font-size: 1rem; 
+            margin-bottom: 5px;
+        }
+
+        .back-button {
+            width: 300px;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="HCLOGO.png" alt="Hackers Cup Logo">
+        </div>
+    </div>
+    
+    
+        <h1>Worrigee Links Golf Club</h1>
+        <p>Location: New South Wales</p>
+        <p>Par: 72</p>
+        <p>Description: The Worrigee Links Golf Club is located in New South Wales and offers a challenging Par 72 course. With its picturesque setting and meticulously maintained greens, it provides an enjoyable experience for golfers of all skill levels. The course features lush fairways, strategically placed bunkers, and scenic water hazards, making each hole a unique and memorable challenge.</p>
+    
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
+        </div>
+    </div>
+	
+    <div class="grid-container">
+		<div class="grid-item" onclick="navigateTo('Hole1.html')">
+        <strong> <a href="Hole1.html">Hole 1</a></strong> </div>
+		<div class="grid-item" onclick="navigateTo('Hole2.html')">
+        <strong> Hole 2</strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole3.html')">
+        <strong> <a href="Hole3.html">Hole 3</a></strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole4.html')">
+        <strong> Hole 4</strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole5.html')">
+        <strong> Hole 5</strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole6.html')">
+        <strong> Hole 6</strong> </div>
+      <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 7</strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole8.html')">
+    <strong> <a href="Honour.html">Hole 8</a></strong> </div>
+<div class="grid-item" onclick="navigateTo('Hole9.html')">
+    <strong> <a href="Hole9.html">Hole 9</a></strong> </div>
+        <div class="grid-item" onclick="navigateTo('Hole10.html')">
+        <strong> Hole 10</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 11</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 12</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 13</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 14</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 15</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 16</strong> </div>
+		 <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 17</strong> </div> <div class="grid-item" onclick="navigateTo('Hole7.html')">
+        <strong> Hole 18</strong> </div>
+		 
+        <!-- Add more grid items for other links -->
+    </div>
+   <div class="sign-out">
+    <button id="sign-out-btn" onclick="leave()">Sign Out</button>
+</div>
+	
+	<style>
+	.navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+			height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+    </style>
+<div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+        <a href="#">
+            <img src="more-01.png" alt="More">
+            More
+        </a>
+    </div>
+	
+	<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword,signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+            authDomain: "hackers-cup.firebaseapp.com",
+            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+            projectId: "hackers-cup",
+            storageBucket: "hackers-cup.appspot.com",
+            messagingSenderId: "765736070872",
+            appId: "1:765736070872:web:86a51c41916e7af75631ad",
+            measurementId: "G-6E1M14F510"
+        };
+
+     const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase();
+
+        const auth = getAuth(app);
+
+        // Function to get the user's display name from the database
+        function getDisplayName(user) {
+            const userRef = ref(database, `users/${user.uid}/displayName`);
+            onValue(userRef, (snapshot) => {
+                const displayName = snapshot.val();
+                if (displayName) {
+                    document.querySelector('.welcome-message').textContent = ``;
+                } else {
+                    const name = prompt('Please enter your display name:');
+                    if (name && name.trim() !== '') {
+                        set(userRef, name.trim())
+                            .then(() => {
+                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
+                            })
+                            .catch((error) => {
+                                console.error('Error updating display name:', error);
+                            });
+                    }
+                }
+            });
+        }
+
+		 function getRoomNumber(user) {
+            const roomRef = ref(database, `users/${user.uid}/roomNumber`);
+            onValue(roomRef, (snapshot) => {
+                const roomNumber = snapshot.val();
+                if (roomNumber) {
+                    document.getElementById('room-number').textContent = `${roomNumber}`;
+                } else {
+                    document.getElementById('room-number').textContent = 'Room number not assigned yet.';
+                }
+            });
+        }
+
+        // Check if a user is logged in
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                // Redirect the user to the login page if not logged in
+                window.location.href = 'index.html';
+            } else {
+                getDisplayName(user);
+				getRoomNumber(user)
+            }
+        });
+
+        // Function to sign out
+        function leave() {
+            auth.signOut()
+                .then(() => {
+                    // Sign-out successful.
+                    window.location.href = 'index.html.html'; // Redirect to login page
+                })
+                .catch((error) => {
+                    // An error happened.
+                    console.error('Sign Out Error', error);
+                });
+        }
+
+        // Add event listener to sign out button
+        document.getElementById('sign-out-btn').addEventListener('click', leave);
+    </script>
+</body>
+
+</html>
+
