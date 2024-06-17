@@ -9,12 +9,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="site.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-status-bar-style" content="black-translucent">
+
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no", viewport-fit=cover">
 
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+
+	.header {
+background-color: white; /* For browsers that do not support gradients */
+  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+}
+
         .navbar {
             position: fixed;
             bottom: 0;
@@ -106,10 +114,7 @@
 
 <body>
     <div class="header">
-        <div class="logo">
-            <img src="HCLOGO.png" alt="Hackers Cup Logo">
-        </div>
-        <div class="welcome-message">
+              
             <br>
         </div>
     </div>
