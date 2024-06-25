@@ -6,23 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta charset="utf-8">
     <title>Payment</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="site.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes">
-
-
     <link rel="apple-touch-icon" href="favicon.png">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-
-	.header {
-background-color: white; /* For browsers that do not support gradients */
-  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
-position: fixed;
-}
+        .header {
+            background-color: white;
+            background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+            position: fixed;
+        }
 
         .navbar {
             position: fixed;
@@ -115,16 +110,14 @@ position: fixed;
 
 <body>
     <div class="header">
-              
-            <br>
-        </div>
+        <br>
+    </div>
     
     <br>
-<br>
-<br>	
+    <br>
+    <br>
     <div class="hotel-info">
-        <div class="hotel-photo">
-        </div>
+        <div class="hotel-photo"></div>
         <div class="details">
             <h1>Cost is $600 which includes</h1>
             <p>
@@ -133,62 +126,54 @@ position: fixed;
                     <li>2 Nights Accommodation (Friday and Saturday nights)</li><br>
                     <li>Full buffet breakfast both days</li><br>
                     <li>This year’s edition of Hackers Cup memorabilia.</li><br>
-                    <li>Prizes: daily winners and place getters, overall Champion, nearest to Pins, long Drives, Bradman
-                        prize, 5 year awards, 10 year awards, 15 year awards, 20 year awards and some lucky loser prizes
-                        will be on offer as part of the new Streamlined Presso Ceremony.</li><br>
-                    <li>The champions Fluro Green Jacket, the massive HC Cup and the “spirit of hackers” award will as
-                        always be highly sought after also.</li><br>
+                    <li>Prizes: daily winners and place getters, overall Champion, nearest to Pins, long Drives, Bradman prize, 5 year awards, 10 year awards, 15 year awards, 20 year awards and some lucky loser prizes will be on offer as part of the new Streamlined Presso Ceremony.</li><br>
+                    <li>The champions Fluro Green Jacket, the massive HC Cup and the “spirit of hackers” award will as always be highly sought after also.</li><br>
                 </ul>
             </p>
         </div>
     </div>
     <div class="hotel-info">
-        <div class="hotel-photo">
-        </div>
+        <div class="hotel-photo"></div>
         <div class="details" id="room-details">
             <h1>Balance</h1>
             <p id="amt-outstanding">Loading amount...</p>
             <p id="financial-status">Loading status...</p>
         </div>
-    </div><br>
+    </div>
     <br>
-<br>
-<br>
-<br>
+    <br>
+    <br>
+    <br>
+    <br>
     <div class="sign-out">
         <button id="sign-out-btn" onclick="leave()">Sign Out</button>
     </div>
-<br>
+    <br>
     
     <div class="navbar">
         <a href="Welcome.html">
-            <img src="home-01.png" alt="Home">
-            Home
+            <img src="home-01.png" alt="Home"> Home
         </a>
         <a href="Payment.html">
-            <img src="payment.png" alt="Payment">
-            Payment
+            <img src="payment.png" alt="Payment"> Payment
         </a>
         <a href="Schedule.html">
-            <img src="schedule.png" alt="Schedule">
-            Schedule
+            <img src="schedule.png" alt="Schedule"> Schedule
         </a>
         <a href="score.html">
-            <img src="more-01.png" alt="Score">
-            Score
+            <img src="more-01.png" alt="Score"> Score
         </a>
     </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
             authDomain: "hackers-cup.firebaseapp.com",
-            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
             projectId: "hackers-cup",
             storageBucket: "hackers-cup.appspot.com",
             messagingSenderId: "765736070872",
@@ -198,72 +183,37 @@ position: fixed;
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
-        const database = getDatabase();
+        const db = getFirestore(app);
         const auth = getAuth(app);
 
-        function getDisplayName(user) {
-            const userRef = ref(database, `users/${user.uid}/displayName`);
-            onValue(userRef, (snapshot) => {
-                const displayName = snapshot.val();
-                if (displayName) {
-                    document.querySelector('.welcome-message').textContent = ``;
-                } else {
-                    const name = prompt('Please enter your display name:');
-                    if (name && name.trim() !== '') {
-                        set(userRef, name.trim())
-                            .then(() => {
-                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
-                            })
-                            .catch((error) => {
-                                console.error('Error updating display name:', error);
-                            });
-                    }
-                }
-            });
+        async function getUserData(user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                document.querySelector('.welcome-message').textContent = `Welcome ${userData.displayName}`;
+                document.getElementById('amt-outstanding').textContent = userData.amtOutstanding || 'Payment not assigned yet.';
+                document.getElementById('financial-status').textContent = userData.financialStatus || 'Payment not assigned yet.';
+            } else {
+                console.log("No such document!");
+            }
         }
 
-        function getAmtOutstanding(user) {
-            const amtOutstandingRef = ref(database, `users/${user.uid}/amtOutstanding`);
-            onValue(amtOutstandingRef, (snapshot) => {
-                const amtOutstandingValue = snapshot.val();
-                if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
-                    document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
-                } else {
-                    document.getElementById('amt-outstanding').textContent = 'Payment not assigned yet.';
-                }
-            });
-        }
-
-        function getFinancialStatus(user) {
-            const financialStatusRef = ref(database, `users/${user.uid}/financialStatus`);
-            onValue(financialStatusRef, (snapshot) => {
-                const financialStatusValue = snapshot.val();
-                if (financialStatusValue !== null && financialStatusValue !== undefined) {
-                    document.getElementById('financial-status').textContent = `${financialStatusValue}`;
-                } else {
-                    document.getElementById('financial-status').textContent = 'Payment not assigned yet.';
-                }
-            });
-        }
-
-        auth.onAuthStateChanged((user) => {
+        onAuthStateChanged(auth, (user) => {
             if (!user) {
                 window.location.href = 'index.html';
             } else {
-                getDisplayName(user);
-                getAmtOutstanding(user);
-                getFinancialStatus(user);
+                getUserData(user);
             }
         });
 
         function leave() {
-            auth.signOut()
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    console.error('Sign Out Error', error);
-                });
+            signOut(auth).then(() => {
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                console.error('Sign Out Error', error);
+            });
         }
 
         document.getElementById('sign-out-btn').addEventListener('click', leave);
