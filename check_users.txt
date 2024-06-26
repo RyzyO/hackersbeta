@@ -1,0 +1,35 @@
+import firebase_admin
+from firebase_admin import credentials, firestore
+import pandas as pd
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("hackers-cup-firebase-adminsdk-8ga14-586bd13d6e.json")
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+# Read users.csv file
+users_df = pd.read_csv("users.csv")
+
+# List to store users not found in the database
+not_found_users = []
+
+# Function to check if email exists in Firestore
+def email_exists(email):
+    users_ref = db.collection('users')
+    query = users_ref.where('email', '==', email).stream()
+    return any(query)
+
+# Check each email in the CSV file
+for index, row in users_df.iterrows():
+    name = row['name']
+    email = row['email']
+    if not email_exists(email):
+        not_found_users.append(f"{name}, {email}")
+
+# Write not found users to a txt file
+with open("not_found_users.txt", "w") as file:
+    for user in not_found_users:
+        file.write(user + "\n")
+
+print("Check complete. Results saved in not_found_users.txt")
