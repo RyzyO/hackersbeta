@@ -6,38 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta charset="utf-8">
     <title>Podcast</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="site.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="navbar.css">
-	 <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+    <link rel="stylesheet" href="navbar.css">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-.header {
-background-color: white; /* For browsers that do not support gradients */
-  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
-position: fixed;
-}
+        .header {
+            background-color: white;
+            /* For browsers that do not support gradients */
+            background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+            position: fixed;
+            width: 100%;
+        }
 
-
-        /* Your existing CSS styles */
         a {
             text-decoration: none;
             color: inherit;
-            /* Use the default color */
         }
 
-        /* Style visited anchor tags */
         a:visited {
             color: inherit;
-            /* Use the default color for visited links */
         }
 
-        /* Style for the hotel information section */
         .hotel-info {
             display: flex;
             align-items: center;
@@ -49,7 +43,7 @@ position: fixed;
         }
 
         .hotel-photo img {
-           width: 260px;
+            width: 260px;
             border-radius: 8px;
             margin-right: 20px;
         }
@@ -60,21 +54,16 @@ position: fixed;
 
         .details h1 {
             font-size: 1.5rem;
-            /* Adjust the font size as needed */
             margin-bottom: 10px;
         }
 
         .details p {
             font-size: 1rem;
-            /* Adjust the font size as needed */
             margin-bottom: 5px;
         }
 
-        /* Your existing CSS styles */
-        /* Style for the back button */
         .back-button {
             width: 300px;
-            /* Adjust button width as needed */
             padding: 10px;
             margin: 20px auto;
             display: block;
@@ -88,13 +77,12 @@ position: fixed;
             cursor: pointer;
         }
 
-        /* Navigation bar styles */
         .navbar {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-			height: 80px;
+            height: 80px;
             display: flex;
             justify-content: space-around;
             background-color: #f0f0f0;
@@ -121,45 +109,52 @@ position: fixed;
             height: 24px;
             margin-bottom: 3px;
         }
+
+        .google-form-container {
+            width: 100%;
+            height: calc(100vh - 200px); /* Adjust height as needed */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .google-form-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
-                    <br>
-        </div>
+        <br>
+    </div>
 
-    
-
-     <br>
- <br>
- <br>
+    <br>
+    <br>
+    <br>
 
     <div class="hotel-info">
-        
         <div class="details">
-            <!-- Replace these placeholders with the actual hotel information -->
             <h1>Register&nbsp;</h1>
             <p>Use the below form to register for Hackers Cup 24</p>
-            
         </div>
-		
     </div>
-	
-	<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfg_9ewUTWq3Hv7wZTNHwe-aSXnGxJIR28RLm7p21aguh3o3w/viewform?embedded=true" width="300" height ="600px" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-	
-		 
-	 
 
-
+    <div class="google-form-container">
+        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfg_9ewUTWq3Hv7wZTNHwe-aSXnGxJIR28RLm7p21aguh3o3w/viewform?embedded=true" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    </div>
 
     <div class="sign-out">
         <button id="sign-out-btn" onclick="leave()">Sign Out</button>
     </div>
 
-  <div id="navbar"></div>
-  <script src="navbar.js"></script>
-       <script type="module">
+    <div id="navbar"></div>
+    <script src="navbar.js"></script>
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
