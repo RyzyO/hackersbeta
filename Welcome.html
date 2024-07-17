@@ -139,8 +139,8 @@
             position: fixed;
             height: 40px;
             width: 40px;
-            bottom: 80px;
-            right: 80px;
+            bottom: 120px;
+            right: 120px;
             cursor: pointer;
         }
 
@@ -240,7 +240,9 @@
             <span class="countdown-label">Seconds</span>
         </div>
     </div>
-
+ <div class="settings-cog" onclick="toggleSettingsPanel()">
+        <img class="settings-cog" src="cog.png" alt="Settings">
+    </div>
    <div class="grid-container">
 	    <div class="grid-item" onclick="navigateTo('register.html')">
             <img src="register_image.png" alt="Register">
@@ -279,9 +281,7 @@
     
 
 
-    <div class="settings-cog" onclick="toggleSettingsPanel()">
-        <img class="settings-cog" src="cog.png" alt="Settings">
-    </div>
+   
 
     <div id="settings-panel" class="settings-panel">
         <button class="wallpaper-option" onclick="changeWallpaper('none')">None</button>
