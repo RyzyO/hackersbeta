@@ -20,6 +20,15 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 	<style>
+
+		.light-text {
+    color: #fff; /* White color for text */
+}
+
+.dark-text {
+    color: #000; /* Black color for text */
+}
+
 	.navbar {
             position: fixed;
             bottom: 0;
@@ -440,29 +449,37 @@ auth.onAuthStateChanged((user) => {
         }
     </script>
     <script>
-        function changeWallpaper(option) {
-            var backgroundImageUrl = "";
+       function changeWallpaper(option) {
+    var backgroundImageUrl = "";
 
-            if (option === "none") {
-                document.body.style.backgroundImage = "none";
-            } else if (option === "golf1") {
-                backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
-            } else if (option === "golf2") {
-                backgroundImageUrl = "golf2.jpg"; // Update with the correct image URL
-            } else if (option === "golf3") {
-                backgroundImageUrl = "golf3.jpg"; // Update with the correct image URL
-            }
-
-            if (option !== "none") {
-                document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
-            }
-
-            toggleSettingsPanel(); // Close settings panel after selection
+    if (option === "none") {
+        document.body.style.backgroundImage = "none";
+        // Remove light-text class and add dark-text class
+        document.getElementById('header').classList.remove('light-text');
+        document.getElementById('countdown').classList.remove('light-text');
+        document.getElementById('header').classList.add('dark-text');
+        document.getElementById('countdown').classList.add('dark-text');
+    } else {
+        if (option === "golf1") {
+            backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
+        } else if (option === "golf2") {
+            backgroundImageUrl = "golf2.jpg"; // Update with the correct image URL
+        } else if (option === "golf3") {
+            backgroundImageUrl = "golf3.jpg"; // Update with the correct image URL
         }
-		
-		function navigateTo(page) {
-            window.location.href = page;
-        }
-		
+        
+        // Apply background image to wallpaper element
+        document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
+
+        // Remove dark-text class and add light-text class
+        document.getElementById('details').classList.remove('dark-text');
+        document.getElementById('countdown').classList.remove('dark-text');
+        document.getElementById('details').classList.add('light-text');
+        document.getElementById('countdown').classList.add('light-text');
+    }
+
+    toggleSettingsPanel(); // Close settings panel after selection
+}
+
     </script>
 </html>
