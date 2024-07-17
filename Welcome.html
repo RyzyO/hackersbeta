@@ -257,6 +257,22 @@
             <span class="countdown-label">Seconds</span>
         </div>
     </div>
+	<script>
+        // Toggle settings panel visibility
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+
+        // Close settings panel if clicked outside of it
+        document.addEventListener('click', function(event) {
+            const settingsPanel = document.getElementById('settings-panel');
+            const settingsCog = document.querySelector('.settings-cog');
+            if (!settingsPanel.contains(event.target) && event.target !== settingsCog) {
+                settingsPanel.classList.remove('show');
+            }
+        });
+    </script>  
  <div class="settings-cog" onclick="toggleSettingsPanel()">
         <img class="settings-cog" src="cog.png" alt="Settings">
     </div>
@@ -307,22 +323,7 @@
         <button class="wallpaper-option" onclick="changeWallpaper('golf3')">Greenwell Point</button>
     </div>
 
-      <script>
-        // Toggle settings panel visibility
-        function toggleSettingsPanel() {
-            const settingsPanel = document.getElementById('settings-panel');
-            settingsPanel.classList.toggle('show');
-        }
-
-        // Close settings panel if clicked outside of it
-        document.addEventListener('click', function(event) {
-            const settingsPanel = document.getElementById('settings-panel');
-            const settingsCog = document.querySelector('.settings-cog');
-            if (!settingsPanel.contains(event.target) && event.target !== settingsCog) {
-                settingsPanel.classList.remove('show');
-            }
-        });
-    </script>  
+      
   <br>
 	<br>
 	<br>
