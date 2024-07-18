@@ -113,6 +113,18 @@
 		background-color: #235bac;
             width: 60px; /* Adjust width as needed */
         }
+		.number {
+            display: inline-block;
+            text-align: center;
+            margin-right: 10px;
+			margin-left: 10px;
+            border: 1px solid #ccc;
+		padding: 5px;
+            border-radius: 15px;
+	color: rgb(255,255,255);
+		background-color: #235bac;
+            width: 60px; /* Adjust width as needed */
+        }
 
         .countdown-box span {
             display: block;
@@ -224,8 +236,12 @@
          <div class="welcome-message">
         <p id="user-name">Loading...<br></p>
     </div>
+		<div class="number">
+           
+        
     <div class="hacker-number">
         <p id="hacker-number">Loading hackers number...</p>
+		</div>
     </div>
     </div>
     <div class="hotel-info">
@@ -399,7 +415,7 @@ function getHackerNumber(user) {
     onValue(hackerRef, (snapshot) => {
         const hackerNumber = snapshot.val();
         if (hackerNumber) {
-            document.getElementById('hacker-number').textContent = '  (' + hackerNumber + ')';
+            document.getElementById('hacker-number').textContent = '  ' + hackerNumber + '';
         } else {
             document.getElementById('hacker-number').textContent = ' (Hackers number not assigned yet)';
         }
