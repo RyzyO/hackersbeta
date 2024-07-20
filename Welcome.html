@@ -490,23 +490,25 @@ auth.onAuthStateChanged((user) => {
     </script>
     <script>
        function changeWallpaper(option) {
-    var backgroundImageUrl = "";
+    var backgroundImageUrl = "10th.jpg";
 
     if (option === "none") {
-        document.body.style.backgroundImage = "none";
-        // Remove light-text class and add dark-text class
+        backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
         document.getElementById('header').classList.remove('light-text');
         document.getElementById('countdown').classList.remove('light-text');
         document.getElementById('header').classList.add('dark-text');
         document.getElementById('countdown').classList.add('dark-text');
     } else {
         if (option === "golf1") {
-            backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
+           
         } else if (option === "golf2") {
             backgroundImageUrl = "kiama.jpg"; // Update with the correct image URL
         } else if (option === "golf3") {
             backgroundImageUrl = "greenwell.jpg"; // Update with the correct image URL
         }
+		  document.addEventListener('DOMContentLoaded', function() {
+        var wallpaper = document.getElementById('wallpaper');
+        wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
         
         // Apply background image to wallpaper element
         document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
