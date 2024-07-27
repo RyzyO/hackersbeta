@@ -2,31 +2,31 @@
 <html>
 
 <head>
-	<link rel="icon" type="image/x-icon" href="favicon.png">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <meta charset="utf-8">
     <title>Schedule</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1"><link rel="manifest" href="site.webmanifest" />
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	 <link rel="apple-touch-icon" href="favicon.png">
- <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="stylesheet" href="styles.css">
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-	<style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .header {
+            background-color: white;
+            background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+        }
 
-.header {
-background-color: white; /* For browsers that do not support gradients */
-  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
-}
-
-	.navbar {
+        .navbar {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-			height: 80px;
+            height: 80px;
             display: flex;
             justify-content: space-around;
             background-color: #f0f0f0;
@@ -53,18 +53,16 @@ background-color: white; /* For browsers that do not support gradients */
             height: 24px;
             margin-bottom: 3px;
         }
-    </style>
- <style>
-	  a {
+
+        a {
             text-decoration: none;
-            color: inherit; /* Use the default color */
+            color: inherit;
         }
 
-        /* Style visited anchor tags */
         a:visited {
-            color: inherit; /* Use the default color for visited links */
+            color: inherit;
         }
-        /* Style for the hotel information section */
+
         .hotel-info {
             display: flex;
             align-items: center;
@@ -72,7 +70,7 @@ background-color: white; /* For browsers that do not support gradients */
             border: 1px solid #ccc;
             margin: 10px;
             border-radius: 8px;
-			width: 300px;
+            width: 300px;
         }
 
         .hotel-photo img {
@@ -86,21 +84,17 @@ background-color: white; /* For browsers that do not support gradients */
         }
 
         .details h1 {
-            font-size: 1.5rem; /* Adjust the font size as needed */
+            font-size: 1.5rem;
             margin-bottom: 10px;
         }
 
         .details p {
-            font-size: 1rem; /* Adjust the font size as needed */
+            font-size: 1rem;
             margin-bottom: 5px;
         }
-    </style>
-	 <style>
-        /* Your existing CSS styles */
-        /* Style for the back button */
+
         .back-button {
             width: 300px;
-            /* Adjust button width as needed */
             padding: 10px;
             margin: 20px auto;
             display: block;
@@ -113,13 +107,9 @@ background-color: white; /* For browsers that do not support gradients */
             font-size: 16px;
             cursor: pointer;
         }
-    </style>
-	<style>
-        /* Your existing CSS styles */
-        /* Style for the back button */
+
         .cal-button {
             width: 100%;
-            /* Adjust button width as needed */
             padding: 10px;
             margin: 20px auto;
             display: block;
@@ -132,81 +122,98 @@ background-color: white; /* For browsers that do not support gradients */
             font-size: 16px;
             cursor: pointer;
         }
+        
+        .tee, .tee2, .tee3 {
+            display: inline-block;
+            text-align: center;
+            margin-left: 80px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 15px;
+            color: rgb(255,255,255);
+            background-color: #235bac;
+            width: 40%;
+        }
+        
+        .tee2 {
+            margin-left: 65px;
+        }
+		
+		.tee3 {
+			margin-left: 50px;
+		}
     </style>
 </head>
 
 <body>
     <div class="header">
-        
-            <br>
-        </div>
+        <br>
     </div>
- <br>
- <br>
- <br>
+    
+    <br>
+    <br>
+    <br>
 
     <div class="hotel-info">
         <div class="hotel-photo">
             <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
-          
         </div>
         <div class="details">
-            <!-- Replace these placeholders with the actual hotel information -->
             <h1>Schedule</h1>
             <p>Add the schedule to your calendar using the link below</p>
-           <a href="hackers.ics" class="cal-button">Save to Calendar</a>
+            <a href="hackers.ics" class="cal-button">Save to Calendar</a>
         </div>
     </div>
-	<div class="hotel-info">
+
+    <div class="hotel-info">
         <div class="hotel-photo">
             <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
-          
         </div>
         <div class="details">
-            <!-- Replace these placeholders with the actual hotel information -->
-            <h1>Friday</h1>
+            <h1>Friday<div class="tee">
+                <p><strong>Tee: <span id="fri-data"></span></strong></p></div></h1>
             <p><strong>Troll Plate Skins</strong></p>
             <p><strong>10:00am:</strong> Registration and Memorabilia Packs</p>
-			<p><strong>11:00am:</strong> Troll Plate Skins: Shotgun Start, BBQ Lunch at halfway </p>
+            <p><strong>11:00am:</strong> Troll Plate Skins: Shotgun Start, BBQ Lunch at halfway </p>
         </div>
     </div>
-	<div class="hotel-info">
+
+    <div class="hotel-info">
         <div class="hotel-photo">
             <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
-          
         </div>
         <div class="details">
-            <!-- Replace these placeholders with the actual hotel information -->
-            <h1>Saturday</h1>
+            <h1>Saturday<div class="tee3">
+                <p><strong>Tee: <span id="sat-data"></span></strong></p></div></h1>
             <p><strong>Stableford and Team Pink Ball</strong></p>
             <p><strong>6:00am - 8:00am:</strong> Breakfast: Team Captains collect group envelopes</p>
-			<p><strong>6:45am - 10:30am:</strong> Tee Times </p>
+            <p><strong>6:45am - 10:30am:</strong> Tee Times </p>
         </div>
     </div>
-	
-	<div class="hotel-info">
+    
+    <div class="hotel-info">
         <div class="hotel-photo">
             <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
-          
         </div>
         <div class="details">
-            <!-- Replace these placeholders with the actual hotel information -->
-            <h1>Sunday</h1>
+            <h1>Sunday<div class="tee2">
+                <p><strong>Tee: <span id="sun-data"></span></strong></p></div></h1>
             <p><strong>Ambrose</strong></p>
-            <p><strong>6:00am - 8:00am</strong> Breakfast: Team Captains collect group envelopes</p>
-			<p><strong>8:30am:</strong> Shotgun Start </p>
+            <p><strong>6:00am - 8:00am:</strong> Breakfast: Team Captains collect group envelopes</p>
+            <p><strong>8:30am:</strong> Shotgun Start </p>
         </div>
     </div>
-	
-	<br>
-	<br>
-	<br>
-	<br>
-  
-   <div class="sign-out">
-    <button id="sign-out-btn" onclick="leave()">Sign Out</button>
-</div>
-	<div class="navbar">
+
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <div class="sign-out">
+        <button id="sign-out-btn" onclick="leave()">Sign Out</button>
+    </div>
+
+    <div class="navbar">
         <a href="Welcome.html">
             <img src="home-01.png" alt="Home">
             Home
@@ -224,11 +231,12 @@ background-color: white; /* For browsers that do not support gradients */
             Score
         </a>
     </div>
-	<script type="module">
+
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword,signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -241,71 +249,55 @@ background-color: white; /* For browsers that do not support gradients */
             measurementId: "G-6E1M14F510"
         };
 
-     const app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const database = getDatabase();
-
         const auth = getAuth(app);
 
-        // Function to get the user's display name from the database
-        function getDisplayName(user) {
-            const userRef = ref(database, `users/${user.uid}/displayName`);
-            onValue(userRef, (snapshot) => {
-                const displayName = snapshot.val();
-                if (displayName) {
-                    document.querySelector('.welcome-message').textContent = ``;
-                } else {
-                    const name = prompt('Please enter your display name:');
-                    if (name && name.trim() !== '') {
-                        set(userRef, name.trim())
-                            .then(() => {
-                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
-                            })
-                            .catch((error) => {
-                                console.error('Error updating display name:', error);
-                            });
-                    }
-                }
+        function getFridaySchedule(user) {
+            const friRef = ref(database, `users/${user.uid}/fri`);
+            onValue(friRef, (snapshot) => {
+                const friData = snapshot.val();
+                document.getElementById('fri-data').textContent = friData || 'Not Assigned';
             });
         }
 
-		 function getRoomNumber(user) {
-            const roomRef = ref(database, `users/${user.uid}/roomNumber`);
-            onValue(roomRef, (snapshot) => {
-                const roomNumber = snapshot.val();
-                if (roomNumber) {
-                    document.getElementById('room-number').textContent = `${roomNumber}`;
-                } else {
-                    document.getElementById('room-number').textContent = 'Room number not assigned yet.';
-                }
+        function getSaturdaySchedule(user) {
+            const satRef = ref(database, `users/${user.uid}/sat`);
+            onValue(satRef, (snapshot) => {
+                const satData = snapshot.val();
+                document.getElementById('sat-data').textContent = satData || 'Not Assigned';
             });
         }
 
-        // Check if a user is logged in
+        function getSundaySchedule(user) {
+            const sunRef = ref(database, `users/${user.uid}/sun`);
+            onValue(sunRef, (snapshot) => {
+                const sunData = snapshot.val();
+                document.getElementById('sun-data').textContent = sunData || 'Not Assigned';
+            });
+        }
+
         auth.onAuthStateChanged((user) => {
             if (!user) {
-                // Redirect the user to the login page if not logged in
                 window.location.href = 'index.html';
             } else {
-                getDisplayName(user);
-				getRoomNumber(user)
+                getFridaySchedule(user);
+                getSaturdaySchedule(user);
+                getSundaySchedule(user);
             }
         });
 
-        // Function to sign out
         function leave() {
             auth.signOut()
                 .then(() => {
-                    // Sign-out successful.
-                    window.location.href = 'index.html.html'; // Redirect to login page
+                    window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    // An error happened.
                     console.error('Sign Out Error', error);
                 });
         }
 
-        // Add event listener to sign out button
         document.getElementById('sign-out-btn').addEventListener('click', leave);
     </script>
 </body>
