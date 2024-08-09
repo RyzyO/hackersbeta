@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stableford</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        h2 {
+            color: #003366;
+            font-family: 'Helvetica', sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #003366;
+            color: #ffffff;
+            font-size: 1.1em;
+        }
+        td {
+            background-color: #e6f2ff;
+            color: #003366;
+        }
+        tr:nth-child(even) td {
+            background-color: #cce0ff;
+        }
+        tr:hover td {
+            background-color: #b3d9ff;
+        }
+        thead {
+            border-bottom: 2px solid #003366;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .refresh-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #003366;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .refresh-button:hover {
+            background-color: #00509e;
+        }
+
+        /* Hide columns E, F, and G by default (portrait mode) */
+        .column-e, .column-f, .column-g {
+            display: none;
+        }
+
+        /* Show columns E, F, and G in landscape orientation */
+        @media screen and (orientation: landscape) {
+            .column-e, .column-f, .column-g {
+                display: table-cell;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="refresh-button" onclick="location.reload();">Refresh</button>
+    <h2>Stableford</h2>
+    <table id="data-table">
+        <thead>
+            <tr id="header-row"></tr>
+        </thead>
+        <tbody id="data-rows"></tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+    const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg'; // Google Sheet ID
+    const gid = '600147197'; // GID for the specific sheet/tab
+    
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+    fetch(url)
+    .then(response => response.text())
+    .then(data => {
+        // Parse the JSONP response to extract the JSON data
+        const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const tableData = json.table.rows;
+
+        // Extract and filter headers for columns B to G (indexes 1 to 6)
+        const allHeaders = json.table.cols.map(col => col.label);
+        const headers = allHeaders.slice(1, 7); // Take columns B to G
+
+        // Override the second header to "Rank"
+        headers[0] = "Rank"; // Change column B header
+
+        // Populate the header row
+        const headerRow = document.getElementById('header-row');
+        headers.forEach((header, index) => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            th.classList.add(`column-${String.fromCharCode(98 + index)}`); // Add class column-b, column-c, etc.
+            headerRow.appendChild(th);
+        });
+
+        // Data to be displayed starting from row 2 (index 1)
+        const dataToDisplay = tableData; // Start from row 2
+
+        // Sort data by column B (index 1 in the extracted data, as we sliced to start from B)
+        dataToDisplay.sort((a, b) => {
+            const valA = a.c[1] ? a.c[1].v : ''; // Value in column B
+            const valB = b.c[1] ? b.c[1].v : ''; // Value in column B
+
+            // Check if both values are numeric
+            const numA = isNaN(valA) ? Infinity : parseFloat(valA);
+            const numB = isNaN(valB) ? Infinity : parseFloat(valB);
+
+            // Sort numeric values first, then alphabetic values
+            if (numA !== numB) {
+                return numA - numB;
+            } else {
+                return valA.localeCompare(valB);
+            }
+        });
+
+        // Populate the table rows
+        const dataRows = document.getElementById('data-rows');
+        dataToDisplay.forEach(row => {
+            const tr = document.createElement('tr');
+            // Only take the columns B to G (indexes 1 to 6)
+            row.c.slice(1, 7).forEach((cell, i) => {
+                const td = document.createElement('td');
+                td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
+                td.classList.add(`column-${String.fromCharCode(98 + i)}`); // Add class column-b, column-c, etc.
+                tr.appendChild(td);
+            });
+            dataRows.appendChild(tr);
+        });
+    })
+    .catch(error => console.error('Error fetching data:', error));
+
+</script>
+
+</body>
+</html>

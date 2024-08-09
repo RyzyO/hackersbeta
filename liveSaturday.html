@@ -1,10 +1,154 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stableford</title>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta charset="utf-8">
+    <title>Scorecard</title>
+   
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+
+.header {
+background-color: white; /* For browsers that do not support gradients */
+  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+
+}
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+       
+
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .sheet-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 100%;
+            height: 65vh;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+        }
+
+        .details h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .details p {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .back-button {
+            width: 300px;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .cal-button {
+            width: 100%;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .open-button {
+            width: 200px;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #0F9D58;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+	   <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f0f4f8;
@@ -57,19 +201,35 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             position: relative;
         }
-        .refresh-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #003366;
-            color: #ffffff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
+       .refresh-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background-color: #003366;
+    color: #ffffff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 40px; /* Adjust width and height */
+    height: 40px; /* Adjust width and height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+.refresh-button img {
+    width: 100%;  /* Make the image fill the button */
+    height: 100%; /* Make the image fill the button */
+    object-fit: contain; /* Ensures the image scales properly within the button */
+    border-radius: 50%; /* Ensures the image follows the button's circular shape */
+}
+
+.refresh-button:hover {
+    background-color: #00509e;
+}
+
         .refresh-button:hover {
             background-color: #00509e;
         }
@@ -85,12 +245,22 @@
                 display: table-cell;
             }
         }
+		   .refresh-img {
+			   width: 15px;
+			   height: 15px;
+		   }
     </style>
+
 </head>
+
 <body>
+    
 
 <div class="container">
-    <button class="refresh-button" onclick="location.reload();">Refresh</button>
+  <button class="refresh-button" onclick="location.reload();">
+    <img src="refresh.png" alt="Refresh"> <!-- Your custom icon -->
+</button>
+
     <h2>Stableford</h2>
     <table id="data-table">
         <thead>
@@ -99,7 +269,26 @@
         <tbody id="data-rows"></tbody>
     </table>
 </div>
-
+	
+ <div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+       <a href="score.html">
+            <img src="more-01.png" alt="Score">
+            Score
+        </a>
+    </div>
+    
 <script type="text/javascript">
     const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg'; // Google Sheet ID
     const gid = '600147197'; // GID for the specific sheet/tab
@@ -107,65 +296,65 @@
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
 
     fetch(url)
-    .then(response => response.text())
-    .then(data => {
-        // Parse the JSONP response to extract the JSON data
-        const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-        const tableData = json.table.rows;
+        .then(response => response.text())
+        .then(data => {
+            // Parse the JSONP response to extract the JSON data
+            const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+            const tableData = json.table.rows;
 
-        // Extract and filter headers for columns B to G (indexes 1 to 6)
-        const allHeaders = json.table.cols.map(col => col.label);
-        const headers = allHeaders.slice(1, 7); // Take columns B to G
+            // Extract and filter headers for columns B to G (indexes 1 to 6)
+            const allHeaders = json.table.cols.map(col => col.label);
+            const headers = allHeaders.slice(1, 7); // Take columns B to G
 
-        // Override the second header to "Rank"
-        headers[0] = "Rank"; // Change column B header
+            // Override the second header to "Rank"
+            headers[0] = "Rank"; // Change column B header
 
-        // Populate the header row
-        const headerRow = document.getElementById('header-row');
-        headers.forEach((header, index) => {
-            const th = document.createElement('th');
-            th.textContent = header;
-            th.classList.add(`column-${String.fromCharCode(98 + index)}`); // Add class column-b, column-c, etc.
-            headerRow.appendChild(th);
-        });
-
-        // Data to be displayed starting from row 2 (index 1)
-        const dataToDisplay = tableData; // Start from row 2
-
-        // Sort data by column B (index 1 in the extracted data, as we sliced to start from B)
-        dataToDisplay.sort((a, b) => {
-            const valA = a.c[1] ? a.c[1].v : ''; // Value in column B
-            const valB = b.c[1] ? b.c[1].v : ''; // Value in column B
-
-            // Check if both values are numeric
-            const numA = isNaN(valA) ? Infinity : parseFloat(valA);
-            const numB = isNaN(valB) ? Infinity : parseFloat(valB);
-
-            // Sort numeric values first, then alphabetic values
-            if (numA !== numB) {
-                return numA - numB;
-            } else {
-                return valA.localeCompare(valB);
-            }
-        });
-
-        // Populate the table rows
-        const dataRows = document.getElementById('data-rows');
-        dataToDisplay.forEach(row => {
-            const tr = document.createElement('tr');
-            // Only take the columns B to G (indexes 1 to 6)
-            row.c.slice(1, 7).forEach((cell, i) => {
-                const td = document.createElement('td');
-                td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
-                td.classList.add(`column-${String.fromCharCode(98 + i)}`); // Add class column-b, column-c, etc.
-                tr.appendChild(td);
+            // Populate the header row
+            const headerRow = document.getElementById('header-row');
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                th.classList.add(`column-${String.fromCharCode(98 + index)}`); // Add class column-b, column-c, etc.
+                headerRow.appendChild(th);
             });
-            dataRows.appendChild(tr);
-        });
-    })
-    .catch(error => console.error('Error fetching data:', error));
 
+            // Data to be displayed starting from row 1 (index 0)
+            const dataToDisplay = tableData;
+
+            // Sort data by column B (index 1 in the extracted data, as we sliced to start from B)
+            dataToDisplay.sort((a, b) => {
+                const valA = a.c[1] ? a.c[1].v : ''; // Value in column B
+                const valB = b.c[1] ? b.c[1].v : ''; // Value in column B
+
+                // Check if both values are numeric
+                const numA = isNaN(valA) ? Infinity : parseFloat(valA);
+                const numB = isNaN(valB) ? Infinity : parseFloat(valB);
+
+                // Sort numeric values first, then alphabetic values
+                if (numA !== numB) {
+                    return numA - numB;
+                } else {
+                    return valA.localeCompare(valB);
+                }
+            });
+
+            // Populate the table rows
+            const dataRows = document.getElementById('data-rows');
+            dataToDisplay.forEach(row => {
+                const tr = document.createElement('tr');
+                // Only take the columns B to G (indexes 1 to 6)
+                row.c.slice(1, 7).forEach((cell, i) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
+                    td.classList.add(`column-${String.fromCharCode(98 + i)}`); // Add class column-b, column-c, etc.
+                    tr.appendChild(td);
+                });
+                dataRows.appendChild(tr);
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
 </script>
-
+    
 </body>
+
 </html>
