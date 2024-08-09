@@ -11,6 +11,7 @@
             color: #333;
             margin: 0;
             padding: 20px;
+            position: relative;
         }
         h2 {
             color: #003366;
@@ -54,6 +55,23 @@
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .refresh-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #003366;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .refresh-button:hover {
+            background-color: #00509e;
         }
 
         /* Hide columns E, F, and G by default (portrait mode) */
@@ -72,6 +90,7 @@
 <body>
 
 <div class="container">
+    <button class="refresh-button" onclick="location.reload();">Refresh</button>
     <h2>Stableford</h2>
     <table id="data-table">
         <thead>
@@ -113,11 +132,21 @@
         // Data to be displayed starting from row 2 (index 1)
         const dataToDisplay = tableData.slice(1); // Start from row 2
 
-        // Sort data by column D (index 2 in the extracted data, as we sliced to start from B)
+        // Sort data by column B (index 1 in the extracted data, as we sliced to start from B)
         dataToDisplay.sort((a, b) => {
-            const valA = a.c[2] ? a.c[2].v : 0; // Value in column D
-            const valB = b.c[2] ? b.c[2].v : 0; // Value in column D
-            return valB - valA; // Sort descending
+            const valA = a.c[1] ? a.c[1].v : ''; // Value in column B
+            const valB = b.c[1] ? b.c[1].v : ''; // Value in column B
+
+            // Check if both values are numeric
+            const numA = isNaN(valA) ? Infinity : parseFloat(valA);
+            const numB = isNaN(valB) ? Infinity : parseFloat(valB);
+
+            // Sort numeric values first, then alphabetic values
+            if (numA !== numB) {
+                return numA - numB;
+            } else {
+                return valA.localeCompare(valB);
+            }
         });
 
         // Populate the table rows
