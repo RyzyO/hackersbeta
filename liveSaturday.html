@@ -88,46 +88,54 @@
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
 
     fetch(url)
-        .then(response => response.text())
-        .then(data => {
-            // Parse the JSONP response to extract the JSON data
-            const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-            const tableData = json.table.rows;
+    .then(response => response.text())
+    .then(data => {
+        // Parse the JSONP response to extract the JSON data
+        const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const tableData = json.table.rows;
 
-            // Extract and filter headers for columns B to G (indexes 1 to 6)
-            const allHeaders = json.table.cols.map(col => col.label);
-            const headers = allHeaders.slice(1, 7); // Take columns B to G
+        // Extract and filter headers for columns B to G (indexes 1 to 6)
+        const allHeaders = json.table.cols.map(col => col.label);
+        const headers = allHeaders.slice(1, 7); // Take columns B to G
 
-            // Override the second header to "Rank"
-            headers[0] = "Rank"; // Change column B header
+        // Override the second header to "Rank"
+        headers[0] = "Rank"; // Change column B header
 
-            // Populate the header row
-            const headerRow = document.getElementById('header-row');
-            headers.forEach((header, index) => {
-                const th = document.createElement('th');
-                th.textContent = header;
-                th.classList.add(`column-${String.fromCharCode(98 + index)}`); // Add class column-b, column-c, etc.
-                headerRow.appendChild(th);
+        // Populate the header row
+        const headerRow = document.getElementById('header-row');
+        headers.forEach((header, index) => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            th.classList.add(`column-${String.fromCharCode(98 + index)}`); // Add class column-b, column-c, etc.
+            headerRow.appendChild(th);
+        });
+
+        // Data to be displayed starting from row 2 (index 1)
+        const dataToDisplay = tableData.slice(1); // Start from row 2
+
+        // Sort data by column D (index 2 in the extracted data, as we sliced to start from B)
+        dataToDisplay.sort((a, b) => {
+            const valA = a.c[2] ? a.c[2].v : 0; // Value in column D
+            const valB = b.c[2] ? b.c[2].v : 0; // Value in column D
+            return valB - valA; // Sort descending
+        });
+
+        // Populate the table rows
+        const dataRows = document.getElementById('data-rows');
+        dataToDisplay.forEach(row => {
+            const tr = document.createElement('tr');
+            // Only take the columns B to G (indexes 1 to 6)
+            row.c.slice(1, 7).forEach((cell, i) => {
+                const td = document.createElement('td');
+                td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
+                td.classList.add(`column-${String.fromCharCode(98 + i)}`); // Add class column-b, column-c, etc.
+                tr.appendChild(td);
             });
+            dataRows.appendChild(tr);
+        });
+    })
+    .catch(error => console.error('Error fetching data:', error));
 
-            // Data to be displayed starting from row 2 (index 1)
-            const dataToDisplay = tableData.slice(1); // Start from row 2
-
-            // Populate the table rows
-            const dataRows = document.getElementById('data-rows');
-            dataToDisplay.forEach(row => {
-                const tr = document.createElement('tr');
-                // Only take the columns B to G (indexes 1 to 6)
-                row.c.slice(1, 7).forEach((cell, i) => {
-                    const td = document.createElement('td');
-                    td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
-                    td.classList.add(`column-${String.fromCharCode(98 + i)}`); // Add class column-b, column-c, etc.
-                    tr.appendChild(td);
-                });
-                dataRows.appendChild(tr);
-            });
-        })
-        .catch(error => console.error('Error fetching data:', error));
 </script>
 
 </body>
