@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troll Plate Skins</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #003366;
+            font-family: 'Helvetica', sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #003366;
+            color: #ffffff;
+            font-size: 1.1em;
+        }
+        td {
+            background-color: #e6f2ff;
+            color: #003366;
+        }
+        tr:nth-child(even) td {
+            background-color: #cce0ff;
+        }
+        tr:hover td {
+            background-color: #b3d9ff;
+        }
+        thead {
+            border-bottom: 2px solid #003366;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Troll Plate Skins</h2>
+    <table id="data-table">
+        <thead>
+            <tr id="header-row"></tr>
+        </thead>
+        <tbody id="data-rows"></tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+    const sheetId = '1UL-W6LFBritAgN9aIGQhFlMbvj_6BCxe1jZONPARdlM'; // Google Sheet ID
+    const gid = '612604449'; // GID for the specific sheet/tab
+    
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            // Parse the JSONP response to extract the JSON data
+            const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+            const tableData = json.table.rows;
+
+            // Extract and filter headers for columns B to D (indexes 1 to 3)
+            const allHeaders = json.table.cols.map(col => col.label);
+            const headers = allHeaders.slice(1, 4); // Take columns B, C, and D
+
+            // Populate the header row
+            const headerRow = document.getElementById('header-row');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            // Data to be displayed starting from row 2 (index 1)
+            const dataToDisplay = tableData.slice(1); // Start from row 2
+
+            // Sort data from row 2 onward by column D (index 3) from highest to lowest
+            dataToDisplay.sort((a, b) => {
+                const valA = a.c[3] ? a.c[3].v : 0; // Value in column D
+                const valB = b.c[3] ? b.c[3].v : 0; // Value in column D
+                return valB - valA; // Sort descending
+            });
+
+            // Populate the table rows
+            const dataRows = document.getElementById('data-rows');
+            dataToDisplay.forEach(row => {
+                const tr = document.createElement('tr');
+                // Only take the columns B to D (indexes 1 to 3)
+                for (let i = 1; i < 4; i++) {
+                    const cell = row.c[i];
+                    const td = document.createElement('td');
+                    td.textContent = cell ? cell.v : '0'; // Display 0 if the cell is empty
+                    tr.appendChild(td);
+                }
+                dataRows.appendChild(tr);
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+</script>
+
+</body>
+</html>
