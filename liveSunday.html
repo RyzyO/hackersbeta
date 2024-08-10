@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="utf-8">
+    <title>Stableford</title>
+
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+
+        h2 {
+            color: #003366;
+            font-family: 'Helvetica', sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #003366;
+            color: #ffffff;
+            font-size: 1.1em;
+        }
+
+        td {
+            background-color: #e6f2ff;
+            color: #003366;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #cce0ff;
+        }
+
+        tr:hover td {
+            background-color: #b3d9ff;
+        }
+
+        thead {
+            border-bottom: 2px solid #003366;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .refresh-button {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background-color: #003366;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 40px; /* Adjust width and height */
+            height: 40px; /* Adjust width and height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .refresh-button img {
+            width: 100%;  /* Make the image fill the button */
+            height: 100%; /* Make the image fill the button */
+            object-fit: contain; /* Ensures the image scales properly within the button */
+            border-radius: 50%; /* Ensures the image follows the button's circular shape */
+        }
+
+        .refresh-button:hover {
+            background-color: #00509e;
+        }
+
+        /* Hide columns E, F, and G by default (portrait mode) */
+        .column-e, .column-f, .column-g, .column-h, .column-i {
+            display: none;
+        }
+
+        /* Show columns E, F, and G in landscape orientation */
+        @media screen and (orientation: landscape) {
+            .column-e, .column-f, .column-g, .column-h, .column-i  {
+                display: table-cell;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <button class="refresh-button" onclick="location.reload();">
+            <img src="refresh.png" alt="Refresh">
+        </button>
+        <h2>Ambrose</h2>
+        <table id="data-table">
+            <thead>
+                <tr id="header-row"></tr>
+            </thead>
+            <tbody id="data-rows"></tbody>
+        </table>
+    </div>
+    
+    <div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+        <a href="score.html">
+            <img src="more-01.png" alt="Score">
+            Score
+        </a>
+    </div>
+    
+    <script type="text/javascript">
+        const sheetId = '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA'; // Google Sheet ID
+        const gid = '869612853'; // GID for the specific sheet/tab
+        
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+                const tableData = json.table.rows;
+
+                // Extract headers from the sheet
+                const headers = json.table.cols.slice(1, 9).map((col, index) => {
+                    if (index === 0) return 'RANK'; // Rename Column B to 'Rank'
+                    return col.label || 'Unknown';
+                });
+
+                // Populate the header row
+                const headerRow = document.getElementById('header-row');
+                headers.forEach((header, index) => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    th.classList.add(`column-${String.fromCharCode(98 + index)}`);
+                    headerRow.appendChild(th);
+                });
+
+                // Sort the table data by the 'Rank' column (index 0) in ascending order
+                tableData.sort((a, b) => {
+                    const rankA = a.c[1] ? a.c[1].v : '';
+                    const rankB = b.c[1] ? b.c[1].v : '';
+
+                    const numA = parseInt(rankA, 10);
+                    const numB = parseInt(rankB, 10);
+
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return numA - numB; // Sort numbers
+                    } else if (!isNaN(numA)) {
+                        return -1; // Numbers come before letters
+                    } else if (!isNaN(numB)) {
+                        return 1; // Numbers come before letters
+                    } else {
+                        return rankA.localeCompare(rankB); // Sort letters
+                    }
+                });
+
+                // Populate the table rows
+                const dataRows = document.getElementById('data-rows');
+                tableData.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    row.c.slice(1, 9).forEach((cell, i) => {
+                        const td = document.createElement('td');
+                        td.textContent = cell ? cell.v : '0';
+                        td.classList.add(`column-${String.fromCharCode(98 + i)}`);
+                        tr.appendChild(td);
+                    });
+
+                    // Use Column C for player name
+                    const playerName = row.c[2] ? row.c[2].v : `Player${index + 1}`; // Column C for player names
+                    tr.addEventListener('click', () => {
+                        window.location.href = `scorecardSun.html?player=${encodeURIComponent(playerName)}`;
+                    });
+
+                    dataRows.appendChild(tr);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>
