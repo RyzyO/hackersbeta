@@ -164,7 +164,7 @@
             <tbody id="data-rows"></tbody>
         </table>
     </div>
-    
+    <br><br><br><br><br><br>
     <div class="navbar">
         <a href="Welcome.html">
             <img src="home-01.png" alt="Home">
@@ -198,7 +198,7 @@
 
                 // Extract headers from the sheet
                 const headers = json.table.cols.slice(1, 7).map((col, index) => {
-                    if (index === 0) return 'Rank'; // Rename Column B to 'Rank'
+                    if (index === 0) return 'RANK'; // Rename Column B to 'Rank'
                     return col.label || 'Unknown';
                 });
 
