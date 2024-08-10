@@ -22,38 +22,6 @@
             padding: 20px;
             position: relative;
         }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            display: flex;
-            justify-content: space-around;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 10px 0;
-            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .navbar a:hover {
-            color: #000000;
-        }
-
-        .navbar a img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
-        }
 
         h2 {
             color: #003366;
@@ -165,7 +133,7 @@
         </table>
     </div>
     
-    <div class="navbar">
+   <div class="navbar">
         <a href="Welcome.html">
             <img src="home-01.png" alt="Home">
             Home
@@ -178,7 +146,7 @@
             <img src="schedule.png" alt="Schedule">
             Schedule
         </a>
-        <a href="score.html">
+       <a href="score.html">
             <img src="more-01.png" alt="Score">
             Score
         </a>
@@ -197,10 +165,7 @@
                 const tableData = json.table.rows;
 
                 // Extract headers from the sheet
-                const headers = json.table.cols.slice(1, 7).map((col, index) => {
-                    if (index === 0) return 'Rank'; // Rename Column B to 'Rank'
-                    return col.label || 'Unknown';
-                });
+                const headers = json.table.cols.slice(1, 7).map(col => col.label || 'Unknown');
 
                 // Populate the header row
                 const headerRow = document.getElementById('header-row');
