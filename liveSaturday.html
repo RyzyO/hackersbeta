@@ -211,6 +211,25 @@
                     headerRow.appendChild(th);
                 });
 
+                // Sort the table data by the 'Rank' column (index 0) in ascending order
+                tableData.sort((a, b) => {
+                    const rankA = a.c[1] ? a.c[1].v : '';
+                    const rankB = b.c[1] ? b.c[1].v : '';
+
+                    const numA = parseInt(rankA, 10);
+                    const numB = parseInt(rankB, 10);
+
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return numA - numB; // Sort numbers
+                    } else if (!isNaN(numA)) {
+                        return -1; // Numbers come before letters
+                    } else if (!isNaN(numB)) {
+                        return 1; // Numbers come before letters
+                    } else {
+                        return rankA.localeCompare(rankB); // Sort letters
+                    }
+                });
+
                 // Populate the table rows
                 const dataRows = document.getElementById('data-rows');
                 tableData.forEach((row, index) => {
