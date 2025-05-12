@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tournament Scoring</title>
+  
+     <link rel="stylesheet" href="assets/css/navbar.css"><script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+  <h1>Live Tournament Scoring</h1>
+  <div id="content">
+    <!-- Custom scoring UI goes here -->
+  </div>
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+  <script>
+    const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+    const API_KEY = 'YOUR_API_KEY';
+    const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+    const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+    const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';
+
+    // Load the Google API client library
+    function handleClientLoad() {
+      gapi.load('client:auth2', initClient);
+    }
+
+    // Initialize the client with API key and OAuth client ID
+    function initClient() {
+      gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        discoveryDocs: DISCOVERY_DOCS,
+        scope: SCOPES
+      }).then(() => {
+        // Listen for sign-in state changes.
+        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+        // Handle the initial sign-in state.
+        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+      });
+    }
+
+    // Update UI depending on sign-in status.
+    function updateSigninStatus(isSignedIn) {
+      if (isSignedIn) {
+        loadTournamentData();
+      } else {
+        gapi.auth2.getAuthInstance().signIn();
+      }
+    }
+
+    // Load tournament data from Google Sheets
+    function loadTournamentData() {
+      gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'Sheet1!A1:Z100' // Adjust the range as needed
+      }).then(response => {
+        const data = response.result.values;
+        // Process data and build your UI dynamically
+        buildCustomUI(data);
+      }, error => {
+        console.error('Error fetching data: ', error);
+      });
+    }
+
+    // Build the custom UI for scoring
+    function buildCustomUI(data) {
+      // Parse the data array (headers, hole details, scores, etc.)
+      // and render your HTML interface.
+      // For example, you might loop over the rows and create a table.
+      document.getElementById('content').innerHTML = "<p>Custom UI built here using data from Google Sheets</p>";
+    }
+
+    // Update a score in Google Sheets
+    function updateScore(row, col, newValue) {
+      const params = {
+        spreadsheetId: SPREADSHEET_ID,
+        range: `Sheet1!${col}${row}`,
+        valueInputOption: "USER_ENTERED",
+      };
+
+      const valueRangeBody = {
+        "range": `Sheet1!${col}${row}`,
+        "majorDimension": "ROWS",
+        "values": [
+          [newValue]
+        ]
+      };
+
+      gapi.client.sheets.spreadsheets.values.update(params, valueRangeBody).then(response => {
+        console.log('Score updated', response);
+        // Optionally reload or update your UI after the change.
+      });
+    }
+
+    // Start the app once the Google API client is loaded
+    handleClientLoad();
+  </script>
+</body>
+</html>

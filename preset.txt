@@ -1,0 +1,18 @@
+<div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>

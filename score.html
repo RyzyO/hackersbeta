@@ -1,308 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <title>Lugx Gaming - Product Detail</title>
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="assets/css/fontawesome.css" />
+       <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css" />
+    <link rel="stylesheet" href="assets/css/owl.css" />
+    <link rel="stylesheet" href="assets/css/animate.css" />
+    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
+  </head>
+  <body>
+    <!-- Header Area Start -->
+    <header class="header-area header-sticky">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <nav class="main-nav">
+              <!-- Logo -->
+              <a href="index.html" class="logo">
+                <img src="assets/images/logo.png" alt="" style="width: 158px;" />
+              </a>
+              <!-- Navigation Links -->
+              <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html" class="active">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+              <a class="menu-trigger">
+                <span>Menu</span>
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- Header Area End -->
 
-<head>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <meta charset="utf-8">
-    <title>Scorecard</title>
-   
-    <link rel="manifest" href="site.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="favicon.png">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-
-.header {
-background-color: white; /* For browsers that do not support gradients */
-  background-image: linear-gradient(to right, #5DE0E6, #004AAD);
-
-}
-
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            display: flex;
-            justify-content: space-around;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 10px 0;
-            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .navbar a:hover {
-            color: #000000;
-        }
-
-        .navbar a img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-       
-
-        .hotel-info {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border: 1px solid #ccc;
-            margin: 10px;
-            border-radius: 8px;
-            width: 300px;
-        }
-
-        .sheet-info {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border: 1px solid #ccc;
-            margin: 10px;
-            border-radius: 8px;
-            width: 100%;
-            height: 65vh;
-        }
-
-        .hotel-photo img {
-            max-width: 200px;
-            border-radius: 8px;
-            margin-right: 20px;
-        }
-
-        .details {
-            flex: 1;
-        }
-
-        .details h1 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-
-        .details p {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-
-        .back-button {
-            width: 300px;
-            padding: 10px;
-            margin: 20px auto;
-            display: block;
-            text-align: center;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .cal-button {
-            width: 100%;
-            padding: 10px;
-            margin: 20px auto;
-            display: block;
-            text-align: center;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .open-button {
-            width: 200px;
-            padding: 10px;
-            margin: 20px auto;
-            display: block;
-            text-align: center;
-            background-color: #0F9D58;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-		.open-buttons {
-            width: 200px;
-            padding: 10px;
-            margin: 20px auto;
-            display: block;
-            text-align: center;
-            background-color: #2F5DE7;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="header"> <br></div>
-	<br><br><br>
-		<div class="hotel-info">
-        <div class="details">
-<h1>Scoring</h1>
-
-          <h4>A Note From Muzz:</h4><br>
-            <p>For those who are new to the scoring it's quite simple.<br><br>
-
-1 - Find the link relevant for the day you're playing. <br><br>
-
-2 - Find the sheet with your name on it. Each player has a sheet with their name on it. DO NOT CHANGE THE NAME of any sheets. <br><br>
-
-3 - After each hole enter your score (off the stick) into the score column (skins and stableford points are all worked out in the back-end so no need to worry about that). If you have a wipe put 9. You must enter a score for every hole or Wishnu will strike you down.<br><br>
-
-4 - Brendo still likes the physical scorecards to be entered by someone... so please do this as we sometimes check if someone sizzles. He also likes to collect things (if you know what I mean). So bring them around to the tab area in the club. Don't give them to me because I will be a thousand green label IPAs deep and screaming at some donkey of a horse I have just put my life savings on. Plus I will be tempted to just throw them over my left shoulder into my portable incinerator.<br><br>
-           
-It also works best if you update it in real time, so you can all really see just how poo we are all going.
-			</p>     </div>
+    <!-- Page Heading -->
+    <div class="page-heading header-text">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12">
+            <h3>LIVE SCORING</h3>
+            <span class="breadcrumb"><a href="#">Hackers Cup 25</a></span>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Main Content -->
+    <div class="single-product section">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-6 align-self-center">
+            <h4>Scoring Will Appear Here Once Ready</h4>
+            <form id="scorecard-form" action="#">
               
-
- <br>
-
-
-   
-
-    <a href="https://docs.google.com/spreadsheets/d/1UL-W6LFBritAgN9aIGQhFlMbvj_6BCxe1jZONPARdlM/edit?usp=sharing" class="open-button"><strong>Friday Live Scoring</strong></a>
-    <a href="https://docs.google.com/spreadsheets/d/1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg/edit?usp=sharing" class="open-button"><strong>Saturday Live Scoring</strong></a>
-    <a href="https://docs.google.com/spreadsheets/d/1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA/edit?usp=sharing" class="open-button"><strong>Sunday Live Scoring</strong></a> 
-	
-	<a href="liveSaturday.html" class="open-buttons"><strong>Saturday Leaderboard</strong></a>  
-	<a href="liveSunday.html" class="open-buttons"><strong>Sunday Leaderboard</strong></a>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
- <div class="navbar">
-        <a href="Welcome.html">
-            <img src="home-01.png" alt="Home">
-            Home
-        </a>
-        <a href="Payment.html">
-            <img src="payment.png" alt="Payment">
-            Payment
-        </a>
-        <a href="Schedule.html">
-            <img src="schedule.png" alt="Schedule">
-            Schedule
-        </a>
-       <a href="score.html">
-            <img src="more-01.png" alt="Score">
-            Score
-        </a>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
-    
+
+    <!-- Footer -->
+   
+    <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+
+    <!-- Scripts -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/isotope.min.js"></script>
+    <script src="assets/js/owl-carousel.js"></script>
+    <script src="assets/js/counter.js"></script>
+    <script src="assets/js/custom.js"></script>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+      document.addEventListener("DOMContentLoaded", function () {
+        // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
-            authDomain: "hackers-cup.firebaseapp.com",
-            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
-            projectId: "hackers-cup",
-            storageBucket: "hackers-cup.appspot.com",
-            messagingSenderId: "765736070872",
-            appId: "1:765736070872:web:86a51c41916e7af75631ad",
-            measurementId: "G-6E1M14F510"
+          apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+          authDomain: "hackers-cup.firebaseapp.com",
+          projectId: "hackers-cup",
+          storageBucket: "hackers-cup.appspot.com",
+          messagingSenderId: "765736070872",
+          appId: "1:765736070872:web:86a51c41916e7af75631ad",
+          measurementId: "G-6E1M14F510"
         };
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
-        const database = getDatabase();
-
+        const db = getFirestore(app);
         const auth = getAuth(app);
+        let userDisplayName = "";
 
+        // Retrieve the displayName from Firestore for the logged-in user.
         function getDisplayName(user) {
-            const userRef = ref(database, `users/${user.uid}/displayName`);
-            onValue(userRef, (snapshot) => {
-                const displayName = snapshot.val();
+          const userRef = doc(db, "users", user.uid);
+          getDoc(userRef)
+            .then((docSnap) => {
+              if (docSnap.exists()) {
+                const displayName = docSnap.data().displayName;
                 if (displayName) {
-                    document.querySelector('.welcome-message').textContent = `Welcome ${displayName}`;
+                  userDisplayName = displayName;
+                  // Optionally update a welcome message element.
+                  const welcomeEl = document.querySelector('.welcome-message');
+                  if (welcomeEl) {
+                    welcomeEl.textContent = `Welcome ${displayName}`;
+                  }
                 } else {
-                    const name = prompt('Please enter your display name:');
-                    if (name && name.trim() !== '') {
-                        set(userRef, name.trim())
-                            .then(() => {
-                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
-                            })
-                            .catch((error) => {
-                                console.error('Error updating display name:', error);
-                            });
-                    }
+                  const name = prompt("Please enter your display name:");
+                  if (name && name.trim() !== "") {
+                    setDoc(userRef, { displayName: name.trim() }, { merge: true })
+                      .then(() => {
+                        userDisplayName = name.trim();
+                        const welcomeEl = document.querySelector('.welcome-message');
+                        if (welcomeEl) {
+                          welcomeEl.textContent = `Welcome ${name.trim()}`;
+                        }
+                      })
+                      .catch((error) => {
+                        console.error("Error updating display name:", error);
+                      });
+                  }
                 }
+              } else {
+                console.log("No such document!");
+              }
+            })
+            .catch((error) => {
+              console.error("Error getting document:", error);
             });
         }
 
-        function getRoomNumber(user) {
-            const roomRef = ref(database, `users/${user.uid}/roomNumber`);
-            onValue(roomRef, (snapshot) => {
-                const roomNumber = snapshot.val();
-                if (roomNumber) {
-                    document.getElementById('room-number').textContent = `${roomNumber}`;
-                } else {
-                    document.getElementById('room-number').textContent = 'Room number not assigned yet.';
-                }
-            });
-        }
-
-        auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = 'index.html';
-            } else {
-                getDisplayName(user);
-                getRoomNumber(user);
-            }
+        onAuthStateChanged(auth, (user) => {
+          if (!user) {
+            window.location.href = "index.html";
+          } else {
+            getDisplayName(user);
+          }
         });
 
-        function leave() {
-            auth.signOut()
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    console.error('Sign Out Error', error);
-                });
-        }
-
-        document.getElementById('sign-out-btn').addEventListener('click', leave);
+        // When the button is clicked, open the Google Sheet with the proper range parameter.
+        document.getElementById("open-scorecard-btn").addEventListener("click", (e) => {
+          e.preventDefault();
+          if (userDisplayName) {
+            // Wrap the sheet name in single quotes.
+            // For example, if userDisplayName is "Alice", the range parameter becomes: 'Alice'!A1
+            const rangeParam = encodeURIComponent("'" + userDisplayName + "'!A1");
+            const sheetUrl = #;
+            window.open(sheetUrl, "_blank");
+          } else {
+            alert("Display name not set yet. Please try again shortly.");
+          }
+        });
+      });
     </script>
-</body>
-
+  </body>
 </html>

@@ -1,0 +1,66 @@
+/* Resetting default margin and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+    font-family: 'Roboto', sans-serif; /* Change the font-family to Roboto or another modern font */
+    background-color: #f0f0f0;
+    margin: 0; /* Reset default body margin */
+    display: flex;
+    flex-direction: column; /* Align content in a column */
+    align-items: center; /* Center content horizontally */
+}
+
+/* Header styles */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.logo img {
+    max-width: 150px;
+}
+
+.welcome-message {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Grid container */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 100px); /* Ensure two columns of 100px each */
+    grid-auto-rows: 100px; /* Rows set to 100px tall */
+    grid-gap: 20px;
+    padding: 20px;
+    max-width: 400px; /* Set a width to contain two 100px columns and 20px gaps */
+}
+
+/* Grid item styles */
+.grid-item {
+    background-color: #fff;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+    cursor: pointer;
+    height: 100px; /* Set height to 100px */
+    width: 100px; /* Set width to 100px */
+}
+
+.grid-item:hover {
+    transform: translateY(-3px);
+    transition: transform 0.3s ease;
+}

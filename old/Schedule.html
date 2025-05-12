@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta charset="utf-8">
+    <title>Schedule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .header {
+            background-color: white;
+            background-image: linear-gradient(to right, #5DE0E6, #004AAD);
+        }
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        a:visited {
+            color: inherit;
+        }
+
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+        }
+
+        .details h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .details p {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .back-button {
+            width: 300px;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .cal-button {
+            width: 100%;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .tee, .tee2, .tee3 {
+            display: inline-block;
+            text-align: center;
+            margin-left: 80px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 15px;
+            color: rgb(255,255,255);
+            background-color: #235bac;
+            width: 40%;
+        }
+        
+        .tee2 {
+            margin-left: 65px;
+        }
+		
+		.tee3 {
+			margin-left: 50px;
+		}
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <br>
+    </div>
+    
+    <br>
+    <br>
+    <br>
+
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
+        </div>
+        <div class="details">
+            <h1>Schedule</h1>
+            <p>Add the schedule to your calendar using the link below</p>
+            <a href="hackers.ics" class="cal-button">Save to Calendar</a>
+        </div>
+    </div>
+
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
+        </div>
+        <div class="details">
+            <h1>Friday<div class="tee">
+                <p><strong>Tee: <span id="fri-data"></span></strong></p><p>11:00am</p></div></h1>
+            <p><strong>Troll Plate Skins</strong></p>
+            <p><strong>10:00am:</strong> Registration and Memorabilia Packs</p>
+            <p><strong>11:00am:</strong> Troll Plate Skins: Shotgun Start, BBQ Lunch at halfway </p>
+        </div>
+    </div>
+
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
+        </div>
+        <div class="details">
+            <h1>Saturday<div class="tee3">
+                <p><strong>Tee: <span id="sat-data"></span></strong></p></div></h1>
+            <p><strong>Stableford and Team Pink Ball</strong></p>
+            <p><strong>6:00am - 8:00am:</strong> Breakfast: Team Captains collect group envelopes</p>
+            <p><strong>6:45am - 10:30am:</strong> Tee Times </p>
+        </div>
+    </div>
+    
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.jpg' with the actual hotel photo -->
+        </div>
+        <div class="details">
+            <h1>Sunday<div class="tee2">
+				<p><strong>Tee: <span id="sun-data"></span></strong></p><p>8:30am</p></div></h1>
+            <p><strong>Ambrose</strong></p>
+            <p><strong>6:00am - 8:00am:</strong> Breakfast: Team Captains collect group envelopes</p>
+            <p><strong>8:30am:</strong> Shotgun Start </p>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <div class="sign-out">
+        <button id="sign-out-btn" onclick="leave()">Sign Out</button>
+    </div>
+
+    <div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+        <a href="score.html">
+            <img src="more-01.png" alt="Score">
+            Score
+        </a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+            authDomain: "hackers-cup.firebaseapp.com",
+            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+            projectId: "hackers-cup",
+            storageBucket: "hackers-cup.appspot.com",
+            messagingSenderId: "765736070872",
+            appId: "1:765736070872:web:86a51c41916e7af75631ad",
+            measurementId: "G-6E1M14F510"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase();
+        const auth = getAuth(app);
+
+        function getFridaySchedule(user) {
+            const friRef = ref(database, `users/${user.uid}/fri`);
+            onValue(friRef, (snapshot) => {
+                const friData = snapshot.val();
+                document.getElementById('fri-data').textContent = friData || 'Not Assigned';
+            });
+        }
+
+        function getSaturdaySchedule(user) {
+            const satRef = ref(database, `users/${user.uid}/sat`);
+            onValue(satRef, (snapshot) => {
+                const satData = snapshot.val();
+                document.getElementById('sat-data').textContent = satData || 'Not Assigned';
+            });
+        }
+
+        function getSundaySchedule(user) {
+            const sunRef = ref(database, `users/${user.uid}/sun`);
+            onValue(sunRef, (snapshot) => {
+                const sunData = snapshot.val();
+                document.getElementById('sun-data').textContent = sunData || 'Not Assigned';
+            });
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                getFridaySchedule(user);
+                getSaturdaySchedule(user);
+                getSundaySchedule(user);
+            }
+        });
+
+        function leave() {
+            auth.signOut()
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error('Sign Out Error', error);
+                });
+        }
+
+        document.getElementById('sign-out-btn').addEventListener('click', leave);
+    </script>
+</body>
+
+</html>

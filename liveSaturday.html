@@ -1,256 +1,270 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta charset="utf-8">
-    <title>Stableford</title>
-
-    <link rel="manifest" href="site.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="favicon.png">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f4f8;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            position: relative;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            display: flex;
-            justify-content: space-around;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 10px 0;
-            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .navbar a:hover {
-            color: #000000;
-        }
-
-        .navbar a img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
-        }
-
-        h2 {
-            color: #003366;
-            font-family: 'Helvetica', sans-serif;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0 auto;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #003366;
-            color: #ffffff;
-            font-size: 1.1em;
-        }
-
-        td {
-            background-color: #e6f2ff;
-            color: #003366;
-        }
-
-        tr:nth-child(even) td {
-            background-color: #cce0ff;
-        }
-
-        tr:hover td {
-            background-color: #b3d9ff;
-        }
-
-        thead {
-            border-bottom: 2px solid #003366;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-
-        .refresh-button {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background-color: #003366;
-            color: #ffffff;
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-            border-radius: 50%;
-            width: 40px; /* Adjust width and height */
-            height: 40px; /* Adjust width and height */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.3s ease;
-        }
-
-        .refresh-button img {
-            width: 100%;  /* Make the image fill the button */
-            height: 100%; /* Make the image fill the button */
-            object-fit: contain; /* Ensures the image scales properly within the button */
-            border-radius: 50%; /* Ensures the image follows the button's circular shape */
-        }
-
-        .refresh-button:hover {
-            background-color: #00509e;
-        }
-
-        /* Hide columns E, F, and G by default (portrait mode) */
-        .column-e, .column-f, .column-g {
-            display: none;
-        }
-
-        /* Show columns E, F, and G in landscape orientation */
-        @media screen and (orientation: landscape) {
-            .column-e, .column-f, .column-g {
-                display: table-cell;
-            }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Leaderboard</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+     <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  
+  <!-- Custom Leaderboard Styling -->
+  <style>
+    /* Use the same font-family as the rest of the site */
+    #data-table {
+      width: 100%;
+      margin: 15px 0;
+      border-collapse: collapse;
+      font-family: 'Poppins', sans-serif;
+      color: #ffffff;
+    }
+    /* Header row styling: dark background with uppercase, spaced text */
+    #data-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    /* Header and cell padding, with subtle borders */
+    #data-table th,
+    #data-table td {
+      padding: 12px 15px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    /* Zebra-striping for table rows */
+    #data-table tbody tr:nth-child(even) {
+      background-color: #333333;
+    }
+    #data-table tbody tr:nth-child(odd) {
+      background-color: #2e2e2e;
+    }
+    /* Hover effect for rows */
+    #data-table tbody tr:hover {
+      background-color: #555555;
+      cursor: pointer;
+    }
+    /* Refresh button styling to match modern aesthetics */
+    .refresh-button {
+      background: transparent;
+      border: none;
+      margin-bottom: 10px;
+      outline: none;
+      cursor: pointer;
+    }
+    .refresh-button img {
+      width: 40px;
+      height: 40px;
+    }
+    /* Mobile specific styles */
+    @media screen and (max-width: 767px) {
+      /* Hide Front and Back columns (column-e and column-f) */
+      .column-e, .column-f {
+        display: none;
+      }
+      /* Make the Name column font smaller (Name column is column-c) */
+      .column-c, .column-a, .column-b, .column-d, .column-g {
+        font-size: 0.8  em; /* Adjust as needed */
+      }
+    }
+  </style>
+  
 </head>
-
 <body>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
     <div class="container">
-        <button class="refresh-button" onclick="location.reload();">
-            <img src="refresh.png" alt="Refresh">
-        </button>
-        <h2>Stableford</h2>
-        <table id="data-table">
-            <thead>
-                <tr id="header-row"></tr>
-            </thead>
-            <tbody id="data-rows"></tbody>
-        </table>
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- ***** Logo Start ***** -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="" style="width: 158px;">
+            </a>
+            <!-- ***** Logo End ***** -->
+            <!-- ***** Menu Start ***** -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="course.html">Venue</a></li>
+              <li><a href="payment.html">Payment</a></li>
+              <li><a href="liveFriday.html">Live Friday</a></li>
+              <li><a href="liveSaturday.html" class="active">Live Saturday</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class='menu-trigger'>
+              <span>Menu</span>
+            </a>
+            <!-- ***** Menu End ***** -->
+          </nav>
+        </div>
+      </div>
     </div>
-    <br><br><br><br><br><br>
-    <div class="navbar">
-        <a href="Welcome.html">
-            <img src="home-01.png" alt="Home">
-            Home
-        </a>
-        <a href="Payment.html">
-            <img src="payment.png" alt="Payment">
-            Payment
-        </a>
-        <a href="Schedule.html">
-            <img src="schedule.png" alt="Schedule">
-            Schedule
-        </a>
-        <a href="score.html">
-            <img src="more-01.png" alt="Score">
-            Score
-        </a>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>SATURDAY LEADERBOARD</h3>
+          <span class="breadcrumb">Stableford Format</span>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="container">
+    <button class="refresh-button" onclick="location.reload();">
+        <img src="refresh.png" alt="Refresh">
+    </button>
+    <h2>Stableford</h2>
+    <table id="data-table">
+        <thead>
+            <tr id="header-row"></tr>
+        </thead>
+        <tbody id="data-rows"></tbody>
+    </table>
+  </div>
+  
+ 
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+  
+  <script type="text/javascript">
+    const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg';
+    const leaderboardGid = '600147197'; // Leaderboard sheet
+    const handicapGid = '1441325450'; // Handicap sheet
     
-    <script type="text/javascript">
-        const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg'; // Google Sheet ID
-        const gid = '600147197'; // GID for the specific sheet/tab
+    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
+    const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${handicapGid}`;
+    
+    // Fetch both leaderboard and handicap data concurrently
+    Promise.all([
+      fetch(leaderboardUrl).then(response => response.text()),
+      fetch(handicapUrl).then(response => response.text())
+    ])
+    .then(([leaderboardData, handicapData]) => {
+      // Parse leaderboard JSON
+      const leaderboardJson = JSON.parse(leaderboardData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const tableData = leaderboardJson.table.rows;
+      
+      // Parse handicap JSON and create a lookup object: { name: handicap }
+      const handicapJson = JSON.parse(handicapData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const handicapMap = {};
+      handicapJson.table.rows.forEach(row => {
+        const name = row.c[0] ? row.c[0].v : '';
+        const handicap = row.c[1] ? row.c[1].v : '';
+        if (name) {
+          handicapMap[name] = handicap;
+        }
+      });
+      
+      // Set headers: Rank, Name, Points, Front, Back, Through
+      const headers = leaderboardJson.table.cols.slice(1, 7).map((col, index) => {
+        switch(index) {
+          case 0: return 'Rank';
+          case 1: return 'Name';
+          case 2: return 'Points';
+          case 3: return 'Front';
+          case 4: return 'Back';
+          case 5: return 'Through';
+          default: return col.label || 'Unknown';
+        }
+      });
+      
+      const headerRow = document.getElementById('header-row');
+      headers.forEach((header, index) => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        th.classList.add(`column-${String.fromCharCode(98 + index)}`);
+        headerRow.appendChild(th);
+      });
+      
+      // Sort the table data by the 'Rank' column (index 0) in ascending order
+      tableData.sort((a, b) => {
+        const rankA = a.c[1] ? a.c[1].v : '';
+        const rankB = b.c[1] ? b.c[1].v : '';
+        const numA = parseInt(rankA, 10);
+        const numB = parseInt(rankB, 10);
         
-        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return numA - numB;
+        } else if (!isNaN(numA)) {
+          return -1;
+        } else if (!isNaN(numB)) {
+          return 1;
+        } else {
+          return rankA.localeCompare(rankB);
+        }
+      });
+      
+      // Populate the table rows and append handicap to player names
+      const dataRows = document.getElementById('data-rows');
+      tableData.forEach((row, index) => {
+        const rankValue = row.c[1] ? row.c[1].v : 0;
+        if (parseInt(rankValue, 10) === 0) return;
+        
+        const tr = document.createElement('tr');
+        row.c.slice(1, 7).forEach((cell, i) => {
+          const td = document.createElement('td');
+          // For the Name column (i === 1), add handicap if available
+          if (i === 1) {
+            const playerName = cell ? cell.v : `Player${index + 1}`;
+            const handicap = handicapMap[playerName] ? handicapMap[playerName] : '';
+            td.textContent = handicap ? `${playerName} (${handicap})` : playerName;
+          } else {
+            td.textContent = cell ? cell.v : '0';
+          }
+          td.classList.add(`column-${String.fromCharCode(98 + i)}`);
+          tr.appendChild(td);
+        });
+        
+        // Use the Name column (from column index 2 in the original data) for the scorecard link
+        const playerNameForLink = row.c[2] ? row.c[2].v : `Player${index + 1}`;
+        tr.addEventListener('click', () => {
+          window.location.href = `scorecard.html?player=${encodeURIComponent(playerNameForLink)}`;
+        });
+        
+        dataRows.appendChild(tr);
+      });
+    })
+    .catch(error => console.error('Error fetching data:', error));
+  </script>
+  
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
 
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-                const tableData = json.table.rows;
-
-                // Extract headers from the sheet
-                const headers = json.table.cols.slice(1, 7).map((col, index) => {
-                    if (index === 0) return 'RANK'; // Rename Column B to 'Rank'
-                    return col.label || 'Unknown';
-                });
-
-                // Populate the header row
-                const headerRow = document.getElementById('header-row');
-                headers.forEach((header, index) => {
-                    const th = document.createElement('th');
-                    th.textContent = header;
-                    th.classList.add(`column-${String.fromCharCode(98 + index)}`);
-                    headerRow.appendChild(th);
-                });
-
-                // Sort the table data by the 'Rank' column (index 0) in ascending order
-                tableData.sort((a, b) => {
-                    const rankA = a.c[1] ? a.c[1].v : '';
-                    const rankB = b.c[1] ? b.c[1].v : '';
-
-                    const numA = parseInt(rankA, 10);
-                    const numB = parseInt(rankB, 10);
-
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        return numA - numB; // Sort numbers
-                    } else if (!isNaN(numA)) {
-                        return -1; // Numbers come before letters
-                    } else if (!isNaN(numB)) {
-                        return 1; // Numbers come before letters
-                    } else {
-                        return rankA.localeCompare(rankB); // Sort letters
-                    }
-                });
-
-                // Populate the table rows
-                const dataRows = document.getElementById('data-rows');
-                tableData.forEach((row, index) => {
-                    const tr = document.createElement('tr');
-                    row.c.slice(1, 7).forEach((cell, i) => {
-                        const td = document.createElement('td');
-                        td.textContent = cell ? cell.v : '0';
-                        td.classList.add(`column-${String.fromCharCode(98 + i)}`);
-                        tr.appendChild(td);
-                    });
-
-                    // Use Column C for player name
-                    const playerName = row.c[2] ? row.c[2].v : `Player${index + 1}`; // Column C for player names
-                    tr.addEventListener('click', () => {
-                        window.location.href = `scorecard.html?player=${encodeURIComponent(playerName)}`;
-                    });
-
-                    dataRows.appendChild(tr);
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    </script>
 </body>
 </html>

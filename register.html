@@ -1,241 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta charset="utf-8">
-    <title>Podcast</title>
-    <link rel="manifest" href="site.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="favicon.png">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="navbar.css">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        .header {
-            background-color: white;
-            /* For browsers that do not support gradients */
-            background-image: linear-gradient(to right, #5DE0E6, #004AAD);
-            
-            width: 100%;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Register</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+     <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
 
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        a:visited {
-            color: inherit;
-        }
-
-        .hotel-info {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border: 1px solid #ccc;
-            margin: 10px;
-            border-radius: 8px;
-            width: 300px;
-        }
-
-        .hotel-photo img {
-            width: 260px;
-            border-radius: 8px;
-            margin-right: 20px;
-        }
-
-        .details {
-            flex: 1;
-        }
-
-        .details h1 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-
-        .details p {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-
-        .back-button {
-            width: 300px;
-            padding: 10px;
-            margin: 20px auto;
-            display: block;
-            text-align: center;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            display: flex;
-            justify-content: space-around;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 10px 0;
-            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .navbar a:hover {
-            color: #000000;
-        }
-
-        .navbar a img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
-        }
-
-        .google-form-container {
-            width: 100%;
-            height: calc(100vh - 200px); /* Adjust height as needed */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .google-form-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-    </style>
+  <style>
+    ul {
+      color: black;
+    }
+    iframe {
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      background-color: white;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="header">
-        <br>
-    </div>
 
-    <br>
-    <br>
-    <br>
-
-    <div class="hotel-info">
-        <div class="details">
-            <h1>Sorry&nbsp;</h1>
-            <p>Registrations for Hackers Cup 24 are now closed.</p>
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- Logo -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="" style="width: 158px;">
+            </a>
+            <!-- Menu -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html" class="active">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class='menu-trigger'>
+              <span>Menu</span>
+            </a>
+          </nav>
         </div>
+      </div>
     </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
 
-    
-
-    <div class="sign-out">
-        <button id="sign-out-btn" onclick="leave()">Sign Out</button>
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>Register</h3>
+          <span class="breadcrumb" id="user-name">Loading...</span>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="navbar"></div>
-    <script src="navbar.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  <div class="contact-page section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <iframe 
+            src="https://docs.google.com/forms/d/e/1FAIpQLScFT7C7BXnYNoCE-qZYmjUw6reLG7yK6mVn94uGrAwX9SzxMA/viewform?embedded=true" 
+            width="100%" height="1600" frameborder="0" marginheight="0" marginwidth="0">
+            Loading…
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
-            authDomain: "hackers-cup.firebaseapp.com",
-            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
-            projectId: "hackers-cup",
-            storageBucket: "hackers-cup.appspot.com",
-            messagingSenderId: "765736070872",
-            appId: "1:765736070872:web:86a51c41916e7af75631ad",
-            measurementId: "G-6E1M14F510"
-        };
+  
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase();
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
 
-        const auth = getAuth(app);
+  <!-- Firebase login/displayName logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // Function to get the user's display name from the database
-        function getDisplayName(user) {
-            const userRef = ref(database, `users/${user.uid}/displayName`);
-            onValue(userRef, (snapshot) => {
-                const displayName = snapshot.val();
-                if (displayName) {
-                    document.querySelector('.welcome-message').textContent = ``;
-                } else {
-                    const name = prompt('Please enter your display name:');
-                    if (name && name.trim() !== '') {
-                        set(userRef, name.trim())
-                            .then(() => {
-                                document.querySelector('.welcome-message').textContent = `Welcome ${name.trim()}`;
-                            })
-                            .catch((error) => {
-                                console.error('Error updating display name:', error);
-                            });
-                    }
-                }
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase();
+    const auth = getAuth(app);
+
+    function getDisplayName(user) {
+      const userRef = ref(database, `users/${user.uid}/displayName`);
+      onValue(userRef, (snapshot) => {
+        const displayName = snapshot.val();
+        if (displayName) {
+          document.getElementById('user-name').textContent = displayName;
+        } else {
+          const name = prompt('Please enter your display name:');
+          if (name && name.trim() !== '') {
+            set(userRef, name.trim()).then(() => {
+              document.getElementById('user-name').textContent = name.trim();
+            }).catch((error) => {
+              console.error('Error updating display name:', error);
             });
+          }
         }
+      });
+    }
 
-        function getRoomNumber(user) {
-            const roomRef = ref(database, `users/${user.uid}/roomNumber`);
-            onValue(roomRef, (snapshot) => {
-                const roomNumber = snapshot.val();
-                if (roomNumber) {
-                    document.getElementById('room-number').textContent = `${roomNumber}`;
-                } else {
-                    document.getElementById('room-number').textContent = 'Room number not assigned yet.';
-                }
-            });
-        }
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        getDisplayName(user);
+      }
+    });
+  </script>
 
-        // Check if a user is logged in
-        auth.onAuthStateChanged((user) => {
-            if (!user) {
-                // Redirect the user to the login page if not logged in
-                window.location.href = 'index.html';
-            } else {
-                getDisplayName(user);
-                getRoomNumber(user);
-            }
-        });
-
-        // Function to sign out
-        function leave() {
-            auth.signOut()
-                .then(() => {
-                    // Sign-out successful.
-                    window.location.href = 'index.html.html'; // Redirect to login page
-                })
-                .catch((error) => {
-                    // An error happened.
-                    console.error('Sign Out Error', error);
-                });
-        }
-
-        // Add event listener to sign out button
-        document.getElementById('sign-out-btn').addEventListener('click', leave);
-    </script>
 </body>
-
 </html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	
+	
+
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta charset="utf-8">
+    <title>Hackers Cup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name = "viewport" content = "initial-scale = 1.0, user-scalable = no">
+    <link rel="apple-touch-icon" href="favicon.png">
+<link rel="apple-touch-startup-image" href="splash.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+	<style>
+
+		.light-text {
+    color: #fff; /* White color for text */
+}
+
+.dark-text {
+    color: #000; /* Black color for text */
+}
+
+	.navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+			height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+    </style>
+    <style>
+        /* Your existing CSS styles */
+        .hotel-info {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            margin: 10px;
+            border-radius: 12px;
+            width: 300px;
+        }
+
+        .hotel-photo img {
+            max-width: 200px;
+            border-radius: 12px;
+            margin-right: 20px;
+        }
+
+        .details {
+            flex: 1;
+            background-color: #235bac; /* Set the background color to light gray */
+            border-radius: 12px; /* Increase border radius for larger corners */
+            padding: 10px;
+		color: rgb(255,255,255);
+        }
+
+        .details p {
+            font-size: 1rem; /* Adjust the font size as needed */
+            margin-bottom: 5px;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit; /* Use the default color */
+        }
+
+        /* Style visited anchor tags */
+        a:visited {
+            color: inherit; /* Use the default color for visited links */
+        }
+
+        .countdown-box {
+            display: inline-block;
+            text-align: center;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+		padding: 10px;
+            border-radius: 5px;
+	color: rgb(255,255,255);
+		background-color: #235bac;
+            width: 60px; /* Adjust width as needed */
+        }
+		.number {
+            display: inline-block;
+            text-align: center;
+            margin-right: 10px;
+			margin-left: 10px;
+            border: 1px solid #ccc;
+		padding: 5px;
+            border-radius: 15px;
+	color: rgb(255,255,255);
+		background-color: #235bac;
+            width: 60px; /* Adjust width as needed */
+        }
+
+        .countdown-box span {
+            display: block;
+        }
+
+        .countdown-label {
+            font-size: 0.6rem;
+            margin-top: 5px;
+            color: rgb(255,255,255);
+            width: 100%; /* Ensure the label spans the full width */
+        }
+
+        .grid-item {
+            cursor: pointer;
+            border-radius: 12px; /* Add border-radius for rounded corners */
+            padding: 0px; /* Add padding for spacing */
+            margin: 0px; /* Add margin for spacing */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+            transition: background-color 0.3s ease; /* Add transition for hover effect */
+            max-width: 200px; /* Set the maximum width for the grid item */
+            max-height: 200px; /* Set the maximum height for the grid item */
+        }
+
+        .grid-item img {
+            max-width: 100%; /* Ensure the image does not exceed the grid item's width */
+            max-height: 100%; /* Ensure the image does not exceed the grid item's height */
+        }
+
+        .grid-item:hover {
+            background-color: rgba(255, 255, 255, 0.7); /* Adjust the transparency on hover */
+        }
+
+        /* Settings cog styles */
+        .settings-cog {
+            position: fixed;
+            height: 40px;
+            width: 40px;
+            bottom: 0px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        /* Settings panel styles */
+        .settings-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 200px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .settings-option {
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        /* Fixed position wallpaper */
+        #wallpaper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Ensure the wallpaper is behind other elements */
+            background-position: center;
+            background-size: cover;
+        }
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.welcome-message {
+    /* Keep existing styles */
+    flex: 1; /* This ensures the welcome message takes up remaining space */
+}
+
+#user-name {
+    text-align: right; /* Align the user name to the right */
+}
+
+    </style>
+</head>
+<script>
+    // Function to navigate to a specified page
+    function navigateTo(page) {
+        window.location.href = page;
+    }
+</script>
+
+<body>
+    <div id="wallpaper"></div> <!-- Wallpaper element -->
+    <div class="header">
+        <div class="logo">
+            <!-- Your logo here -->
+            <img src="HCLOGO.png" alt="Hackers Cup Logo">
+        </div>
+         <div class="welcome-message">
+        <p id="user-name">Welcome<br></p>
+    </div>
+		<div class="number">
+           
+        
+    <div class="hacker-number">
+        <p id="hacker-number"><br></p>
+		</div>
+    </div>
+    </div>
+    <div class="hotel-info">
+        <div class="hotel-photo">
+            <!-- Replace the 'hotel_photo.png' with the actual hotel photo -->
+
+        </div>
+        <div class="details" id="room-details">
+           <h1>Welcome to Hackers Cup 24<p>23 - 25 August 2024</p></h1>
+
+        </div>
+    </div>
+
+    <div id="countdown">
+        <div class="countdown-box">
+            <span id="days" class="countdown-value">00</span>
+            <span class="countdown-label">Days</span>
+        </div>
+        <div class="countdown-box">
+            <span id="hours" class="countdown-value">00</span>
+            <span class="countdown-label">Hours</span>
+        </div>
+        <div class="countdown-box">
+            <span id="minutes" class="countdown-value">00</span>
+            <span class="countdown-label">Minutes</span>
+        </div>
+        <div class="countdown-box">
+            <span id="seconds" class="countdown-value">00</span>
+            <span class="countdown-label">Seconds</span>
+        </div>
+    </div>
+	<script>
+        // Toggle settings panel visibility
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+
+        // Close settings panel if clicked outside of it
+        document.addEventListener('click', function(event) {
+            const settingsPanel = document.getElementById('settings-panel');
+            const settingsCog = document.querySelector('.settings-cog');
+            if (!settingsPanel.contains(event.target) && event.target !== settingsCog) {
+                settingsPanel.classList.remove('show');
+            }
+        });
+    </script>  
+ <div class="settings-cog" onclick="toggleSettingsPanel()">
+        <img class="settings-cog" src="cog.png" alt="Settings">
+    </div>
+   <div class="grid-container">
+	   <div class="grid-item" onclick="navigateTo('Venue.html')">
+            <img src="venue_image.png" alt="Venue">
+        </div>
+	    
+	  
+        <div class="grid-item" onclick="navigateTo('score.html')">
+            <img src="score_image1.png" alt="Score">
+        </div>
+	   <div class="grid-item" onclick="navigateTo('Payment.html')">
+            <img src="payment_image.png" alt="Payment">
+        </div>
+	   <div class="grid-item" onclick="navigateTo('Podcast.html')">
+            <img src="podcast_image.png" alt="Podcast">
+        </div>
+        <div class="grid-item" onclick="navigateTo('Memorabilia.html')">
+            <img src="memorabilia_image.png" alt="Memorabilia">
+        </div>
+        
+        
+        <div class="grid-item" onclick="navigateTo('Schedule.html')">
+            <img src="schedule_image.png" alt="Schedule">
+        </div>
+        <div class="grid-item" onclick="navigateTo('Honour.html')">
+            <img src="honour_image.png" alt="Honour Roll">
+        </div>
+        <div class="grid-item" onclick="navigateTo('Hotel.html')">
+            <img src="hotel_image.png" alt="Hotel">
+        </div>
+        <div class="grid-item" onclick="navigateTo('register.html')">
+            <img src="register_image.png" alt="Register">
+        </div>
+        <div class="grid-item" id="exit-button">
+            <img src="exit.png" alt="Sign Out">
+        </div>
+    </div>
+    
+
+
+   
+
+    <div id="settings-panel" class="settings-panel">
+        <button class="wallpaper-option" onclick="changeWallpaper('none')">None</button>
+        
+        <button class="wallpaper-option" onclick="changeWallpaper('golf2')">Kiama</button>
+        <button class="wallpaper-option" onclick="changeWallpaper('golf3')">Greenwell Point</button>
+    </div>
+
+      
+  <br>
+	<br>
+	<br>
+	<br>
+	
+</body>
+<div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+        <a href="score.html">
+            <img src="more-01.png" alt="Score">
+            Score
+        </a>
+    </div>
+<script type="module">
+   
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+            authDomain: "hackers-cup.firebaseapp.com",
+            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+            projectId: "hackers-cup",
+            storageBucket: "hackers-cup.appspot.com",
+            messagingSenderId: "765736070872",
+            appId: "1:765736070872:web:86a51c41916e7af75631ad",
+            measurementId: "G-6E1M14F510"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase();
+
+        const auth = getAuth(app);
+
+
+       function getDisplayName(user) {
+    const userRef = ref(database, `users/${user.uid}/displayName`);
+    onValue(userRef, (snapshot) => {
+        const displayName = snapshot.val();
+        if (displayName) {
+            document.getElementById('user-name').textContent = displayName;
+        } else {
+            const name = prompt('Please enter your display name:');
+            if (name && name.trim() !== '') {
+                set(userRef, name.trim())
+                    .then(() => {
+                        document.getElementById('user-name').textContent = name.trim();
+                    })
+                    .catch((error) => {
+                        console.error('Error updating display name:', error);
+                    });
+            }
+        }
+    });
+}
+
+function getHackerNumber(user) {
+    const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+    onValue(hackerRef, (snapshot) => {
+        const hackerNumber = snapshot.val();
+        if (hackerNumber) {
+            document.getElementById('hacker-number').textContent = '  ' + hackerNumber + '';
+        } else {
+            document.getElementById('hacker-number').textContent = ' (Hackers number not assigned yet)';
+        }
+    });
+}
+
+
+auth.onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+    } else {
+        getDisplayName(user);
+        getHackerNumber(user);
+    }
+});
+
+
+        function leave() {
+            auth.signOut()
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error('Sign Out Error', error);
+                });
+        }
+
+        
+
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+
+        function updateCountdown() {
+            const targetDate = new Date("August 23, 2024 11:00:00 GMT+1000");
+            const currentDate = new Date();
+            const timeDifference = targetDate - currentDate;
+
+            if (timeDifference < 0) {
+                document.getElementById('countdown').textContent = 'Hackers Cup has begun!';
+                return;
+            }
+
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = padZeroes(days);
+            document.getElementById('hours').textContent = padZeroes(hours);
+            document.getElementById('minutes').textContent = padZeroes(minutes);
+            document.getElementById('seconds').textContent = padZeroes(seconds);
+        }
+
+        // Function to add leading zeroes to numbers less than 10
+        function padZeroes(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        // Initial call to update the countdown timer
+        updateCountdown();
+
+        // Call the updateCountdown function every second
+        setInterval(updateCountdown, 1000);
+    </script>
+    <script>
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+    </script>
+    <script>
+       function changeWallpaper(option) {
+    var backgroundImageUrl = "10th.jpg";
+
+    if (option === "none") {
+        backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
+        document.getElementById('header').classList.remove('light-text');
+        document.getElementById('countdown').classList.remove('light-text');
+        document.getElementById('header').classList.add('dark-text');
+        document.getElementById('countdown').classList.add('dark-text');
+    } else {
+        if (option === "golf1") {
+           
+        } else if (option === "golf2") {
+            backgroundImageUrl = "kiama.jpg"; // Update with the correct image URL
+        } else if (option === "golf3") {
+            backgroundImageUrl = "greenwell.jpg"; // Update with the correct image URL
+        }
+		  document.addEventListener('DOMContentLoaded', function() {
+        var wallpaper = document.getElementById('wallpaper');
+        wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
+        
+        // Apply background image to wallpaper element
+        document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
+
+        // Remove dark-text class and add light-text class
+        document.getElementById('details').classList.remove('dark-text');
+        document.getElementById('countdown').classList.remove('dark-text');
+        document.getElementById('details').classList.add('light-text');
+        document.getElementById('countdown').classList.add('light-text');
+    }
+
+    toggleSettingsPanel(); // Close settings panel after selection
+}
+
+    </script>
+</html>

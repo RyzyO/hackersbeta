@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="stylesheet" href="assets/css/navbar.css"><title>View Golf Scorecards</title>
+</head>
+<body>
+
+  <h1>List of Games</h1>
+
+  <div id="gameList">
+    <!-- List of games will be populated here -->
+  </div>
+
+  <div id="playerList" style="display:none;">
+    <h2>Players in Game</h2>
+    <ul id="players"></ul>
+  </div>
+
+  <div id="scorecard" style="display:none;">
+    <h2>Scorecard</h2>
+    <table id="scoreTable">
+      <thead>
+        <tr>
+          <th>Hole</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Score data will be populated here -->
+      </tbody>
+    </table>
+  </div>
+<div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Function to get and display the list of games
+    async function getGames() {
+      const gameListDiv = document.getElementById('gameList');
+      const gamesRef = collection(db, 'games');
+      const gamesSnapshot = await getDocs(gamesRef);
+
+      if (gamesSnapshot.empty) {
+        gameListDiv.innerHTML = 'No games found.';
+        return;
+      }
+
+      // Create the game list
+      gamesSnapshot.forEach(doc => {
+        const gameName = doc.id;
+        const gameButton = document.createElement('button');
+        gameButton.textContent = gameName;
+        gameButton.onclick = () => showPlayers(gameName);  // Show players on click
+        gameListDiv.appendChild(gameButton);
+      });
+    }
+
+    // Function to show players for the selected game
+    async function showPlayers(gameName) {
+      const playerListDiv = document.getElementById('playerList');
+      const playersUl = document.getElementById('players');
+      playersUl.innerHTML = '';  // Clear previous players
+
+      const gameRef = doc(db, 'games', gameName);
+      const gameDoc = await getDoc(gameRef);
+
+      if (gameDoc.exists()) {
+        const playerScores = gameDoc.data().playerScores;
+        for (const playerID in playerScores) {
+          const playerName = await getPlayerName(playerID);  // Fetch player name from users collection
+          const playerItem = document.createElement('li');
+          playerItem.textContent = playerName;
+          playerItem.onclick = () => showScorecard(gameName, playerID);  // Show scorecard on click
+          playersUl.appendChild(playerItem);
+        }
+        playerListDiv.style.display = 'block';  // Show player list
+      }
+    }
+
+    // Function to fetch player name from the users collection
+    async function getPlayerName(playerID) {
+      const userRef = doc(db, 'users', playerID);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        return userDoc.data().displayName;  // Return the player's display name
+      } else {
+        console.log('User not found');
+        return 'Unknown Player';  // Return a fallback name if user doesn't exist
+      }
+    }
+
+    // Function to display the scorecard for the selected player
+    async function showScorecard(gameName, playerID) {
+      const scorecardDiv = document.getElementById('scorecard');
+      const scoreTable = document.getElementById('scoreTable').getElementsByTagName('tbody')[0];
+      scoreTable.innerHTML = '';  // Clear previous scores
+
+      const gameRef = doc(db, 'games', gameName);
+      const gameDoc = await getDoc(gameRef);
+
+      if (gameDoc.exists()) {
+        const playerScores = gameDoc.data().playerScores;
+        const scoreData = playerScores[playerID];
+
+        if (scoreData) {
+          // Loop through holes and display the score
+          for (let i = 1; i <= 9; i++) {
+            const holeScore = scoreData[`hole${i}`];
+            const row = scoreTable.insertRow();
+            const holeCell = row.insertCell(0);
+            const scoreCell = row.insertCell(1);
+            holeCell.textContent = `Hole ${i}`;
+            scoreCell.textContent = holeScore;
+          }
+          scorecardDiv.style.display = 'block';  // Show scorecard
+        }
+      }
+    }
+
+    // Call getGames to load games when the page is ready
+    document.addEventListener('DOMContentLoaded', getGames);
+  </script>
+
+</body>
+</html>

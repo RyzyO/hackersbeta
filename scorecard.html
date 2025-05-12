@@ -1,193 +1,466 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Scorecard</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f4f8;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            position: relative;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Player Scorecard</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+     <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  
+  <!-- Custom Table Styling -->
+  <style>
+    /* Scorecard table styling matching the leaderboard page */
+    h3 {
+      color: white;
+    }
+    .scorecard-table {
+      width: 100%;
+      margin: 20px 0;
+      border-collapse: collapse;
+      font-family: 'Poppins', sans-serif;
+      color: #ffffff;
+    }
+    /* Header row styling: dark background with uppercase, spaced text */
+    .scorecard-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    /* Header and cell padding, with subtle borders */
+    .scorecard-table th,
+    .scorecard-table td {
+      padding: 12px 15px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    /* Zebra-striping for table rows */
+    .scorecard-table tbody tr:nth-child(even) {
+      background-color: #333333;
+    }
+    .scorecard-table tbody tr:nth-child(odd) {
+      background-color: #2e2e2e;
+    }
+    /* Hover effect for rows */
+    .scorecard-table tbody tr:hover {
+      background-color: #555555;
+      cursor: pointer;
+    }
+    /* Stats card styling */
+    .stats-card {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #333333;
+      border-radius: 10px;
+      color: #ffffff;
+      text-align: center;
+      min-width: 120px;
+    }
 
-        h2 {
-            color: #003366;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    /* ----------------------------
+       DESKTOP (>= 769px) STYLING
+       ---------------------------- */
+    @media (min-width: 769px) {
+      .scorecard-table {
+        table-layout: fixed;
+      }
+      /* Force all 10 columns to 10% so they line up nicely */
+      .scorecard-table th,
+      .scorecard-table td {
+        width: 5%;
+      }
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0 auto;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-		 .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            display: flex;
-            justify-content: space-around;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 10px 0;
-            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .navbar a:hover {
-            color: #000000;
-        }
-
-        .navbar a img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
-        }
-
-
-        th, td {
-            padding: 12px 15px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #003366;
-            color: #ffffff;
-        }
-
-        td {
-            background-color: #e6f2ff;
-            color: #003366;
-        }
-
-        tr:nth-child(even) td {
-            background-color: #cce0ff;
-        }
-
-        tr:hover td {
-            background-color: #b3d9ff;
-        }
-
-        /* Hide columns G and H by default (portrait mode) */
-        .column-g, .column-h {
-            display: none;
-        }
-
-        /* Show columns G and H in landscape orientation */
-        @media screen and (orientation: landscape) {
-            .column-g, .column-h {
-                display: table-cell;
-            }
-        }
-
-        /* Back button styling */
-        .back-button {
-            width: 200px;
-            padding: 10px;
-            margin: 20px 0;
-            display: block;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .back-button:hover {
-            background-color: #2980b9;
-        }
-    </style>
+    /* ----------------------------
+       MOBILE (<= 768px) STYLING
+       ---------------------------- */
+    @media (max-width: 768px) {
+      .scorecard-table {
+        table-layout: auto;
+      }
+      .scorecard-table th,
+      .scorecard-table td {
+        width: auto;
+      }
+      /* Fix width for the last column ("Out" or "In") */
+      .scorecard-table th:last-child,
+      .scorecard-table td:last-child {
+        width: 80px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <a href="liveSaturday.html" class="back-button">Back to Leaderboard</a>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
     <div class="container">
-        <h2 id="player-name"></h2>
-        <table id="scorecard-table">
-            <thead>
-                <tr id="header-row"></tr>
-            </thead>
-            <tbody id="scorecard-rows"></tbody>
-        </table>
-    </div><br><br><br><br><br><br>
-<div class="navbar">
-        <a href="Welcome.html">
-            <img src="home-01.png" alt="Home">
-            Home
-        </a>
-        <a href="Payment.html">
-            <img src="payment.png" alt="Payment">
-            Payment
-        </a>
-        <a href="Schedule.html">
-            <img src="schedule.png" alt="Schedule">
-            Schedule
-        </a>
-       <a href="score.html">
-            <img src="more-01.png" alt="Score">
-            Score
-        </a>
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- Logo -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="Logo" style="width: 158px;" />
+            </a>
+            <!-- Menu -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="honour-roll.html" class="active">Honour Roll</a></li>
+              <li><a href="product-details.html">Product Details</a></li>
+              <li><a href="contact.html">Contact Us</a></li>
+              <li><a href="#">Sign In</a></li>
+            </ul>
+            <a class="menu-trigger"><span>Menu</span></a>
+          </nav>
+        </div>
+      </div>
     </div>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const playerName = urlParams.get('player');
-        document.getElementById('player-name').textContent = playerName;
+  </header>
+  <!-- ***** Header Area End ***** -->
 
-        const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg'; // Google Sheet ID
-        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+  <!-- Page heading with a blue background -->
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>SATURDAY LEADERBOARD</h3>
+          <span class="breadcrumb">Stableford Format</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-                const tableData = json.table.rows;
+  <div class="container">
+    <!-- Stats header row -->
+    <div class="row align-items-center py-3">
+      <!-- Left side: Player name and handicap -->
+      <div class="col-12 col-md-6 text-md-left">
+        <h2 id="player-name" class="m-0">Player Name</h2>
+        <h4 id="player-handicap" class="m-0"></h4>
+      </div>
+      <!-- Right side: Stats card -->
+      <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end mt-3 mt-md-0">
+        <div class="stats-card" style="padding: 15px 20px; border-radius: 10px;">
+          <div>Total Points: <span id="total-points">0</span></div>
+          <div>Rank: <span id="player-rank">N/A</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Front Nine Table -->
+    <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
+      <thead>
+        <tr>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+          <th>6</th>
+          <th>7</th>
+          <th>8</th>
+          <th>9</th>
+          <th>Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row: Par for holes 1-9 + Par total (Out) -->
+        <tr>
+          <td id="par1"></td>
+          <td id="par2"></td>
+          <td id="par3"></td>
+          <td id="par4"></td>
+          <td id="par5"></td>
+          <td id="par6"></td>
+          <td id="par7"></td>
+          <td id="par8"></td>
+          <td id="par9"></td>
+          <td id="parOut"></td>
+        </tr>
+        <!-- Row: Score for holes 1-9 + Score total (Out) -->
+        <tr>
+          <td id="score1"></td>
+          <td id="score2"></td>
+          <td id="score3"></td>
+          <td id="score4"></td>
+          <td id="score5"></td>
+          <td id="score6"></td>
+          <td id="score7"></td>
+          <td id="score8"></td>
+          <td id="score9"></td>
+          <td id="scoreOut"></td>
+        </tr>
+        <!-- Row: Points for holes 1-9 + Points total (Out) -->
+        <tr>
+          <td id="points1"></td>
+          <td id="points2"></td>
+          <td id="points3"></td>
+          <td id="points4"></td>
+          <td id="points5"></td>
+          <td id="points6"></td>
+          <td id="points7"></td>
+          <td id="points8"></td>
+          <td id="points9"></td>
+          <td id="pointsOut"></td>
+        </tr>
+      </tbody>
+    </table>
 
-                // Extract headers and only select columns E, F, G, H, I, and M (indexes 4, 5, 6, 7, 8, and 12)
-                const allHeaders = json.table.cols.map(col => col.label);
-                const headers = [allHeaders[4], allHeaders[5], allHeaders[6], allHeaders[7], allHeaders[8], allHeaders[12]];
+    <!-- Back Nine Table -->
+    <table id="back-nine-table" class="scorecard-table" style="margin-top: 30px;">
+      <thead>
+        <tr>
+          <th>10</th>
+          <th>11</th>
+          <th>12</th>
+          <th>13</th>
+          <th>14</th>
+          <th>15</th>
+          <th>16</th>
+          <th>17</th>
+          <th>18</th>
+          <th>In</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row: Par for holes 10-18 + Par total (In) -->
+        <tr>
+          <td id="par10"></td>
+          <td id="par11"></td>
+          <td id="par12"></td>
+          <td id="par13"></td>
+          <td id="par14"></td>
+          <td id="par15"></td>
+          <td id="par16"></td>
+          <td id="par17"></td>
+          <td id="par18"></td>
+          <td id="parIn"></td>
+        </tr>
+        <!-- Row: Score for holes 10-18 + Score total (In) -->
+        <tr>
+          <td id="score10"></td>
+          <td id="score11"></td>
+          <td id="score12"></td>
+          <td id="score13"></td>
+          <td id="score14"></td>
+          <td id="score15"></td>
+          <td id="score16"></td>
+          <td id="score17"></td>
+          <td id="score18"></td>
+          <td id="scoreIn"></td>
+        </tr>
+        <!-- Row: Points for holes 10-18 + Points total (In) -->
+        <tr>
+          <td id="points10"></td>
+          <td id="points11"></td>
+          <td id="points12"></td>
+          <td id="points13"></td>
+          <td id="points14"></td>
+          <td id="points15"></td>
+          <td id="points16"></td>
+          <td id="points17"></td>
+          <td id="points18"></td>
+          <td id="pointsIn"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-                // Populate the header row
-                const headerRow = document.getElementById('header-row');
-                headers.forEach((header, index) => {
-                    const th = document.createElement('th');
-                    th.textContent = header;
-                    th.classList.add(`column-${String.fromCharCode(101 + index)}`); // Add class column-e, column-f, etc.
-                    headerRow.appendChild(th);
-                });
+  
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
 
-                // Populate the table rows
-                const dataRows = document.getElementById('scorecard-rows');
-                tableData.forEach(row => {
-                    const tr = document.createElement('tr');
-                    [4, 5, 6, 7, 8, 12].forEach((index, i) => {
-                        const td = document.createElement('td');
-                        td.textContent = row.c[index] ? row.c[index].v : '0'; // Display 0 if the cell is empty
-                        td.classList.add(`column-${String.fromCharCode(101 + i)}`); // Add class column-e, column-f, etc.
-                        tr.appendChild(td);
-                    });
-                    dataRows.appendChild(tr);
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    </script>
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+
+  <!-- Main Script to Fetch & Populate Scorecard Data -->
+  <script>
+    /****************************************************
+     * 1) Get the player name from the URL parameter
+     ****************************************************/
+    const urlParams = new URLSearchParams(window.location.search);
+    const playerName = urlParams.get('player') || "Unknown Player";
+    document.getElementById('player-name').textContent = playerName;
+
+    /****************************************************
+     * 2) Fetch the Google Sheet data for the scorecard
+     *    Each row = 1 hole, with columns:
+     *    E (index 4) = hole #, F (index 5) = par,
+     *    I (index 8) = score, M (index 12) = points
+     ****************************************************/
+    const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg';
+    const fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+
+    // Arrays to hold hole data by hole number
+    const holePars = [];
+    const holeScores = [];
+    const holePoints = [];
+
+    fetch(fetchUrl)
+      .then(response => response.text())
+      .then(text => {
+        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const rows = json.table.rows;
+
+        rows.forEach(r => {
+          const holeNum = r.c[4] ? parseInt(r.c[4].v, 10) : 0;
+          const parVal  = r.c[5] ? parseInt(r.c[5].v, 10) : 0;
+          const scoreVal= r.c[8] ? parseInt(r.c[8].v, 10) : 0;
+          const ptsVal  = r.c[12] ? parseInt(r.c[12].v, 10) : 0;
+
+          if (holeNum >= 1 && holeNum <= 18) {
+            holePars[holeNum] = parVal;
+            holeScores[holeNum] = scoreVal;
+            holePoints[holeNum] = ptsVal;
+          }
+        });
+
+        // Populate the table for front 9
+        let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
+        for (let h = 1; h <= 9; h++) {
+          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
+          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
+          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
+          outParSum    += (holePars[h]   || 0);
+          outScoreSum  += (holeScores[h] || 0);
+          outPointsSum += (holePoints[h] || 0);
+        }
+        document.getElementById("parOut").textContent = outParSum;
+        document.getElementById("scoreOut").textContent = outScoreSum;
+        document.getElementById("pointsOut").textContent = outPointsSum;
+
+        // Populate the table for back 9
+        let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
+        for (let h = 10; h <= 18; h++) {
+          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
+          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
+          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
+          inParSum    += (holePars[h]   || 0);
+          inScoreSum  += (holeScores[h] || 0);
+          inPointsSum += (holePoints[h] || 0);
+        }
+        document.getElementById("parIn").textContent = inParSum;
+        document.getElementById("scoreIn").textContent = inScoreSum;
+        document.getElementById("pointsIn").textContent = inPointsSum;
+
+        /****************************************************
+         * 3) Color-code the SCORE cells by difference (Score - Par)
+         ****************************************************/
+        function colorScoreCell(holeNumber) {
+          const par = holePars[holeNumber] || 0;
+          const scr = holeScores[holeNumber] || 0;
+          const diff = scr - par;
+          const scoreCell = document.getElementById(`score${holeNumber}`);
+          if (!scoreCell) return;
+          
+          // Reset any previous styling
+          scoreCell.style.backgroundColor = "";
+          scoreCell.style.color = "";
+
+          if (diff === 0) {
+            scoreCell.style.backgroundColor = "white";
+            scoreCell.style.color = "black";
+          } else if (diff === -1) {
+            scoreCell.style.backgroundColor = "#add8e6"; // Light blue
+            scoreCell.style.color = "black";
+          } else if (diff === -2) {
+            scoreCell.style.backgroundColor = "blue";
+            scoreCell.style.color = "white";
+          } else if (diff === -3) {
+            scoreCell.style.backgroundColor = "navy";
+            scoreCell.style.color = "white";
+          } else if (diff === 1) {
+            scoreCell.style.backgroundColor = "orange";
+            scoreCell.style.color = "black";
+          } else if (diff >= 2) {
+            scoreCell.style.backgroundColor = "red";
+            scoreCell.style.color = "white";
+          }
+        }
+        for (let h = 1; h <= 18; h++) {
+          colorScoreCell(h);
+        }
+      })
+      .catch(err => console.error("Error fetching or parsing scorecard data:", err));
+
+    /****************************************************
+     * 4) Fetch leaderboard data to get player's rank and points
+     *    (Assumes leaderboard data is in a separate tab with gid=600147197)
+     ****************************************************/
+    const leaderboardSheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg';
+    const leaderboardGid = '600147197';
+    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${leaderboardSheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
+
+    fetch(leaderboardUrl)
+      .then(response => response.text())
+      .then(text => {
+        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const rows = json.table.rows;
+        let playerRank = "N/A", playerPoints = 0;
+        rows.forEach(r => {
+          // Assuming player's name is in column 2 (r.c[2]) and comparing case-insensitively
+          if (r.c[2] && r.c[2].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
+            playerRank = r.c[1] ? r.c[1].v : "N/A"; // Rank is in column 1
+            // Points assumed to be in column 3 (custom header: Rank, Name, Points, Front, Back, Through)
+            playerPoints = r.c[3] ? r.c[3].v : 0;
+          }
+        });
+        document.getElementById("player-rank").textContent = playerRank;
+        document.getElementById("total-points").textContent = playerPoints;
+      })
+      .catch(err => console.error("Error fetching leaderboard data:", err));
+
+    /****************************************************
+     * 5) Fetch handicap data from the "Handicaps" sheet
+     *    (Assumes handicap data is in a sheet named "Handicaps"
+     *     with names in column A and handicaps in column B)
+     ****************************************************/
+    const handicapSheetName = 'Handicaps';
+    const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(handicapSheetName)}`;
+
+    fetch(handicapUrl)
+      .then(response => response.text())
+      .then(text => {
+        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const rows = json.table.rows;
+        let handicap = "N/A";
+        rows.forEach(r => {
+          // Compare names case-insensitively (assuming name is in column A and handicap in column B)
+          if (r.c[0] && r.c[0].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
+            handicap = r.c[1] ? r.c[1].v : "N/A";
+          }
+        });
+        document.getElementById("player-handicap").textContent = `Handicap: ${handicap}`;
+      })
+      .catch(err => console.error("Error fetching handicap data:", err));
+  </script>
 </body>
 </html>

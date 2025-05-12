@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Golf Scoring System</title>
+</head>
+<body>
+
+  <h1>Submit Your Golf Scores</h1>
+
+  <form id="scoreForm">
+    <label for="hole1">Hole 1 Score:</label>
+    <input type="number" id="hole1" name="hole1" required><br><br>
+    <label for="hole2">Hole 2 Score:</label>
+    <input type="number" id="hole2" name="hole2" required><br><br>
+    <label for="hole3">Hole 3 Score:</label>
+    <input type="number" id="hole3" name="hole3" required><br><br>
+    <label for="hole4">Hole 4 Score:</label>
+    <input type="number" id="hole4" name="hole4" required><br><br>
+    <label for="hole5">Hole 5 Score:</label>
+    <input type="number" id="hole5" name="hole5" required><br><br>
+    <label for="hole6">Hole 6 Score:</label>
+    <input type="number" id="hole6" name="hole6" required><br><br>
+    <label for="hole7">Hole 7 Score:</label>
+    <input type="number" id="hole7" name="hole7" required><br><br>
+    <label for="hole8">Hole 8 Score:</label>
+    <input type="number" id="hole8" name="hole8" required><br><br>
+    <label for="hole9">Hole 9 Score:</label>
+    <input type="number" id="hole9" name="hole9" required><br><br>
+    <button type="submit">Submit Score</button>
+  </form>
+
+  <h2>Your Current Scores</h2>
+  <table id="scoreTable">
+    <thead>
+      <tr>
+        <th>Hole</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Scores will be populated here -->
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const firebaseConfig = {
+        apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+        authDomain: "hackers-cup.firebaseapp.com",
+        projectId: "hackers-cup",
+        storageBucket: "hackers-cup.appspot.com",
+        messagingSenderId: "765736070872",
+        appId: "1:765736070872:web:86a51c41916e7af75631ad",
+        measurementId: "G-6E1M14F510"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      // Form submission
+      document.getElementById('scoreForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Get current user
+        const user = auth.currentUser;
+        if (!user) {
+          alert('Please log in first.');
+          return;
+        }
+
+        const userID = user.uid;  // Get the logged-in user's ID
+
+        // Get the scores from the form
+        const hole1Score = document.getElementById('hole1').value;
+        const hole2Score = document.getElementById('hole2').value;
+        const hole3Score = document.getElementById('hole3').value;
+        const hole4Score = document.getElementById('hole4').value;
+        const hole5Score = document.getElementById('hole5').value;
+        const hole6Score = document.getElementById('hole6').value;
+        const hole7Score = document.getElementById('hole7').value;
+        const hole8Score = document.getElementById('hole8').value;
+        const hole9Score = document.getElementById('hole9').value;
+
+        // Prepare the score data
+        const scoreData = {
+          hole1: hole1Score,
+          hole2: hole2Score,
+          hole3: hole3Score,
+          hole4: hole4Score,
+          hole5: hole5Score,
+          hole6: hole6Score,
+          hole7: hole7Score,
+          hole8: hole8Score,
+          hole9: hole9Score
+        };
+
+        // Check if 'game1' document exists
+        const gameRef = doc(db, 'games', 'game1');
+        const gameDoc = await getDoc(gameRef);
+
+        if (!gameDoc.exists()) {
+          console.log('No such game document!');
+          return;
+        }
+
+        // Update the Firestore document with the player's scores
+        try {
+          await updateDoc(gameRef, {
+            [`playerScores.${userID}`]: scoreData  // Update the specific user's score
+          });
+          alert('Scores submitted successfully!');
+          
+          // Load and display the scores
+          loadScores(userID);
+        } catch (error) {
+          console.error('Error submitting score:', error);
+          alert('Error submitting score. Please try again.');
+        }
+      });
+
+      // Function to load scores from Firestore
+      async function loadScores(userID) {
+        const gameRef = doc(db, 'games', 'game1');
+        const gameDoc = await getDoc(gameRef);
+
+        if (gameDoc.exists()) {
+          const playerScores = gameDoc.data().playerScores;
+          
+          if (playerScores && playerScores[userID]) {
+            const scores = playerScores[userID];
+            const tableBody = document.querySelector('#scoreTable tbody');
+            tableBody.innerHTML = ''; // Clear existing table rows
+            
+            // Loop through each hole and create a row for each score
+            for (let hole = 1; hole <= 9; hole++) {
+              const row = document.createElement('tr');
+              row.innerHTML = `<td>Hole ${hole}</td><td>${scores[`hole${hole}`]}</td>`;
+              tableBody.appendChild(row);
+            }
+          } else {
+            alert('No scores found for this user.');
+          }
+        } else {
+          console.log('Game document does not exist.');
+        }
+      }
+
+      // Initially load scores if logged in
+      const user = auth.currentUser;
+      if (user) {
+        loadScores(user.uid);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>COMP2110 Home Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>  
+
+    <header>
+      <div id="logo"></div>
+      <h1>COMP2110 Home Dashboard</h1>
+      <nav>
+        <ul>
+          <li><a href="#" id="home-link">Home</a></li>
+          <li><a href="#" id="settings-link">Settings</a></li>
+          <li><a href="#" id="map-link">Map</a></li>
+          <li><a href="#" id="logbook-link">Logbook</a></li>
+          <li><a href="#" id="help-link">Help</a></li>
+        </ul>
+      </nav>
+      <div id="header-date">Tuesday, 4th May, 2025</div>
+      <div id="header-placeholder"></div>
+    </header>
+
+    <div id="body-placeholder"></div>
+
+    <div id="advertising">
+      <img alt="Advertisement" src="https://comp2110-portal-server.fly.dev/adserver">
+      <p>Advertisement</p>
+    </div>
+
+    <div class="container" id="container-weather">
+      <div class="card weather-card" id="weather-home">
+        <h2>Home Weather</h2>
+        <dl>
+          <dt>Temperature</dt><dd>28&deg;C</dd>
+          <dt>Humidity</dt><dd>70%</dd>
+          <dt>Wind</dt><dd>2 kph NNE</dd>
+          <dt>Rain</dt><dd>3mm</dd>
+        </dl>
+      </div>
+
+      <div class="card weather-card" id="weather-city">
+        <h2>City Weather</h2>
+        <dl>
+          <dt>Temperature</dt><dd>23&deg;C</dd>
+          <dt>Humidity</dt><dd>72%</dd>
+          <dt>Wind</dt><dd>12 kph NE</dd>
+        </dl>
+      </div>
+
+      </div>
+
+    <div class="container" id="container-lights">
+
+
+      <div class="lights-card card" id="lights-downstairs">
+        <h2>Downstairs Lights</h2>
+        <div class="grid">
+
+          <div class="grid-item light">
+            <h3>Living Room Main Light</h3>
+            <div class="toggle">
+              <input type="checkbox"  id="lrm1">
+              <label for="lrm1"></label>
+            </div> 
+          </div>  
+        
+          <div class="grid-item light">
+              <h3>Living Room Lamp</h3>
+              <div class="toggle">
+                <input type="checkbox" id="lrm2" checked>
+                <label for="lrm2"></label>
+              </div> 
+          </div>
+
+          <div class="grid-item light">
+              <h3>Dining Room Light</h3>
+              <div class="toggle">
+                <input type="checkbox" id="drm1">
+                <label for="drm1"></label>
+              </div> 
+          </div>
+
+          <div class="grid-item light">
+              <h3>Kitchen Spotlights</h3>
+              <div class="toggle">
+                <input type="checkbox" id="k1" checked>
+                <label for="k1"></label>
+              </div> 
+          </div>
+
+          <div class="grid-item light">
+              <h3>Hallway Light</h3>
+              <div class="toggle">
+                <input type="checkbox" id="h1">
+                <label for="h1"></label>
+              </div> 
+          </div>
+        </div>
+      </div>
+  
+      <div class="lights-card card" id="lights-upstairs">
+        <h2>Upstairs Lights</h2>
+        <div class="grid">
+          <div class="grid-item light">
+              <h3>Kid's Bedroom Light</h3>
+              <div class="toggle">
+                <input type="checkbox"  id="kbl">
+                <label for="kbl"></label>
+              </div> 
+          </div>
+          <div class="grid-item light">
+              <h3>Bedroom 2 Light</h3>
+              <div class="toggle">
+                <input type="checkbox"  id="b2l">
+                <label for="b2l"></label>
+              </div> 
+          </div>
+          <div class="grid-item light">
+              <h3>Bathroom Light</h3>
+              <div class="toggle">
+                <input type="checkbox" id="bal" checked>
+                <label for="bal"></label>
+              </div> 
+          </div>
+          <div class="grid-item light">
+              <h3>Main Bedroom Light</h3>
+              <div class="toggle">
+                <input type="checkbox"  id="mbl">
+                <label for="mbl"></label>
+              </div> 
+          </div>
+        </div>
+      </div>
+  
+    </div>
+
+  
+    <div class="container" id="container-sensors">
+
+      <div class="sensors-card  grid-card card" id="sensors-kids-bedroom">
+        <h2>Kid's Bedroom</h2>
+        <div class="grid-item sensor">
+            <div>Temperature</div>
+            <div>21.5°C</div>
+        </div>
+        <div class="grid-item sensor">
+            <div>Air Quality</div>
+            <div>Good</div>
+        </div>
+      </div>
+    
+      <div class="sensors-card grid-card card" id="sensors-living-room">
+          <h2>Living Room</h2>
+          <div class="grid-item sensor">
+              <div>Temperature</div>
+              <div>22.3°C</div>
+          </div>
+          <div class="grid-item sensor">
+              <div>Air Quality</div>
+              <div>Excellent</div>
+          </div>
+      </div>
+    
+      <div class="sensors-card card" id="sensors-kitchen">
+          <h2>Kitchen</h2>
+          <div class="grid-item sensor">
+              <div>Temperature</div>
+              <div>23.8°C</div>
+          </div>
+          <div class="grid-item sensor">
+              <div>Air Quality</div>
+              <div>Fair</div>
+          </div>
+      </div>
+    </div>
+  
+    <div class="container" id="container-lists">
+      <div class="card list-card" id="list-shopping">
+        <h2>Shopping List</h2>
+
+        <ul>
+          <li><input type="checkbox" name="sl1"><label for="sl1">Milk</label></li>
+          <li><input type="checkbox" checked name="sl2"><label for="sl2">Bread</label></li> 
+          <li><input type="checkbox" name="sl3"><label for="sl3">Eggs</label></li>
+          <li><input type="checkbox" checked name="sl4"><label for="sl4">Cheese</label></li>
+          <li><input type="checkbox" name="sl5"><label for="sl5">Tomatoes</label></li>
+          <li><input type="checkbox" name="sl6"><label for="sl6">Black shoe polish</label></li>
+        </ul>
+      </div>
+
+      <div class="card list-card" id="list-tasks">
+        <h2>Task List</h2>
+
+        <ul>
+          <li><input type="checkbox" checked name="tl1"><label for="tl1">Go Shopping</label></li>
+          <li><input type="checkbox" name="tl2"><label for="tl2">Mow grass</label></li> 
+          <li><input type="checkbox" name="tl3"><label for="tl3">Weekly exercise</label></li>
+          <li><input type="checkbox" name="tl4"><label for="tl4">Paint front door</label></li>
+          <li><input type="checkbox" name="tl5"><label for="tl5">Study Spanish</label></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      <p id="footer-copyright">Copyright &copy; 2025 COMP2110 Designers</p>
+      <ul id="footer-links">
+        <li><a href="#" id="footer-statistics-link">Statistics</a></li>
+        <li><a href="#" id="footer-settings-link">Settings</a></li>
+        <li><a href="#" id="footer-license-link">License</a></li>
+      </ul>
+    </footer>
+  </body>
+</html>

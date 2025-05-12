@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Scorecard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        h2 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+		 .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px 0;
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar a:hover {
+            color: #000000;
+        }
+
+        .navbar a img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
+        }
+
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #003366;
+            color: #ffffff;
+        }
+
+        td {
+            background-color: #e6f2ff;
+            color: #003366;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #cce0ff;
+        }
+
+        tr:hover td {
+            background-color: #b3d9ff;
+        }
+
+        /* Hide columns G and H by default (portrait mode) */
+        .column-g, .column-h {
+            display: none;
+        }
+
+        /* Show columns G and H in landscape orientation */
+        @media screen and (orientation: landscape) {
+            .column-g, .column-h {
+                display: table-cell;
+            }
+        }
+
+        /* Back button styling */
+        .back-button {
+            width: 200px;
+            padding: 10px;
+            margin: 20px 0;
+            display: block;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <a href="liveSaturday.html" class="back-button">Back to Leaderboard</a>
+    <div class="container">
+        <h2 id="player-name"></h2>
+        <table id="scorecard-table">
+            <thead>
+                <tr id="header-row"></tr>
+            </thead>
+            <tbody id="scorecard-rows"></tbody>
+        </table>
+    </div><br><br><br><br><br><br>
+<div class="navbar">
+        <a href="Welcome.html">
+            <img src="home-01.png" alt="Home">
+            Home
+        </a>
+        <a href="Payment.html">
+            <img src="payment.png" alt="Payment">
+            Payment
+        </a>
+        <a href="Schedule.html">
+            <img src="schedule.png" alt="Schedule">
+            Schedule
+        </a>
+       <a href="score.html">
+            <img src="more-01.png" alt="Score">
+            Score
+        </a>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('player');
+        document.getElementById('player-name').textContent = playerName;
+
+        const sheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg'; // Google Sheet ID
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+                const tableData = json.table.rows;
+
+                // Extract headers and only select columns E, F, G, H, I, and M (indexes 4, 5, 6, 7, 8, and 12)
+                const allHeaders = json.table.cols.map(col => col.label);
+                const headers = [allHeaders[4], allHeaders[5], allHeaders[6], allHeaders[7], allHeaders[8], allHeaders[12]];
+
+                // Populate the header row
+                const headerRow = document.getElementById('header-row');
+                headers.forEach((header, index) => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    th.classList.add(`column-${String.fromCharCode(101 + index)}`); // Add class column-e, column-f, etc.
+                    headerRow.appendChild(th);
+                });
+
+                // Populate the table rows
+                const dataRows = document.getElementById('scorecard-rows');
+                tableData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    [4, 5, 6, 7, 8, 12].forEach((index, i) => {
+                        const td = document.createElement('td');
+                        td.textContent = row.c[index] ? row.c[index].v : '0'; // Display 0 if the cell is empty
+                        td.classList.add(`column-${String.fromCharCode(101 + i)}`); // Add class column-e, column-f, etc.
+                        tr.appendChild(td);
+                    });
+                    dataRows.appendChild(tr);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>
