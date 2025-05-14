@@ -97,10 +97,18 @@
       }
     }
     
-    /* Styling for holes 10-18 */
-#back-nine-table th,
-#back-nine-table td {
-  font-size: 12px; /* Adjust the size as needed */
+    /* Shared styles for both Front Nine and Back Nine tables */
+.scorecard-table th,
+.scorecard-table td {
+  font-size: 14px; /* Match the size for readability */
+  padding: 8px 10px; /* Reduce padding for narrower cells */
+  text-align: center;
+}
+
+/* Force equal column widths */
+.scorecard-table th,
+.scorecard-table td {
+  width: 5%; /* Adjust as needed to fit the table within the page */
 }
     
   </style>
