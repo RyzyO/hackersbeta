@@ -258,7 +258,7 @@
         // Use the Name column (from column index 2 in the original data) for the scorecard link
         const playerNameForLink = row.c[2] ? row.c[2].v : `Player${index + 1}`;
         tr.addEventListener('click', () => {
-          window.location.href = `scorecard.html?player=${encodeURIComponent(playerNameForLink)}`;
+          window.location.href = `scorecard24.html?player=${encodeURIComponent(playerNameForLink)}`;
         });
         
         dataRows.appendChild(tr);

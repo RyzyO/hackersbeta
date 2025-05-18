@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Player Scorecard</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <style>
+    h3 {
+      color: white;
+    }
+    .scorecard-table {
+      width: 100%;
+      margin: 20px 0;
+      border-collapse: collapse;
+      font-family: 'Poppins', sans-serif;
+      color: #ffffff;
+    }
+    .scorecard-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .scorecard-table th,
+    .scorecard-table td {
+      padding: 12px 15px;
+      border: 1px solid #444;
+      text-align: center;
+      font-size: 14px;
+    }
+    .scorecard-table tbody tr:nth-child(even) {
+      background-color: #333333;
+    }
+    .scorecard-table tbody tr:nth-child(odd) {
+      background-color: #2e2e2e;
+    }
+    .scorecard-table tbody tr:hover {
+      background-color: #555555;
+      cursor: pointer;
+    }
+    .stats-card {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #333333;
+      border-radius: 10px;
+      color: #ffffff;
+      text-align: center;
+      min-width: 120px;
+    }
+    @media (min-width: 769px) {
+      .scorecard-table {
+        table-layout: fixed;
+      }
+      .scorecard-table th,
+      .scorecard-table td {
+        width: 10%;
+        min-width: 60px;
+        max-width: 90px;
+        font-size: 14px;
+        padding: 8px 10px;
+        text-align: center;
+      }
+    }
+    @media (max-width: 768px) {
+      .scorecard-table {
+        table-layout: fixed;
+      }
+      .scorecard-table th,
+      .scorecard-table td {
+        width: 10%;
+        min-width: 40px;
+        max-width: 70px;
+      }
+      .scorecard-table th:last-child,
+      .scorecard-table td:last-child {
+        width: 10%;
+        min-width: 50px;
+        max-width: 80px;
+      }
+      
+    }
+    .scorecard-table th,
+    .scorecard-table td {
+      font-size: 14px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .scorecard-table th,
+    .scorecard-table td {
+      width: 5%;
+    }
+  </style>
+</head>
+<body>
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- Logo -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="Logo" style="width: 158px;" />
+            </a>
+            <!-- Menu -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="honour-roll.html" class="active">Honour Roll</a></li>
+              <li><a href="product-details.html">Product Details</a></li>
+              <li><a href="contact.html">Contact Us</a></li>
+              <li><a href="#">Sign In</a></li>
+            </ul>
+            <a class="menu-trigger"><span>Menu</span></a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>SUNDAY LEADERBOARD</h3>
+          <span class="breadcrumb">Ambrose Format</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats header row -->
+    <div class="row align-items-center py-3">
+      <div class="col-12 col-md-6 text-md-left">
+        <h2 id="player-name" class="m-0">Player Name</h2>
+      </div>
+      <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end mt-3 mt-md-0">
+        <div class="stats-card" style="padding: 15px 20px; border-radius: 10px;">
+          <div>Score: <span id="total-points">0</span></div>
+          <div>Rank: <span id="player-rank">N/A</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Ambrose Table: split into Front Nine and Back Nine, with par rows -->
+    <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
+      <thead>
+        <tr>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+          <th>6</th>
+          <th>7</th>
+          <th>8</th>
+          <th>9</th>
+          <th>Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="par1"></td>
+          <td id="par2"></td>
+          <td id="par3"></td>
+          <td id="par4"></td>
+          <td id="par5"></td>
+          <td id="par6"></td>
+          <td id="par7"></td>
+          <td id="par8"></td>
+          <td id="par9"></td>
+          <td id="parOut"></td>
+        </tr>
+        <tr>
+          <td id="score1"></td>
+          <td id="score2"></td>
+          <td id="score3"></td>
+          <td id="score4"></td>
+          <td id="score5"></td>
+          <td id="score6"></td>
+          <td id="score7"></td>
+          <td id="score8"></td>
+          <td id="score9"></td>
+          <td id="scoreOut"></td>
+        </tr>
+      </tbody>
+    </table>
+    <table id="back-nine-table" class="scorecard-table" style="margin-top: 30px;">
+      <thead>
+        <tr>
+          <th>10</th>
+          <th>11</th>
+          <th>12</th>
+          <th>13</th>
+          <th>14</th>
+          <th>15</th>
+          <th>16</th>
+          <th>17</th>
+          <th>18</th>
+          <th>In</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="par10"></td>
+          <td id="par11"></td>
+          <td id="par12"></td>
+          <td id="par13"></td>
+          <td id="par14"></td>
+          <td id="par15"></td>
+          <td id="par16"></td>
+          <td id="par17"></td>
+          <td id="par18"></td>
+          <td id="parIn"></td>
+        </tr>
+        <tr>
+          <td id="score10"></td>
+          <td id="score11"></td>
+          <td id="score12"></td>
+          <td id="score13"></td>
+          <td id="score14"></td>
+          <td id="score15"></td>
+          <td id="score16"></td>
+          <td id="score17"></td>
+          <td id="score18"></td>
+          <td id="scoreIn"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <br><br><br><br><br><br>
+  <div class="bottom-nav">
+    <a href="index.html">
+      <i class="fas fa-home"></i>
+      Home
+    </a>
+    <a href="payment.html">
+      <i class="fas fa-dollar-sign"></i>
+      Payment
+    </a>
+    <a href="podcast.html">
+      <i class="fas fa-podcast"></i>
+      Podcast
+    </a>
+    <a href="score.html">
+      <i class="fas fa-chart-line"></i>
+      Score
+    </a>
+  </div>
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+  <script>
+     // Get player name from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let playerName = urlParams.get('player') || "Unknown Player";
+    const displayName = playerName.replace(/-/g, ' & ');
+    document.getElementById('player-name').textContent = displayName;
+
+    // Fetch Sunday sheet data for this player
+    const sheetId = '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA';
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+
+    fetch(url)
+      .then(response => response.text())
+      .then(data => {
+        const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const rows = json.table.rows;
+
+        // Assume scores are in column I (index 8), par in column F (index 5), holes 1-18 are rows 0-17
+        const scores = [];
+        const pars = [];
+        for (let i = 0; i < 18; i++) {
+          scores[i + 1] = rows[i] && rows[i].c[8] ? parseInt(rows[i].c[8].v, 10) : 0;
+          pars[i + 1] = rows[i] && rows[i].c[5] ? parseInt(rows[i].c[5].v, 10) : 0;
+        }
+
+        // Calculate Out, In for par and score
+        let outParSum = 0, inParSum = 0, outScoreSum = 0, inScoreSum = 0;
+        for (let h = 1; h <= 9; h++) {
+          outParSum += pars[h] || 0;
+          outScoreSum += scores[h] || 0;
+        }
+        for (let h = 10; h <= 18; h++) {
+          inParSum += pars[h] || 0;
+          inScoreSum += scores[h] || 0;
+        }
+
+        // Populate front nine
+        for (let h = 1; h <= 9; h++) {
+          const parTd = document.getElementById(`par${h}`);
+          parTd.textContent = pars[h] || 0;
+          const td = document.getElementById(`score${h}`);
+          td.textContent = scores[h] || 0;
+          colorScoreCell(h, td, pars, scores);
+        }
+        document.getElementById('parOut').textContent = outParSum;
+        document.getElementById('scoreOut').textContent = outScoreSum;
+
+        // Populate back nine
+        for (let h = 10; h <= 18; h++) {
+          const parTd = document.getElementById(`par${h}`);
+          parTd.textContent = pars[h] || 0;
+          const td = document.getElementById(`score${h}`);
+          td.textContent = scores[h] || 0;
+          colorScoreCell(h, td, pars, scores);
+        }
+        document.getElementById('parIn').textContent = inParSum;
+        document.getElementById('scoreIn').textContent = inScoreSum;
+
+        // Dynamic cell coloring: compare to par (column 5)
+        function colorScoreCell(holeNumber, cell, pars, scores) {
+          const par = pars[holeNumber] || 0;
+          const scr = scores[holeNumber] || 0;
+          const diff = scr - par;
+          cell.style.backgroundColor = "";
+          cell.style.color = "";
+          if (!par) return;
+          if (diff === 0) {
+            cell.style.backgroundColor = "white";
+            cell.style.color = "black";
+          } else if (diff === -1) {
+            cell.style.backgroundColor = "#add8e6";
+            cell.style.color = "black";
+          } else if (diff === -2) {
+            cell.style.backgroundColor = "blue";
+            cell.style.color = "white";
+          } else if (diff === -3) {
+            cell.style.backgroundColor = "navy";
+            cell.style.color = "white";
+          } else if (diff === 1) {
+            cell.style.backgroundColor = "orange";
+            cell.style.color = "black";
+          } else if (diff >= 2) {
+            cell.style.backgroundColor = "red";
+            cell.style.color = "white";
+          }
+        }
+      })
+      .catch(error => console.error('Error fetching data:', error));
+
+    // Fetch leaderboard data to get player's rank and score
+    const leaderboardGid = '869612853';
+    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
+
+    fetch(leaderboardUrl)
+      .then(response => response.text())
+      .then(data => {
+        const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+        const rows = json.table.rows;
+        let playerRank = "N/A", playerScore = 0;
+        rows.forEach(r => {
+          if (r.c[2] && r.c[2].v.trim().toLowerCase().replace(/-/g, ' & ') === displayName.trim().toLowerCase()) {
+            playerRank = r.c[1] ? r.c[1].v : "N/A";
+            playerScore = r.c[5] ? r.c[5].v : 0;
+          }
+        });
+        document.getElementById("player-rank").textContent = playerRank;
+        document.getElementById("total-points").textContent = playerScore;
+      })
+      .catch(error => console.error("Error fetching leaderboard data:", error));
+  </script>
+</body>
+</html>
