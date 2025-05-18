@@ -75,7 +75,12 @@
       /* Force all 10 columns to 10% so they line up nicely */
       .scorecard-table th,
       .scorecard-table td {
-        width: 5%;
+        width: 10%;
+        min-width: 60px;
+        max-width: 90px;
+        font-size: 14px;
+        padding: 8px 10px;
+        text-align: center;
       }
     }
 
@@ -84,16 +89,20 @@
        ---------------------------- */
     @media (max-width: 768px) {
       .scorecard-table {
-        table-layout: auto;
+        table-layout: fixed;
       }
       .scorecard-table th,
       .scorecard-table td {
-        width: auto;
+        width: 10%;
+        min-width: 40px;
+        max-width: 70px;
       }
       /* Fix width for the last column ("Out" or "In") */
       .scorecard-table th:last-child,
       .scorecard-table td:last-child {
-        width: 80px;
+        width: 10%;
+        min-width: 50px;
+        max-width: 80px;
       }
     }
     
