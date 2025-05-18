@@ -262,7 +262,7 @@
   color: white;
   border: none;
   border-radius: 8px;
-  display: none;
+  display: none !important;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 ">
   Enable Notifications
@@ -321,7 +321,7 @@
       const auth = getAuth(app);
 
       function getDisplayName(user) {
-        const userRef = ref(database, `users/${user.uid}/displayName`);
+        const userRef = ref(database, users/${user.uid}/displayName);
         onValue(userRef, (snapshot) => {
           const displayName = snapshot.val();
           if (displayName) {
@@ -342,7 +342,7 @@
       }
 
       function getHackerNumber(user) {
-        const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+        const hackerRef = ref(database, users/${user.uid}/hackerNumber);
         onValue(hackerRef, (snapshot) => {
           const hackerNumber = snapshot.val();
           if (hackerNumber) {
@@ -481,7 +481,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  window.onload = () => {
     const button = document.getElementById('enableNotifications');
 
     if (!button) {
@@ -494,11 +494,9 @@
         .then((registration) => {
           console.log("✅ Service Worker registered");
 
-          // Show button only if permission is not granted
-          if (Notification.permission === 'default' || Notification.permission === 'denied') {
+          if (Notification.permission === 'default') {
             button.style.display = 'block';
           } else {
-            button.style.display = 'none';
             console.log("Notification permission already:", Notification.permission);
           }
 
@@ -516,9 +514,9 @@
 
     onMessage(messaging, (payload) => {
       console.log("🔔 Foreground message received:", payload);
-      alert(`${payload.notification.title}\n${payload.notification.body}`);
+      alert(${payload.notification.title}\n${payload.notification.body});
     });
-  });
+  };
 </script>
 
 
