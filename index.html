@@ -27,10 +27,7 @@
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
   
     <style>
-      /* Style for course flyover images */
- height: auto; /* Maintain aspect ratio */
- display: block; /* Remove extra space below image */
-    }
+      
       #hi { 
         font-size: 20px;
         color: #ffffff;
@@ -197,6 +194,7 @@
           <div class="col-lg-6">
             <div class="main-button">
               <a href="https://www.nelsonbaygolf.com/courses/" target="_blank" rel="noopener noreferrer">View All</a>
+              
             </div>
           </div>
           <div class="col-lg-3 col-md-6">
@@ -251,22 +249,15 @@
       </div>
     </div>
     <br><br><br>
-<button id="enableNotifications" style="
-  position: fixed;
-  bottom: 200px; /* above the navbar */
-  right: 20px;
-  padding: 12px 18px;
-  font-weight: bold;
-  z-index: 9999;
-  background-color: #0071f8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  display: none;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-">
-  Enable Notifications
-</button>
+
+
+<div class="main-button">
+  <a id="enableNotifications" href="#" rel="noopener noreferrer">Enable Notifications</a>
+</div>
+<br><br><br>
+<br><br><br>
+<br><br><br>
+<br><br><br>
 
 
 
@@ -498,13 +489,14 @@
           if (Notification.permission === 'default' || Notification.permission === 'denied') {
             button.style.display = 'block';
           } else {
-            button.style.display = 'none';
+            button.style.display = 'block'; // Always show the button
             console.log("Notification permission already:", Notification.permission);
           }
 
-          button.addEventListener('click', async () => {
+          button.addEventListener('click', async (e) => {
+            e.preventDefault();
             await initNotifications();
-            button.style.display = 'none';
+            // Do NOT hide the button after use
           });
         })
         .catch(err => {
