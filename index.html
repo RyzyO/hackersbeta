@@ -427,6 +427,58 @@
         }
       }
     </script>
+<script type="module">
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  async function initNotifications() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const token = await getToken(messaging, {
+          vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
+        });
+        console.log("FCM Token:", token);
+        // You can send this token to your server or store it in Firebase Realtime DB
+      } else {
+        console.warn("Notification permission not granted.");
+      }
+    } catch (error) {
+      console.error("Error getting notification permission or token:", error);
+    }
+  }
+
+  initNotifications();
+
+  onMessage(messaging, (payload) => {
+    console.log("Foreground message received:", payload);
+    alert(`${payload.notification.title}\n${payload.notification.body}`);
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then(registration => {
+        console.log('Service Worker registered:', registration);
+      }).catch(error => {
+        console.error('Service Worker registration failed:', error);
+      });
+  }
+</script>
 
   </body>
 </html>
