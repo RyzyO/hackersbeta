@@ -250,6 +250,20 @@
       </div>
     </div>
     <br><br><br>
+<button id="enableNotifications" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 15px;
+  font-weight: bold;
+  z-index: 9999;
+  background-color: #0071f8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  display: none;">
+  Enable Notifications
+</button>
 
     
 <div class="bottom-nav">
@@ -452,33 +466,39 @@
         const token = await getToken(messaging, {
           vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
         });
-        console.log("FCM Token:", token);
-        // You can send this token to your server or store it in Firebase Realtime DB
+        console.log("✅ FCM Token:", token);
+        alert("Notifications enabled!");
       } else {
-        console.warn("Notification permission not granted.");
+        console.warn("❌ Notification permission not granted.");
       }
     } catch (error) {
-      console.error("Error getting notification permission or token:", error);
+      console.error("Error during initNotifications:", error);
     }
   }
 
-  initNotifications();
+  // Register service worker and check permission
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then(() => {
+        if (Notification.permission === 'default') {
+          document.getElementById('enableNotifications').style.display = 'block';
+        }
+      }).catch(err => {
+        console.error('Service Worker registration failed:', err);
+      });
+  }
+
+  document.getElementById('enableNotifications').addEventListener('click', async () => {
+    await initNotifications();
+    document.getElementById('enableNotifications').style.display = 'none';
+  });
 
   onMessage(messaging, (payload) => {
     console.log("Foreground message received:", payload);
     alert(`${payload.notification.title}\n${payload.notification.body}`);
   });
-
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then(registration => {
-        console.log('Service Worker registered:', registration);
-      }).catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
-  }
 </script>
+
 
   </body>
 </html>
