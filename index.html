@@ -251,6 +251,22 @@
       </div>
     </div>
     <br><br><br>
+<button id="enableNotifications" style="
+  position: fixed;
+  bottom: 200px; /* above the navbar */
+  right: 20px;
+  padding: 12px 18px;
+  font-weight: bold;
+  z-index: 9999;
+  background-color: #0071f8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  display: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+">
+  Enable Notifications
+</button>
 
 
 
@@ -456,7 +472,7 @@
           vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
         });
         console.log("✅ FCM Token:", token);
-        // Optionally: alert("Notifications enabled!");
+        alert("Notifications enabled!");
       } else {
         console.warn("❌ Notification permission not granted.");
       }
@@ -466,12 +482,30 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('enableNotifications');
+
+    if (!button) {
+      console.warn("Enable Notifications button not found.");
+      return;
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then((registration) => {
           console.log("✅ Service Worker registered");
-          // Immediately request notification permission on load
-          initNotifications();
+
+          // Show button only if permission is not granted
+          if (Notification.permission === 'default' || Notification.permission === 'denied') {
+            button.style.display = 'block';
+          } else {
+            button.style.display = 'none';
+            console.log("Notification permission already:", Notification.permission);
+          }
+
+          button.addEventListener('click', async () => {
+            await initNotifications();
+            button.style.display = 'none';
+          });
         })
         .catch(err => {
           console.error('Service Worker registration failed:', err);
