@@ -262,7 +262,7 @@
   color: white;
   border: none;
   border-radius: 8px;
-  display: none !important;
+  display: none;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 ">
   Enable Notifications
@@ -494,9 +494,11 @@
         .then((registration) => {
           console.log("✅ Service Worker registered");
 
-          if (Notification.permission === 'default') {
+          // Show button only if permission is not granted
+          if (Notification.permission === 'default' || Notification.permission === 'denied') {
             button.style.display = 'block';
           } else {
+            button.style.display = 'none';
             console.log("Notification permission already:", Notification.permission);
           }
 
