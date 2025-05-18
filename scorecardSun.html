@@ -152,7 +152,7 @@
         </div>
       </div>
     </div>
-    <!-- Ambrose Table: split into Front Nine and Back Nine -->
+    <!-- Ambrose Table: split into Front Nine and Back Nine, with par rows -->
     <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
       <thead>
         <tr>
@@ -169,6 +169,18 @@
         </tr>
       </thead>
       <tbody>
+        <tr>
+          <td id="par1"></td>
+          <td id="par2"></td>
+          <td id="par3"></td>
+          <td id="par4"></td>
+          <td id="par5"></td>
+          <td id="par6"></td>
+          <td id="par7"></td>
+          <td id="par8"></td>
+          <td id="par9"></td>
+          <td id="parOut"></td>
+        </tr>
         <tr>
           <td id="score1"></td>
           <td id="score2"></td>
@@ -199,6 +211,18 @@
         </tr>
       </thead>
       <tbody>
+        <tr>
+          <td id="par10"></td>
+          <td id="par11"></td>
+          <td id="par12"></td>
+          <td id="par13"></td>
+          <td id="par14"></td>
+          <td id="par15"></td>
+          <td id="par16"></td>
+          <td id="par17"></td>
+          <td id="par18"></td>
+          <td id="parIn"></td>
+        </tr>
         <tr>
           <td id="score10"></td>
           <td id="score11"></td>
@@ -257,37 +281,50 @@
         const json = JSON.parse(data.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
         const rows = json.table.rows;
 
-        // Assume scores are in column I (index 8), holes 1-18 are rows 0-17
+        // Assume scores are in column I (index 8), par in column F (index 5), holes 1-18 are rows 0-17
         const scores = [];
+        const pars = [];
         for (let i = 0; i < 18; i++) {
           scores[i + 1] = rows[i] && rows[i].c[8] ? parseInt(rows[i].c[8].v, 10) : 0;
+          pars[i + 1] = rows[i] && rows[i].c[5] ? parseInt(rows[i].c[5].v, 10) : 0;
         }
 
-        // Calculate Out, In
-        let outSum = 0, inSum = 0;
-        for (let h = 1; h <= 9; h++) outSum += scores[h] || 0;
-        for (let h = 10; h <= 18; h++) inSum += scores[h] || 0;
+        // Calculate Out, In for par and score
+        let outParSum = 0, inParSum = 0, outScoreSum = 0, inScoreSum = 0;
+        for (let h = 1; h <= 9; h++) {
+          outParSum += pars[h] || 0;
+          outScoreSum += scores[h] || 0;
+        }
+        for (let h = 10; h <= 18; h++) {
+          inParSum += pars[h] || 0;
+          inScoreSum += scores[h] || 0;
+        }
 
         // Populate front nine
         for (let h = 1; h <= 9; h++) {
+          const parTd = document.getElementById(`par${h}`);
+          parTd.textContent = pars[h] || 0;
           const td = document.getElementById(`score${h}`);
           td.textContent = scores[h] || 0;
-          colorScoreCell(h, td, rows);
+          colorScoreCell(h, td, pars, scores);
         }
-        document.getElementById('scoreOut').textContent = outSum;
+        document.getElementById('parOut').textContent = outParSum;
+        document.getElementById('scoreOut').textContent = outScoreSum;
 
         // Populate back nine
         for (let h = 10; h <= 18; h++) {
+          const parTd = document.getElementById(`par${h}`);
+          parTd.textContent = pars[h] || 0;
           const td = document.getElementById(`score${h}`);
           td.textContent = scores[h] || 0;
-          colorScoreCell(h, td, rows);
+          colorScoreCell(h, td, pars, scores);
         }
-        document.getElementById('scoreIn').textContent = inSum;
+        document.getElementById('parIn').textContent = inParSum;
+        document.getElementById('scoreIn').textContent = inScoreSum;
 
         // Dynamic cell coloring: compare to par (column 5)
-        function colorScoreCell(holeNumber, cell, rows) {
-          const row = rows[holeNumber - 1];
-          const par = row && row.c[5] ? parseInt(row.c[5].v, 10) : 0;
+        function colorScoreCell(holeNumber, cell, pars, scores) {
+          const par = pars[holeNumber] || 0;
           const scr = scores[holeNumber] || 0;
           const diff = scr - par;
           cell.style.backgroundColor = "";
