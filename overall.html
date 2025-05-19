@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Overall Leaderboard</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <style>
+    #overall-table {
+      width: 100%;
+      margin: 15px 0;
+      border-collapse: collapse;
+      font-family: 'Poppins', sans-serif;
+      color: #ffffff;
+    }
+    #overall-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    #overall-table th,
+    #overall-table td {
+      padding: 12px 15px;
+      border: 1px solid #444;
+      text-align: center;
+      font-size: 14px;
+    }
+    #overall-table tbody tr:nth-child(even) {
+      background-color: #333333;
+    }
+    #overall-table tbody tr:nth-child(odd) {
+      background-color: #2e2e2e;
+    }
+    #overall-table tbody tr:hover {
+      background-color: #555555;
+      cursor: pointer;
+    }
+    .refresh-button {
+      background: transparent;
+      border: none;
+      margin-bottom: 10px;
+      outline: none;
+      cursor: pointer;
+    }
+    .refresh-button img {
+      width: 40px;
+      height: 40px;
+    }
+    @media screen and (max-width: 767px) {
+      #overall-table th,
+      #overall-table td {
+        font-size: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- ***** Logo Start ***** -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="" style="width: 158px;">
+            </a>
+            <!-- ***** Logo End ***** -->
+            <!-- ***** Menu Start ***** -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class='menu-trigger'>
+              <span>Menu</span>
+            </a>
+            <!-- ***** Menu End ***** -->
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>OVERALL LEADERBOARD</h3>
+          <span class="breadcrumb">Combined Saturday &amp; Sunday</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <button class="refresh-button" onclick="location.reload();">
+      <img src="/assets/images/refresh.png" alt="Refresh">
+    </button>
+    <table id="overall-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Name</th>
+          <th>Saturday Rank</th>
+          <th>Sunday Rank</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="overall-rows"></tbody>
+    </table>
+  </div>
+
+  <br><br><br><br><br><br>
+  <div class="bottom-nav">
+    <a href="index.html">
+      <i class="fas fa-home"></i>
+      Home
+    </a>
+    <a href="payment.html">
+      <i class="fas fa-dollar-sign"></i>
+      Payment
+    </a>
+    <a href="podcast.html">
+      <i class="fas fa-podcast"></i>
+      Podcast
+    </a>
+    <a href="score.html">
+      <i class="fas fa-chart-line"></i>
+      Score
+    </a>
+  </div>
+
+  <script type="text/javascript">
+    // Saturday and Sunday sheet info
+    const saturdaySheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg';
+    const saturdayGid = '600147197';
+    const sundaySheetId = '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA';
+    const sundayGid = '869612853';
+
+    const saturdayUrl = `https://docs.google.com/spreadsheets/d/${saturdaySheetId}/gviz/tq?tqx=out:json&gid=${saturdayGid}`;
+    const sundayUrl = `https://docs.google.com/spreadsheets/d/${sundaySheetId}/gviz/tq?tqx=out:json&gid=${sundayGid}`;
+
+    // Helper to normalize player names (remove spaces, lowercase, replace hyphens with &)
+    function normalizeName(name) {
+      return name.replace(/\s+/g, '').replace(/-/g, '&').toLowerCase();
+    }
+
+    Promise.all([
+      fetch(saturdayUrl).then(r => r.text()),
+      fetch(sundayUrl).then(r => r.text())
+    ]).then(([satData, sunData]) => {
+      // --- SATURDAY LOGIC: tie-break by back nine points (col 5) ---
+      const satJson = JSON.parse(satData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      let satRows = satJson.table.rows
+        .map(row => {
+          const rank = row.c[1] ? parseInt(row.c[1].v, 10) : 99;
+          const name = row.c[2] ? row.c[2].v : '';
+          const backNine = row.c[5] ? parseInt(row.c[5].v, 10) : 0;
+          return { name, rank, backNine };
+        })
+        .filter(entry => entry.name && !isNaN(entry.rank) && entry.rank > 0);
+
+      satRows.sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        return b.backNine - a.backNine;
+      });
+
+      let satPlayers = {};
+      let currentRank = 1;
+      for (let i = 0; i < satRows.length; i++) {
+        if (
+          i > 0 &&
+          satRows[i].rank === satRows[i - 1].rank &&
+          satRows[i].backNine === satRows[i - 1].backNine
+        ) {
+          // Same as previous, same rank
+        } else {
+          currentRank = i + 1;
+        }
+        satPlayers[normalizeName(satRows[i].name)] = {
+          name: satRows[i].name,
+          satRank: currentRank
+        };
+      }
+
+      // --- SUNDAY LOGIC: tie-break by nett score (col 8), lower is better ---
+      const sunJson = JSON.parse(sunData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      let sunRows = sunJson.table.rows
+        .map(row => {
+          const rank = row.c[1] ? parseInt(row.c[1].v, 10) : 99;
+          const teamName = row.c[2] ? row.c[2].v : '';
+          const nett = row.c[8] ? parseFloat(row.c[8].v) : 9999;
+          return { teamName, rank, nett };
+        })
+        .filter(entry => entry.teamName && !isNaN(entry.rank) && entry.rank > 0);
+
+      sunRows.sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        return a.nett - b.nett;
+      });
+
+      const sunPlayers = {};
+      let currentSunRank = 1;
+      for (let i = 0; i < sunRows.length; i++) {
+        if (
+          i > 0 &&
+          sunRows[i].rank === sunRows[i - 1].rank &&
+          sunRows[i].nett === sunRows[i - 1].nett
+        ) {
+          // Same as previous, same rank
+        } else {
+          currentSunRank = i + 1;
+        }
+        sunRows[i].teamName.split('-').forEach(player => {
+          const trimmed = player.trim();
+          if (trimmed) {
+            sunPlayers[normalizeName(trimmed)] = { name: trimmed, sunRank: currentSunRank };
+          }
+        });
+      }
+
+      // --- Merge all unique player names ---
+      const allNames = new Set([
+        ...Object.keys(satPlayers),
+        ...Object.keys(sunPlayers)
+      ]);
+
+      // --- Build combined results ---
+      const combined = [];
+      allNames.forEach(key => {
+        const sat = satPlayers[key];
+        const sun = sunPlayers[key];
+        const name = sat ? sat.name : (sun ? sun.name : key);
+        const satRank = sat ? sat.satRank : 99;
+        const sunRank = sun ? sun.sunRank : 99;
+        const total = satRank + sunRank;
+        combined.push({ name, satRank, sunRank, total });
+      });
+
+      // --- OVERALL LOGIC: tie-break by best single-day, then lower Saturday rank, then name ---
+      combined.sort((a, b) => {
+        if (a.total !== b.total) return a.total - b.total;
+        const aBest = Math.min(a.satRank, a.sunRank);
+        const bBest = Math.min(b.satRank, b.sunRank);
+        if (aBest !== bBest) return aBest - bBest;
+        if (a.satRank !== b.satRank) return a.satRank - b.satRank;
+        return a.name.localeCompare(b.name);
+      });
+
+      // --- Render table ---
+      const tbody = document.getElementById('overall-rows');
+      combined.forEach((entry, idx) => {
+        const tr = document.createElement('tr');
+        // Overall rank (1-based)
+        const rankTd = document.createElement('td');
+        rankTd.textContent = idx + 1;
+        tr.appendChild(rankTd);
+
+        // Name (display as is)
+        const nameTd = document.createElement('td');
+        nameTd.textContent = entry.name;
+        tr.appendChild(nameTd);
+
+        // Saturday rank
+        const satTd = document.createElement('td');
+        satTd.textContent = entry.satRank !== 99 ? entry.satRank : '-';
+        tr.appendChild(satTd);
+
+        // Sunday rank
+        const sunTd = document.createElement('td');
+        sunTd.textContent = entry.sunRank !== 99 ? entry.sunRank : '-';
+        tr.appendChild(sunTd);
+
+        // Total
+        const totalTd = document.createElement('td');
+        totalTd.textContent = entry.total !== 198 ? entry.total : '-';
+        tr.appendChild(totalTd);
+
+        tbody.appendChild(tr);
+      });
+    }).catch(err => {
+      document.getElementById('overall-rows').innerHTML = '<tr><td colspan="5">Error loading leaderboard.</td></tr>';
+      console.error(err);
+    });
+  </script>
+  <!-- ...existing scripts... -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+</body>
+</html>
