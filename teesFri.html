@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shotgun Start Tee Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="apple-touch-startup-image" href="splash.png">
+  <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; background-color: #f4f4f4; padding: 20px; }
+    h1 { text-align: center; font-weight: 700; margin-bottom: 20px; }
+    .btn { margin: 5px; }
+    table { background: #fff; }
+    .modal-content { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .player-option { padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 5px 0; cursor: pointer; transition: background-color 0.2s; }
+    .player-option:hover { background-color: #e0f0ff; }
+    .selected { background-color: #a5d8ff; }
+    #groupModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; }
+    #playerList { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hackers Cup 25 - Friday</h1>
+   
+    <table class="table table-striped" id="teeSheet">
+      <thead class="table-dark">
+        <tr>
+          <th>Hole</th>
+          <th>Player 1</th>
+          <th>Player 2</th>
+          <th>Player 3</th>
+          <th>Player 4</th>
+         
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="groupModal">
+    <div class="modal-content">
+      <h2 class="mb-3">Create Group</h2>
+      <label>Search Players:</label>
+      <input type="text" id="searchInput" oninput="filterPlayers()" class="form-control mb-2" placeholder="Type to search...">
+      <div id="playerList" class="mb-3"></div>
+      <label>Assign to Hole:</label>
+      <select id="holeSelect" class="form-control mb-3"></select>
+      <div class="d-flex justify-content-between">
+       
+      
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1yJdEAaQWqbTdQTnY-BwFN6hnUbh-74zq4L8Dj1spDG8/export?format=csv&gid=912567431";
+
+    let allPlayers = [], availablePlayers = [], selectedPlayers = [], teeSheetData = [];
+    let currentDocId = null;
+
+    async function loadPlayers() {
+      try {
+        const res = await fetch(SHEET_CSV_URL);
+        const csv = await res.text();
+        const rows = csv.trim().split("\n").slice(1);
+        allPlayers = rows.map(row => row.split(",")[1]?.trim()).filter(name => name);
+        availablePlayers = [...allPlayers];
+        console.log("Players loaded from sheet.");
+      } catch (err) {
+        console.error("Error loading sheet:", err);
+        alert("Failed to load Google Sheet.");
+      }
+    }
+
+    async function loadFromFirestore() {
+      try {
+        const q = query(collection(db, "teeSheetsFri"), orderBy("createdAt", "desc"), limit(1));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const docSnap = snapshot.docs[0];
+          currentDocId = docSnap.id;
+          teeSheetData = docSnap.data().groups || [];
+          renderTeeSheet();
+        }
+      } catch (err) {
+        console.error("Failed to load from Firestore:", err);
+      }
+    }
+
+    window.openModal = function() {
+      if (availablePlayers.length === 0) return alert("No players available. Please load from sheet.");
+      selectedPlayers = [];
+      document.getElementById('searchInput').value = '';
+      renderPlayerList();
+      populateHoles();
+      document.getElementById('groupModal').style.display = 'block';
+    }
+
+    window.closeModal = function() {
+      document.getElementById('groupModal').style.display = 'none';
+    }
+
+    function renderPlayerList() {
+      const list = document.getElementById('playerList');
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      list.innerHTML = '';
+      const groupedPlayers = teeSheetData.flatMap(group => group.players);
+      availablePlayers.forEach(player => {
+        if (player.toLowerCase().includes(search) && !groupedPlayers.includes(player)) {
+          const div = document.createElement('div');
+          div.className = 'player-option';
+          if (selectedPlayers.includes(player)) div.classList.add('selected');
+          div.textContent = player;
+          div.onclick = () => togglePlayer(player);
+          list.appendChild(div);
+        }
+      });
+    }
+
+    function togglePlayer(player) {
+      if (selectedPlayers.includes(player)) {
+        selectedPlayers = selectedPlayers.filter(p => p !== player);
+      } else {
+        if (selectedPlayers.length >= 4) return alert("Max 4 players per group.");
+        selectedPlayers.push(player);
+      }
+      renderPlayerList();
+    }
+
+    function populateHoles() {
+      const select = document.getElementById('holeSelect');
+      select.innerHTML = '';
+      for (let i = 1; i <= 18; i++) {
+        select.innerHTML += `<option value="${i}">Hole ${i}</option>`;
+      }
+    }
+
+    window.saveGroup = function() {
+      if (selectedPlayers.length === 0) return alert("Select at least one player.");
+      const hole = document.getElementById('holeSelect').value;
+      teeSheetData.push({ hole, players: [...selectedPlayers] });
+      availablePlayers = availablePlayers.filter(p => !selectedPlayers.includes(p));
+      renderTeeSheet();
+      closeModal();
+      syncToFirestore();
+    }
+
+    function renderTeeSheet() {
+      const tbody = document.querySelector('#teeSheet tbody');
+      tbody.innerHTML = '';
+      teeSheetData.forEach((group, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${group.hole}</td>
+          ${[0, 1, 2, 3].map(i => `<td>${group.players[i] || ''}</td>`).join('')}
+          
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.deleteGroup = function(index) {
+      availablePlayers = availablePlayers.concat(teeSheetData[index].players);
+      teeSheetData.splice(index, 1);
+      renderTeeSheet();
+      syncToFirestore();
+    }
+
+    async function syncToFirestore() {
+      if (!currentDocId) return;
+      try {
+        await updateDoc(doc(db, "teeSheetsFri", currentDocId), { groups: teeSheetData });
+      } catch (err) {
+        console.error("Failed to update Firestore:", err);
+      }
+    }
+
+    window.filterPlayers = function() {
+      renderPlayerList();
+    }
+
+    window.saveToFirestore = function() {
+      if (teeSheetData.length === 0) return alert("No groups to save.");
+      addDoc(collection(db, "teeSheetsFri"), {
+        createdAt: new Date(),
+        groups: teeSheetData
+      })
+      .then(() => alert("Tee sheet saved to Firestore!"))
+      .catch(err => {
+        console.error("Error saving to Firestore:", err);
+        alert("Failed to save tee sheet.");
+      });
+    }
+
+    window.downloadPDF = function() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFont("Poppins", "normal");
+      doc.setFontSize(14);
+      doc.text("Shotgun Start Tee Sheet", 14, 20);
+      let startY = 30;
+      teeSheetData.forEach(group => {
+        doc.text(`Hole ${group.hole}: ${group.players.join(", ")}`, 14, startY);
+        startY += 10;
+      });
+      doc.save("tee_sheet.pdf");
+    }
+
+    window.onload = async () => {
+      await loadPlayers();
+      await loadFromFirestore();
+    };
+  </script>
+</body>
+</html>
