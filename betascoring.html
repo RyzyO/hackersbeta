@@ -5,6 +5,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Scorecard</title>
   <!-- Your stylesheets here -->
+   <!-- Add this inside the <head> of betascoring.html -->
+<style>
+  /* Table styling from liveSaturday */
+  #scorecardTable {
+    width: 100%;
+    margin: 15px 0;
+    border-collapse: collapse;
+    font-family: 'Poppins', sans-serif;
+    color: #ffffff;
+  }
+  #scorecardTable thead tr {
+    background-color: #2a2a2a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #scorecardTable th,
+  #scorecardTable td {
+    padding: 12px 15px;
+    border: 1px solid #444;
+    text-align: center;
+    font-size: 14px;
+  }
+  #scorecardTable tbody tr:nth-child(even) {
+    background-color: #333333;
+  }
+  #scorecardTable tbody tr:nth-child(odd) {
+    background-color: #2e2e2e;
+  }
+  #scorecardTable tbody tr:hover {
+    background-color: #555555;
+    cursor: pointer;
+  }
+  /* Button styling from liveSaturday */
+  .submit-button {
+    background: transparent;
+    border: none;
+    margin-bottom: 10px;
+    outline: none;
+    cursor: pointer;
+    background-color: #ec6090;
+    color: white;
+    padding: 10px 0;
+    border-radius: 5px;
+    font-size: 16px;
+    width: 100%;
+    transition: background 0.2s;
+  }
+  .submit-button:hover {
+    background-color: #ff327a;
+  }
+  /* Mobile specific styles */
+  @media screen and (max-width: 767px) {
+    #scorecardTable th, #scorecardTable td {
+      font-size: 12px;
+      padding: 8px 5px;
+    }
+    .submit-button {
+      font-size: 14px;
+      padding: 8px 0;
+    }
+  }
+</style>
 </head>
 <body>
   <script type="module">
@@ -27,7 +89,7 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDUEEmb5v0X23gwLJ_M54c9yNkDqWWsPx1-mvBGgDbXxKurcTkV3hZZoloTPbt0IZ2/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwo-BGqIwkdbB5gIvAUB-UKZbw-LYFueCvCFZNxw5ZT3HmiMNz-jm2bkqqROoiHVS5kiw/exec";
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
