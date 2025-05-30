@@ -28,6 +28,8 @@
       border-collapse: collapse;
       font-family: 'Poppins', sans-serif;
       color: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
     }
     /* Header row styling: dark background with uppercase, spaced text */
     .scorecard-table thead tr {
@@ -184,17 +186,8 @@
     <!-- Front Nine Table -->
     <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
       <thead>
-        <tr>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>Out</th>
+        <tr id="front-nine-header">
+          <!-- Dynamically filled -->
         </tr>
       </thead>
       <tbody>
@@ -243,17 +236,8 @@
     <!-- Back Nine Table -->
     <table id="back-nine-table" class="scorecard-table" style="margin-top: 30px;">
       <thead>
-        <tr>
-          <th>10</th>
-          <th>11</th>
-          <th>12</th>
-          <th>13</th>
-          <th>14</th>
-          <th>15</th>
-          <th>16</th>
-          <th>17</th>
-          <th>18</th>
-          <th>In</th>
+        <tr id="back-nine-header">
+          <!-- Dynamically filled -->
         </tr>
       </thead>
       <tbody>
@@ -378,6 +362,29 @@
           }
         });
 
+        // Set dynamic hole numbers in table headers
+        const frontHeader = document.getElementById('front-nine-header');
+        const backHeader = document.getElementById('back-nine-header');
+        frontHeader.innerHTML = '';
+        backHeader.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+          const th = document.createElement('th');
+          th.textContent = holeNumbers[i] !== undefined ? holeNumbers[i] : '';
+          frontHeader.appendChild(th);
+        }
+        const thOut = document.createElement('th');
+        thOut.textContent = 'Out';
+        frontHeader.appendChild(thOut);
+
+        for (let i = 9; i < 18; i++) {
+          const th = document.createElement('th');
+          th.textContent = holeNumbers[i] !== undefined ? holeNumbers[i] : '';
+          backHeader.appendChild(th);
+        }
+        const thIn = document.createElement('th');
+        thIn.textContent = 'In';
+        backHeader.appendChild(thIn);
+
         // Fill the tables using the order from the sheet (column E)
         let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
         let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
@@ -397,9 +404,9 @@
 
         // Back 9 (next 9 holes in the data)
         for (let i = 9; i < 18; i++) {
-          document.getElementById(`par${i-8+9-1}`).textContent = holePars[i] || 0;
-          document.getElementById(`score${i-8+9-1}`).textContent = holeScores[i] || 0;
-          document.getElementById(`points${i-8+9-1}`).textContent = holePoints[i] || 0;
+          document.getElementById(`par${i+1}`).textContent = holePars[i] || 0;
+          document.getElementById(`score${i+1}`).textContent = holeScores[i] || 0;
+          document.getElementById(`points${i+1}`).textContent = holePoints[i] || 0;
           inParSum    += (holePars[i]   || 0);
           inScoreSum  += (holeScores[i] || 0);
           inPointsSum += (holePoints[i] || 0);
