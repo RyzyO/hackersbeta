@@ -355,6 +355,7 @@
     const holePars = [];
     const holeScores = [];
     const holePoints = [];
+    const holeNumbers = [];
 
     fetch(fetchUrl)
       .then(response => response.text())
@@ -362,66 +363,63 @@
         const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
         const rows = json.table.rows;
 
+        // Collect hole numbers in order of appearance
         rows.forEach(r => {
           const holeNum = r.c[4] ? parseInt(r.c[4].v, 10) : 0;
           const parVal  = r.c[5] ? parseInt(r.c[5].v, 10) : 0;
           const scoreVal= r.c[8] ? parseInt(r.c[8].v, 10) : 0;
           const ptsVal  = r.c[12] ? parseInt(r.c[12].v, 10) : 0;
 
-          if (holeNum >= 1 && holeNum <= 18) {
-            holePars[holeNum] = parVal;
-            holeScores[holeNum] = scoreVal;
-            holePoints[holeNum] = ptsVal;
+          if (holeNum > 0) {
+            holeNumbers.push(holeNum);
+            holePars.push(parVal);
+            holeScores.push(scoreVal);
+            holePoints.push(ptsVal);
           }
         });
 
-        // Populate the table for front 9
+        // Fill the tables using the order from the sheet (column E)
         let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
-        for (let h = 1; h <= 9; h++) {
-          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
-          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
-          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
-          outParSum    += (holePars[h]   || 0);
-          outScoreSum  += (holeScores[h] || 0);
-          outPointsSum += (holePoints[h] || 0);
+        let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
+
+        // Front 9 (first 9 holes in the data)
+        for (let i = 0; i < 9; i++) {
+          document.getElementById(`par${i+1}`).textContent = holePars[i] || 0;
+          document.getElementById(`score${i+1}`).textContent = holeScores[i] || 0;
+          document.getElementById(`points${i+1}`).textContent = holePoints[i] || 0;
+          outParSum    += (holePars[i]   || 0);
+          outScoreSum  += (holeScores[i] || 0);
+          outPointsSum += (holePoints[i] || 0);
         }
         document.getElementById("parOut").textContent = outParSum;
         document.getElementById("scoreOut").textContent = outScoreSum;
         document.getElementById("pointsOut").textContent = outPointsSum;
 
-        // Populate the table for back 9
-        let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
-        for (let h = 10; h <= 18; h++) {
-          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
-          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
-          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
-          inParSum    += (holePars[h]   || 0);
-          inScoreSum  += (holeScores[h] || 0);
-          inPointsSum += (holePoints[h] || 0);
+        // Back 9 (next 9 holes in the data)
+        for (let i = 9; i < 18; i++) {
+          document.getElementById(`par${i-8+9-1}`).textContent = holePars[i] || 0;
+          document.getElementById(`score${i-8+9-1}`).textContent = holeScores[i] || 0;
+          document.getElementById(`points${i-8+9-1}`).textContent = holePoints[i] || 0;
+          inParSum    += (holePars[i]   || 0);
+          inScoreSum  += (holeScores[i] || 0);
+          inPointsSum += (holePoints[i] || 0);
         }
         document.getElementById("parIn").textContent = inParSum;
         document.getElementById("scoreIn").textContent = inScoreSum;
         document.getElementById("pointsIn").textContent = inPointsSum;
 
-        /****************************************************
-         * 3) Color-code the SCORE cells by difference (Score - Par)
-         ****************************************************/
-        function colorScoreCell(holeNumber) {
-          const par = holePars[holeNumber] || 0;
-          const scr = holeScores[holeNumber] || 0;
+        // Color code the score cells
+        function colorScoreCell(cellId, par, scr) {
           const diff = scr - par;
-          const scoreCell = document.getElementById(`score${holeNumber}`);
+          const scoreCell = document.getElementById(cellId);
           if (!scoreCell) return;
-          
-          // Reset any previous styling
           scoreCell.style.backgroundColor = "";
           scoreCell.style.color = "";
-
           if (diff === 0) {
             scoreCell.style.backgroundColor = "white";
             scoreCell.style.color = "black";
           } else if (diff === -1) {
-            scoreCell.style.backgroundColor = "#add8e6"; // Light blue
+            scoreCell.style.backgroundColor = "#add8e6";
             scoreCell.style.color = "black";
           } else if (diff === -2) {
             scoreCell.style.backgroundColor = "blue";
@@ -437,12 +435,49 @@
             scoreCell.style.color = "white";
           }
         }
-        for (let h = 1; h <= 18; h++) {
-          colorScoreCell(h);
+        for (let i = 0; i < 18; i++) {
+          colorScoreCell(`score${i+1}`, holePars[i] || 0, holeScores[i] || 0);
         }
       })
       .catch(err => console.error("Error fetching or parsing scorecard data:", err));
 
+    /****************************************************
+     * 3) Color-code the SCORE cells by difference (Score - Par)
+     ****************************************************/
+    function colorScoreCell(holeNumber) {
+      const par = holePars[holeNumber] || 0;
+      const scr = holeScores[holeNumber] || 0;
+      const diff = scr - par;
+      const scoreCell = document.getElementById(`score${holeNumber}`);
+      if (!scoreCell) return;
+      
+      // Reset any previous styling
+      scoreCell.style.backgroundColor = "";
+      scoreCell.style.color = "";
+
+      if (diff === 0) {
+        scoreCell.style.backgroundColor = "white";
+        scoreCell.style.color = "black";
+      } else if (diff === -1) {
+        scoreCell.style.backgroundColor = "#add8e6"; // Light blue
+        scoreCell.style.color = "black";
+      } else if (diff === -2) {
+        scoreCell.style.backgroundColor = "blue";
+        scoreCell.style.color = "white";
+      } else if (diff === -3) {
+        scoreCell.style.backgroundColor = "navy";
+        scoreCell.style.color = "white";
+      } else if (diff === 1) {
+        scoreCell.style.backgroundColor = "orange";
+        scoreCell.style.color = "black";
+      } else if (diff >= 2) {
+        scoreCell.style.backgroundColor = "red";
+        scoreCell.style.color = "white";
+      }
+    }
+    for (let h = 1; h <= 18; h++) {
+      colorScoreCell(h);
+    }
     /****************************************************
      * 4) Fetch leaderboard data to get player's rank and points
      *    (Assumes leaderboard data is in a separate tab with gid=992817698)

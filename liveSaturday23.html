@@ -239,7 +239,7 @@
       tableData.forEach((row, index) => {
         const rankValue = row.c[1] ? row.c[1].v : 0;
         if (parseInt(rankValue, 10) === 0) return;
-        
+
         const tr = document.createElement('tr');
         row.c.slice(1, 7).forEach((cell, i) => {
           const td = document.createElement('td');
@@ -254,13 +254,14 @@
           td.classList.add(`column-${String.fromCharCode(98 + i)}`);
           tr.appendChild(td);
         });
-        
+
         // Use the Name column (from column index 2 in the original data) for the scorecard link
         const playerNameForLink = row.c[2] ? row.c[2].v : `Player${index + 1}`;
         tr.addEventListener('click', () => {
-          window.location.href = `scorecard23.html?player=${encodeURIComponent(playerNameForLink)}`;
+          // Pass extra query param to indicate holes 10-27
+          window.location.href = `scorecard23.html?player=${encodeURIComponent(playerNameForLink)}&holes=10-27`;
         });
-        
+
         dataRows.appendChild(tr);
       });
     })
