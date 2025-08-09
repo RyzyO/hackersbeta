@@ -337,164 +337,249 @@
 
   <!-- Main Script to Fetch & Populate Scorecard Data -->
   <script>
-    /****************************************************
-     * 1) Get the player name from the URL parameter
-     ****************************************************/
-    const urlParams = new URLSearchParams(window.location.search);
-    const playerName = urlParams.get('player') || "Unknown Player";
-    document.getElementById('player-name').textContent = playerName;
+  /****************************************************
+   * 1) Get the player name from the URL parameter
+   ****************************************************/
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerName = urlParams.get('player') || "Unknown Player";
+  document.getElementById('player-name').textContent = playerName;
 
-    /****************************************************
-     * 2) Fetch the Google Sheet data for the scorecard
-     *    Each row = 1 hole, with columns:
-     *    E (index 4) = hole #, F (index 5) = par,
-     *    I (index 8) = score, M (index 12) = points
-     ****************************************************/
-    const sheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I';
-    const fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+  /****************************************************
+   * Hole order (exactly as requested)
+   ****************************************************/
+  const frontOrder = [1, 2, 3, 4, 5, 6, 7, 8, 24];              // "Out"
+  const backOrder  = [25, 9, 19, 20, 21, 17, 18, 10, 27];       // "In"
 
-    // Arrays to hold hole data by hole number
-    const holePars = [];
-    const holeScores = [];
-    const holePoints = [];
+  // Convenience helpers
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const sumByOrder = (arr, order) => order.reduce((s, h) => s + (Number(arr[h]) || 0), 0);
 
-    fetch(fetchUrl)
-      .then(response => response.text())
-      .then(text => {
-        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-        const rows = json.table.rows;
+  /****************************************************
+   * 2) Fetch the Google Sheet data for the scorecard
+   *    Each row = 1 hole, with columns:
+   *    E (index 4) = hole #, F (index 5) = par,
+   *    I (index 8) = score, M (index 12) = points
+   ****************************************************/
+  const sheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I';
+  const fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
 
-        rows.forEach(r => {
-          const holeNum = r.c[4] ? parseInt(r.c[4].v, 10) : 0;
-          const parVal  = r.c[5] ? parseInt(r.c[5].v, 10) : 0;
-          const scoreVal= r.c[8] ? parseInt(r.c[8].v, 10) : 0;
-          const ptsVal  = r.c[12] ? parseInt(r.c[12].v, 10) : 0;
+  // Arrays indexed by hole number (can contain 24, 25, 27, etc.)
+  const holePars = [];
+  const holeScores = [];
+  const holePoints = [];
 
-          if (holeNum >= 1 && holeNum <= 18) {
-            holePars[holeNum] = parVal;
-            holeScores[holeNum] = scoreVal;
-            holePoints[holeNum] = ptsVal;
-          }
-        });
+  fetch(fetchUrl)
+    .then(response => response.text())
+    .then(text => {
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const rows = json.table.rows;
 
-        // Populate the table for front 9
-        let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
-        for (let h = 1; h <= 9; h++) {
-          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
-          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
-          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
-          outParSum    += (holePars[h]   || 0);
-          outScoreSum  += (holeScores[h] || 0);
-          outPointsSum += (holePoints[h] || 0);
+      rows.forEach(r => {
+        const holeNum  = r.c[4]  ? parseInt(r.c[4].v, 10)  : 0;  // E
+        const parVal   = r.c[5]  ? parseInt(r.c[5].v, 10)  : 0;  // F
+        const scoreVal = r.c[8]  ? parseInt(r.c[8].v, 10)  : 0;  // I
+        const ptsVal   = r.c[12] ? parseInt(r.c[12].v, 10) : 0;  // M
+
+        // Accept holes 1..27 (covers 24, 25, 27)
+        if (holeNum >= 1 && holeNum <= 27) {
+          holePars[holeNum]   = parVal;
+          holeScores[holeNum] = scoreVal;
+          holePoints[holeNum] = ptsVal;
         }
-        document.getElementById("parOut").textContent = outParSum;
-        document.getElementById("scoreOut").textContent = outScoreSum;
-        document.getElementById("pointsOut").textContent = outPointsSum;
+      });
 
-        // Populate the table for back 9
-        let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
-        for (let h = 10; h <= 18; h++) {
-          document.getElementById(`par${h}`).textContent = holePars[h] || 0;
-          document.getElementById(`score${h}`).textContent = holeScores[h] || 0;
-          document.getElementById(`points${h}`).textContent = holePoints[h] || 0;
-          inParSum    += (holePars[h]   || 0);
-          inScoreSum  += (holeScores[h] || 0);
-          inPointsSum += (holePoints[h] || 0);
+      /****************************************************
+       * Update table HEADERS to reflect custom order
+       ****************************************************/
+      const frontHeads = document.querySelectorAll('#front-nine-table thead th');
+      for (let i = 0; i < 9; i++) frontHeads[i].textContent = frontOrder[i];
+      frontHeads[9].textContent = 'Out';
+
+      const backHeads = document.querySelectorAll('#back-nine-table thead th');
+      for (let i = 0; i < 9; i++) backHeads[i].textContent = backOrder[i];
+      backHeads[9].textContent = 'In';
+
+      /****************************************************
+       * Populate FRONT (positions 1..9 map to frontOrder)
+       ****************************************************/
+      let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
+      for (let i = 0; i < 9; i++) {
+        const hole = frontOrder[i];
+        const pos  = i + 1; // column ids 1..9
+        setText(`par${pos}`,    holePars[hole]   ?? 0);
+        setText(`score${pos}`,  holeScores[hole] ?? 0);
+        setText(`points${pos}`, holePoints[hole] ?? 0);
+      }
+      outParSum    = sumByOrder(holePars,   frontOrder);
+      outScoreSum  = sumByOrder(holeScores, frontOrder);
+      outPointsSum = sumByOrder(holePoints, frontOrder);
+      setText("parOut",    outParSum);
+      setText("scoreOut",  outScoreSum);
+      setText("pointsOut", outPointsSum);
+
+      /****************************************************
+       * Populate BACK (positions 10..18 map to backOrder)
+       ****************************************************/
+      let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
+      for (let i = 0; i < 9; i++) {
+        const hole = backOrder[i];
+        const pos  = 10 + i; // column ids 10..18
+        setText(`par${pos}`,    holePars[hole]   ?? 0);
+        setText(`score${pos}`,  holeScores[hole] ?? 0);
+        setText(`points${pos}`, holePoints[hole] ?? 0);
+      }
+      inParSum    = sumByOrder(holePars,   backOrder);
+      inScoreSum  = sumByOrder(holeScores, backOrder);
+      inPointsSum = sumByOrder(holePoints, backOrder);
+      setText("parIn",    inParSum);
+      setText("scoreIn",  inScoreSum);
+      setText("pointsIn", inPointsSum);
+
+      // After you compute outPointsSum and inPointsSum:
+const totalPts = outPointsSum + inPointsSum;
+document.getElementById("total-points").textContent = totalPts;
+
+
+      /****************************************************
+       * 3) Color-code the SCORE cells by difference (Score - Par)
+       *    We color by POSITION (cell id) using the mapped hole.
+       ****************************************************/
+      function colorScoreCellFor(holeNumber, cellId) {
+        const par = holePars[holeNumber] || 0;
+        const scr = holeScores[holeNumber] || 0;
+        const diff = scr - par;
+        const cell = document.getElementById(cellId);
+        if (!cell) return;
+
+        // Reset any previous styling
+        cell.style.backgroundColor = "";
+        cell.style.color = "";
+
+        if (diff === 0) {
+          cell.style.backgroundColor = "white";
+          cell.style.color = "black";
+        } else if (diff === -1) {
+          cell.style.backgroundColor = "#add8e6"; // Light blue
+          cell.style.color = "black";
+        } else if (diff === -2) {
+          cell.style.backgroundColor = "blue";
+          cell.style.color = "white";
+        } else if (diff === -3) {
+          cell.style.backgroundColor = "navy";
+          cell.style.color = "white";
+        } else if (diff === 1) {
+          cell.style.backgroundColor = "orange";
+          cell.style.color = "black";
+        } else if (diff >= 2) {
+          cell.style.backgroundColor = "red";
+          cell.style.color = "white";
         }
-        document.getElementById("parIn").textContent = inParSum;
-        document.getElementById("scoreIn").textContent = inScoreSum;
-        document.getElementById("pointsIn").textContent = inPointsSum;
+      }
 
-        /****************************************************
-         * 3) Color-code the SCORE cells by difference (Score - Par)
-         ****************************************************/
-        function colorScoreCell(holeNumber) {
-          const par = holePars[holeNumber] || 0;
-          const scr = holeScores[holeNumber] || 0;
-          const diff = scr - par;
-          const scoreCell = document.getElementById(`score${holeNumber}`);
-          if (!scoreCell) return;
-          
-          // Reset any previous styling
-          scoreCell.style.backgroundColor = "";
-          scoreCell.style.color = "";
+      // Apply colors for front positions 1..9
+      for (let i = 0; i < 9; i++) {
+        colorScoreCellFor(frontOrder[i], `score${i + 1}`);
+      }
+      // Apply colors for back positions 10..18
+      for (let i = 0; i < 9; i++) {
+        colorScoreCellFor(backOrder[i], `score${10 + i}`);
+      }
+    })
+    .catch(err => console.error("Error fetching or parsing scorecard data:", err));
 
-          if (diff === 0) {
-            scoreCell.style.backgroundColor = "white";
-            scoreCell.style.color = "black";
-          } else if (diff === -1) {
-            scoreCell.style.backgroundColor = "#add8e6"; // Light blue
-            scoreCell.style.color = "black";
-          } else if (diff === -2) {
-            scoreCell.style.backgroundColor = "blue";
-            scoreCell.style.color = "white";
-          } else if (diff === -3) {
-            scoreCell.style.backgroundColor = "navy";
-            scoreCell.style.color = "white";
-          } else if (diff === 1) {
-            scoreCell.style.backgroundColor = "orange";
-            scoreCell.style.color = "black";
-          } else if (diff >= 2) {
-            scoreCell.style.backgroundColor = "red";
-            scoreCell.style.color = "white";
-          }
+  /****************************************************
+   * 4) Leaderboard rank & total points (unchanged)
+   ****************************************************/
+  
+// 4) Leaderboard rank ONLY (don’t overwrite total-points)
+
+// 4) Leaderboard RANK — compute from Points so it's always correct
+
+// 4) Leaderboard RANK — compute from Points, match player by col B or C
+const leaderboardSheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I'; // same doc as scorecard
+const leaderboardGid = '1551828927'; // your leaderboard tab
+const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${leaderboardSheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
+
+fetch(leaderboardUrl)
+  .then(r => r.text())
+  .then(text => {
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+    const cols = (json.table.cols || []).map(c => (c && c.label ? c.label.toString().trim().toLowerCase() : ''));
+    const rows = json.table.rows || [];
+
+    // Explicit column assumptions per your note:
+    // B = index 1 (a.k.a. c[1])  -> nameB
+    // C = index 2 (a.k.a. c[2])  -> nameC
+    // Points likely in D = index 3, but detect by header if possible
+    const NAME_B_COL = 1;
+    const NAME_C_COL = 2;
+    const pointsIdxByLabel = cols.findIndex(l => ['points','total points','score','total'].includes(l));
+    const POINTS_COL = pointsIdxByLabel >= 0 ? pointsIdxByLabel : 3; // fallback to D
+
+    const getV  = c => (c ? (c.v ?? c.f ?? '') : '');
+    const norm  = s => String(s ?? '').trim().toLowerCase();
+    const toNum = v => {
+      if (typeof v === 'number') return v;
+      const n = parseFloat(String(v).replace(/[^\d.-]/g,''));
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const target = norm(playerName);
+
+    // Build entries {nameB, nameC, points}
+    const entries = rows.map(r => ({
+      nameB: norm(getV(r.c[NAME_B_COL])),
+      nameC: norm(getV(r.c[NAME_C_COL])),
+      points: toNum(getV(r.c[POINTS_COL]))
+    }));
+
+    // Sort by points desc
+    entries.sort((a, b) => b.points - a.points);
+
+    // Standard competition ranking (ties share rank)
+    let rank = 'N/A';
+    for (let i = 0; i < entries.length; ) {
+      const start = i;
+      const pts = entries[i].points;
+      while (i < entries.length && entries[i].points === pts) i++;
+      const group = entries.slice(start, i);
+      // match either B OR C name to the playerName
+      if (group.some(g => g.nameB === target || g.nameC === target)) {
+        rank = start + 1; // 1-based rank
+        break;
+      }
+    }
+
+    document.getElementById('player-rank').textContent = rank;
+    // Do NOT touch #total-points here — it’s set from the scorecard calc.
+  })
+  .catch(err => console.error('Error computing rank from leaderboard:', err));
+
+
+
+
+  /****************************************************
+   * 5) Handicap (unchanged)
+   ****************************************************/
+  const handicapSheetName = 'Handicaps';
+  const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(handicapSheetName)}`;
+
+  fetch(handicapUrl)
+    .then(response => response.text())
+    .then(text => {
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const rows = json.table.rows;
+      let handicap = "N/A";
+      rows.forEach(r => {
+        if (r.c[0] && r.c[0].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
+          handicap = r.c[1] ? r.c[1].v : "N/A";
         }
-        for (let h = 1; h <= 18; h++) {
-          colorScoreCell(h);
-        }
-      })
-      .catch(err => console.error("Error fetching or parsing scorecard data:", err));
+      });
+      document.getElementById("player-handicap").textContent = `Handicap: ${handicap}`;
+    })
+    .catch(err => console.error("Error fetching handicap data:", err));
 
-    /****************************************************
-     * 4) Fetch leaderboard data to get player's rank and points
-     *    (Assumes leaderboard data is in a separate tab with gid=600147197)
-     ****************************************************/
-    const leaderboardSheetId = '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg';
-    const leaderboardGid = '600147197';
-    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${leaderboardSheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
-
-    fetch(leaderboardUrl)
-      .then(response => response.text())
-      .then(text => {
-        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-        const rows = json.table.rows;
-        let playerRank = "N/A", playerPoints = 0;
-        rows.forEach(r => {
-          // Assuming player's name is in column 2 (r.c[2]) and comparing case-insensitively
-          if (r.c[2] && r.c[2].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
-            playerRank = r.c[1] ? r.c[1].v : "N/A"; // Rank is in column 1
-            // Points assumed to be in column 3 (custom header: Rank, Name, Points, Front, Back, Through)
-            playerPoints = r.c[3] ? r.c[3].v : 0;
-          }
-        });
-        document.getElementById("player-rank").textContent = playerRank;
-        document.getElementById("total-points").textContent = playerPoints;
-      })
-      .catch(err => console.error("Error fetching leaderboard data:", err));
-
-    /****************************************************
-     * 5) Fetch handicap data from the "Handicaps" sheet
-     *    (Assumes handicap data is in a sheet named "Handicaps"
-     *     with names in column A and handicaps in column B)
-     ****************************************************/
-    const handicapSheetName = 'Handicaps';
-    const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(handicapSheetName)}`;
-
-    fetch(handicapUrl)
-      .then(response => response.text())
-      .then(text => {
-        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-        const rows = json.table.rows;
-        let handicap = "N/A";
-        rows.forEach(r => {
-          // Compare names case-insensitively (assuming name is in column A and handicap in column B)
-          if (r.c[0] && r.c[0].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
-            handicap = r.c[1] ? r.c[1].v : "N/A";
-          }
-        });
-        document.getElementById("player-handicap").textContent = `Handicap: ${handicap}`;
-      })
-      .catch(err => console.error("Error fetching handicap data:", err));
-  </script>
+    
+</script>
 </body>
 </html>
