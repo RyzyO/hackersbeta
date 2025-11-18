@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Seed Hackers Cup 26 (DEV ONLY)</title>
+</head>
+<body>
+  <h1>Seed Hackers Cup 26</h1>
+  <button id="seedButton">Seed Demo Data</button>
+  <pre id="log"></pre>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
+      authDomain: "hackers-cup.firebaseapp.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const logEl = document.getElementById("log");
+    const log = (msg) => (logEl.textContent += msg + "\n");
+
+    async function seedHackersCup26() {
+      log("Starting seed...");
+
+      // 1) Competition document
+      await setDoc(doc(db, "competitions", "hackersCup26"), {
+        name: "Hackers Cup 26",
+        year: 2026,
+        status: "planning",
+        createdAt: serverTimestamp()
+      }, { merge: true });
+      log("Competition document created.");
+
+      // 2) Players
+      const players = [
+        { id: "p_brendan", name: "Brendan Oakes", handicap: 20 },
+        { id: "p_andrew", name: "Andrew Murray", handicap: 20 },
+        { id: "p_noel", name: "Noel Jago", handicap: 29 },
+        { id: "p_peter", name: "Peter Keen", handicap: 29 },
+        { id: "p_ashley", name: "Ashley Oakes", handicap: 29 },
+        { id: "p_martyn", name: "Martyn Budden", handicap: 12 }
+      ];
+
+      for (const p of players) {
+        await setDoc(
+          doc(db, "competitions", "hackersCup26", "players", p.id),
+          {
+            name: p.name,
+            handicap: p.handicap,
+            available: { fri: true, sat: true, sun: true },
+            createdAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+        log(`Player seeded: ${p.name}`);
+      }
+
+      // 3) Rounds
+      const rounds = [
+        { id: "friday", name: "Friday", type: "stableford+skins" },
+        { id: "saturday", name: "Saturday", type: "stableford" },
+        { id: "sunday", name: "Sunday", type: "ambrose" }
+      ];
+
+      for (const r of rounds) {
+        await setDoc(
+          doc(db, "competitions", "hackersCup26", "rounds", r.id),
+          {
+            name: r.name,
+            type: r.type,
+            status: "open",
+            createdAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+        log(`Round seeded: ${r.name}`);
+      }
+
+      // 4) TEE SHEETS — FIXED PATH
+      // friday
+      await setDoc(
+        doc(
+          db,
+          "competitions", "hackersCup26",
+          "rounds", "friday",
+          "teeSheets", "main"
+        ),
+        {
+          groups: [
+            {
+              groupId: "fri_hole1",
+              hole: 1,
+              teeTime: "07:30",
+              players: ["p_brendan", "p_andrew", "p_noel", "p_peter"]
+            },
+            {
+              groupId: "fri_hole10",
+              hole: 10,
+              teeTime: "07:38",
+              players: ["p_ashley", "p_martyn"]
+            }
+          ],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+      );
+      log("Friday tee sheet seeded.");
+
+      // saturday
+      await setDoc(
+        doc(
+          db,
+          "competitions", "hackersCup26",
+          "rounds", "saturday",
+          "teeSheets", "main"
+        ),
+        {
+          groups: [
+            {
+              groupId: "sat_hole1",
+              hole: 1,
+              teeTime: "07:30",
+              players: ["p_brendan", "p_andrew", "p_noel", "p_peter"]
+            },
+            {
+              groupId: "sat_hole10",
+              hole: 10,
+              teeTime: "07:38",
+              players: ["p_ashley", "p_martyn"]
+            }
+          ],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+      );
+      log("Saturday tee sheet seeded.");
+
+      // 5) Sunday teams + tee sheet
+      await setDoc(
+        doc(db, "competitions", "hackersCup26", "teams", "t_brendan_andrew"),
+        {
+          players: ["p_brendan", "p_andrew"],
+          teamHandicap: 10
+        },
+        { merge: true }
+      );
+
+      await setDoc(
+        doc(db, "competitions", "hackersCup26", "teams", "t_noel_peter"),
+        {
+          players: ["p_noel", "p_peter"],
+          teamHandicap: 14.5
+        },
+        { merge: true }
+      );
+
+      log("Teams seeded.");
+
+      await setDoc(
+        doc(
+          db,
+          "competitions", "hackersCup26",
+          "rounds", "sunday",
+          "teeSheets", "main"
+        ),
+        {
+          groups: [
+            {
+              groupId: "sun_hole1",
+              hole: 1,
+              teeTime: "08:00",
+              players: ["p_brendan", "p_andrew", "p_noel", "p_peter"],
+              teams: ["t_brendan_andrew", "t_noel_peter"]
+            }
+          ],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+      );
+
+      log("Sunday tee sheet seeded.");
+      log("✅ Seeding complete.");
+    }
+
+    document
+      .getElementById("seedButton")
+      .addEventListener("click", () => seedHackersCup26());
+  </script>
+</body>
+</html>

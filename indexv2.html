@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="apple-touch-startup-image" href="splash.png">
+    <title>Hackers Cup</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="assets/css/fontawesome.css">
+    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+   <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/owl.css">
+    <link rel="stylesheet" href="assets/css/animate.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  
+    <style>
+      
+      #hi { 
+        font-size: 20px;
+        color: #ffffff;
+      }
+      #dates {
+        font-weight: 750;
+      }
+      
+      /* Basic styling for the countdown timer */
+      #countdown {
+       
+        font-size: 17px;
+        text-transform: uppercase;
+        color: #fff;
+        font-weight: 500;
+        font-style: italic;
+        letter-spacing: 0.5px;
+        margin-top: 20px;
+      }
+      .thumb img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ***** Preloader Start ***** -->
+    <div id="js-preloader" class="js-preloader">
+      <div class="preloader-inner">
+        <span class="dot"></span>
+        <div class="dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+    <!-- ***** Preloader End ***** -->
+
+    <!-- ***** Header Area Start ***** -->
+    <header class="header-area header-sticky">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <nav class="main-nav">
+              <!-- ***** Logo Start ***** -->
+              <a href="index.html" class="logo">
+                <img src="assets/images/logo.png" alt="" style="width: 158px;">
+              </a>
+              <!-- ***** Logo End ***** -->
+              <!-- ***** Menu Start ***** -->
+              <ul class="nav">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="register.html">Register</a></li>
+                <li><a href="venue.html">Venue</a></li>
+                <li><a href="payment.html">Payment</a></li>
+                <li><a href="podcast.html">Podcast</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="honour-roll.html">Honour Roll</a></li>
+              </ul>
+              <a class='menu-trigger'>
+                <span>Menu</span>
+              </a>
+              <!-- ***** Menu End ***** -->
+            </nav>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- ***** Header Area End ***** -->
+
+    <div class="main-banner">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-6 align-self-center">
+            <div class="caption header-text">
+              <h6 id="hacker-number"></h6>
+              <h2 id="user-name"></h2>
+              <h6>Welcome to our 25th Annual Road Trip.</h6>
+              <br>
+              <h6>This year we head back north to Nelson Bay GC. </h6> <br><br>
+              <h6 id="dates">AUGUST 8TH - 10TH 2025 </h6> 
+              <!-- Countdown timer display -->
+              <div id="countdown">
+               <i></i>
+                  <span>T-Minus</span>
+                <span id="days">00</span> Days 
+                <span id="hours">00</span> Hours 
+                <span id="minutes">00</span> Minutes 
+                
+                <span id="seconds">00</span> Seconds
+              </i>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-lg-4 offset-lg-2">
+            <div class="right-image">
+              <img src="assets/images/banner-image.jpg" alt="">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3 col-md-6">
+            <a href="register.html">
+              <div class="item">
+                <div class="image">
+                  <img src="assets/images/featured-02.png" alt="" style="max-width: 44px;">
+                </div>
+                <h4>REGISTER</h4>
+              </div>
+            </a>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <a href="payment.html">
+              <div class="item">
+                <div class="image">
+                  <img src="assets/images/featured-01.png" alt="" style="max-width: 44px;">
+                </div>
+                <h4>PAYMENT</h4>
+              </div>
+            </a>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <a href="podcast.html">
+              <div class="item">
+                <div class="image">
+                  <img src="assets/images/featured-03.png" alt="" style="max-width: 44px;">
+                </div>
+                <h4>PODCAST</h4>
+              </div>
+            </a>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <a href="honour-roll.html">
+              <div class="item">
+                <div class="image">
+                  <img src="assets/images/featured-04.png" alt="" style="max-width: 44px;">
+                </div>
+                <h4>HONOUR ROLL</h4>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+          <div class="col-lg-3 col-md-6">
+            <div class="item d-flex flex-column align-items-center" style="background:none;box-shadow:none;">
+              <div class="image" style="background:none;box-shadow:none;display:flex;justify-content:center;align-items:center;width:100%;">
+                <img id="sponsor-slide-img" src="" alt="Sponsor" style="max-width:110px;max-height:110px;object-fit:contain;background:none;box-shadow:none;border-radius:0;display:block;margin:auto;">
+              </div>
+              <h4 style="text-align:center;width:100%;">SPONSORS</h4>
+            </div> 
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+
+    <div class="section trending">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="section-heading">
+              <h6>Nelson Bay</h6>
+              <h2>Course Flyovers</h2>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="main-button">
+              <a href="https://www.nelsonbaygolf.com/courses/" target="_blank" rel="noopener noreferrer">View All</a>
+              
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="https://www.nelsonbaygolf.com/blog/course/1/" target="_blank" rel="noopener noreferrer"><img id="course-img1" src="assets/images/hole1.png" alt=""></a>
+                <span class="price">311m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 1</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="https://www.nelsonbaygolf.com/blog/course/2/" target="_blank" rel="noopener noreferrer"><img id="course-img2" src="assets/images/hole2.png" alt=""></a>
+                <span class="price">397m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 2</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="https://www.nelsonbaygolf.com/blog/course/3/" target="_blank" rel="noopener noreferrer"><img id="course-img3" src="assets/images/hole3.png" alt=""></a>
+                <span class="price">504m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 5</span>
+                <h4>Hole 3</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="https://www.nelsonbaygolf.com/blog/course/4/" target="_blank" rel="noopener noreferrer"><img id="course-img4" src="assets/images/hole4.png" alt=""></a>
+                <span class="price">322m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 4</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br><br><br>
+
+
+<div class="main-button">
+  <a id="enableNotifications" href="#" rel="noopener noreferrer">Enable Notifications</a>
+</div>
+<br><br><br>
+<br><br><br>
+<br><br><br>
+<br><br><br>
+
+
+
+    
+<div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+    <!-- Scripts -->
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/isotope.min.js"></script>
+    <script src="assets/js/owl-carousel.js"></script>
+    <script src="assets/js/counter.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+        authDomain: "hackers-cup.firebaseapp.com",
+        databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+        projectId: "hackers-cup",
+        storageBucket: "hackers-cup.appspot.com",
+        messagingSenderId: "765736070872",
+        appId: "1:765736070872:web:86a51c41916e7af75631ad",
+        measurementId: "G-6E1M14F510"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const database = getDatabase();
+
+      const auth = getAuth(app);
+
+      function getDisplayName(user) {
+        const localKey = `displayName_${user.uid}`;
+        const cached = localStorage.getItem(localKey);
+        if (cached) {
+          document.getElementById('user-name').textContent = cached;
+        }
+
+        const userRef = ref(database, `users/${user.uid}/displayName`);
+        // One-time read to avoid persistent realtime listener
+        get(userRef)
+          .then((snapshot) => {
+            const displayName = snapshot.val();
+            if (displayName) {
+              document.getElementById('user-name').textContent = displayName;
+              try { localStorage.setItem(localKey, displayName); } catch (e) {}
+            } else {
+              const name = prompt('Please enter your display name:');
+              if (name && name.trim() !== '') {
+                set(userRef, name.trim())
+                  .then(() => {
+                    document.getElementById('user-name').textContent = name.trim();
+                    try { localStorage.setItem(localKey, name.trim()); } catch (e) {}
+                  })
+                  .catch((error) => {
+                    console.error('Error updating display name:', error);
+                  });
+              }
+            }
+          })
+          .catch((err) => {
+            console.warn('Could not fetch displayName:', err);
+          });
+      }
+
+      function getHackerNumber(user) {
+        const localKey = `hackerNumber_${user.uid}`;
+        const cached = localStorage.getItem(localKey);
+        if (cached) {
+          document.getElementById('hacker-number').textContent = "G'day, hacker no. " + cached;
+        }
+
+        const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+        // One-time read to avoid persistent realtime listener
+        get(hackerRef)
+          .then((snapshot) => {
+            const hackerNumber = snapshot.val();
+            if (hackerNumber) {
+              document.getElementById('hacker-number').textContent = "G'day, hacker no. " + hackerNumber;
+              try { localStorage.setItem(localKey, hackerNumber); } catch (e) {}
+            } else {
+              document.getElementById('hacker-number').textContent = "G'day";
+            }
+          })
+          .catch((err) => {
+            console.warn('Could not fetch hackerNumber:', err);
+          });
+      }
+
+      auth.onAuthStateChanged((user) => {
+        if (!user) {
+          window.location.href = 'login.html';
+        } else {
+          getDisplayName(user);
+          getHackerNumber(user);
+        }
+      });
+
+      function leave() {
+        auth.signOut()
+          .then(() => {
+            window.location.href = 'index.html';
+          })
+          .catch((error) => {
+            console.error('Sign Out Error', error);
+          });
+      }
+
+      function toggleSettingsPanel() {
+        const settingsPanel = document.getElementById('settings-panel');
+        settingsPanel.classList.toggle('show');
+      }
+
+      // Update the countdown timer to target August 8, 2025 11:30:00 AEST
+      function updateCountdown() {
+        const targetDate = new Date("August 8, 2025 11:30:00 GMT+1000");
+        const currentDate = new Date();
+        const timeDifference = targetDate - currentDate;
+
+        if (timeDifference < 0) {
+          document.getElementById('countdown').textContent = 'Hackers Cup has begun!';
+          return;
+        }
+
+        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+        document.getElementById('days').textContent = padZeroes(days);
+        document.getElementById('hours').textContent = padZeroes(hours);
+        document.getElementById('minutes').textContent = padZeroes(minutes);
+        document.getElementById('seconds').textContent = padZeroes(seconds);
+      }
+
+      // Function to add leading zeroes to numbers less than 10
+      function padZeroes(num) {
+        return num < 10 ? '0' + num : num;
+      }
+
+      // Initial call to update the countdown timer
+      updateCountdown();
+
+      // Call the updateCountdown function every second
+      setInterval(updateCountdown, 1000);
+    </script>
+    <script>
+      function toggleSettingsPanel() {
+        const settingsPanel = document.getElementById('settings-panel');
+        settingsPanel.classList.toggle('show');
+      }
+    </script>
+    <script>
+      function changeWallpaper(option) {
+        var backgroundImageUrl = "10th.jpg";
+
+        if (option === "none") {
+          backgroundImageUrl = "10th.jpg";
+          document.getElementById('header').classList.remove('light-text');
+          document.getElementById('countdown').classList.remove('light-text');
+          document.getElementById('header').classList.add('dark-text');
+          document.getElementById('countdown').classList.add('dark-text');
+        } else {
+          if (option === "golf1") {
+            // Option logic if needed
+          } else if (option === "golf2") {
+            backgroundImageUrl = "kiama.jpg";
+          } else if (option === "golf3") {
+            backgroundImageUrl = "greenwell.jpg";
+          }
+          document.addEventListener('DOMContentLoaded', function() {
+            var wallpaper = document.getElementById('wallpaper');
+            wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
+            document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
+            document.getElementById('details').classList.remove('dark-text');
+            document.getElementById('countdown').classList.remove('dark-text');
+            document.getElementById('details').classList.add('light-text');
+            document.getElementById('countdown').classList.add('light-text');
+          });
+        }
+      }
+    </script>
+<script type="module">
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  async function initNotifications() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const token = await getToken(messaging, {
+          vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
+        });
+        console.log("✅ FCM Token:", token);
+        alert("Notifications enabled!");
+      } else {
+        console.warn("❌ Notification permission not granted.");
+      }
+    } catch (error) {
+      console.error("Error during initNotifications:", error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('enableNotifications');
+
+    if (!button) {
+      console.warn("Enable Notifications button not found.");
+      return;
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+          console.log("✅ Service Worker registered");
+
+          // Show button only if permission is not granted
+          if (Notification.permission === 'default' || Notification.permission === 'denied') {
+            button.style.display = 'block';
+          } else {
+            button.style.display = 'block'; // Always show the button
+            console.log("Notification permission already:", Notification.permission);
+          }
+
+          button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await initNotifications();
+            // Do NOT hide the button after use
+          });
+        })
+        .catch(err => {
+          console.error('Service Worker registration failed:', err);
+        });
+    } else {
+      console.warn("Service Worker not supported in this browser.");
+    }
+
+    onMessage(messaging, (payload) => {
+      console.log("🔔 Foreground message received:", payload);
+      alert(`${payload.notification.title}\n${payload.notification.body}`);
+    });
+  });
+</script>
+<script>
+  // Sponsor image filenames in order
+  const sponsorImages = [
+    'assets/images/sponsors/1.png',
+    'assets/images/sponsors/2.jpg',
+    'assets/images/sponsors/3.png',
+    'assets/images/sponsors/4.png',
+    'assets/images/sponsors/5.png',
+    'assets/images/sponsors/6.png',
+    'assets/images/sponsors/7.png',
+    'assets/images/sponsors/8.png',
+    'assets/images/sponsors/9.webp',
+    'assets/images/sponsors/10.png',
+    'assets/images/sponsors/11.png',
+    'assets/images/sponsors/12.png'
+  ];
+
+  let sponsorIndex = 0;
+  document.addEventListener('DOMContentLoaded', function() {
+    const sponsorImg = document.getElementById('sponsor-slide-img');
+    function showSponsorSlide() {
+      sponsorImg.style.opacity = 0;
+      setTimeout(() => {
+        sponsorImg.src = sponsorImages[sponsorIndex];
+        sponsorImg.style.opacity = 1;
+      }, 200);
+      sponsorIndex = (sponsorIndex + 1) % sponsorImages.length;
+    }
+    if (sponsorImages.length > 0 && sponsorImg) {
+      sponsorImg.src = sponsorImages[0];
+      setInterval(showSponsorSlide, 2500);
+    }
+  });
+</script>
+<script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</html>  </body></script>   
+
+  </body>
+</html>

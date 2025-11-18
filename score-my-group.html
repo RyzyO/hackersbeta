@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hackers Cup 26 – Score My Group</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Kanit font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-main: #050713;
+      --bg-card: #10121e;
+      --bg-card-soft: #151827;
+      --accent-aqua: #1eeaf0;
+      --accent-lime: #c8ff46;
+      --accent-orange: #ff7a1a;
+      --text-main: #ecf8ff;
+      --text-muted: #8a90a4;
+      --border-subtle: #2a2e45;
+      --error: #fecaca;
+      --success: #bbf7d0;
+      --hole-pill-bg: #1b2136;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #15192f 0, transparent 50%),
+        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
+        var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px 16px 24px;
+    }
+
+    /* HEADER / BRAND */
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 14px 14px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      background: linear-gradient(120deg, #050713, #10121f 40%, #050713 100%);
+      border: 1px solid rgba(30, 234, 240, 0.2);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.65);
+    }
+
+    .header-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .header-pill {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 255, 70, 0.6);
+      background: rgba(200, 255, 70, 0.12);
+      color: var(--accent-lime);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-subtitle strong {
+      color: var(--accent-aqua);
+      font-weight: 500;
+    }
+
+    /* CARDS */
+
+    .card {
+      background: radial-gradient(circle at top left, #1c2036 0, #10121e 55%);
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(42, 46, 69, 0.9);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #f9fbff;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* DAY SELECTOR */
+
+    .day-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .day-tile {
+      position: relative;
+      border-radius: 16px;
+      padding: 14px 12px 12px;
+      background: var(--bg-card-soft);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      overflow: hidden;
+      transition:
+        transform 0.14s ease,
+        box-shadow 0.14s ease,
+        border-color 0.14s ease,
+        background 0.14s ease;
+    }
+
+    .day-tile::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.09), transparent 55%);
+      transition: opacity 0.18s ease;
+      pointer-events: none;
+    }
+
+    .day-tile span.day-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .day-tile span.day-sub {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .day-tile.friday span.day-label {
+      color: var(--accent-aqua);
+    }
+
+    .day-tile.saturday span.day-label {
+      color: var(--accent-lime);
+    }
+
+    .day-tile.sunday span.day-label {
+      color: var(--accent-orange);
+    }
+
+    .day-tile.selected {
+      border-color: var(--accent-aqua);
+      box-shadow: 0 0 0 1px rgba(30, 234, 240, 0.4), 0 14px 35px rgba(0,0,0,0.8);
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, #101221, #151b30);
+    }
+
+    .day-tile.selected::before {
+      opacity: 1;
+    }
+
+    /* SELECT + BUTTONS */
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin: 6px 0 4px;
+      color: #e0e5f4;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card-soft);
+      color: var(--text-main);
+      font-size: 15px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--accent-aqua) 50%),
+                        linear-gradient(135deg, var(--accent-aqua) 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 3px),
+                           calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent-aqua);
+      box-shadow: 0 0 0 1px rgba(30, 234, 240, 0.4);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent-aqua);
+      color: #050713;
+      font-weight: 600;
+      cursor: pointer;
+      gap: 6px;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+    }
+
+    .btn:hover:not([disabled]) {
+      transform: translateY(-0.5px);
+      box-shadow: 0 9px 26px rgba(0,0,0,0.7);
+      background: #43f0f4;
+    }
+
+    .btn[disabled] {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn.secondary {
+      background: #232536;
+      color: var(--text-main);
+      border: 1px solid #323552;
+      text-transform: none;
+    }
+
+    /* STATUS TEXT */
+
+    .status {
+      font-size: 12px;
+      margin-top: 6px;
+      color: var(--text-muted);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .status.success {
+      color: var(--success);
+    }
+
+    /* SCORING */
+
+    .group-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    #groupTags {
+      margin-bottom: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #181c2f;
+      margin-right: 6px;
+      margin-bottom: 4px;
+      color: #e4ebff;
+      border: 1px solid #262c43;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      margin-right: 5px;
+      background: var(--accent-aqua);
+    }
+
+    .hole-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .hole-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hole-number {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hole-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .hole-progress {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--hole-pill-bg);
+      border: 1px solid #262b44;
+    }
+
+    .players-container {
+      margin-top: 6px;
+      border-radius: 14px;
+      background: rgba(8, 10, 22, 0.9);
+      border: 1px solid #232844;
+      padding: 8px 10px;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px;
+      gap: 12px;
+    }
+
+    .player-row:not(:last-child) {
+      border-bottom: 1px dashed #232844;
+    }
+
+    .player-name-block {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-name {
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-label-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .player-input {
+      width: 64px;
+      padding: 8px 8px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      background: #13172a;
+      color: var(--text-main);
+      border: 1px solid #323552;
+      border-radius: 10px;
+      box-sizing: border-box;
+      transition: border-color 0.12s ease, background 0.12s ease, transform 0.06s ease;
+    }
+
+    .player-input:focus {
+      outline: none;
+      border-color: var(--accent-aqua);
+      background: #090c17;
+      transform: translateY(-0.5px);
+      box-shadow: 0 0 0 1px rgba(30, 234, 240, 0.4);
+    }
+
+    /* NAV ROW */
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      gap: 8px;
+    }
+
+    .nav-row .btn-icon {
+      flex: 0 0 auto;
+      min-width: 86px;
+      font-size: 12px;
+      padding-inline: 12px;
+    }
+
+    .hole-index {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-save-hole {
+      width: 100%;
+      margin-top: 12px;
+      background: linear-gradient(120deg, var(--accent-lime), #faffb0);
+      color: #111827;
+      box-shadow: 0 12px 30px rgba(154, 180, 44, 0.74);
+    }
+
+    .btn-save-hole:hover:not([disabled]) {
+      background: linear-gradient(120deg, #ddff63, #faffb0);
+    }
+
+    /* HIDDEN UTILITY */
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* SMALL SCREENS */
+
+    @media (max-width: 360px) {
+      .header-title {
+        font-size: 20px;
+      }
+      .player-input {
+        width: 56px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-title-row">
+        <div class="header-title">Hackers Cup 26</div>
+        <div class="header-pill">Live Group Scoring</div>
+      </div>
+      <div class="header-subtitle">
+        Score your entire group <strong>hole by hole</strong>. Changes sync to the live leaderboard.
+      </div>
+    </header>
+
+    <!-- STEP 1: DAY -->
+    <section id="stepDay" class="card">
+      <h2>1. Select your day</h2>
+      <p>Choose the day you’re playing. Formats change by day.</p>
+      <div class="day-grid" style="margin-top:12px;">
+        <button class="day-tile friday" type="button" data-day="friday">
+          <span class="day-label">Friday</span>
+          <span class="day-sub">Skins – Stableford across entire field</span>
+        </button>
+        <button class="day-tile saturday" type="button" data-day="saturday">
+          <span class="day-label">Saturday</span>
+          <span class="day-sub">Individual Stableford</span>
+        </button>
+        <button class="day-tile sunday" type="button" data-day="sunday" style="grid-column: span 2;">
+          <span class="day-label">Sunday</span>
+          <span class="day-sub">2-Ball Ambrose – Nett stroke</span>
+        </button>
+      </div>
+      <p class="status" id="dayStatus"></p>
+    </section>
+
+    <!-- STEP 2: PLAYER -->
+    <section id="stepPlayer" class="card hidden">
+      <h2>2. Who are you?</h2>
+      <p>Select your name so we can find your group for that day.</p>
+      <label for="playerSelect">Your name</label>
+      <select id="playerSelect">
+        <option value="">Loading players…</option>
+      </select>
+      <p class="status" id="playerStatus"></p>
+      <div style="margin-top:10px;">
+        <button id="btnConfirmPlayer" class="btn" type="button" disabled>Load my group</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: SCORING -->
+    <section id="stepScoring" class="card hidden">
+      <h2>3. Score your group</h2>
+
+      <div class="group-meta" id="groupMeta"></div>
+      <div id="groupTags"></div>
+
+      <div id="holeContainer">
+        <div class="hole-header">
+          <div class="hole-main">
+            <div class="hole-number" id="holeTitle">HOLE 1</div>
+            <div class="hole-meta" id="holeMeta">Par info loading…</div>
+          </div>
+          <div class="hole-progress" id="holeProgress">1 / 18</div>
+        </div>
+
+        <div class="players-container" id="playersContainer"></div>
+
+        <div class="nav-row">
+          <button id="btnPrevHole" class="btn secondary btn-icon" type="button">
+            &larr; Prev
+          </button>
+          <div class="hole-index" id="holeIndexLabel">Hole 1 of 18</div>
+          <button id="btnNextHole" class="btn secondary btn-icon" type="button">
+            Next &rarr;
+          </button>
+        </div>
+
+        <button id="btnSaveHole" class="btn btn-save-hole" type="button">
+          Save This Hole
+        </button>
+        <p class="status" id="scoreStatus"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      getDocs,
+      collection,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
+      authDomain: "hackers-cup.firebaseapp.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // --- Worrigee Links course data (Men, par + index) ---
+    const COURSE = {
+      name: "Worrigee Links Golf Course",
+      par: 70,
+      holes: {
+        1:  { par: 5, index: 9 },
+        2:  { par: 3, index: 1 },
+        3:  { par: 4, index: 15 },
+        4:  { par: 4, index: 17 },
+        5:  { par: 4, index: 5 },
+        6:  { par: 3, index: 11 },
+        7:  { par: 5, index: 3 },
+        8:  { par: 3, index: 13 },
+        9:  { par: 4, index: 7 },
+        10: { par: 4, index: 8 },
+        11: { par: 5, index: 10 },
+        12: { par: 3, index: 2 },
+        13: { par: 4, index: 14 },
+        14: { par: 3, index: 4 },
+        15: { par: 4, index: 18 },
+        16: { par: 4, index: 6 },
+        17: { par: 3, index: 16 },
+        18: { par: 5, index: 12 }
+      }
+    };
+
+    // DOM elements
+    const stepDay = document.getElementById("stepDay");
+    const stepPlayer = document.getElementById("stepPlayer");
+    const stepScoring = document.getElementById("stepScoring");
+
+    const dayStatus = document.getElementById("dayStatus");
+    const playerStatus = document.getElementById("playerStatus");
+    const scoreStatus = document.getElementById("scoreStatus");
+
+    const playerSelect = document.getElementById("playerSelect");
+    const btnConfirmPlayer = document.getElementById("btnConfirmPlayer");
+
+    const groupMetaEl = document.getElementById("groupMeta");
+    const groupTagsEl = document.getElementById("groupTags");
+
+    const holeTitleEl = document.getElementById("holeTitle");
+    const holeMetaEl = document.getElementById("holeMeta");
+    const holeProgressEl = document.getElementById("holeProgress");
+    const holeIndexLabelEl = document.getElementById("holeIndexLabel");
+    const playersContainer = document.getElementById("playersContainer");
+
+    const btnPrevHole = document.getElementById("btnPrevHole");
+    const btnNextHole = document.getElementById("btnNextHole");
+    const btnSaveHole = document.getElementById("btnSaveHole");
+    const holeContainer = document.getElementById("holeContainer");
+
+    const HOLE_COUNT = 18;
+    const COMP_ID = "hackersCup26";
+
+    // State
+    let selectedDayId = null;
+    let selectedPlayerId = null;
+    let isSunday = false;
+
+    let playersMap = {};
+    let currentGroup = null;
+
+    let entityType = "player"; // player | team
+    let entityOrder = [];      // ordered list of IDs
+    let entityNames = {};
+
+    let scoreData = {}; // id -> holeN -> strokes
+    let currentHole = 1;
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    function setStatus(el, msg, type = "") {
+      el.textContent = msg || "";
+      el.classList.remove("error", "success");
+      if (type) el.classList.add(type);
+    }
+
+    // Load players
+    async function loadPlayers() {
+      const snap = await getDocs(collection(db, "competitions", COMP_ID, "players"));
+      const list = [];
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        playersMap[docSnap.id] = d;
+        list.push({ id: docSnap.id, name: d.name });
+      });
+
+      list.sort((a,b) => a.name.localeCompare(b.name));
+      playerSelect.innerHTML = '<option value="">Select your name…</option>';
+
+      list.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        playerSelect.appendChild(opt);
+      });
+    }
+
+    // Choose day (tiles)
+    stepDay.addEventListener("click", e => {
+      const tile = e.target.closest("[data-day]");
+      if (!tile) return;
+
+      selectedDayId = tile.getAttribute("data-day");
+      isSunday = selectedDayId === "sunday";
+
+      document.querySelectorAll(".day-tile").forEach(t => t.classList.remove("selected"));
+      tile.classList.add("selected");
+
+      const label = selectedDayId.charAt(0).toUpperCase() + selectedDayId.slice(1);
+      setStatus(dayStatus, "Day selected: " + label, "success");
+
+      stepPlayer.classList.remove("hidden");
+      playerStatus.textContent = "";
+    });
+
+    // Select player
+    playerSelect.addEventListener("change", () => {
+      selectedPlayerId = playerSelect.value;
+      btnConfirmPlayer.disabled = !selectedPlayerId;
+    });
+
+    btnConfirmPlayer.addEventListener("click", async () => {
+      if (!selectedDayId || !selectedPlayerId) return;
+      setStatus(playerStatus, "Finding your group…");
+
+      try {
+        await loadGroupForPlayer();
+        // Hide the selection widgets now that the group is loaded
+        stepDay.classList.add("hidden");
+        stepPlayer.classList.add("hidden");
+        stepScoring.classList.remove("hidden");
+        setStatus(playerStatus, "Group loaded. Scroll down to start scoring.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(playerStatus, err.message, "error");
+      }
+    });
+
+    async function loadGroupForPlayer() {
+      const teeRef = doc(
+        db,
+        "competitions", COMP_ID,
+        "rounds", selectedDayId,
+        "teeSheets", "main"
+      );
+      const teeSnap = await getDoc(teeRef);
+      if (!teeSnap.exists()) throw new Error("Tee sheet not found for this day.");
+
+      const teeData = teeSnap.data();
+      const groups = teeData.groups || [];
+      const found = groups.find(g => g.players && g.players.includes(selectedPlayerId));
+
+      if (!found) throw new Error("You're not in a group for this day.");
+
+      currentGroup = found;
+
+      // Build entity list
+      entityOrder = [];
+      entityNames = {};
+      entityType = "player";
+
+      if (!isSunday) {
+        found.players.forEach(pid => {
+          entityOrder.push(pid);
+          entityNames[pid] = playersMap[pid]?.name || pid;
+        });
+      } else {
+        const teamIds = found.teams || [];
+        for (const tid of teamIds) {
+          const tSnap = await getDoc(doc(db, "competitions", COMP_ID, "teams", tid));
+          if (tSnap.exists()) {
+            const t = tSnap.data();
+            const teamName = (t.players || [])
+              .map(pid => playersMap[pid]?.name || pid)
+              .join(" + ");
+            entityOrder.push(tid);
+            entityNames[tid] = teamName || tid;
+          }
+        }
+        entityType = "team";
+      }
+
+      // Init scoreData
+      scoreData = {};
+      entityOrder.forEach(id => {
+        scoreData[id] = {};
+      });
+
+      const hole = found.hole || 1;
+      const teeTime = found.teeTime || "";
+      const groupId = found.groupId || "";
+
+      // UI group meta
+      groupMetaEl.textContent = `Starting on Hole ${hole}${teeTime ? " • Tee " + teeTime : ""}`;
+      groupTagsEl.innerHTML = `
+        <span class="tag"><span class="tag-dot"></span>${capitalize(selectedDayId)}</span>
+        ${groupId ? `<span class="tag">Group ${groupId}</span>` : ""}
+        ${isSunday ? '<span class="tag">2-Ball Ambrose</span>' : '<span class="tag">Gross strokes</span>'}
+      `;
+
+      currentHole = hole;
+      renderHole();
+    }
+
+    function renderHole() {
+      const hk = "hole" + currentHole;
+
+      holeTitleEl.textContent = "HOLE " + currentHole;
+      holeProgressEl.textContent = `${currentHole} / ${HOLE_COUNT}`;
+      holeIndexLabelEl.textContent = `Hole ${currentHole} of ${HOLE_COUNT}`;
+
+      const info = COURSE.holes[currentHole];
+      const parts = [];
+      if (info) {
+        parts.push(`Par ${info.par}`, `Index ${info.index}`);
+      }
+      parts.push(isSunday ? "Enter gross strokes per team" : "Enter gross strokes per player");
+      holeMetaEl.textContent = parts.join(" • ");
+
+      btnPrevHole.disabled = currentHole === 1;
+      btnNextHole.disabled = currentHole === HOLE_COUNT;
+
+      playersContainer.innerHTML = "";
+      entityOrder.forEach(id => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        const nameBlock = document.createElement("div");
+        nameBlock.className = "player-name-block";
+
+        const nameEl = document.createElement("div");
+        nameEl.className = "player-name";
+        nameEl.textContent = entityNames[id] || id;
+
+        const subEl = document.createElement("div");
+        subEl.className = "player-label-sub";
+        subEl.textContent = isSunday ? "Team gross" : "Player gross";
+
+        nameBlock.appendChild(nameEl);
+        nameBlock.appendChild(subEl);
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "player-input";
+        input.dataset.entityId = id;
+        input.dataset.holeKey = hk;
+        input.value = scoreData[id][hk] ?? "";
+        input.min = "1";
+        input.max = "20";
+
+        row.appendChild(nameBlock);
+        row.appendChild(input);
+        playersContainer.appendChild(row);
+      });
+
+      setStatus(scoreStatus, "");
+    }
+
+    async function saveCurrentHole() {
+      if (!currentGroup || !selectedDayId) {
+        console.warn("No group or day selected, cannot save.");
+        setStatus(scoreStatus, "No group/day selected, cannot save.", "error");
+        return;
+      }
+
+      const hk = "hole" + currentHole;
+      console.log("Saving current hole:", hk, "for entities:", entityOrder);
+
+      const inputs = playersContainer.querySelectorAll("input.player-input");
+
+      // Sync UI -> scoreData
+      inputs.forEach(input => {
+        const id = input.dataset.entityId;
+        const val = input.value.trim();
+        if (!scoreData[id]) scoreData[id] = {};
+        if (val === "") {
+          delete scoreData[id][hk];
+        } else {
+          const num = Number(val);
+          if (!Number.isNaN(num) && num > 0) {
+            scoreData[id][hk] = num;
+          }
+        }
+      });
+
+      console.log("scoreData after sync:", JSON.stringify(scoreData, null, 2));
+
+      setStatus(scoreStatus, "Saving...");
+
+      try {
+        const groupId = currentGroup.groupId || null;
+
+        for (const id of entityOrder) {
+          const ref = doc(
+            db,
+            "competitions", COMP_ID,
+            "rounds", selectedDayId,
+            "scorecards", id
+          );
+
+          const update = {
+            updatedAt: serverTimestamp(),
+            groupId
+          };
+
+          if (scoreData[id][hk] !== undefined) {
+            update[hk] = scoreData[id][hk];
+          }
+
+          console.log("Writing to Firestore:", ref.path, update);
+          await setDoc(ref, update, { merge: true });
+        }
+
+        setStatus(scoreStatus, `Saved Hole ${currentHole} ✓`, "success");
+        console.log("✅ Save finished for hole", currentHole);
+      } catch (err) {
+        console.error("Error saving hole:", err);
+        setStatus(scoreStatus, "Error: " + err.message, "error");
+      }
+    }
+
+    btnPrevHole.addEventListener("click", () => {
+      if (currentHole > 1) {
+        currentHole--;
+        renderHole();
+      }
+    });
+
+    btnNextHole.addEventListener("click", () => {
+      if (currentHole < HOLE_COUNT) {
+        currentHole++;
+        renderHole();
+      }
+    });
+
+    btnSaveHole.addEventListener("click", saveCurrentHole);
+
+    // Swipe left/right
+    holeContainer.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].clientX;
+    });
+
+    holeContainer.addEventListener("touchend", e => {
+      touchEndX = e.changedTouches[0].clientX;
+      handleSwipe();
+    });
+
+    function handleSwipe() {
+      const dx = touchEndX - touchStartX;
+      if (Math.abs(dx) < 50) return;
+
+      if (dx < 0 && currentHole < HOLE_COUNT) {
+        currentHole++;
+        renderHole();
+      } else if (dx > 0 && currentHole > 1) {
+        currentHole--;
+        renderHole();
+      }
+    }
+
+    function capitalize(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    // Load players on page load
+    loadPlayers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hackers Cup 26 – Friday Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { 
+      font-family: system-ui; 
+      background:#0f172a; 
+      color:#f1f5f9; 
+      padding:20px; 
+      margin:0;
+    }
+    h1 { margin-top:0; }
+    .updated { font-size:13px; opacity:0.7; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { padding:10px 6px; border-bottom:1px solid #1e293b; }
+    th { color:#cbd5e1; text-align:left; font-size:14px; }
+    .rank { font-weight:700; }
+  </style>
+</head>
+<body>
+
+<h1>Friday Leaderboard</h1>
+<div class="updated" id="updated"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Player</th>
+      <th>Pts</th>
+    </tr>
+  </thead>
+  <tbody id="lbBody"></tbody>
+</table>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { 
+    getFirestore, doc, getDoc, getDocs, collection 
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:"AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
+    authDomain:"hackers-cup.firebaseapp.com",
+    projectId:"hackers-cup"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function loadLeaderboard() {
+    // HEADER DOC
+    const lbDoc = await getDoc(doc(
+      db,
+      "competitions","hackersCup26",
+      "rounds","friday",
+      "leaderboard"
+    ));
+
+    if (lbDoc.exists()) {
+      const d = lbDoc.data();
+      document.getElementById("updated").textContent =
+        "Updated: " + (d.updatedAt?.toDate().toLocaleString() || "—");
+    }
+
+    // ENTRIES
+    const snap = await getDocs(collection(
+      db,
+      "competitions","hackersCup26",
+      "rounds","friday",
+      "leaderboard","entries"
+    ));
+
+    const rows = [];
+    snap.forEach(docSnap => rows.push(docSnap.data()));
+    rows.sort((a,b) => a.rank - b.rank);
+
+    const tbody = document.getElementById("lbBody");
+    tbody.innerHTML = "";
+
+    rows.forEach(r => {
+      tbody.innerHTML += `
+        <tr>
+          <td class="rank">${r.rank}</td>
+          <td>${r.name}</td>
+          <td>${r.stablefordTotal}</td>
+        </tr>
+      `;
+    });
+  }
+
+  loadLeaderboard();
+</script>
+
+</body>
+</html>
