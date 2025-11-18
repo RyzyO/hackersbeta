@@ -453,6 +453,40 @@
       background: linear-gradient(120deg, #ddff63, #faffb0);
     }
 
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #13172a;
+  border: 1px solid #323552;
+  color: var(--text-main);
+  font-size: 20px;
+  line-height: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.score-btn:hover {
+  background: #0e1223;
+  border-color: var(--accent-aqua);
+}
+
+.score-btn:active {
+  transform: scale(0.93);
+}
+
+
+
     /* HIDDEN UTILITY */
 
     .hidden {
@@ -547,9 +581,6 @@
           </button>
         </div>
 
-        <button id="btnSaveHole" class="btn btn-save-hole" type="button">
-          Save This Hole
-        </button>
         <p class="status" id="scoreStatus"></p>
       </div>
     </section>
@@ -630,7 +661,7 @@
 
     const btnPrevHole = document.getElementById("btnPrevHole");
     const btnNextHole = document.getElementById("btnNextHole");
-    const btnSaveHole = document.getElementById("btnSaveHole");
+
     const holeContainer = document.getElementById("holeContainer");
 
     const HOLE_COUNT = 18;
@@ -788,6 +819,19 @@
       renderHole();
     }
 
+
+    let saveTimer = null;
+
+function autoSave() {
+  setStatus(scoreStatus, "Saving…");
+
+  // debounce so it doesn't spam Firestore
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveCurrentHole(true);
+  }, 400);
+}
+
     function renderHole() {
       const hk = "hole" + currentHole;
 
@@ -825,24 +869,65 @@
         nameBlock.appendChild(nameEl);
         nameBlock.appendChild(subEl);
 
-        const input = document.createElement("input");
-        input.type = "number";
-        input.className = "player-input";
-        input.dataset.entityId = id;
-        input.dataset.holeKey = hk;
-        input.value = scoreData[id][hk] ?? "";
-        input.min = "1";
-        input.max = "20";
+        const scoreBox = document.createElement("div");
+scoreBox.className = "score-box";
 
-        row.appendChild(nameBlock);
-        row.appendChild(input);
-        playersContainer.appendChild(row);
+// minus button
+const minusBtn = document.createElement("div");
+minusBtn.className = "score-btn";
+minusBtn.textContent = "−";
+
+// input
+const input = document.createElement("input");
+input.type = "number";
+input.className = "player-input";
+input.dataset.entityId = id;
+input.dataset.holeKey = hk;
+input.value = scoreData[id][hk] ?? "";
+input.min = "1";
+input.max = "20";
+
+// plus button
+const plusBtn = document.createElement("div");
+plusBtn.className = "score-btn";
+plusBtn.textContent = "+";
+
+// append
+scoreBox.appendChild(minusBtn);
+scoreBox.appendChild(input);
+scoreBox.appendChild(plusBtn);
+
+row.appendChild(nameBlock);
+row.appendChild(scoreBox);
+playersContainer.appendChild(row);
+
+// button events
+minusBtn.addEventListener("click", () => {
+  let v = parseInt(input.value || "0");
+  if (v > 1) input.value = v - 1;
+  autoSave();
+});
+
+plusBtn.addEventListener("click", () => {
+  let v = parseInt(input.value || "0");
+  input.value = v + 1;
+  autoSave();
+});
+
+// typing auto save
+input.addEventListener("input", () => {
+  autoSave();
+});
+
+
+
+
       });
 
       setStatus(scoreStatus, "");
     }
 
-    async function saveCurrentHole() {
+    async function saveCurrentHole(auto = false) {
       if (!currentGroup || !selectedDayId) {
         console.warn("No group or day selected, cannot save.");
         setStatus(scoreStatus, "No group/day selected, cannot save.", "error");
@@ -897,7 +982,12 @@
           await setDoc(ref, update, { merge: true });
         }
 
-        setStatus(scoreStatus, `Saved Hole ${currentHole} ✓`, "success");
+       if (!auto) {
+  setStatus(scoreStatus, `Saved Hole ${currentHole} ✓`, "success");
+} else {
+  setStatus(scoreStatus, "Saved ✓", "success");
+}
+
         console.log("✅ Save finished for hole", currentHole);
       } catch (err) {
         console.error("Error saving hole:", err);
@@ -905,21 +995,24 @@
       }
     }
 
-    btnPrevHole.addEventListener("click", () => {
-      if (currentHole > 1) {
-        currentHole--;
-        renderHole();
-      }
-    });
+    btnPrevHole.addEventListener("click", async () => {
+  if (currentHole > 1) {
+    await saveCurrentHole(true);  // auto save before moving
+    currentHole--;
+    renderHole();
+  }
+});
 
-    btnNextHole.addEventListener("click", () => {
-      if (currentHole < HOLE_COUNT) {
-        currentHole++;
-        renderHole();
-      }
-    });
+btnNextHole.addEventListener("click", async () => {
+  if (currentHole < HOLE_COUNT) {
+    await saveCurrentHole(true);  // auto save before moving
+    currentHole++;
+    renderHole();
+  }
+});
 
-    btnSaveHole.addEventListener("click", saveCurrentHole);
+
+   
 
     // Swipe left/right
     holeContainer.addEventListener("touchstart", e => {
