@@ -5,8 +5,7 @@
   <title>Hackers Cup 26 – Score My Group</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Kanit font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap"
@@ -272,6 +271,25 @@
       text-transform: none;
     }
 
+    /* Scorecard modal/table */
+    .scorecard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .scorecard-table th, .scorecard-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #232844;
+      font-size: 13px;
+      text-align: left;
+    }
+    .scorecard-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
     /* STATUS TEXT */
 
     .status {
@@ -511,7 +529,10 @@
     <header class="header">
       <div class="header-title-row">
         <div class="header-title">Hackers Cup 26</div>
-        <div class="header-pill">Live Scoring</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="header-pill">Live Scoring</div>
+       
+        </div>
       </div>
       
     </header>
@@ -523,15 +544,15 @@
       <div class="day-grid" style="margin-top:12px;">
         <button class="day-tile friday" type="button" data-day="friday">
           <span class="day-label">Friday</span>
-          <span class="day-sub">Skins – Stableford across entire field</span>
+          <span class="day-sub">Troll Plate Skins</span>
         </button>
         <button class="day-tile saturday" type="button" data-day="saturday">
           <span class="day-label">Saturday</span>
-          <span class="day-sub">Individual Stableford</span>
+          <span class="day-sub">Singles Stableford</span>
         </button>
         <button class="day-tile sunday" type="button" data-day="sunday" style="grid-column: span 2;">
           <span class="day-label">Sunday</span>
-          <span class="day-sub">2-Ball Ambrose – Nett stroke</span>
+          <span class="day-sub">2-Ball Ambrose</span>
         </button>
       </div>
       <p class="status" id="dayStatus"></p>
@@ -569,6 +590,10 @@
 
         <div class="players-container" id="playersContainer"></div>
 
+        <div class="scorecard-actions" style="margin-top:10px;">
+          <button id="btnOpenMemberScorecard" class="btn secondary" type="button">View Selected Member Scorecard</button>
+        </div>
+
         <div class="nav-row">
           <button id="btnPrevHole" class="btn secondary btn-icon" type="button">
             &larr; Prev
@@ -596,6 +621,8 @@
       collection,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref as rdbRef, get as rdbGet, query as rdbQuery, orderByChild as rdbOrderByChild, equalTo as rdbEqualTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
@@ -609,6 +636,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const rtdb = getDatabase(app);
 
     // --- Worrigee Links course data (Men, par + index) ---
     const COURSE = {
@@ -670,8 +699,30 @@
     let selectedPlayerId = null;
     let isSunday = false;
 
+    // Auth / auto-match state
+    let currentUserDisplayName = null;
+    let currentUserUid = null;
+    let matchedPlayerId = null; // single match from players list
+
+    function normalizeName(s) {
+      if (!s) return "";
+      return s
+        .toString()
+        .toLowerCase()
+        .replace(/[\u2018\u2019\u201c\u201d']/g, "") // smart quotes/apostrophes
+        .replace(/[^a-z0-9\s]/g, "") // remove punctuation
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     let playersMap = {};
     let currentGroup = null;
+
+    // Handicaps and team members
+    let handicapsMap = {};     // id -> handicap (for player ids or team ids)
+    let teamMembers = {};      // teamId -> [uid,...]
+    let teamHandicapMap = {};  // teamId -> computed team handicap
+    let teeTimesMap = {};      // id -> tee info for selected day (from RTDB under users/{uid}/{fri|sat|sun})
 
     let entityType = "player"; // player | team
     let entityOrder = [];      // ordered list of IDs
@@ -689,7 +740,211 @@
       if (type) el.classList.add(type);
     }
 
-    // Load players
+    // Handicap helpers
+    // Read handicap by directly looking up RTDB users/{uid}/handicap
+    async function getHandicapForUid(uid) {
+      try {
+        const snap = await rdbGet(rdbRef(rtdb, `users/${uid}/handicap`));
+        if (snap && typeof snap.val === 'function') {
+          const v = snap.val();
+          return Number(v) || 0;
+        }
+      } catch (e) {
+        console.warn('RTDB handicap read failed for', uid, e);
+      }
+      // fallback to playersMap if present
+      const fallback = Number(playersMap[uid]?.handicap || 0);
+      return fallback || 0;
+    }
+
+    // New: find a RTDB user by matching displayName to the player's name, then return their handicap
+    async function getHandicapForPlayerId(playerId) {
+      const playerName = playersMap[playerId]?.name;
+      if (!playerName) {
+        return Number(playersMap[playerId]?.handicap || 0) || 0;
+      }
+
+      // Try an indexed RTDB query for exact displayName
+      try {
+        const q = rdbQuery(rdbRef(rtdb, 'users'), rdbOrderByChild('displayName'), rdbEqualTo(playerName));
+        const snap = await rdbGet(q);
+        if (snap && snap.exists && snap.forEach) {
+          let found = null;
+          snap.forEach(child => {
+            const v = child.val();
+            if (v && (v.handicap !== undefined)) {
+              found = v;
+              return true; // stop iterating
+            }
+          });
+          if (found) return Number(found.handicap) || 0;
+        }
+      } catch (e) {
+        console.warn('RTDB exact query failed for displayName', playerName, e);
+      }
+
+      // Fallback: scan all users and do a normalized comparison (case-insensitive, strip punctuation)
+      try {
+        const allSnap = await rdbGet(rdbRef(rtdb, 'users'));
+        if (allSnap && allSnap.exists && allSnap.forEach) {
+          const target = normalizeName(playerName);
+          let match = null;
+          allSnap.forEach(child => {
+            const v = child.val();
+            if (v && v.displayName) {
+              if (normalizeName(v.displayName) === target) {
+                match = v;
+                return true;
+              }
+            }
+          });
+          if (match) return Number(match.handicap) || 0;
+        }
+      } catch (e) {
+        console.warn('RTDB scan fallback failed for', playerName, e);
+      }
+
+      // Final fallback: use playersMap stored handicap
+      return Number(playersMap[playerId]?.handicap || 0) || 0;
+    }
+
+    // Resolve RTDB UID for a playerId by matching displayName; returns the RTDB key (uid) or null
+    async function resolveUidForPlayerId(playerId) {
+      const playerName = playersMap[playerId]?.name;
+      if (!playerName) return null;
+
+      try {
+        const q = rdbQuery(rdbRef(rtdb, 'users'), rdbOrderByChild('displayName'), rdbEqualTo(playerName));
+        const snap = await rdbGet(q);
+        if (snap && snap.exists) {
+          // return first matching child key
+          let foundKey = null;
+          snap.forEach(child => {
+            foundKey = child.key;
+            return true; // stop
+          });
+          if (foundKey) return foundKey;
+        }
+      } catch (e) {
+        console.warn('RTDB exact uid query failed for displayName', playerName, e);
+      }
+
+      // Fallback: scan all users and compare normalized displayName
+      try {
+        const allSnap = await rdbGet(rdbRef(rtdb, 'users'));
+        if (allSnap && allSnap.exists) {
+          const target = normalizeName(playerName);
+          let matchKey = null;
+          allSnap.forEach(child => {
+            const v = child.val();
+            if (v && v.displayName && normalizeName(v.displayName) === target) {
+              matchKey = child.key;
+              return true;
+            }
+          });
+          if (matchKey) return matchKey;
+        }
+      } catch (e) {
+        console.warn('RTDB uid scan failed for', playerName, e);
+      }
+
+      return null;
+    }
+
+    async function fetchHandicapsForGroup() {
+      handicapsMap = {};
+      teamHandicapMap = {};
+      teeTimesMap = {};
+
+      // Map the selected page day to the RTDB short key (fri/sat/sun)
+      const rtDay = rtdbDayKey(selectedDayId);
+
+      // For players: fetch handicap + tee time in parallel per player
+      if (entityType === 'player') {
+        const tasks = entityOrder.map(async (pid) => {
+          // Resolve RTDB UID for this playerId, then read handicap and tee under that uid
+            const uid = await resolveUidForPlayerId(pid);
+            if (uid) {
+              const [hSnap, teeSnap] = await Promise.all([
+                getHandicapForUid(uid),
+                (async () => {
+                  try {
+                    const s = await rdbGet(rdbRef(rtdb, `users/${uid}/${rtDay}`));
+                    if (s && typeof s.val === 'function') return s.val();
+                  } catch (e) {
+                    console.warn('Tee fetch error for uid', uid, selectedDayId, e);
+                    return null;
+                  }
+                  return null;
+                })()
+              ]);
+              handicapsMap[pid] = Number(hSnap || 0);
+              if (teeSnap !== null && typeof teeSnap !== 'undefined') {
+                teeTimesMap[pid] = (typeof teeSnap === 'string') ? teeSnap : (teeSnap.teeTime || teeSnap.time || JSON.stringify(teeSnap));
+                console.log('Tee fetched', { playerId: pid, uid, day: selectedDayId, tee: teeTimesMap[pid] });
+              } else {
+                console.log('Tee not found for', { playerId: pid, uid, day: selectedDayId });
+              }
+            } else {
+              // fallback: try earlier displayName search for handicap, tee unknown
+              const h = await getHandicapForPlayerId(pid);
+              handicapsMap[pid] = Number(h || 0);
+              console.log('UID not resolved for playerId, used fallback handicap', { playerId: pid, handicap: handicapsMap[pid] });
+            }
+        });
+        await Promise.all(tasks);
+      } else if (entityType === 'team') {
+        // teamMembers should already be populated when loading teams
+        const teamTasks = entityOrder.map(async (tid) => {
+          const members = teamMembers[tid] || [];
+          // fetch handicaps and tee times for members in parallel
+          const memberTasks = members.map(async (m) => {
+            const uid = await resolveUidForPlayerId(m);
+            if (uid) {
+              const [h, teeSnap] = await Promise.all([
+                getHandicapForUid(uid),
+                (async () => {
+                  try {
+                    const s = await rdbGet(rdbRef(rtdb, `users/${uid}/${rtDay}`));
+                    if (s && typeof s.val === 'function') return s.val();
+                  } catch (e) {
+                    return null;
+                  }
+                  return null;
+                })()
+              ]);
+              handicapsMap[m] = Number(h || 0);
+              if (teeSnap !== null && typeof teeSnap !== 'undefined') {
+                teeTimesMap[m] = (typeof teeSnap === 'string') ? teeSnap : (teeSnap.teeTime || teeSnap.time || JSON.stringify(teeSnap));
+              }
+              return Number(h || 0);
+            } else {
+              const h = await getHandicapForPlayerId(m);
+              handicapsMap[m] = Number(h || 0);
+              return Number(h || 0);
+            }
+          });
+
+          const memberHandicaps = await Promise.all(memberTasks);
+          const sum = memberHandicaps.reduce((a,b) => a + (Number(b) || 0), 0);
+          const teamH = Math.round(sum / 2) || 0;
+          teamHandicapMap[tid] = teamH;
+        });
+        await Promise.all(teamTasks);
+      }
+    }
+        // Helper to map page day ids to RTDB keys (use short keys used in RTDB)
+        function rtdbDayKey(day) {
+          if (!day) return day;
+          const d = day.toString().toLowerCase();
+          if (d === 'friday') return 'fri';
+          if (d === 'saturday') return 'sat';
+          if (d === 'sunday') return 'sun';
+          return d;
+        }
+
+        const rtDay = rtdbDayKey(selectedDayId);
+      // Load players
     async function loadPlayers() {
       const snap = await getDocs(collection(db, "competitions", COMP_ID, "players"));
       const list = [];
@@ -698,7 +953,7 @@
         playersMap[docSnap.id] = d;
         list.push({ id: docSnap.id, name: d.name });
       });
-
+      
       list.sort((a,b) => a.name.localeCompare(b.name));
       playerSelect.innerHTML = '<option value="">Select your name…</option>';
 
@@ -708,10 +963,33 @@
         opt.textContent = p.name;
         playerSelect.appendChild(opt);
       });
+
+      // If we have a current user displayName, try to auto-match (normalize and allow contains)
+      if (currentUserDisplayName) {
+        const normDisplay = normalizeName(currentUserDisplayName);
+        const exactMatches = list.filter(p => p.name && normalizeName(p.name) === normDisplay);
+        if (exactMatches.length === 1) {
+          matchedPlayerId = exactMatches[0].id;
+        } else {
+          // try contains (player name contains displayName or vice-versa)
+          const containsMatches = list.filter(p => {
+            const np = normalizeName(p.name || "");
+            return np.includes(normDisplay) || normDisplay.includes(np);
+          });
+          if (containsMatches.length === 1) matchedPlayerId = containsMatches[0].id;
+          else matchedPlayerId = null;
+        }
+
+        console.log('Auto-match attempt:', { displayName: currentUserDisplayName, normDisplay, matchedPlayerId });
+        if (matchedPlayerId) {
+          playerSelect.value = matchedPlayerId;
+          selectedPlayerId = matchedPlayerId;
+          btnConfirmPlayer.disabled = false;
+        }
+      }
     }
 
-    // Choose day (tiles)
-    stepDay.addEventListener("click", e => {
+              stepDay.addEventListener("click", e => {
       const tile = e.target.closest("[data-day]");
       if (!tile) return;
 
@@ -724,8 +1002,30 @@
       const label = selectedDayId.charAt(0).toUpperCase() + selectedDayId.slice(1);
       setStatus(dayStatus, "Day selected: " + label, "success");
 
-      stepPlayer.classList.remove("hidden");
-      playerStatus.textContent = "";
+      // If we have a single matched player from auth, attempt to auto-load their group
+      if (matchedPlayerId) {
+        // set selected player and try to load their group for the selected day
+        selectedPlayerId = matchedPlayerId;
+        btnConfirmPlayer.disabled = false;
+        playerStatus.textContent = "Attempting to find your group…";
+        // try to load group; if fails, fall back to showing dropdown
+        loadGroupForPlayer()
+          .then(() => {
+            // hide selectors and show scoring
+            stepDay.classList.add("hidden");
+            stepPlayer.classList.add("hidden");
+            stepScoring.classList.remove("hidden");
+            setStatus(playerStatus, "Group loaded. Scroll down to start scoring.", "success");
+          })
+          .catch(err => {
+            console.warn('Auto-load failed, showing selector instead:', err);
+            stepPlayer.classList.remove("hidden");
+            playerStatus.textContent = "";
+          });
+      } else {
+        stepPlayer.classList.remove("hidden");
+        playerStatus.textContent = "";
+      }
     });
 
     // Select player
@@ -752,6 +1052,7 @@
     });
 
     async function loadGroupForPlayer() {
+      console.log('loadGroupForPlayer called', { selectedDayId, selectedPlayerId });
       const teeRef = doc(
         db,
         "competitions", COMP_ID,
@@ -764,6 +1065,7 @@
       const teeData = teeSnap.data();
       const groups = teeData.groups || [];
       const found = groups.find(g => g.players && g.players.includes(selectedPlayerId));
+      console.log('tee groups count', groups.length, 'found group?', !!found);
 
       if (!found) throw new Error("You're not in a group for this day.");
 
@@ -790,6 +1092,8 @@
               .join(" + ");
             entityOrder.push(tid);
             entityNames[tid] = teamName || tid;
+            // store team members for later handicap computation
+            teamMembers[tid] = t.players || [];
           }
         }
         entityType = "team";
@@ -801,7 +1105,7 @@
         scoreData[id] = {};
       });
 
-      const hole = found.hole || 1;
+      let hole = found.hole || 1;
       const teeTime = found.teeTime || "";
       const groupId = found.groupId || "";
 
@@ -812,6 +1116,26 @@
         ${groupId ? `<span class="tag">Group ${groupId}</span>` : ""}
         ${isSunday ? '<span class="tag">2-Ball Ambrose</span>' : '<span class="tag">Gross strokes</span>'}
       `;
+
+      // Fetch handicaps and tee times for the loaded group members (RTDB)
+      await fetchHandicapsForGroup();
+
+      // If the selected player's RTDB tee for this day contains a hole (e.g. "2A", "5C"),
+      // prefer that as the group's starting hole. Fall back to the teeSheet hole if none found.
+      try {
+        const tee = teeTimesMap[selectedPlayerId];
+        if (tee) {
+          const s = String(tee);
+          // find the first 1-18 number in the string (handles '2A', '10B', ' 5 ', etc.)
+          const m = s.match(/(1[0-8]|[1-9])/);
+          if (m && m[1]) {
+            hole = Number(m[1]);
+          }
+          console.log('Parsed tee for player', { player: selectedPlayerId, tee: s, parsedHole: hole });
+        }
+      } catch (e) {
+        console.warn('Could not parse tee hole from RTDB value for', selectedPlayerId, e);
+      }
 
       currentHole = hole;
       renderHole();
@@ -845,8 +1169,9 @@ function autoSave() {
       parts.push(isSunday ? "Enter gross strokes per team" : "Enter gross strokes per player");
       holeMetaEl.textContent = parts.join(" • ");
 
-      btnPrevHole.disabled = currentHole === 1;
-      btnNextHole.disabled = currentHole === HOLE_COUNT;
+      // Keep Prev/Next enabled so users can loop between holes
+      btnPrevHole.disabled = false;
+      btnNextHole.disabled = false;
 
       playersContainer.innerHTML = "";
       entityOrder.forEach(id => {
@@ -858,11 +1183,25 @@ function autoSave() {
 
         const nameEl = document.createElement("div");
         nameEl.className = "player-name";
-        nameEl.textContent = entityNames[id] || id;
+        // show handicap next to name in parentheses
+        let displayName = entityNames[id] || id;
+        let hText = '';
+        if (entityType === 'player') {
+          const h = handicapsMap[id];
+          if (typeof h !== 'undefined') hText = ` (${h})`;
+        } else {
+          // team: show team handicap if available
+          const th = teamHandicapMap[id];
+          if (typeof th !== 'undefined') hText = ` (${th})`;
+        }
+        nameEl.textContent = displayName + hText;
 
         const subEl = document.createElement("div");
         subEl.className = "player-label-sub";
-        subEl.textContent = isSunday ? "Team gross" : "Player gross";
+        // include tee time if available for this member
+        const teeInfo = teeTimesMap[id];
+        const teeText = teeInfo ? ` • Tee ${teeInfo}` : '';
+        subEl.textContent = (isSunday ? "Team gross" : "Player gross") + teeText;
 
         nameBlock.appendChild(nameEl);
         nameBlock.appendChild(subEl);
@@ -876,14 +1215,25 @@ minusBtn.className = "score-btn";
 minusBtn.textContent = "−";
 
 // input
-const input = document.createElement("input");
-input.type = "number";
-input.className = "player-input";
-input.dataset.entityId = id;
-input.dataset.holeKey = hk;
-input.value = scoreData[id][hk] ?? "";
-input.min = "1";
-input.max = "20";
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "player-input";
+        input.dataset.entityId = id;
+        input.dataset.holeKey = hk;
+        input.value = scoreData[id][hk] ?? "";
+        input.min = "1";
+        input.max = "20";
+
+        // small view scorecard button per member
+        const viewBtn = document.createElement('button');
+        viewBtn.type = 'button';
+        viewBtn.className = 'btn secondary';
+        viewBtn.style.padding = '6px 10px';
+        viewBtn.style.fontSize = '12px';
+        viewBtn.textContent = 'View';
+        viewBtn.addEventListener('click', () => {
+          openScorecardModal(id);
+        });
 
 // plus button
 const plusBtn = document.createElement("div");
@@ -895,8 +1245,9 @@ scoreBox.appendChild(minusBtn);
 scoreBox.appendChild(input);
 scoreBox.appendChild(plusBtn);
 
-row.appendChild(nameBlock);
-row.appendChild(scoreBox);
+  nameBlock.appendChild(viewBtn);
+  row.appendChild(nameBlock);
+  row.appendChild(scoreBox);
 playersContainer.appendChild(row);
 
 // button events
@@ -973,7 +1324,35 @@ input.addEventListener("input", () => {
           };
 
           if (scoreData[id][hk] !== undefined) {
-            update[hk] = scoreData[id][hk];
+            const gross = scoreData[id][hk];
+            update[hk] = gross;
+
+            // compute net and stableford points using stored handicaps
+            const holeInfo = COURSE.holes[currentHole] || {};
+            const par = Number(holeInfo.par || 4);
+            const holeIndex = Number(holeInfo.index || currentHole);
+
+            let handicap = 0;
+            if (entityType === 'player') {
+              handicap = Number(handicapsMap[id] || 0);
+            } else {
+              handicap = Number(teamHandicapMap[id] || 0);
+            }
+
+            const strokesReceived = Math.floor(handicap / 18) + ((handicap % 18) >= holeIndex ? 1 : 0);
+            const net = Number(gross) - strokesReceived;
+            const pts = (function(netStrokes, parVal){
+              const diff = netStrokes - parVal;
+              if (diff <= -3) return 5;
+              if (diff === -2) return 4;
+              if (diff === -1) return 3;
+              if (diff === 0) return 2;
+              if (diff === 1) return 1;
+              return 0;
+            })(net, par);
+
+            update['net_' + hk] = net;
+            update['pts_' + hk] = pts;
           }
 
           console.log("Writing to Firestore:", ref.path, update);
@@ -994,19 +1373,27 @@ input.addEventListener("input", () => {
     }
 
     btnPrevHole.addEventListener("click", async () => {
-  if (currentHole > 1) {
-    await saveCurrentHole(true);  // auto save before moving
-    currentHole--;
-    renderHole();
-  }
-});
+      // Auto-save then move: wrap from hole 1 back to hole 18
+      if (currentHole > 1) {
+        await saveCurrentHole(true);
+        currentHole--;
+      } else {
+        await saveCurrentHole(true);
+        currentHole = HOLE_COUNT;
+      }
+      renderHole();
+    });
 
 btnNextHole.addEventListener("click", async () => {
+  // Auto-save then advance: wrap from last hole back to hole 1
   if (currentHole < HOLE_COUNT) {
     await saveCurrentHole(true);  // auto save before moving
     currentHole++;
-    renderHole();
+  } else {
+    await saveCurrentHole(true);
+    currentHole = 1;
   }
+  renderHole();
 });
 
 
@@ -1041,6 +1428,191 @@ btnNextHole.addEventListener("click", async () => {
 
     // Load players on page load
     loadPlayers();
+
+    // SCORECARD modal UI
+    const scorecardModal = document.createElement('div');
+    scorecardModal.id = 'scorecardModal';
+    scorecardModal.className = 'card hidden';
+    scorecardModal.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Scorecard</h2>
+        <div>
+          <button id="closeScorecard" class="btn secondary" type="button">Close</button>
+        </div>
+      </div>
+      <p class="status" id="scorecardStatus"></p>
+      <label for="scorecardMember">Member</label>
+      <select id="scorecardMember"></select>
+      <table class="scorecard-table" id="scorecardTable">
+        <thead>
+          <tr><th>Hole</th><th>Par</th><th>Gross</th><th>Net</th><th>Stableford</th></tr>
+        </thead>
+        <tbody id="scorecardBody"></tbody>
+      </table>
+    `;
+    document.body.appendChild(scorecardModal);
+
+    const btnOpenScorecard = document.getElementById('btnOpenScorecard');
+    const btnOpenMemberScorecard = document.getElementById('btnOpenMemberScorecard');
+    const closeScorecard = () => scorecardModal.classList.add('hidden');
+
+    btnOpenScorecard.addEventListener('click', () => {
+      // populate members
+      openScorecardModal();
+    });
+
+    btnOpenMemberScorecard.addEventListener('click', () => {
+      const sel = document.getElementById('scorecardMember');
+      const id = sel.value;
+      if (id) openScorecardModal(id);
+    });
+
+    document.getElementById('closeScorecard').addEventListener('click', closeScorecard);
+
+    async function openScorecardModal(memberId) {
+      if (!currentGroup) {
+        setStatus(document.getElementById('scorecardStatus'), 'Load a group first.', 'error');
+        scorecardModal.classList.remove('hidden');
+        return;
+      }
+
+      // populate select
+      const sel = document.getElementById('scorecardMember');
+      sel.innerHTML = '';
+      const options = entityOrder.map(id => {
+        const o = document.createElement('option');
+        o.value = id;
+        o.textContent = entityNames[id] || id;
+        return o;
+      });
+      options.forEach(o => sel.appendChild(o));
+
+      scorecardModal.classList.remove('hidden');
+      setStatus(document.getElementById('scorecardStatus'), '');
+
+      if (memberId) {
+        sel.value = memberId;
+      }
+
+      sel.onchange = () => loadAndRenderScorecard(sel.value);
+      // initial render
+      loadAndRenderScorecard(sel.value || sel.options[0]?.value);
+    }
+
+    async function loadAndRenderScorecard(id) {
+      const body = document.getElementById('scorecardBody');
+      body.innerHTML = '';
+      if (!selectedDayId) {
+        setStatus(document.getElementById('scorecardStatus'), 'Select day first.', 'error');
+        return;
+      }
+
+      try {
+        const refDoc = doc(db, 'competitions', COMP_ID, 'rounds', selectedDayId, 'scorecards', id);
+        const snap = await getDoc(refDoc);
+        const data = (snap.exists()) ? snap.data() : {};
+
+        // determine handicap for the id
+        let handicap = 0;
+        if (entityType === 'player') {
+          handicap = Number(handicapsMap[id] || await getHandicapForPlayerId(id) || 0);
+        } else {
+          handicap = Number(teamHandicapMap[id] || 0);
+        }
+
+        for (let i = 1; i <= HOLE_COUNT; i++) {
+          const hk = 'hole' + i;
+          const gross = data[hk] !== undefined ? data[hk] : '';
+          const par = (COURSE.holes[i] && COURSE.holes[i].par) || '';
+          const holeIndex = (COURSE.holes[i] && COURSE.holes[i].index) || i;
+
+          let net = '';
+          let pts = '';
+          if (gross !== '') {
+            // prefer stored net/pts
+            if (data['net_' + hk] !== undefined) net = data['net_' + hk];
+            if (data['pts_' + hk] !== undefined) pts = data['pts_' + hk];
+
+            if (net === '' || pts === '') {
+              const sr = Math.floor(handicap / 18) + ((handicap % 18) >= holeIndex ? 1 : 0);
+              net = Number(gross) - sr;
+              const diff = net - par;
+              if (diff <= -3) pts = 5;
+              else if (diff === -2) pts = 4;
+              else if (diff === -1) pts = 3;
+              else if (diff === 0) pts = 2;
+              else if (diff === 1) pts = 1;
+              else pts = 0;
+            }
+          }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i}</td><td>${par}</td><td>${gross}</td><td>${net}</td><td>${pts}</td>`;
+          body.appendChild(tr);
+        }
+
+        setStatus(document.getElementById('scorecardStatus'), '');
+      } catch (e) {
+        console.error('Error loading scorecard:', e);
+        setStatus(document.getElementById('scorecardStatus'), 'Error loading scorecard', 'error');
+      }
+    }
+
+    // Watch auth state to pick up displayName (from auth or fallback to RTDB)
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      currentUserUid = user.uid;
+      currentUserDisplayName = user.displayName || null;
+
+      if (!currentUserDisplayName) {
+        try {
+          const snap = await rdbGet(rdbRef(rtdb, `users/${user.uid}/displayName`));
+          if (snap && snap.exists && snap.val) {
+            // RTDB get returns a DataSnapshot with .val()
+            try {
+              currentUserDisplayName = snap.val();
+            } catch (e) {}
+          }
+        } catch (e) {
+          console.warn('Could not read displayName from RTDB:', e);
+        }
+      }
+
+      // If players already loaded, attempt to compute match immediately using normalization
+      if (currentUserDisplayName && Object.keys(playersMap).length > 0) {
+        const list = Object.keys(playersMap).map(id => ({ id, name: playersMap[id]?.name }));
+        const normDisplay = normalizeName(currentUserDisplayName);
+        const exactMatches = list.filter(p => p.name && normalizeName(p.name) === normDisplay);
+        if (exactMatches.length === 1) matchedPlayerId = exactMatches[0].id;
+        else {
+          const containsMatches = list.filter(p => {
+            const np = normalizeName(p.name || "");
+            return np.includes(normDisplay) || normDisplay.includes(np);
+          });
+          if (containsMatches.length === 1) matchedPlayerId = containsMatches[0].id;
+        }
+
+        console.log('Auth-match attempt:', { displayName: currentUserDisplayName, normDisplay, matchedPlayerId });
+        if (matchedPlayerId) {
+          playerSelect.value = matchedPlayerId;
+          selectedPlayerId = matchedPlayerId;
+          btnConfirmPlayer.disabled = false;
+
+          // If a day is already selected, try to auto-load the group now
+          if (selectedDayId) {
+            try {
+              await loadGroupForPlayer();
+              stepDay.classList.add("hidden");
+              stepPlayer.classList.add("hidden");
+              stepScoring.classList.remove("hidden");
+              setStatus(playerStatus, "Group loaded. Scroll down to start scoring.", "success");
+            } catch (err) {
+              console.warn('Auto-load from auth matched player failed:', err);
+            }
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
