@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Notifications Hub - Hackers Cup</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  
+  <style>
+    body { background: #1e1e2e; color: #fff; }
+    .admin-container { max-width: 900px; margin: 100px auto 50px; padding: 30px; }
+    .notification-form { background: #27293d; padding: 30px; border-radius: 16px; margin-bottom: 30px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+    .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1e1e2e; color: #fff; font-family: 'Poppins', sans-serif; }
+    .form-control:focus { outline: none; border-color: #e75e8d; }
+    textarea.form-control { min-height: 120px; resize: vertical; }
+    .btn-send { background: linear-gradient(105deg, #e75e8d 0%, #ef8f6e 100%); color: #fff; padding: 14px 40px; border: none; border-radius: 23px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .btn-send:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(231, 94, 141, 0.4); }
+    .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
+    .user-list { background: #27293d; padding: 20px; border-radius: 16px; max-height: 400px; overflow-y: auto; }
+    .user-item { padding: 10px; margin: 5px 0; background: #1e1e2e; border-radius: 8px; display: flex; align-items: center; }
+    .user-item input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; }
+    .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .alert-success { background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; }
+    .alert-danger { background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; }
+    .select-all-btn { background: #444; color: #fff; padding: 8px 16px; border: none; border-radius: 8px; margin-bottom: 15px; cursor: pointer; }
+    .select-all-btn:hover { background: #555; }
+  </style>
+</head>
+<body>
+
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="Hackers Cup" style="width:158px;">
+            </a>
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="admin-notifications.html" class="active">Admin Notifications</a></li>
+              <li><a href="#" onclick="signOut()">Logout</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <h1 style="margin-bottom: 30px;">📢 Notifications Hub</h1>
+    
+    <div id="alert-container"></div>
+    
+    <div class="notification-form">
+      <h3>Send Notification</h3>
+      
+      <div class="form-group">
+        <label for="notif-title">Title</label>
+        <input type="text" id="notif-title" class="form-control" placeholder="e.g., Important Update">
+      </div>
+      
+      <div class="form-group">
+        <label for="notif-body">Message</label>
+        <textarea id="notif-body" class="form-control" placeholder="Enter your notification message here..."></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="send-to-all" style="margin-right: 8px;">
+          Send to all users
+        </label>
+      </div>
+      
+      <div id="user-selection" style="display: none;">
+        <h4 style="margin-top: 20px; margin-bottom: 15px;">Select Recipients</h4>
+        <button class="select-all-btn" onclick="toggleSelectAll()">Select All</button>
+        <div class="user-list" id="user-list">
+          <p style="color: #888;">Loading users...</p>
+        </div>
+      </div>
+      
+      <button class="btn-send" onclick="sendNotification()" id="send-btn">
+        Send Notification
+      </button>
+    </div>
+  </div>
+
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase();
+    const auth = getAuth(app);
+
+    let allUsers = {};
+
+    // Check admin access
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      // Check if user is admin (you can set this in Firebase manually)
+      const adminRef = ref(database, `admins/${user.uid}`);
+      const adminSnap = await get(adminRef);
+      
+      if (!adminSnap.exists() || !adminSnap.val()) {
+        showAlert('Access denied. Admin privileges required.', 'danger');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return;
+      }
+      
+      loadUsers();
+    });
+
+    async function loadUsers() {
+      const usersRef = ref(database, 'users');
+      const snapshot = await get(usersRef);
+      
+      if (snapshot.exists()) {
+        allUsers = snapshot.val();
+        displayUsers();
+      }
+    }
+
+    function displayUsers() {
+      const userList = document.getElementById('user-list');
+      userList.innerHTML = '';
+      
+      Object.entries(allUsers).forEach(([uid, userData]) => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        div.innerHTML = `
+          <input type="checkbox" id="user-${uid}" value="${uid}">
+          <label for="user-${uid}" style="margin: 0; cursor: pointer; flex: 1;">
+            ${userData.displayName || 'Unknown'} ${userData.hackerNumber ? `(#${userData.hackerNumber})` : ''}
+          </label>
+        `;
+        userList.appendChild(div);
+      });
+    }
+
+    document.getElementById('send-to-all').addEventListener('change', (e) => {
+      document.getElementById('user-selection').style.display = e.target.checked ? 'none' : 'block';
+    });
+
+    window.toggleSelectAll = function() {
+      const checkboxes = document.querySelectorAll('#user-list input[type="checkbox"]');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(cb => cb.checked = !allChecked);
+    };
+
+    window.sendNotification = async function() {
+      const title = document.getElementById('notif-title').value.trim();
+      const body = document.getElementById('notif-body').value.trim();
+      const sendToAll = document.getElementById('send-to-all').checked;
+      
+      if (!title || !body) {
+        showAlert('Please enter both title and message.', 'danger');
+        return;
+      }
+      
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      
+      try {
+        let recipients = [];
+        
+        if (sendToAll) {
+          recipients = Object.keys(allUsers);
+        } else {
+          const checkboxes = document.querySelectorAll('#user-list input[type="checkbox"]:checked');
+          recipients = Array.from(checkboxes).map(cb => cb.value);
+        }
+        
+        if (recipients.length === 0) {
+          showAlert('Please select at least one recipient.', 'danger');
+          btn.disabled = false;
+          btn.textContent = 'Send Notification';
+          return;
+        }
+        
+        const notification = {
+          title,
+          body,
+          timestamp: Date.now(),
+          sender: auth.currentUser.uid
+        };
+        
+        // Save notification to each user's notifications list
+        const promises = recipients.map(uid => {
+          const notifRef = push(ref(database, `notifications/${uid}`));
+          return set(notifRef, notification);
+        });
+        
+        await Promise.all(promises);
+        
+        // Here you would also call your Firebase Cloud Function to send FCM messages
+        // For now, we're just saving to database
+        
+        showAlert(`✅ Notification sent to ${recipients.length} user(s)!`, 'success');
+        
+        // Clear form
+        document.getElementById('notif-title').value = '';
+        document.getElementById('notif-body').value = '';
+        document.getElementById('send-to-all').checked = false;
+        document.querySelectorAll('#user-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+        
+      } catch (error) {
+        console.error('Error sending notification:', error);
+        showAlert('Failed to send notification: ' + error.message, 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Notification';
+      }
+    };
+
+    function showAlert(message, type) {
+      const container = document.getElementById('alert-container');
+      container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    window.signOut = function() {
+      firebaseSignOut(auth).then(() => {
+        window.location.href = 'index.html';
+      });
+    };
+  </script>
+
+</body>
+</html>

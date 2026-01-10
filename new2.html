@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Golf Hackers Odyssey</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="apple-touch-startup-image" href="splash.png">
+</head>
+<body>
+  <custom-navbar></custom-navbar>
+
+  <div class="hero">
+    <div class="hero-content">
+      <h6 id="hacker-number"></h6>
+      <h1 id="user-name"></h1>
+      <p class="hero-text">Welcome to our 25th Annual Road Trip</p>
+      <p class="hero-text">This year we head back north to Nelson Bay GC</p>
+      <div class="date-badge">
+        <p id="dates">AUGUST 8TH - 10TH 2025</p>
+      </div>
+      <div id="countdown">
+        <span>T-Minus</span>
+        <div class="countdown-item">
+          <span id="days">00</span>
+          <small>Days</small>
+        </div>
+        <div class="countdown-item">
+          <span id="hours">00</span>
+          <small>Hours</small>
+        </div>
+        <div class="countdown-item">
+          <span id="minutes">00</span>
+          <small>Minutes</small>
+        </div>
+        <div class="countdown-item">
+          <span id="seconds">00</span>
+          <small>Seconds</small>
+        </div>
+      </div>
+    </div>
+    <div class="hero-image">
+      <img src="assets/images/banner-image.jpg" alt="Golf Course">
+    </div>
+  </div>
+  <div class="quick-links">
+    <div class="quick-link">
+      <a href="register.html">
+        <div class="icon">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <h4>REGISTER</h4>
+      </a>
+    </div>
+    <div class="quick-link">
+      <a href="payment.html">
+        <div class="icon">
+          <i class="fas fa-credit-card"></i>
+        </div>
+        <h4>PAYMENT</h4>
+      </a>
+    </div>
+    <div class="quick-link">
+      <a href="podcast.html">
+        <div class="icon">
+          <i class="fas fa-podcast"></i>
+        </div>
+        <h4>PODCAST</h4>
+      </a>
+    </div>
+    <div class="quick-link">
+      <a href="honour-roll.html">
+        <div class="icon">
+          <i class="fas fa-trophy"></i>
+        </div>
+        <h4>HONOUR ROLL</h4>
+      </a>
+    </div>
+  </div>
+
+  <div class="sponsor-slider">
+    <div class="sponsor-slide">
+      <img id="sponsor-slide-img" src="" alt="Sponsor">
+      <h4>SPONSORS</h4>
+    </div>
+  </div>
+  <section class="course-section">
+    <div class="section-header">
+      <h2>Nelson Bay Course Flyovers</h2>
+      <a href="https://www.nelsonbaygolf.com/courses/" class="view-all-btn" target="_blank">View All</a>
+    </div>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="course-thumb">
+          <a href="https://www.nelsonbaygolf.com/blog/course/1/" target="_blank">
+            <img id="course-img1" src="assets/images/hole1.png" alt="Hole 1">
+          </a>
+          <span class="distance">311m</span>
+        </div>
+        <div class="course-info">
+          <span class="par">Par 4</span>
+          <h3>Hole 1</h3>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="course-thumb">
+          <a href="https://www.nelsonbaygolf.com/blog/course/2/" target="_blank">
+            <img id="course-img2" src="assets/images/hole2.png" alt="Hole 2">
+          </a>
+          <span class="distance">397m</span>
+        </div>
+        <div class="course-info">
+          <span class="par">Par 4</span>
+          <h3>Hole 2</h3>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="course-thumb">
+          <a href="https://www.nelsonbaygolf.com/blog/course/3/" target="_blank">
+            <img id="course-img3" src="assets/images/hole3.png" alt="Hole 3">
+          </a>
+          <span class="distance">504m</span>
+        </div>
+        <div class="course-info">
+          <span class="par">Par 5</span>
+          <h3>Hole 3</h3>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="course-thumb">
+          <a href="https://www.nelsonbaygolf.com/blog/course/4/" target="_blank">
+            <img id="course-img4" src="assets/images/hole4.png" alt="Hole 4">
+          </a>
+          <span class="distance">322m</span>
+        </div>
+        <div class="course-info">
+          <span class="par">Par 4</span>
+          <h3>Hole 4</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="notifications-section">
+    <a id="enableNotifications" href="#" class="notification-btn">
+      <i class="fas fa-bell"></i> Enable Notifications
+    </a>
+  </div>
+
+  <custom-footer></custom-footer>
+  <script src="components/navbar.js"></script>
+  <script src="components/footer.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+        authDomain: "hackers-cup.firebaseapp.com",
+        databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+        projectId: "hackers-cup",
+        storageBucket: "hackers-cup.appspot.com",
+        messagingSenderId: "765736070872",
+        appId: "1:765736070872:web:86a51c41916e7af75631ad",
+        measurementId: "G-6E1M14F510"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const database = getDatabase();
+
+      const auth = getAuth(app);
+
+      function getDisplayName(user) {
+        const userRef = ref(database, `users/${user.uid}/displayName`);
+        onValue(userRef, (snapshot) => {
+          const displayName = snapshot.val();
+          if (displayName) {
+            document.getElementById('user-name').textContent = displayName;
+          } else {
+            const name = prompt('Please enter your display name:');
+            if (name && name.trim() !== '') {
+              set(userRef, name.trim())
+                .then(() => {
+                  document.getElementById('user-name').textContent = name.trim();
+                })
+                .catch((error) => {
+                  console.error('Error updating display name:', error);
+                });
+            }
+          }
+        });
+      }
+
+      function getHackerNumber(user) {
+        const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+        onValue(hackerRef, (snapshot) => {
+          const hackerNumber = snapshot.val();
+          if (hackerNumber) {
+            document.getElementById('hacker-number').textContent = "G'day, hacker no. " + hackerNumber;
+          } else {
+            document.getElementById('hacker-number').textContent = "G'day";
+          }
+        });
+      }
+
+      auth.onAuthStateChanged((user) => {
+        if (!user) {
+          window.location.href = 'index.html';
+        } else {
+          getDisplayName(user);
+          getHackerNumber(user);
+        }
+      });
+
+      function leave() {
+        auth.signOut()
+          .then(() => {
+            window.location.href = 'index.html';
+          })
+          .catch((error) => {
+            console.error('Sign Out Error', error);
+          });
+      }
+
+      function toggleSettingsPanel() {
+        const settingsPanel = document.getElementById('settings-panel');
+        settingsPanel.classList.toggle('show');
+      }
+
+      // Update the countdown timer to target August 8, 2025 11:30:00 AEST
+      function updateCountdown() {
+        const targetDate = new Date("August 8, 2025 11:30:00 GMT+1000");
+        const currentDate = new Date();
+        const timeDifference = targetDate - currentDate;
+
+        if (timeDifference < 0) {
+          document.getElementById('countdown').textContent = 'Hackers Cup has begun!';
+          return;
+        }
+
+        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+        document.getElementById('days').textContent = padZeroes(days);
+        document.getElementById('hours').textContent = padZeroes(hours);
+        document.getElementById('minutes').textContent = padZeroes(minutes);
+        document.getElementById('seconds').textContent = padZeroes(seconds);
+      }
+
+      // Function to add leading zeroes to numbers less than 10
+      function padZeroes(num) {
+        return num < 10 ? '0' + num : num;
+      }
+
+      // Initial call to update the countdown timer
+      updateCountdown();
+
+      // Call the updateCountdown function every second
+      setInterval(updateCountdown, 1000);
+    </script>
+    <script>
+      function toggleSettingsPanel() {
+        const settingsPanel = document.getElementById('settings-panel');
+        settingsPanel.classList.toggle('show');
+      }
+    </script>
+    <script>
+      function changeWallpaper(option) {
+        var backgroundImageUrl = "10th.jpg";
+
+        if (option === "none") {
+          backgroundImageUrl = "10th.jpg";
+          document.getElementById('header').classList.remove('light-text');
+          document.getElementById('countdown').classList.remove('light-text');
+          document.getElementById('header').classList.add('dark-text');
+          document.getElementById('countdown').classList.add('dark-text');
+        } else {
+          if (option === "golf1") {
+            // Option logic if needed
+          } else if (option === "golf2") {
+            backgroundImageUrl = "kiama.jpg";
+          } else if (option === "golf3") {
+            backgroundImageUrl = "greenwell.jpg";
+          }
+          document.addEventListener('DOMContentLoaded', function() {
+            var wallpaper = document.getElementById('wallpaper');
+            wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
+            document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
+            document.getElementById('details').classList.remove('dark-text');
+            document.getElementById('countdown').classList.remove('dark-text');
+            document.getElementById('details').classList.add('light-text');
+            document.getElementById('countdown').classList.add('light-text');
+          });
+        }
+      }
+    </script>
+<script type="module">
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  async function initNotifications() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const token = await getToken(messaging, {
+          vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
+        });
+        console.log("✅ FCM Token:", token);
+        alert("Notifications enabled!");
+      } else {
+        console.warn("❌ Notification permission not granted.");
+      }
+    } catch (error) {
+      console.error("Error during initNotifications:", error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('enableNotifications');
+
+    if (!button) {
+      console.warn("Enable Notifications button not found.");
+      return;
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+          console.log("✅ Service Worker registered");
+
+          // Show button only if permission is not granted
+          if (Notification.permission === 'default' || Notification.permission === 'denied') {
+            button.style.display = 'block';
+          } else {
+            button.style.display = 'block'; // Always show the button
+            console.log("Notification permission already:", Notification.permission);
+          }
+
+          button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await initNotifications();
+            // Do NOT hide the button after use
+          });
+        })
+        .catch(err => {
+          console.error('Service Worker registration failed:', err);
+        });
+    } else {
+      console.warn("Service Worker not supported in this browser.");
+    }
+
+    onMessage(messaging, (payload) => {
+      console.log("🔔 Foreground message received:", payload);
+      alert(`${payload.notification.title}\n${payload.notification.body}`);
+    });
+  });
+</script>
+<script>
+  // Sponsor image filenames in order
+  const sponsorImages = [
+    'assets/images/sponsors/1.png',
+    'assets/images/sponsors/2.jpg',
+    'assets/images/sponsors/3.png',
+    'assets/images/sponsors/4.png',
+    'assets/images/sponsors/5.png',
+    'assets/images/sponsors/6.png',
+    'assets/images/sponsors/7.png',
+    'assets/images/sponsors/8.png',
+    'assets/images/sponsors/9.webp',
+    'assets/images/sponsors/10.png',
+    'assets/images/sponsors/11.png',
+    'assets/images/sponsors/12.png'
+  ];
+
+  let sponsorIndex = 0;
+  document.addEventListener('DOMContentLoaded', function() {
+    const sponsorImg = document.getElementById('sponsor-slide-img');
+    function showSponsorSlide() {
+      sponsorImg.style.opacity = 0;
+      setTimeout(() => {
+        sponsorImg.src = sponsorImages[sponsorIndex];
+        sponsorImg.style.opacity = 1;
+      }, 200);
+      sponsorIndex = (sponsorIndex + 1) % sponsorImages.length;
+    }
+    if (sponsorImages.length > 0 && sponsorImg) {
+      sponsorImg.src = sponsorImages[0];
+      setInterval(showSponsorSlide, 2500);
+    }
+  });
+</script>
+<script>
+  </script>
+  <script src="script.js"></script>
+<script src="https://huggingface.co/deepsite/deepsite-badge.js"></script>
+</body>
+</html>

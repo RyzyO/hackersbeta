@@ -1,10 +1,14 @@
 /* eslint-disable */
 const { onDocumentWritten } = require("firebase-functions/firestore");
+const { onValueWritten } = require("firebase-functions/v2/database");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getDatabase } = require("firebase-admin/database");
+const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
 const db = getFirestore();
+const rtdb = getDatabase();
 
 const COMP_ID = "hackersCup26";
 
@@ -194,5 +198,105 @@ exports.processSundayLeaderboard = onDocumentWritten(
     await batch2.commit();
 
     return true;
+  }
+);
+
+/** =======================
+ *   SEND FCM NOTIFICATIONS
+ *  ======================= */
+exports.sendNotification = onValueWritten(
+  "/notifications/{userId}/{notificationId}",
+  async (event) => {
+    try {
+      const userId = event.params.userId;
+      const notificationId = event.params.notificationId;
+      
+      // Get the notification data
+      const notification = event.data.after.val();
+      
+      // Skip if notification doesn't exist or is being deleted
+      if (!notification) {
+        console.log("Notification deleted or doesn't exist, skipping");
+        return;
+      }
+      
+      // Skip if already sent
+      if (notification.sent) {
+        console.log("Notification already sent, skipping");
+        return;
+      }
+      
+      console.log(`Processing notification for user ${userId}:`, notification);
+      
+      // Get user's FCM token from the database
+      const tokenRefPath = `/fcmTokens/${userId}`;
+      const userTokenSnapshot = await rtdb.ref(tokenRefPath).once('value');
+      const userToken = userTokenSnapshot.val();
+      console.log('Token snapshot path:', tokenRefPath);
+      console.log('Token snapshot exists:', userTokenSnapshot.exists());
+      console.log('Token snapshot value:', userToken);
+      
+      // Handle empty or malformed token values
+      const normalizedToken = typeof userToken === 'string' ? userToken.trim() : (userToken && userToken.token ? String(userToken.token).trim() : null);
+      if (!normalizedToken) {
+        console.log(`No FCM token found for user ${userId} at ${tokenRefPath}`);
+        // Mark as attempted but no token
+        await rtdb.ref(`/notifications/${userId}/${notificationId}`).update({
+          sent: false,
+          error: 'No FCM token found',
+          attemptedAt: Date.now()
+        });
+        return;
+      }
+      
+      // Prepare the FCM message
+      const message = {
+        token: normalizedToken,
+        notification: {
+          title: notification.title || 'Hackers Cup',
+          body: notification.body || 'You have a new notification'
+        },
+        data: {
+          notificationId: notificationId,
+          timestamp: String(notification.timestamp || Date.now())
+        },
+        webpush: {
+          fcmOptions: {
+            link: 'https://hackersbeta.web.app/notifications.html'
+          }
+        }
+      };
+      
+      // Send the notification
+      const response = await getMessaging().send(message);
+      console.log(`Successfully sent notification to ${userId}:`, response);
+      
+      // Mark notification as sent
+      await rtdb.ref(`/notifications/${userId}/${notificationId}`).update({
+        sent: true,
+        sentAt: Date.now(),
+        messageId: response
+      });
+      
+      return true;
+      
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      
+      // Try to mark the error in the database
+      try {
+        const userId = event.params.userId;
+        const notificationId = event.params.notificationId;
+        await rtdb.ref(`/notifications/${userId}/${notificationId}`).update({
+          sent: false,
+          error: error.message,
+          attemptedAt: Date.now()
+        });
+      } catch (updateError) {
+        console.error("Error updating notification status:", updateError);
+      }
+      
+      throw error;
+    }
   }
 );

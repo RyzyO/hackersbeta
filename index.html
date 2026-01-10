@@ -51,6 +51,52 @@
         max-width: 100%;
         height: auto;
       }
+      
+      /* Video Modal Styles */
+      .video-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.9);
+      }
+      .video-modal-content {
+        position: relative;
+        margin: 5% auto;
+        width: 90%;
+        max-width: 1200px;
+      }
+      .video-modal-close {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10000;
+      }
+      .video-modal-close:hover {
+        color: #ccc;
+      }
+      #modalVideo {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+      .thumb video {
+        width: 100%;
+        height: auto;
+        border-radius: 23px;
+        cursor: pointer;
+      }
+      .thumb a {
+        cursor: pointer;
+      }
     </style>
   </head>
 
@@ -108,10 +154,10 @@
             <div class="caption header-text">
               <h6 id="hacker-number"></h6>
               <h2 id="user-name"></h2>
-              <h6>Welcome to our 25th Annual Road Trip.</h6>
+              <h6>Welcome to our 26th Annual Road Trip.</h6>
               <br>
-              <h6>This year we head back north to Nelson Bay GC. </h6> <br><br>
-              <h6 id="dates">AUGUST 8TH - 10TH 2025 </h6> 
+              <h6>This year we head back south to Worrigee Links. </h6> <br><br>
+              <h6 id="dates">AUGUST 21ST - 23RD 2026 </h6> 
               <!-- Countdown timer display -->
               <div id="countdown">
                <i></i>
@@ -199,61 +245,336 @@
         <div class="row">
           <div class="col-lg-6">
             <div class="section-heading">
-              <h6>Nelson Bay</h6>
+              <h6>Worrigee Links</h6>
               <h2>Course Flyovers</h2>
             </div>
           </div>
           <div class="col-lg-6">
             <div class="main-button">
-              <a href="https://www.nelsonbaygolf.com/courses/" target="_blank" rel="noopener noreferrer">View All</a>
-              
+              <a href="https://worrigeelinks.com.au/course-flyovers/" target="_blank" rel="noopener noreferrer">View All</a>
             </div>
           </div>
+          
+          <!-- Hole 1 -->
           <div class="col-lg-3 col-md-6">
             <div class="item">
               <div class="thumb">
-                <a href="https://www.nelsonbaygolf.com/blog/course/1/" target="_blank" rel="noopener noreferrer"><img id="course-img1" src="assets/images/hole1.png" alt=""></a>
-                <span class="price">311m</span>
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_1-1080p.mp4'); return false;">
+                  <video id="course-img1" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_1-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">468m</span>
               </div>
               <div class="down-content">
-                <span class="category">Par 4</span>
+                <span class="category">Par 5</span>
                 <h4>Hole 1</h4>
               </div>
             </div>
           </div>
+          
+          <!-- Hole 2 -->
           <div class="col-lg-3 col-md-6">
             <div class="item">
               <div class="thumb">
-                <a href="https://www.nelsonbaygolf.com/blog/course/2/" target="_blank" rel="noopener noreferrer"><img id="course-img2" src="assets/images/hole2.png" alt=""></a>
-                <span class="price">397m</span>
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_2-1080p.mp4'); return false;">
+                  <video id="course-img2" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_2-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">202m</span>
               </div>
               <div class="down-content">
-                <span class="category">Par 4</span>
+                <span class="category">Par 3</span>
                 <h4>Hole 2</h4>
               </div>
             </div>
           </div>
+          
+          <!-- Hole 3 -->
           <div class="col-lg-3 col-md-6">
             <div class="item">
               <div class="thumb">
-                <a href="https://www.nelsonbaygolf.com/blog/course/3/" target="_blank" rel="noopener noreferrer"><img id="course-img3" src="assets/images/hole3.png" alt=""></a>
-                <span class="price">504m</span>
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_3-1080p.mp4'); return false;">
+                  <video id="course-img3" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_3-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">324m</span>
               </div>
               <div class="down-content">
-                <span class="category">Par 5</span>
+                <span class="category">Par 4</span>
                 <h4>Hole 3</h4>
               </div>
             </div>
           </div>
+          
+          <!-- Hole 4 -->
           <div class="col-lg-3 col-md-6">
             <div class="item">
               <div class="thumb">
-                <a href="https://www.nelsonbaygolf.com/blog/course/4/" target="_blank" rel="noopener noreferrer"><img id="course-img4" src="assets/images/hole4.png" alt=""></a>
-                <span class="price">322m</span>
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_4-1080p-1.mp4'); return false;">
+                  <video id="course-img4" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_4-1080p-1.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">279m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 5</span>
+                <h4>Hole 4</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 5 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_5-1080p.mp4'); return false;">
+                  <video id="course-img5" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_5-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">370m</span>
               </div>
               <div class="down-content">
                 <span class="category">Par 4</span>
-                <h4>Hole 4</h4>
+                <h4>Hole 5</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 6 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_6-1080p.mp4'); return false;">
+                  <video id="course-img6" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_6-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">162m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 3</span>
+                <h4>Hole 6</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 7 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_7-1080p.mp4'); return false;">
+                  <video id="course-img7" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_7-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">478m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 5</span>
+                <h4>Hole 7</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 8 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_8-1080p.mp4'); return false;">
+                  <video id="course-img8" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_8-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">157m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 3</span>
+                <h4>Hole 8</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 9 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_9-1080p.mp4'); return false;">
+                  <video id="course-img9" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_9-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">346m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 9</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 10 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_10-1080p.mp4'); return false;">
+                  <video id="course-img10" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_10-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">335m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 10</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 11 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_11-1080p.mp4'); return false;">
+                  <video id="course-img11" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_11-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">444m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 5</span>
+                <h4>Hole 11</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 12 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_12-1080p.mp4'); return false;">
+                  <video id="course-img12" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_12-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">185m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 3</span>
+                <h4>Hole 12</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 13 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_13-1080p-1.mp4'); return false;">
+                  <video id="course-img13" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_13-1080p-1.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">280m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 13</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 14 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_14-1080p.mp4'); return false;">
+                  <video id="course-img14" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_14-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">175m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 3</span>
+                <h4>Hole 14</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 15 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_15-1080p.mp4'); return false;">
+                  <video id="course-img15" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_15-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">242m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 15</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 16 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_16-1080p.mp4'); return false;">
+                  <video id="course-img16" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_16-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">350m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 4</span>
+                <h4>Hole 16</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 17 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_17-1080p.mp4'); return false;">
+                  <video id="course-img17" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_17-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">132m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 3</span>
+                <h4>Hole 17</h4>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hole 18 -->
+          <div class="col-lg-3 col-md-6">
+            <div class="item">
+              <div class="thumb">
+                <a href="#" onclick="openVideoModal('https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_18-1080p.mp4'); return false;">
+                  <video id="course-img18" preload="metadata" muted playsinline>
+                    <source src="https://worrigeelinks.com.au/wp-content/uploads/2025/06/hole_18-1080p.mp4#t=0.001" type="video/mp4">
+                  </video>
+                </a>
+                <span class="price">445m</span>
+              </div>
+              <div class="down-content">
+                <span class="category">Par 5</span>
+                <h4>Hole 18</h4>
               </div>
             </div>
           </div>
@@ -262,6 +583,16 @@
     </div>
     <br><br><br>
 
+<!-- Video Modal -->
+<div id="videoModal" class="video-modal">
+  <div class="video-modal-content">
+    <span class="video-modal-close">&times;</span>
+    <video id="modalVideo" controls autoplay>
+      <source src="" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</div>
 
 <div class="main-button">
   <a id="enableNotifications" href="#" rel="noopener noreferrer">Enable Notifications</a>
@@ -380,9 +711,9 @@
         settingsPanel.classList.toggle('show');
       }
 
-      // Update the countdown timer to target August 8, 2025 11:30:00 AEST
+      // Update the countdown timer to target 11:30:00 AEST
       function updateCountdown() {
-        const targetDate = new Date("August 8, 2025 11:30:00 GMT+1000");
+        const targetDate = new Date("August 20, 2026 11:30:00 GMT+1000");
         const currentDate = new Date();
         const timeDifference = targetDate - currentDate;
 
@@ -421,10 +752,10 @@
     </script>
     <script>
       function changeWallpaper(option) {
-        var backgroundImageUrl = "10th.jpg";
+        var backgroundImageUrl = "WL26.jpg";
 
         if (option === "none") {
-          backgroundImageUrl = "10th.jpg";
+          backgroundImageUrl = "WL26.jpg";
           document.getElementById('header').classList.remove('light-text');
           document.getElementById('countdown').classList.remove('light-text');
           document.getElementById('header').classList.add('dark-text');
@@ -439,7 +770,7 @@
           }
           document.addEventListener('DOMContentLoaded', function() {
             var wallpaper = document.getElementById('wallpaper');
-            wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
+            wallpaper.style.backgroundImage = "url('WL26.jpg')"; // Default wallpaper URL
             document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
             document.getElementById('details').classList.remove('dark-text');
             document.getElementById('countdown').classList.remove('dark-text');
@@ -449,9 +780,56 @@
         }
       }
     </script>
+    
+    <script>
+      // Video Modal Functions
+      function openVideoModal(videoUrl) {
+        const modal = document.getElementById('videoModal');
+        const modalVideo = document.getElementById('modalVideo');
+        const videoSource = modalVideo.querySelector('source');
+        
+        videoSource.src = videoUrl;
+        modalVideo.load();
+        modal.style.display = 'block';
+        modalVideo.play();
+      }
+      
+      // Close modal when clicking X
+      document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('videoModal');
+        const closeBtn = document.querySelector('.video-modal-close');
+        const modalVideo = document.getElementById('modalVideo');
+        
+        closeBtn.onclick = function() {
+          modal.style.display = 'none';
+          modalVideo.pause();
+          modalVideo.currentTime = 0;
+        }
+        
+        // Close modal when clicking outside the video
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = 'none';
+            modalVideo.pause();
+            modalVideo.currentTime = 0;
+          }
+        }
+        
+        // Close with ESC key
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape' && modal.style.display === 'block') {
+            modal.style.display = 'none';
+            modalVideo.pause();
+            modalVideo.currentTime = 0;
+          }
+        });
+      });
+    </script>
 <script type="module">
   import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -466,6 +844,8 @@
 
   const app = initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
+  const database = getDatabase(app);
+  const auth = getAuth(app);
 
   async function initNotifications() {
     try {
@@ -475,6 +855,14 @@
           vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
         });
         console.log("✅ FCM Token:", token);
+        
+        // Save token to database for the current user
+        const user = auth.currentUser;
+        if (user) {
+          await set(ref(database, `fcmTokens/${user.uid}`), token);
+          console.log("✅ Token saved to database");
+        }
+        
         alert("Notifications enabled!");
       } else {
         console.warn("❌ Notification permission not granted.");
@@ -558,39 +946,6 @@
     }
   });
 </script>
-<script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</html>  </body></script>   
 
   </body>
 </html>

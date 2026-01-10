@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Notifications - Hackers Cup</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  
+  <style>
+    body { background: #1e1e2e; color: #fff; min-height: 100vh; }
+    .notifications-container { max-width: 800px; margin: 100px auto 50px; padding: 20px; }
+    .notification-item { 
+      background: #27293d; 
+      padding: 20px; 
+      border-radius: 12px; 
+      margin-bottom: 15px;
+      border-left: 4px solid #e75e8d;
+      transition: transform 0.2s;
+    }
+    .notification-item:hover { transform: translateX(5px); }
+    .notification-item.unread { 
+      background: #2f3147; 
+      border-left-color: #ef8f6e;
+    }
+    .notification-title { 
+      font-size: 18px; 
+      font-weight: 600; 
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .notification-body { 
+      color: #bbb; 
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .notification-time { 
+      font-size: 12px; 
+      color: #888;
+    }
+    .badge-new {
+      background: #ef8f6e;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+    .empty-state i {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+    .filter-tab {
+      padding: 10px 20px;
+      background: #27293d;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .filter-tab:hover { background: #2f3147; }
+    .filter-tab.active { 
+      background: linear-gradient(105deg, #e75e8d 0%, #ef8f6e 100%);
+      font-weight: 600;
+    }
+    .mark-all-read {
+      background: #444;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+    }
+    .mark-all-read:hover { background: #555; }
+  </style>
+</head>
+<body>
+
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="Hackers Cup" style="width:158px;">
+            </a>
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="notifications.html" class="active">Notifications</a></li>
+            </ul>
+            <a class='menu-trigger'><span>Menu</span></a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="notifications-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+      <h1>🔔 My Notifications</h1>
+      <button class="mark-all-read" onclick="enableNotifications()" id="enable-notifications-btn" style="display: none;">
+        Enable Push
+      </button>
+      <button class="mark-all-read" onclick="markAllAsRead()" id="mark-all-btn" style="display: none;">
+        Mark All as Read
+      </button>
+    </div>
+    
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterNotifications('all')">All</button>
+      <button class="filter-tab" onclick="filterNotifications('unread')">Unread</button>
+      <button class="filter-tab" onclick="filterNotifications('read')">Read</button>
+    </div>
+    
+    <div id="notifications-list">
+      <div class="empty-state">
+        <i class="fas fa-bell-slash"></i>
+        <h3>Loading notifications...</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <a href="index.html"><i class="fas fa-home"></i>Home</a>
+    <a href="payment.html"><i class="fas fa-dollar-sign"></i>Payment</a>
+    <a href="podcast.html"><i class="fas fa-podcast"></i>Podcast</a>
+    <a href="notifications.html" class="active"><i class="fas fa-bell"></i>Notifications</a>
+  </div>
+
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase();
+    const auth = getAuth(app);
+    const messaging = getMessaging(app);
+
+    let allNotifications = [];
+    let currentFilter = 'all';
+    let currentUser = null;
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      currentUser = user;
+      loadNotifications(user.uid);
+
+      initPushUI();
+      if (Notification.permission === 'granted') {
+        saveFcmToken();
+      }
+    });
+
+    function loadNotifications(uid) {
+      const notifRef = ref(database, `notifications/${uid}`);
+      
+      onValue(notifRef, (snapshot) => {
+        const list = document.getElementById('notifications-list');
+        allNotifications = [];
+        
+        if (!snapshot.exists()) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-bell-slash"></i>
+              <h3>No notifications yet</h3>
+              <p>You'll see your notifications here when you receive them.</p>
+            </div>
+          `;
+          return;
+        }
+        
+        const data = snapshot.val();
+        allNotifications = Object.entries(data).map(([id, notif]) => ({
+          id,
+          ...notif
+        })).sort((a, b) => b.timestamp - a.timestamp);
+        
+        displayNotifications();
+      });
+    }
+
+    function displayNotifications() {
+      const list = document.getElementById('notifications-list');
+      let filtered = allNotifications;
+      
+      if (currentFilter === 'unread') {
+        filtered = allNotifications.filter(n => !n.read);
+      } else if (currentFilter === 'read') {
+        filtered = allNotifications.filter(n => n.read);
+      }
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <h3>No ${currentFilter !== 'all' ? currentFilter : ''} notifications</h3>
+          </div>
+        `;
+        document.getElementById('mark-all-btn').style.display = 'none';
+        return;
+      }
+      
+      const hasUnread = allNotifications.some(n => !n.read);
+      document.getElementById('mark-all-btn').style.display = hasUnread ? 'block' : 'none';
+      
+      list.innerHTML = filtered.map(notif => {
+        const date = new Date(notif.timestamp);
+        const timeStr = formatTime(date);
+        
+        return `
+          <div class="notification-item ${!notif.read ? 'unread' : ''}" onclick="markAsRead('${notif.id}')">
+            <div class="notification-title">
+              <span>${notif.title}</span>
+              ${!notif.read ? '<span class="badge-new">NEW</span>' : ''}
+            </div>
+            <div class="notification-body">${notif.body}</div>
+            <div class="notification-time">${timeStr}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatTime(date) {
+      const now = new Date();
+      const diff = now - date;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      
+      if (minutes < 1) return 'Just now';
+      if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    window.filterNotifications = function(filter) {
+      currentFilter = filter;
+      
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      displayNotifications();
+    };
+
+    window.markAsRead = async function(notifId) {
+      if (!currentUser) return;
+      
+      const notifRef = ref(database, `notifications/${currentUser.uid}/${notifId}`);
+      const snapshot = await get(notifRef);
+      
+      if (snapshot.exists() && !snapshot.val().read) {
+        await set(notifRef, { ...snapshot.val(), read: true });
+      }
+    };
+
+    window.markAllAsRead = async function() {
+      if (!currentUser) return;
+      
+      const btn = document.getElementById('mark-all-btn');
+      btn.disabled = true;
+      btn.textContent = 'Marking...';
+      
+      const promises = allNotifications
+        .filter(n => !n.read)
+        .map(n => {
+          const notifRef = ref(database, `notifications/${currentUser.uid}/${n.id}`);
+          return set(notifRef, { ...n, read: true });
+        });
+      
+      await Promise.all(promises);
+      
+      btn.disabled = false;
+      btn.textContent = 'Mark All as Read';
+    };
+
+    function initPushUI() {
+      const btn = document.getElementById('enable-notifications-btn');
+      if (!btn) return;
+      btn.style.display = 'block';
+    }
+
+    async function enableNotifications() {
+      if (!currentUser) return;
+      if ('serviceWorker' in navigator) {
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      }
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        await saveFcmToken();
+        const btn = document.getElementById('enable-notifications-btn');
+        if (btn) btn.textContent = 'Push Enabled';
+      }
+    }
+
+    async function saveFcmToken() {
+      try {
+        if (!currentUser) return;
+        const token = await getToken(messaging, {
+          vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
+        });
+        if (token) {
+          await set(ref(database, `fcmTokens/${currentUser.uid}`), token);
+        }
+      } catch (e) {
+      }
+    }
+    
+    window.enableNotifications = enableNotifications;
+  </script>
+
+</body>
+</html>

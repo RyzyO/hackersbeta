@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  <title>Hackers Cup</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- PWA -->
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="favicon.png">
+
+  <!-- CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .section-spacer {
+      margin: 4rem 0;
+    }
+
+    #countdown {
+      font-size: 15px;
+      font-style: italic;
+      margin-top: 16px;
+      color: #fff;
+    }
+
+    /* =======================
+       MOBILE UX IMPROVEMENTS
+    ======================== */
+
+    @media (max-width: 768px) {
+
+      /* Hide desktop header */
+      .header-area {
+        display: none;
+      }
+
+      body {
+        padding-bottom: 80px;
+      }
+
+      .main-banner {
+        padding: 80px 20px 40px;
+      }
+
+      .right-image {
+        display: none;
+      }
+
+      .main-banner h2 {
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .main-banner h6 {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      #countdown {
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .features .item {
+        padding: 22px 12px;
+        border-radius: 16px;
+      }
+
+      /* Bottom nav */
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .bottom-nav a {
+        flex: 1;
+        text-align: center;
+        color: #bbb;
+        font-size: 11px;
+        padding: 6px 0;
+      }
+
+      .bottom-nav i {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .bottom-nav a.active {
+        color: #fff;
+      }
+
+      .bottom-nav a:active {
+        transform: scale(0.92);
+      }
+
+      .mobile-cta a {
+        width: 100%;
+        max-width: 320px;
+        margin: auto;
+        text-align: center;
+        font-size: 15px;
+        padding: 14px 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- HEADER (desktop only) -->
+<header class="header-area header-sticky">
+  <div class="container">
+    <nav class="main-nav">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo.png" style="width:158px">
+      </a>
+      <ul class="nav">
+        <li><a class="active" href="index.html">Home</a></li>
+        <li><a href="register.html">Register</a></li>
+        <li><a href="venue.html">Venue</a></li>
+        <li><a href="payment.html">Payment</a></li>
+        <li><a href="podcast.html">Podcast</a></li>
+        <li><a href="schedule.html">Schedule</a></li>
+        <li><a href="honour-roll.html">Honour Roll</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="main-banner">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-6 align-self-center">
+        <h6 id="hacker-number"></h6>
+        <h2 id="user-name"></h2>
+        <h6>25th Annual Road Trip</h6>
+        <h6>Nelson Bay Golf Club</h6>
+        <h6><strong>AUGUST 8–10, 2025</strong></h6>
+
+        <div id="countdown">
+          T-Minus
+          <span id="days">00</span>d
+          <span id="hours">00</span>h
+          <span id="minutes">00</span>m
+          <span id="seconds">00</span>s
+        </div>
+      </div>
+
+      <div class="col-lg-4 offset-lg-2 right-image">
+        <img src="assets/images/banner-image.jpg">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-spacer"></div>
+
+<!-- FEATURES -->
+<div class="features">
+  <div class="container">
+    <div class="row">
+      <div class="col-6 col-md-3"><a href="register.html"><div class="item"><h4>REGISTER</h4></div></a></div>
+      <div class="col-6 col-md-3"><a href="payment.html"><div class="item"><h4>PAYMENT</h4></div></a></div>
+      <div class="col-6 col-md-3"><a href="podcast.html"><div class="item"><h4>PODCAST</h4></div></a></div>
+      <div class="col-6 col-md-3"><a href="honour-roll.html"><div class="item"><h4>HONOUR ROLL</h4></div></a></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-spacer"></div>
+
+<!-- NOTIFICATIONS -->
+<div class="main-button mobile-cta">
+  <a id="enableNotifications" href="#">Enable Notifications</a>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <a href="index.html"><i class="fas fa-home"></i>Home</a>
+  <a href="payment.html"><i class="fas fa-dollar-sign"></i>Payment</a>
+  <a href="podcast.html"><i class="fas fa-podcast"></i>Podcast</a>
+  <a href="score.html"><i class="fas fa-chart-line"></i>Score</a>
+</div>
+
+<!-- SCRIPTS -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad"
+  });
+
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const messaging = getMessaging(app);
+
+  onAuthStateChanged(auth, async user => {
+    if (!user) return location.href = "login.html";
+
+    const snap = await get(ref(db, `users/${user.uid}`));
+    if (!snap.exists()) return;
+
+    const { displayName, hackerNumber } = snap.val();
+    if (displayName) userName.textContent = displayName;
+    if (hackerNumber) hackerNumberEl.textContent = `G'day, hacker no. ${hackerNumber}`;
+  });
+
+  const target = new Date(2025,7,8,11,30);
+  setInterval(() => {
+    const d = target - new Date();
+    if (d <= 0) return;
+    days.textContent = String(Math.floor(d/86400000)).padStart(2,"0");
+    hours.textContent = String(Math.floor(d/3600000)%24).padStart(2,"0");
+    minutes.textContent = String(Math.floor(d/60000)%60).padStart(2,"0");
+    seconds.textContent = String(Math.floor(d/1000)%60).padStart(2,"0");
+  },1000);
+
+  document.getElementById("enableNotifications").onclick = async e => {
+    e.preventDefault();
+    const p = await Notification.requestPermission();
+    if (p !== "granted") return;
+    const token = await getToken(messaging,{vapidKey:"BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"});
+    await set(ref(db,`users/${auth.currentUser.uid}/fcmToken`),token);
+    alert("Notifications enabled ✅");
+  };
+
+  const page = location.pathname.split("/").pop();
+  document.querySelectorAll(".bottom-nav a").forEach(a=>{
+    if(a.getAttribute("href")===page) a.classList.add("active");
+  });
+</script>
+
+</body>
+</html>
