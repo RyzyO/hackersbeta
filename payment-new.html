@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Payment Dashboard - Hackers Cup</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #1e3a8a 0%, #38bdf8 100%);
+      --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      --warning-gradient: linear-gradient(135deg, #1e3a8a 0%, #60a5fa 100%);
+      --dark-bg: #0f0f1e;
+      --card-bg: #1a1a2e;
+      --card-hover: #25253e;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b8;
+      --border-color: #2a2a3e;
+      --success: #38ef7d;
+      --warning: #f5576c;
+      --info: #38bdf8;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    
+    /* Ensure all text elements are light colored */
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--text-primary);
+    }
+    
+    p {
+      color: var(--text-primary);
+    }
+    
+    /* Ensure header displays correctly */
+    .header-area {
+      position: relative;
+      z-index: 1000;
+    }
+    
+    .header-area .container,
+    .header-area .row,
+    .header-area .col-12 {
+      display: block;
+    }
+    
+    /* Dashboard content box sizing */
+    .dashboard-container *,
+    .status-card *,
+    .content-card *,
+    .transfer-details *,
+    .action-btn * {
+      box-sizing: border-box;
+    }
+    
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 100px 20px 40px;
+    }
+    
+    .dashboard-header {
+      margin-bottom: 40px;
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .dashboard-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    
+    .dashboard-header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+    
+    .status-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .status-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 28px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .status-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--info);
+      box-shadow: 0 10px 40px rgba(56, 189, 248, 0.2);
+    }
+    
+    .status-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+    }
+    
+    .status-card.success::before {
+      background: var(--success-gradient);
+    }
+    
+    .status-card.warning::before {
+      background: var(--warning-gradient);
+    }
+    
+    .status-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .status-card-title {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    
+    .status-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    
+    .status-icon.balance {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+    }
+    
+    .status-icon.status {
+      background: rgba(56, 239, 125, 0.1);
+      color: #38ef7d;
+    }
+    
+    .status-card-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    
+    .status-card-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+    
+    .status-badge.paid {
+      background: rgba(56, 239, 125, 0.1);
+      color: #38ef7d;
+    }
+    
+    .status-badge.pending {
+      background: rgba(245, 87, 108, 0.1);
+      color: #f5576c;
+    }
+    
+    .status-badge.partial {
+      background: rgba(255, 193, 7, 0.1);
+      color: #ffc107;
+    }
+    
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .content-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 32px;
+      border: 1px solid var(--border-color);
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .content-card h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-primary);
+    }
+    
+    .content-card h3 i {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .package-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .package-item:last-child {
+      border-bottom: none;
+    }
+    
+    .package-item i {
+      color: var(--success);
+      font-size: 1.2rem;
+      margin-top: 4px;
+    }
+    
+    .package-item-content {
+      flex: 1;
+    }
+    
+    .package-item h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+    
+    .package-item p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+    
+    .price-tag {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      white-space: nowrap;
+    }
+    
+    .transfer-details {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    
+    .transfer-details h4 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+    }
+    
+    .transfer-info {
+      display: grid;
+      gap: 12px;
+    }
+    
+    .transfer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--card-bg);
+      border-radius: 12px;
+    }
+    
+    .transfer-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .transfer-value {
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+      color: var(--text-primary);
+    }
+    
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .action-btn {
+      flex: 1;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .action-btn.primary {
+      background: var(--primary-gradient);
+      color: white;
+    }
+    
+    .action-btn.secondary {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.3);
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard-header h1 {
+        font-size: 2rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 80px 16px 40px;
+      }
+      
+      .status-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+      
+      .content-card {
+        padding: 24px;
+      }
+    }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+    }
+    
+    .bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.75rem;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      min-width: 70px;
+    }
+    
+    .bottom-nav a i {
+      font-size: 1.25rem;
+    }
+    
+    .bottom-nav a:hover,
+    .bottom-nav a.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .bottom-nav a {
+        font-size: 0.7rem;
+        min-width: 60px;
+      }
+      
+      .bottom-nav a i {
+        font-size: 1.1rem;
+      }
+    }
+    
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        padding: 0;
+      }
+      
+      .header-area,
+      .bottom-nav,
+      .content-grid,
+      .action-btn,
+      nav,
+      .quick-actions {
+        display: none !important;
+      }
+      
+      .dashboard-container {
+        padding: 20px;
+        max-width: 100%;
+      }
+      
+      .dashboard-header h1 {
+        color: #1e3a8a;
+        -webkit-text-fill-color: #1e3a8a;
+      }
+      
+      .dashboard-header p {
+        color: #666;
+      }
+      
+      .status-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        page-break-inside: avoid;
+      }
+      
+      .status-card {
+        border: 2px solid #333;
+        background: white;
+        page-break-inside: avoid;
+      }
+      
+      .status-card::before {
+        background: #1e3a8a !important;
+      }
+      
+      .status-card-title,
+      .status-card-label,
+      .status-card-value,
+      .status-badge,
+      .transfer-label,
+      .transfer-value,
+      h1, h2, h3, h4, h5, h6, p {
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+      }
+      
+      .status-icon {
+        border: 1px solid #333;
+      }
+      
+      .quick-actions {
+        display: none !important;
+      }
+      
+      .print-summary {
+        display: block !important;
+        margin-top: 30px;
+        padding: 20px;
+        border: 2px solid #333;
+        page-break-inside: avoid;
+      }
+      
+      .print-summary h3 {
+        color: #1e3a8a !important;
+        margin-bottom: 15px;
+      }
+      
+      .print-summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #ccc;
+      }
+      
+      .print-summary-row:last-child {
+        border-bottom: 2px solid #333;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+    }
+    
+    .print-summary {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="" style="width: 158px;">
+            </a>
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html" class="active">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class='menu-trigger'>
+              <span>Menu</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <!-- Modern Dashboard -->
+  <div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <h1>Payment Dashboard</h1>
+      <p id="user-name">Welcome back, Loading...</p>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="status-cards">
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">Outstanding Balance</span>
+          <div class="status-icon balance">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+        </div>
+        <div class="status-card-value" id="amt-outstanding">$0</div>
+        <div class="status-card-label">Amount to be paid</div>
+      </div>
+
+      <div class="status-card success">
+        <div class="status-card-header">
+          <span class="status-card-title">Payment Status</span>
+          <div class="status-icon status">
+            <i class="fas fa-check-circle"></i>
+          </div>
+        </div>
+        <div class="status-card-value" style="font-size: 1.75rem;" id="financial-status">Pending</div>
+        <div class="status-badge pending" id="status-badge">Processing</div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-card-header">
+          <span class="status-card-title">Total Package</span>
+          <div class="status-icon balance">
+            <i class="fas fa-receipt"></i>
+          </div>
+        </div>
+        <div class="status-card-value">$650</div>
+        <div class="status-card-label">Full package cost</div>
+      </div>
+
+      <div class="status-card warning">
+        <div class="status-card-header">
+          <span class="status-card-title">Payment Due Date</span>
+          <div class="status-icon balance">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+        </div>
+        <div class="status-card-value" style="font-size: 1.75rem;">Jul 21</div>
+        <div class="status-card-label">2026</div>
+        <div class="status-badge warning" style="background: rgba(245, 87, 108, 0.15); color: #f5576c;">
+          <i class="fas fa-clock"></i> Payment Required
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Package Includes -->
+      <div class="content-card">
+        <h3><i class="fas fa-box-open"></i> What's Included</h3>
+        
+        <div class="package-item">
+          <i class="fas fa-golf-ball"></i>
+          <div class="package-item-content">
+            <h4>Golf Weekend</h4>
+            <p>Full rounds Saturday and Sunday with carts included</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-bed"></i>
+          <div class="package-item-content">
+            <h4>Accommodation</h4>
+            <p>2 nights - Friday & Saturday</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-utensils"></i>
+          <div class="package-item-content">
+            <h4>Full Breakfast Buffet</h4>
+             <p>Both mornings included</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-trophy"></i>
+          <div class="package-item-content">
+            <h4>Prizes & Awards</h4>
+            <p>Champion Green Jacket, HC Cup, Spirit Award, milestone awards, and more</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-gift"></i>
+          <div class="package-item-content">
+            <h4>Memorabilia</h4>
+            <p>This year's edition of Hackers Cup memorabilia</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Friday Skins -->
+      <div class="content-card">
+        <h3><i class="fas fa-plus-circle"></i> Optional Add-On</h3>
+        
+        <div style="background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 1.25rem; color: var(--text-primary);">Friday Skins</h4>
+            <div class="price-tag">$80</div>
+          </div>
+          <p style="color: var(--text-secondary); margin-bottom: 16px;">Get a head start on the competition</p>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-golf-ball"></i>
+          <div class="package-item-content">
+            <h4>Friday Golf Round</h4>
+            <p>Full 18 holes to warm up</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-golf-ball"></i>
+          <div class="package-item-content">
+            <h4>Golf Carts</h4>
+            <p>Included for Friday round</p>
+          </div>
+        </div>
+
+        <div class="package-item">
+          <i class="fas fa-coins"></i>
+          <div class="package-item-content">
+            <h4>Skins Pool</h4>
+            <p>Contribution to competitive pool</p>
+          </div>
+        </div>
+
+        <!-- Bank Transfer Details -->
+        <div class="transfer-details">
+          <h4><i class="fas fa-university"></i> Bank Transfer Details</h4>
+          <div class="transfer-info">
+            <div class="transfer-row">
+              <span class="transfer-label">BSB</span>
+              <span class="transfer-value">062-217</span>
+            </div>
+            <div class="transfer-row">
+              <span class="transfer-label">Account Number</span>
+              <span class="transfer-value">10521045</span>
+            </div>
+            <div class="transfer-row">
+              <span class="transfer-label">Reference</span>
+              <span class="transfer-value" id="ref-value">HC26 + Your Name</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <button class="action-btn primary" onclick="copyBankDetails()">
+            <i class="fas fa-copy"></i>
+            Copy Details
+          </button>
+          <button class="action-btn primary" onclick="printSummary()" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+            <i class="fas fa-file-pdf"></i>
+            Get PDF
+          </button>
+          <button class="action-btn secondary" onclick="window.location.href='contact.html'">
+            <i class="fas fa-question-circle"></i>
+            Need Help?
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Hidden Print Summary -->
+    <div class="print-summary">
+      <h3>Payment Summary - Hackers Cup 2026</h3>
+      <div class="print-summary-row">
+        <span>Player Name:</span>
+        <span id="print-name">-</span>
+      </div>
+      <div class="print-summary-row">
+        <span>Package Cost:</span>
+        <span>$650.00</span>
+      </div>
+      <div class="print-summary-row">
+        <span>Amount Paid:</span>
+        <span id="print-paid">$0.00</span>
+      </div>
+      <div class="print-summary-row">
+        <span>Outstanding Balance:</span>
+        <span id="print-outstanding">$0.00</span>
+      </div>
+      <div class="print-summary-row">
+        <span>Payment Status:</span>
+        <span id="print-status">Pending</span>
+      </div>
+      <div class="print-summary-row">
+        <span>Payment Due Date:</span>
+        <span>July 21, 2026</span>
+      </div>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
+        <p><strong>Bank Transfer Details:</strong></p>
+        <p>BSB: 062-217</p>
+        <p>Account Number: 10521045</p>
+        <p id="print-reference">Reference: HC26 + Your Name</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <a href="index.html">
+      <i class="fas fa-home"></i>
+      Home
+    </a>
+    <a href="payment.html" class="active">
+      <i class="fas fa-dollar-sign"></i>
+      Payment
+    </a>
+    <a href="podcast.html">
+      <i class="fas fa-podcast"></i>
+      Podcast
+    </a>
+    <a href="score.html">
+      <i class="fas fa-chart-line"></i>
+      Score
+    </a>
+  </div>
+    
+    </a>
+  </div>
+
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/custom.js"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase();
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    function getDisplayName(user) {
+      const userRef = ref(database, `users/${user.uid}/displayName`);
+      onValue(userRef, (snapshot) => {
+        const displayName = snapshot.val();
+        if (displayName) {
+          document.getElementById('user-name').textContent = `Welcome back, ${displayName}`;
+          // Update reference field with actual name
+          document.getElementById('ref-value').textContent = `HC26 ${displayName}`;
+          window.userDisplayName = displayName; // Store for copy function
+        } else {
+          const name = prompt('Please enter your display name:');
+          if (name && name.trim() !== '') {
+            set(userRef, name.trim())
+              .then(() => {
+                document.getElementById('user-name').textContent = `Welcome back, ${name.trim()}`;
+                document.getElementById('ref-value').textContent = `HC26 ${name.trim()}`;
+                window.userDisplayName = name.trim();
+              })
+              .catch((error) => {
+                console.error('Error updating display name:', error);
+              });
+          }
+        }
+      });
+    }
+
+    function getAmtOutstanding(user) {
+      const userRef = doc(db, "users", user.uid);
+      getDoc(userRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          const amtOutstandingValue = docSnap.data().amtOutstanding;
+          if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
+            document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
+          } else {
+            document.getElementById('amt-outstanding').textContent = '$0';
+          }
+        } else {
+          console.log("No such document!");
+          document.getElementById('amt-outstanding').textContent = '$0';
+        }
+      }).catch((error) => {
+        console.error("Error getting document:", error);
+        document.getElementById('amt-outstanding').textContent = '$0';
+      });
+    }
+
+    function getFinancialStatus(user) {
+      const userRef = doc(db, "users", user.uid);
+      getDoc(userRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          const financialStatusValue = docSnap.data().financialStatus;
+          if (financialStatusValue !== null && financialStatusValue !== undefined) {
+            document.getElementById('financial-status').textContent = financialStatusValue;
+            
+            // Update badge
+            const badge = document.getElementById('status-badge');
+            badge.className = 'status-badge';
+            
+            if (financialStatusValue.toLowerCase() === 'paid') {
+              badge.classList.add('paid');
+              badge.textContent = 'Paid';
+            } else if (financialStatusValue.toLowerCase() === 'partial') {
+              badge.classList.add('partial');
+              badge.textContent = 'Partial Payment';
+            } else {
+              badge.classList.add('pending');
+              badge.textContent = 'Payment Pending';
+            }
+          } else {
+            document.getElementById('financial-status').textContent = 'Pending';
+            document.getElementById('status-badge').textContent = 'Payment Pending';
+          }
+        } else {
+          console.log("No such document!");
+          document.getElementById('financial-status').textContent = 'Pending';
+          document.getElementById('status-badge').textContent = 'Payment Pending';
+        }
+      }).catch((error) => {
+        console.error("Error getting document:", error);
+        document.getElementById('financial-status').textContent = 'Pending';
+        document.getElementById('status-badge').textContent = 'Payment Pending';
+      });
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        getDisplayName(user);
+        getAmtOutstanding(user);
+        getFinancialStatus(user);
+      }
+    });
+
+    // Copy bank details function
+    window.copyBankDetails = function() {
+      const reference = document.getElementById('ref-value').textContent;
+      const details = `BSB: 062-217\nAccount: 10521045\nReference: ${reference}`;
+      navigator.clipboard.writeText(details).then(() => {
+        const btn = event.target.closest('.action-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.style.background = 'var(--success-gradient)';
+        
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style.background = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy. Please copy manually.');
+      });
+    };
+    
+    // Print summary function
+    window.printSummary = function() {
+      // Update print summary with current values
+      const userName = document.getElementById('user-name').textContent.replace('Welcome back, ', '');
+      const outstanding = document.getElementById('amt-outstanding').textContent;
+      const status = document.getElementById('financial-status').textContent;
+      const reference = document.getElementById('ref-value').textContent;
+      
+      // Calculate amount paid
+      const outstandingNum = parseFloat(outstanding.replace('$', ''));
+      const totalCost = 650;
+      const amountPaid = totalCost - outstandingNum;
+      
+      document.getElementById('print-name').textContent = userName;
+      document.getElementById('print-outstanding').textContent = outstanding;
+      document.getElementById('print-paid').textContent = '$' + amountPaid.toFixed(2);
+      document.getElementById('print-status').textContent = status;
+      document.getElementById('print-reference').textContent = `Reference: ${reference}`;
+      
+      // Trigger print dialog
+      window.print();
+    };
+  </script>
+</body>
+</html>
