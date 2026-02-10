@@ -94,6 +94,31 @@
       color: var(--text-secondary);
       font-size: 1rem;
     }
+
+    .last-updated {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+
+    .name-input {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-width: 240px;
+    }
+
+    .name-input:focus {
+      outline: 2px solid rgba(56, 189, 248, 0.5);
+      outline-offset: 2px;
+    }
+
+    .helper-text {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
     
     .status-cards {
       display: grid;
@@ -226,11 +251,17 @@
     .content-card h3 {
       font-size: 1.5rem;
       font-weight: 700;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 12px;
       color: var(--text-primary);
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 20px;
     }
     
     .content-card h3 i {
@@ -242,20 +273,28 @@
     
     .package-item {
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
     }
-    
-    .package-item:last-child {
-      border-bottom: none;
+
+    .package-item + .package-item {
+      margin-top: 12px;
     }
     
     .package-item i {
       color: var(--success);
       font-size: 1.2rem;
-      margin-top: 4px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(56, 239, 125, 0.1);
     }
     
     .package-item-content {
@@ -271,7 +310,28 @@
     
     .package-item p {
       color: var(--text-secondary);
-      font-size: 0.875rem;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .addon-highlight {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(239, 68, 68, 0.12) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .addon-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .addon-note {
+      color: var(--text-secondary);
       margin: 0;
     }
     
@@ -365,6 +425,30 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(56, 189, 248, 0.3);
     }
+
+    .action-btn:focus-visible {
+      outline: 2px solid rgba(56, 189, 248, 0.6);
+      outline-offset: 2px;
+    }
+
+    .primary-cta {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      color: #ffffff;
+      font-size: 1.05rem;
+    }
+
+    .status-help {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-help i {
+      color: #38bdf8;
+    }
     
     @keyframes fadeInUp {
       from {
@@ -402,6 +486,37 @@
       
       .content-card {
         padding: 24px;
+      }
+
+      .package-item {
+        padding: 14px 14px;
+      }
+
+      .transfer-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .transfer-value {
+        width: 100%;
+        word-break: break-word;
+      }
+
+      .name-input {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .addon-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .primary-cta {
+        position: sticky;
+        bottom: 68px;
+        z-index: 998;
       }
     }
     
@@ -591,6 +706,7 @@
     <div class="dashboard-header">
       <h1>Payment Dashboard</h1>
       <p id="user-name">Welcome back, Loading...</p>
+      <div class="last-updated" id="last-updated" aria-live="polite">Last updated: --</div>
     </div>
 
     <!-- Status Cards -->
@@ -602,7 +718,7 @@
             <i class="fas fa-dollar-sign"></i>
           </div>
         </div>
-        <div class="status-card-value" id="amt-outstanding">$0</div>
+        <div class="status-card-value" id="amt-outstanding" aria-live="polite">$0</div>
         <div class="status-card-label">Amount to be paid</div>
       </div>
 
@@ -613,8 +729,12 @@
             <i class="fas fa-check-circle"></i>
           </div>
         </div>
-        <div class="status-card-value" style="font-size: 1.75rem;" id="financial-status">Pending</div>
+        <div class="status-card-value" style="font-size: 1.75rem;" id="financial-status" aria-live="polite">Pending</div>
         <div class="status-badge pending" id="status-badge">Processing</div>
+        <div class="status-help" title="Paid = balance $0. Partial = payment received but balance remains. Pending = no payment recorded.">
+          <i class="fas fa-info-circle"></i>
+          Paid, Partial, or Pending
+        </div>
       </div>
 
       <div class="status-card">
@@ -624,20 +744,20 @@
             <i class="fas fa-receipt"></i>
           </div>
         </div>
-        <div class="status-card-value">$650</div>
+        <div class="status-card-value" id="total-package">$650.00</div>
         <div class="status-card-label">Full package cost</div>
       </div>
 
-      <div class="status-card warning">
+      <div class="status-card warning" id="due-card">
         <div class="status-card-header">
           <span class="status-card-title">Payment Due Date</span>
           <div class="status-icon balance">
             <i class="fas fa-calendar-alt"></i>
           </div>
         </div>
-        <div class="status-card-value" style="font-size: 1.75rem;">Jul 21</div>
-        <div class="status-card-label">2026</div>
-        <div class="status-badge warning" style="background: rgba(245, 87, 108, 0.15); color: #f5576c;">
+        <div class="status-card-value" style="font-size: 1.75rem;" id="due-date-value">Jul 21</div>
+        <div class="status-card-label" id="due-date-year">2026</div>
+        <div class="status-badge warning" id="due-badge" style="background: rgba(245, 87, 108, 0.15); color: #f5576c;">
           <i class="fas fa-clock"></i> Payment Required
         </div>
       </div>
@@ -648,6 +768,7 @@
       <!-- Package Includes -->
       <div class="content-card">
         <h3><i class="fas fa-box-open"></i> What's Included</h3>
+        <p class="section-subtitle">Everything in your weekend package.</p>
         
         <div class="package-item">
           <i class="fas fa-golf-ball"></i>
@@ -693,13 +814,14 @@
       <!-- Optional Friday Skins -->
       <div class="content-card">
         <h3><i class="fas fa-plus-circle"></i> Optional Add-On</h3>
+        <p class="section-subtitle">Level up your weekend with Friday skins.</p>
         
-        <div style="background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="addon-highlight">
+          <div class="addon-header">
             <h4 style="margin: 0; font-size: 1.25rem; color: var(--text-primary);">Friday Skins</h4>
             <div class="price-tag">$80</div>
           </div>
-          <p style="color: var(--text-secondary); margin-bottom: 16px;">Get a head start on the competition</p>
+          <p class="addon-note">Get a head start on the competition</p>
         </div>
 
         <div class="package-item">
@@ -745,15 +867,16 @@
           </div>
         </div>
 
+
         <!-- Quick Actions -->
         <div class="quick-actions">
-          <button class="action-btn primary" onclick="copyBankDetails()">
+          <button class="action-btn primary primary-cta" onclick="copyBankDetails()">
             <i class="fas fa-copy"></i>
-            Copy Details
+            Copy Payment Details
           </button>
-          <button class="action-btn primary" onclick="printSummary()" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+          <button class="action-btn secondary" onclick="downloadSummaryPdf()">
             <i class="fas fa-file-pdf"></i>
-            Get PDF
+            Download PDF
           </button>
           <button class="action-btn secondary" onclick="window.location.href='contact.html'">
             <i class="fas fa-question-circle"></i>
@@ -817,14 +940,12 @@
       Score
     </a>
   </div>
-    
-    </a>
-  </div>
 
   <!-- Scripts -->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
   <script src="assets/js/custom.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -850,29 +971,40 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    function formatCurrency(value) {
+      const numberValue = Number(value);
+      if (Number.isNaN(numberValue)) {
+        return '$0.00';
+      }
+      return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: 2
+      }).format(numberValue);
+    }
+
+    function updateLastUpdated() {
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString('en-AU')}`;
+    }
+
+    function setDisplayNameUI(displayName) {
+      const name = displayName && displayName.trim() !== '' ? displayName.trim() : 'Player';
+      document.getElementById('user-name').textContent = `Welcome back, ${name}`;
+      document.getElementById('ref-value').textContent = `HC26 ${name}`;
+      window.userDisplayName = name;
+    }
+
     function getDisplayName(user) {
       const userRef = ref(database, `users/${user.uid}/displayName`);
       onValue(userRef, (snapshot) => {
         const displayName = snapshot.val();
         if (displayName) {
-          document.getElementById('user-name').textContent = `Welcome back, ${displayName}`;
-          // Update reference field with actual name
-          document.getElementById('ref-value').textContent = `HC26 ${displayName}`;
-          window.userDisplayName = displayName; // Store for copy function
+          setDisplayNameUI(displayName);
         } else {
-          const name = prompt('Please enter your display name:');
-          if (name && name.trim() !== '') {
-            set(userRef, name.trim())
-              .then(() => {
-                document.getElementById('user-name').textContent = `Welcome back, ${name.trim()}`;
-                document.getElementById('ref-value').textContent = `HC26 ${name.trim()}`;
-                window.userDisplayName = name.trim();
-              })
-              .catch((error) => {
-                console.error('Error updating display name:', error);
-              });
-          }
+          setDisplayNameUI('');
         }
+        updateLastUpdated();
       });
     }
 
@@ -882,17 +1014,22 @@
         if (docSnap.exists()) {
           const amtOutstandingValue = docSnap.data().amtOutstanding;
           if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
-            document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
+            const formatted = formatCurrency(amtOutstandingValue);
+            document.getElementById('amt-outstanding').textContent = formatted;
+            updatePaymentIndicators(amtOutstandingValue, document.getElementById('financial-status').textContent);
           } else {
-            document.getElementById('amt-outstanding').textContent = '$0';
+            document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+            updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
           }
         } else {
           console.log("No such document!");
-          document.getElementById('amt-outstanding').textContent = '$0';
+          document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+          updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
         }
+        updateLastUpdated();
       }).catch((error) => {
         console.error("Error getting document:", error);
-        document.getElementById('amt-outstanding').textContent = '$0';
+        document.getElementById('amt-outstanding').textContent = formatCurrency(0);
       });
     }
 
@@ -918,20 +1055,61 @@
               badge.classList.add('pending');
               badge.textContent = 'Payment Pending';
             }
+            updatePaymentIndicators(getOutstandingValue(), financialStatusValue);
           } else {
             document.getElementById('financial-status').textContent = 'Pending';
             document.getElementById('status-badge').textContent = 'Payment Pending';
+            updatePaymentIndicators(getOutstandingValue(), 'Pending');
           }
         } else {
           console.log("No such document!");
           document.getElementById('financial-status').textContent = 'Pending';
           document.getElementById('status-badge').textContent = 'Payment Pending';
+          updatePaymentIndicators(getOutstandingValue(), 'Pending');
         }
+        updateLastUpdated();
       }).catch((error) => {
         console.error("Error getting document:", error);
         document.getElementById('financial-status').textContent = 'Pending';
         document.getElementById('status-badge').textContent = 'Payment Pending';
       });
+    }
+
+    function getOutstandingValue() {
+      const text = document.getElementById('amt-outstanding').textContent;
+      const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
+      return Number.isNaN(numeric) ? 0 : numeric;
+    }
+
+    function updatePaymentIndicators(outstandingValue, statusValue) {
+      const normalizedStatus = (statusValue || '').toLowerCase();
+      const dueCard = document.getElementById('due-card');
+      const dueBadge = document.getElementById('due-badge');
+      const dueValue = document.getElementById('due-date-value');
+      const dueYear = document.getElementById('due-date-year');
+
+      if (outstandingValue <= 0 || normalizedStatus === 'paid') {
+        document.getElementById('financial-status').textContent = 'Paid';
+        const badge = document.getElementById('status-badge');
+        badge.className = 'status-badge paid';
+        badge.textContent = 'Paid';
+
+        dueCard.classList.remove('warning');
+        dueValue.textContent = 'No Payment Due';
+        dueValue.style.color = 'var(--success)';
+        dueYear.textContent = '';
+        dueBadge.className = 'status-badge paid';
+        dueBadge.style.display = 'none';
+        return;
+      }
+
+      dueCard.classList.add('warning');
+      dueValue.textContent = 'Jul 21';
+      dueValue.style.color = '';
+      dueYear.textContent = '2026';
+      dueBadge.className = 'status-badge warning';
+      dueBadge.innerHTML = '<i class="fas fa-clock"></i> Payment Required';
+      dueBadge.style.display = 'inline-block';
     }
 
     auth.onAuthStateChanged((user) => {
@@ -964,27 +1142,36 @@
       });
     };
     
-    // Print summary function
-    window.printSummary = function() {
-      // Update print summary with current values
+    // Download PDF summary
+    window.downloadSummaryPdf = function() {
       const userName = document.getElementById('user-name').textContent.replace('Welcome back, ', '');
       const outstanding = document.getElementById('amt-outstanding').textContent;
       const status = document.getElementById('financial-status').textContent;
       const reference = document.getElementById('ref-value').textContent;
-      
-      // Calculate amount paid
-      const outstandingNum = parseFloat(outstanding.replace('$', ''));
       const totalCost = 650;
-      const amountPaid = totalCost - outstandingNum;
-      
-      document.getElementById('print-name').textContent = userName;
-      document.getElementById('print-outstanding').textContent = outstanding;
-      document.getElementById('print-paid').textContent = '$' + amountPaid.toFixed(2);
-      document.getElementById('print-status').textContent = status;
-      document.getElementById('print-reference').textContent = `Reference: ${reference}`;
-      
-      // Trigger print dialog
-      window.print();
+      const outstandingNum = parseFloat(outstanding.replace(/[^0-9.]/g, ''));
+      const amountPaid = totalCost - (Number.isNaN(outstandingNum) ? 0 : outstandingNum);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text('Payment Summary - Hackers Cup 2026', 14, 18);
+      doc.setFontSize(12);
+      doc.text(`Player Name: ${userName}`, 14, 30);
+      doc.text(`Package Cost: ${formatCurrency(totalCost)}`, 14, 38);
+      doc.text(`Amount Paid: ${formatCurrency(amountPaid)}`, 14, 46);
+      doc.text(`Outstanding Balance: ${outstanding}`, 14, 54);
+      doc.text(`Payment Status: ${status}`, 14, 62);
+      doc.text('Payment Due Date: July 21, 2026', 14, 70);
+
+      doc.setFontSize(13);
+      doc.text('Bank Transfer Details', 14, 84);
+      doc.setFontSize(12);
+      doc.text('BSB: 062-217', 14, 92);
+      doc.text('Account Number: 10521045', 14, 100);
+      doc.text(`Reference: ${reference}`, 14, 108);
+
+      doc.save('hackers-cup-payment-summary.pdf');
     };
   </script>
 </body>
