@@ -200,6 +200,11 @@
       opacity: 1;
     }
 
+    .day-tile:focus-visible {
+      outline: 2px solid var(--accent-aqua);
+      outline-offset: 2px;
+    }
+
     /* SELECT + BUTTONS */
 
     label {
@@ -258,6 +263,11 @@
       background: #43f0f4;
     }
 
+    .btn:focus-visible {
+      outline: 2px solid var(--accent-aqua);
+      outline-offset: 2px;
+    }
+
     .btn[disabled] {
       opacity: 0.45;
       cursor: default;
@@ -272,22 +282,109 @@
     }
 
     /* Scorecard modal/table */
+    .scorecard-modal {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, #15192f 0, transparent 50%),
+        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
+        var(--bg-main);
+      display: block;
+      padding: 18px 16px 24px;
+      z-index: 9999;
+      overflow: auto;
+    }
+
+    .scorecard-card {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      min-height: 100%;
+    }
+
+    .scorecard-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .scorecard-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .scorecard-sub {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .scorecard-stats {
+      background: #1b2036;
+      border: 1px solid #2b3150;
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      min-width: 160px;
+    }
+
     .scorecard-table {
       width: 100%;
+      margin: 12px 0 0;
       border-collapse: collapse;
-      margin-top: 10px;
+      color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
     }
-    .scorecard-table th, .scorecard-table td {
-      padding: 6px 8px;
-      border-bottom: 1px solid #232844;
+
+    .scorecard-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .scorecard-table th,
+    .scorecard-table td {
+      padding: 10px 12px;
+      border: 1px solid #3a3a3a;
+      text-align: center;
       font-size: 13px;
-      text-align: left;
     }
+
+    .scorecard-table tbody tr:nth-child(even) {
+      background-color: #2f2f2f;
+    }
+
+    .scorecard-table tbody tr:nth-child(odd) {
+      background-color: #262626;
+    }
+
+    .scorecard-table tbody tr:hover {
+      background-color: #3b3b3b;
+    }
+
     .scorecard-actions {
       display: flex;
       gap: 8px;
-      justify-content: flex-end;
-      margin-top: 8px;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .scorecard-actions .btn {
+      font-size: 13px;
+      padding: 8px 12px;
     }
 
     /* STATUS TEXT */
@@ -304,6 +401,10 @@
 
     .status.success {
       color: var(--success);
+    }
+
+    .status.warn {
+      color: var(--accent-orange);
     }
 
     /* SCORING */
@@ -445,6 +546,19 @@
       gap: 8px;
     }
 
+    .score-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .score-actions .btn {
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+
     .nav-row .btn-icon {
       flex: 0 0 auto;
       min-width: 86px;
@@ -511,6 +625,10 @@
       display: none !important;
     }
 
+    .scorecard-modal.hidden {
+      display: none !important;
+    }
+
     /* SMALL SCREENS */
 
     @media (max-width: 360px) {
@@ -555,7 +673,7 @@
           <span class="day-sub">2-Ball Ambrose</span>
         </button>
       </div>
-      <p class="status" id="dayStatus"></p>
+      <p class="status" id="dayStatus" aria-live="polite"></p>
     </section>
 
     <!-- STEP 2: PLAYER -->
@@ -566,7 +684,7 @@
       <select id="playerSelect">
         <option value="">Loading players…</option>
       </select>
-      <p class="status" id="playerStatus"></p>
+      <p class="status" id="playerStatus" aria-live="polite"></p>
       <div style="margin-top:10px;">
         <button id="btnConfirmPlayer" class="btn" type="button" disabled>Load my group</button>
       </div>
@@ -603,8 +721,12 @@
             Next &rarr;
           </button>
         </div>
+        <div class="score-actions">
+          <button id="btnForceSave" class="btn secondary hidden" type="button">Save now</button>
+          <span class="status" id="saveMeta" aria-live="polite"></span>
+        </div>
 
-        <p class="status" id="scoreStatus"></p>
+        <p class="status" id="scoreStatus" aria-live="polite"></p>
       </div>
     </section>
   </div>
@@ -640,30 +762,8 @@
     const rtdb = getDatabase(app);
 
     // --- Worrigee Links course data (Men, par + index) ---
-    const COURSE = {
-      name: "Worrigee Links Golf Course",
-      par: 70,
-      holes: {
-        1:  { par: 5, index: 9 },
-        2:  { par: 3, index: 1 },
-        3:  { par: 4, index: 15 },
-        4:  { par: 4, index: 17 },
-        5:  { par: 4, index: 5 },
-        6:  { par: 3, index: 11 },
-        7:  { par: 5, index: 3 },
-        8:  { par: 3, index: 13 },
-        9:  { par: 4, index: 7 },
-        10: { par: 4, index: 8 },
-        11: { par: 5, index: 10 },
-        12: { par: 3, index: 2 },
-        13: { par: 4, index: 14 },
-        14: { par: 3, index: 4 },
-        15: { par: 4, index: 18 },
-        16: { par: 4, index: 6 },
-        17: { par: 3, index: 16 },
-        18: { par: 5, index: 12 }
-      }
-    };
+    let COURSE = null;
+    const COURSE_ID = "worrigee";
 
     // DOM elements
     const stepDay = document.getElementById("stepDay");
@@ -733,6 +833,30 @@
 
     let touchStartX = 0;
     let touchEndX = 0;
+
+    async function loadCourse() {
+      if (COURSE) return COURSE;
+      const courseRef = doc(db, "courses", COURSE_ID);
+      const snap = await getDoc(courseRef);
+      if (!snap.exists()) {
+        throw new Error("Course data not found.");
+      }
+      COURSE = snap.data();
+      return COURSE;
+    }
+
+    function getStrokesReceived(handicap, index1, index2) {
+      const h = Number(handicap) || 0;
+      const base = Math.floor(h / 18);
+      const remainder = h % 18;
+      let extra = 0;
+      if (remainder > 0) {
+        const useIndex2 = base % 2 === 1;
+        const targetIndex = useIndex2 ? index2 : index1;
+        extra = Number(targetIndex) <= remainder ? 1 : 0;
+      }
+      return base + extra;
+    }
 
     function setStatus(el, msg, type = "") {
       el.textContent = msg || "";
@@ -1052,6 +1176,7 @@
     });
 
     async function loadGroupForPlayer() {
+      await loadCourse();
       console.log('loadGroupForPlayer called', { selectedDayId, selectedPlayerId });
       const teeRef = doc(
         db,
@@ -1164,7 +1289,7 @@ function autoSave() {
       const info = COURSE.holes[currentHole];
       const parts = [];
       if (info) {
-        parts.push(`Par ${info.par}`, `Index ${info.index}`);
+        parts.push(`Par ${info.par}`, `Index 1 ${info.index1}`, `Index 2 ${info.index2}`);
       }
       parts.push(isSunday ? "Enter gross strokes per team" : "Enter gross strokes per player");
       holeMetaEl.textContent = parts.join(" • ");
@@ -1330,7 +1455,8 @@ input.addEventListener("input", () => {
             // compute net and stableford points using stored handicaps
             const holeInfo = COURSE.holes[currentHole] || {};
             const par = Number(holeInfo.par || 4);
-            const holeIndex = Number(holeInfo.index || currentHole);
+            const holeIndex1 = Number(holeInfo.index1 || currentHole);
+            const holeIndex2 = Number(holeInfo.index2 || (holeIndex1 + 18));
 
             let handicap = 0;
             if (entityType === 'player') {
@@ -1339,7 +1465,7 @@ input.addEventListener("input", () => {
               handicap = Number(teamHandicapMap[id] || 0);
             }
 
-            const strokesReceived = Math.floor(handicap / 18) + ((handicap % 18) >= holeIndex ? 1 : 0);
+            const strokesReceived = getStrokesReceived(handicap, holeIndex1, holeIndex2);
             const net = Number(gross) - strokesReceived;
             const pts = (function(netStrokes, parVal){
               const diff = netStrokes - parVal;
@@ -1432,23 +1558,33 @@ btnNextHole.addEventListener("click", async () => {
     // SCORECARD modal UI
     const scorecardModal = document.createElement('div');
     scorecardModal.id = 'scorecardModal';
-    scorecardModal.className = 'card hidden';
+    scorecardModal.className = 'scorecard-modal hidden';
     scorecardModal.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="margin:0;">Scorecard</h2>
-        <div>
+      <div class="scorecard-card">
+        <div class="scorecard-head">
+          <div>
+            <div class="scorecard-name" id="scorecardPlayerName">Player</div>
+            <div class="scorecard-sub" id="scorecardPlayerHandicap">Handicap: -</div>
+          </div>
+          <div class="scorecard-stats">
+            <div>Points: <span id="scorecardTotalPoints">0</span> • Gross: <span id="scorecardTotalGross">0</span></div>
+          </div>
+        </div>
+        <p class="status" id="scorecardStatus"></p>
+        <div class="scorecard-actions">
+          <div>
+            <label for="scorecardMember">Member</label>
+            <select id="scorecardMember"></select>
+          </div>
           <button id="closeScorecard" class="btn secondary" type="button">Close</button>
         </div>
+        <table class="scorecard-table" id="scorecardTable">
+          <thead>
+            <tr><th>Hole</th><th>Par</th><th>Index 1</th><th>Index 2</th><th>Gross</th><th>Net</th><th>Stableford</th></tr>
+          </thead>
+          <tbody id="scorecardBody"></tbody>
+        </table>
       </div>
-      <p class="status" id="scorecardStatus"></p>
-      <label for="scorecardMember">Member</label>
-      <select id="scorecardMember"></select>
-      <table class="scorecard-table" id="scorecardTable">
-        <thead>
-          <tr><th>Hole</th><th>Par</th><th>Gross</th><th>Net</th><th>Stableford</th></tr>
-        </thead>
-        <tbody id="scorecardBody"></tbody>
-      </table>
     `;
     document.body.appendChild(scorecardModal);
 
@@ -1456,10 +1592,12 @@ btnNextHole.addEventListener("click", async () => {
     const btnOpenMemberScorecard = document.getElementById('btnOpenMemberScorecard');
     const closeScorecard = () => scorecardModal.classList.add('hidden');
 
-    btnOpenScorecard.addEventListener('click', () => {
-      // populate members
-      openScorecardModal();
-    });
+    if (btnOpenScorecard) {
+      btnOpenScorecard.addEventListener('click', () => {
+        // populate members
+        openScorecardModal();
+      });
+    }
 
     btnOpenMemberScorecard.addEventListener('click', () => {
       const sel = document.getElementById('scorecardMember');
@@ -1507,6 +1645,8 @@ btnNextHole.addEventListener("click", async () => {
         return;
       }
 
+      await loadCourse();
+
       try {
         const refDoc = doc(db, 'competitions', COMP_ID, 'rounds', selectedDayId, 'scorecards', id);
         const snap = await getDoc(refDoc);
@@ -1520,11 +1660,18 @@ btnNextHole.addEventListener("click", async () => {
           handicap = Number(teamHandicapMap[id] || 0);
         }
 
+        document.getElementById('scorecardPlayerName').textContent = entityNames[id] || id;
+        document.getElementById('scorecardPlayerHandicap').textContent = `Handicap: ${handicap}`;
+
+        let totalGross = 0;
+        let totalPoints = 0;
+
         for (let i = 1; i <= HOLE_COUNT; i++) {
           const hk = 'hole' + i;
           const gross = data[hk] !== undefined ? data[hk] : '';
           const par = (COURSE.holes[i] && COURSE.holes[i].par) || '';
-          const holeIndex = (COURSE.holes[i] && COURSE.holes[i].index) || i;
+          const holeIndex1 = (COURSE.holes[i] && COURSE.holes[i].index1) || i;
+          const holeIndex2 = (COURSE.holes[i] && COURSE.holes[i].index2) || (Number(holeIndex1) + 18);
 
           let net = '';
           let pts = '';
@@ -1534,7 +1681,7 @@ btnNextHole.addEventListener("click", async () => {
             if (data['pts_' + hk] !== undefined) pts = data['pts_' + hk];
 
             if (net === '' || pts === '') {
-              const sr = Math.floor(handicap / 18) + ((handicap % 18) >= holeIndex ? 1 : 0);
+              const sr = getStrokesReceived(handicap, holeIndex1, holeIndex2);
               net = Number(gross) - sr;
               const diff = net - par;
               if (diff <= -3) pts = 5;
@@ -1547,9 +1694,19 @@ btnNextHole.addEventListener("click", async () => {
           }
 
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${i}</td><td>${par}</td><td>${gross}</td><td>${net}</td><td>${pts}</td>`;
+          tr.innerHTML = `<td>${i}</td><td>${par}</td><td>${holeIndex1}</td><td>${holeIndex2}</td><td>${gross}</td><td>${net}</td><td>${pts}</td>`;
           body.appendChild(tr);
+
+          if (gross !== '') {
+            totalGross += Number(gross) || 0;
+          }
+          if (pts !== '') {
+            totalPoints += Number(pts) || 0;
+          }
         }
+
+        document.getElementById('scorecardTotalGross').textContent = totalGross || 0;
+        document.getElementById('scorecardTotalPoints').textContent = totalPoints || 0;
 
         setStatus(document.getElementById('scorecardStatus'), '');
       } catch (e) {

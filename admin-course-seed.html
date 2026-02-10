@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Course Seed</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #050713;
+      --bg-card: #10121e;
+      --bg-card-soft: #151827;
+      --accent-aqua: #1eeaf0;
+      --text-main: #ecf8ff;
+      --text-muted: #8a90a4;
+      --border-subtle: #2a2e45;
+      --success: #bbf7d0;
+      --error: #fecaca;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #15192f 0, transparent 50%),
+        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
+        var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 820px;
+      padding: 20px 16px 32px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, #1c2036 0, #10121e 55%);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(42, 46, 69, 0.9);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent-aqua);
+      color: #050713;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .status.success { color: var(--success); }
+    .status.error { color: var(--error); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid #232844;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <h2>Seed Course: Worrigee</h2>
+      <p class="status">Writes to Firestore: courses/worrigee</p>
+      <button class="btn" id="seedBtn" type="button">Seed Course Data</button>
+      <div class="status" id="seedStatus"></div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Hole</th>
+              <th>Par</th>
+              <th>Index 1</th>
+              <th>Index 2</th>
+              <th>Dist (m)</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const courseData = {
+      id: "worrigee",
+      name: "Worrigee Links Golf Course",
+      par: 70,
+      holes: {
+        1:  { par: 5, index1: 10, index2: 23, distance: 473 },
+        2:  { par: 3, index1: 1, index2: 26, distance: 210 },
+        3:  { par: 4, index1: 12, index2: 29, distance: 330 },
+        4:  { par: 4, index1: 16, index2: 32, distance: 292 },
+        5:  { par: 4, index1: 3, index2: 21, distance: 360 },
+        6:  { par: 3, index1: 15, index2: 36, distance: 165 },
+        7:  { par: 5, index1: 6, index2: 19, distance: 497 },
+        8:  { par: 3, index1: 8, index2: 31, distance: 160 },
+        9:  { par: 4, index1: 4, index2: 20, distance: 350 },
+        10: { par: 4, index1: 7, index2: 22, distance: 335 },
+        11: { par: 5, index1: 11, index2: 30, distance: 444 },
+        12: { par: 3, index1: 2, index2: 27, distance: 185 },
+        13: { par: 4, index1: 17, index2: 33, distance: 280 },
+        14: { par: 3, index1: 5, index2: 25, distance: 175 },
+        15: { par: 4, index1: 18, index2: 34, distance: 242 },
+        16: { par: 4, index1: 9, index2: 24, distance: 350 },
+        17: { par: 3, index1: 13, index2: 35, distance: 132 },
+        18: { par: 5, index1: 14, index2: 28, distance: 445 }
+      },
+      updatedAt: serverTimestamp()
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const seedBtn = document.getElementById('seedBtn');
+    const seedStatus = document.getElementById('seedStatus');
+    const previewBody = document.getElementById('previewBody');
+
+    function setStatus(msg, type = "") {
+      seedStatus.textContent = msg || "";
+      seedStatus.classList.remove('success', 'error');
+      if (type) seedStatus.classList.add(type);
+    }
+
+    function renderPreview() {
+      previewBody.innerHTML = "";
+      Object.keys(courseData.holes).forEach(key => {
+        const h = courseData.holes[key];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${key}</td>
+          <td>${h.par}</td>
+          <td>${h.index1}</td>
+          <td>${h.index2}</td>
+          <td>${h.distance}</td>
+        `;
+        previewBody.appendChild(tr);
+      });
+    }
+
+    seedBtn.addEventListener('click', async () => {
+      try {
+        setStatus('Seeding...');
+        await setDoc(doc(db, 'courses', 'worrigee'), courseData, { merge: true });
+        setStatus('Seeded course data.', 'success');
+      } catch (e) {
+        console.error(e);
+        setStatus('Seeding failed.', 'error');
+      }
+    });
+
+    renderPreview();
+  </script>
+</body>
+</html>
