@@ -157,6 +157,88 @@
     .pulse-stat.tone-amber { --tone: rgba(251, 146, 60, 0.9); }
     .pulse-stat.tone-violet { --tone: rgba(168, 85, 247, 0.9); }
 
+    .pulse-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pulse-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+    }
+
+    .pulse-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 60;
+    }
+
+    .pulse-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .pulse-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: min(94vw, 420px);
+      padding: 18px 16px 24px;
+      background: rgba(15, 23, 42, 0.92);
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: -18px 0 30px rgba(2, 6, 23, 0.28);
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 70;
+      overflow-y: auto;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .pulse-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    @media (min-width: 768px) {
+      .pulse-toggle {
+        display: none;
+      }
+
+      .pulse-overlay {
+        display: none;
+      }
+
+      .pulse-drawer {
+        position: static;
+        transform: none;
+        width: auto;
+        height: auto;
+        padding: 0;
+        background: transparent;
+        border: none;
+        overflow: visible;
+      }
+    }
+
     .hero-gradient {
       background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
     }
@@ -376,35 +458,45 @@
 
   <section class="py-10 md:py-14 -mt-8 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="pulse-card mb-6">
-        <div class="pulse-header">
-          <div class="pulse-title">Ryzy Performance Pulse</div>
-          
-        </div>
-        <div class="pulse-grid">
-          <div class="pulse-stat tone-sky">
-            <div class="pulse-stat-label">Avg Score</div>
-            <div id="pulse-avg-score" class="pulse-stat-value">0.0</div>
+      <div class="flex items-center justify-end md:hidden mb-4">
+        <button id="pulse-toggle" class="pulse-toggle" type="button">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          Performance Pulse
+        </button>
+      </div>
+      <div id="pulse-drawer" class="pulse-drawer">
+        <div class="pulse-card mb-6">
+          <div class="pulse-header">
+            <div class="pulse-title">Ryzy Performance Pulse</div>
+            <button id="pulse-close" class="pulse-close" type="button" aria-label="Close performance pulse">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
           </div>
-          <div class="pulse-stat tone-emerald">
-            <div class="pulse-stat-label">Avg Handicap</div>
-            <div id="pulse-avg-handicap" class="pulse-stat-value">0.0</div>
-          </div>
-          <div class="pulse-stat tone-gold">
-            <div class="pulse-stat-label">36+ Points</div>
-            <div id="pulse-played" class="pulse-stat-value">0</div>
-          </div>
-          <div class="pulse-stat tone-rose">
-            <div class="pulse-stat-label">Under 36</div>
-            <div id="pulse-not-played" class="pulse-stat-value">0</div>
-          </div>
-          <div class="pulse-stat tone-amber">
-            <div class="pulse-stat-label">40+ Scores</div>
-            <div id="pulse-40plus" class="pulse-stat-value">0</div>
-          </div>
-          <div class="pulse-stat tone-violet">
-            <div class="pulse-stat-label">Through 18</div>
-            <div id="pulse-through" class="pulse-stat-value">0</div>
+          <div class="pulse-grid">
+            <div class="pulse-stat tone-sky">
+              <div class="pulse-stat-label">Avg Score</div>
+              <div id="pulse-avg-score" class="pulse-stat-value">0.0</div>
+            </div>
+            <div class="pulse-stat tone-emerald">
+              <div class="pulse-stat-label">Avg Handicap</div>
+              <div id="pulse-avg-handicap" class="pulse-stat-value">0.0</div>
+            </div>
+            <div class="pulse-stat tone-gold">
+              <div class="pulse-stat-label">36+ Points</div>
+              <div id="pulse-played" class="pulse-stat-value">0</div>
+            </div>
+            <div class="pulse-stat tone-rose">
+              <div class="pulse-stat-label">Under 36</div>
+              <div id="pulse-not-played" class="pulse-stat-value">0</div>
+            </div>
+            <div class="pulse-stat tone-amber">
+              <div class="pulse-stat-label">40+ Scores</div>
+              <div id="pulse-40plus" class="pulse-stat-value">0</div>
+            </div>
+            <div class="pulse-stat tone-violet">
+              <div class="pulse-stat-label">Through 18</div>
+              <div id="pulse-through" class="pulse-stat-value">0</div>
+            </div>
           </div>
         </div>
       </div>
@@ -468,8 +560,38 @@
       if (window.lucide) {
         window.lucide.createIcons();
       }
+
+      const pulseToggle = document.getElementById('pulse-toggle');
+      const pulseDrawer = document.getElementById('pulse-drawer');
+      const pulseOverlay = document.getElementById('pulse-overlay');
+      const pulseClose = document.getElementById('pulse-close');
+
+      const closePulse = () => {
+        pulseDrawer?.classList.remove('is-open');
+        pulseOverlay?.classList.remove('is-open');
+        document.body.style.overflow = '';
+      };
+
+      if (pulseToggle && pulseDrawer && pulseOverlay) {
+        pulseToggle.addEventListener('click', () => {
+          pulseDrawer.classList.add('is-open');
+          pulseOverlay.classList.add('is-open');
+          document.body.style.overflow = 'hidden';
+        });
+
+        pulseOverlay.addEventListener('click', closePulse);
+        pulseClose?.addEventListener('click', closePulse);
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closePulse();
+          }
+        });
+      }
     });
   </script>
+
+  <div id="pulse-overlay" class="pulse-overlay"></div>
 
   <script type="text/javascript">
     const sheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I';
