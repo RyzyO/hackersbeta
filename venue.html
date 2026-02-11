@@ -1,155 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Venue | Hackers Cup</title>
 
-  <head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
 
-    <title>Venue</title>
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
 
-    <!-- Bootstrap core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
 
-    <!-- Additional CSS Files -->
-        <link rel="stylesheet" href="assets/css/navbar.css">
-    <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-    <link rel="stylesheet" href="assets/css/owl.css">
-    <link rel="stylesheet" href="assets/css/animate.css">
-    <link rel="stylesheet"href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
 
-  </head>
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
 
-<body>
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
 
-  <!-- ***** Preload Start ***** -->
-  <div id="js-preloader" class="js-preloader">
-    <div class="preloader-inner">
-      <span class="dot"></span>
-      <div class="dots">
-        <span></span>
-        <span></span>
-        <span></span>
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="mailto:info@hackerscup.live" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Contact</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- ***** Preload End ***** -->
 
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <nav class="main-nav">
-                    <!-- ***** Logo Start ***** -->
-                    <a href="index.html" class="logo">
-                        <img src="assets/images/logo.png" alt="" style="width: 158px;">
-                    </a>
-                    <!-- ***** Logo End ***** -->
-                    <!-- ***** Menu Start ***** -->
-                    <ul class="nav">
-                      <li><a href="index.html">Home</a></li>
- <li><a href="register.html">Register</a></li>
- <li><a href="course.html" class="active">Venue</a></li>
- <li><a href="payment.html">Payment</a></li>
- <li><a href="podcast.html">Podcast</a></li>
-                      <li><a href="schedule.html">Schedule</a></li>
- <li><a href="honour-roll.html">Honour Roll</a></li>
- <li><a href="mailto:info@hackerscup.live">Contact Us</a></li>
-                  </ul>
-                    <a class='menu-trigger'>
-                        <span>Menu</span>
-                    </a>
-                    <!-- ***** Menu End ***** -->
-                </nav>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+        <a href="mailto:info@hackerscup.live" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div class="space-y-6 animate-slide-up">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="map" class="w-4 h-4 text-hackers-sky"></i>
+            <span class="text-sm font-medium text-gray-300">Venue & Accommodation</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+            Worrigee Links
+            
+          </h1>
+          <p class="text-lg text-gray-300">Everything you need for the road trip: course details, hotel info, and your assigned room.</p>
+        </div>
+        <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+          <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Your Room</p>
+          <p id="room-number" class="text-3xl font-semibold mt-3">Loading room number...</p>
+          <p class="text-sm text-gray-400 mt-2">Assigned room at Shoalhaven Springs.</p>
+          <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Level</p>
+            <p id="room-level" class="text-lg font-semibold">Loading level...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div class="glass-card rounded-3xl p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="flag" class="w-6 h-6 text-hackers-sky"></i>
             </div>
-        </div>
-    </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
-
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>VENUE</h3>
-         
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section trending">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-6">
-          <div class="section-heading">
-            <h6>Venue Information</h6>
-            <h2>VENUE</h2>
+            <div>
+              <h2 class="text-2xl font-bold">Worrigee Links Golf Course</h2>
+              <p class="text-sm text-gray-400">Official course venue.</p>
+            </div>
+          </div>
+          <div class="space-y-3 text-sm text-gray-300">
+            <div class="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+              <span class="uppercase tracking-[0.2em] text-xs text-gray-400">Course</span>
+              <span>Par 70</span>
+            </div>
+            <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Website</p>
+              <a href="https://worrigeelinks.com.au/" target="_blank" rel="noopener noreferrer" class="text-hackers-sky">https://worrigeelinks.com.au/</a>
+            </div>
           </div>
         </div>
-        <div class="col-lg-6">
-          <div class="trending-filter">
-            <!-- Remove all individual 'item' divs within the 'trending-box' and the 'trending-filter' ul -->
+
+        <div class="glass-card rounded-3xl p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+              <i data-lucide="hotel" class="w-6 h-6 text-hackers-gold"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold">Shoalhaven Springs Motel</h2>
+              <p class="text-sm text-gray-400">Primary accommodation.</p>
+            </div>
           </div>
-        </div>
-        <div class="col-lg-12">
-          <div class="trending-products">
-            <div class="row">
-              <!-- Content for the venue page goes here -->
-              <div class="col-lg-12">
-                  <p>Nelson Bay Golf Club is the host venue for this year's Hackers. Located in the beautiful Port Stephens area, the course offers a challenging and enjoyable experience for golfers of all skill levels.</p><br>
-                  <ul>
-                      <li><strong>Name:</strong> Nelson Bay Golf Club</li>
-                      <li><strong>Address:</strong> Dowling St, Nelson Bay NSW 2315</li>
-                      <li><strong>Phone:</strong> (02) 4981 1132</li>
-                      <li><strong>Website:</strong> <a href="https://www.nelsonbaygolfclub.com.au/" target="_blank">https://www.nelsonbaygolfclub.com/</a></li>
-                  </ul>
-              </div>
+          <div class="space-y-3 text-sm text-gray-300">
+            <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Address</p>
+              <p>131 Greenwell Point Road, Worrigee NSW 2540</p>
+            </div>
+            <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Contact</p>
+              <p>(02) 4422 4522</p>
+              <p>shoalhaven@springs.com.au</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <br>
-  <br>
-  <br>
-  <br>
-  <br>
+  </section>
 
-  
   <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
+      </div>
+    </div>
+  </div>
 
-  <!-- Scripts -->
-  <!-- Bootstrap core JavaScript -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
 
-  </body>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+    const database = getDatabase();
+    const auth = getAuth(app);
+
+    function setRoomNumber(text) {
+      const roomEl = document.getElementById('room-number');
+      if (roomEl) {
+        roomEl.textContent = text;
+      }
+    }
+
+    function getRoomNumber(user) {
+      const roomRef = ref(database, `users/${user.uid}/roomNumber`);
+      onValue(roomRef, (snapshot) => {
+        const roomNumber = snapshot.val();
+        if (roomNumber) {
+          setRoomNumber(`${roomNumber}`);
+        } else {
+          setRoomNumber('Room number not assigned yet.');
+        }
+      });
+    }
+
+    function setRoomLevel(text) {
+      const levelEl = document.getElementById('room-level');
+      if (levelEl) {
+        levelEl.textContent = text;
+      }
+    }
+
+    function getRoomLevel(user) {
+      const levelRef = ref(database, `users/${user.uid}/level`);
+      onValue(levelRef, (snapshot) => {
+        const level = snapshot.val();
+        if (level !== null && level !== undefined && level !== '') {
+          setRoomLevel(`${level}`);
+        } else {
+          setRoomLevel('Level not assigned yet.');
+        }
+      });
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        getRoomNumber(user);
+        getRoomLevel(user);
+      }
+    });
+  </script>
+</body>
 </html>

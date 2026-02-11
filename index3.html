@@ -181,7 +181,7 @@
     /* Loading Spinner */
     .loader {
       border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #10b981;
+      border-top-color: #38bdf8;
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -592,13 +592,30 @@
     lucide.createIcons();
     
     // Remove Preloader
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const preloader = document.getElementById('preloader');
+    (function handlePreloader() {
+      const preloader = document.getElementById('preloader');
+      if (!preloader) return;
+
+      const hasVisited = localStorage.getItem('hc_preloaded') === '1';
+      let removed = false;
+
+      const hidePreloader = () => {
+        if (removed) return;
+        removed = true;
         preloader.style.opacity = '0';
-        setTimeout(() => preloader.remove(), 500);
-      }, 500);
-    });
+        setTimeout(() => preloader.remove(), 300);
+        localStorage.setItem('hc_preloaded', '1');
+      };
+
+      if (hasVisited) {
+        preloader.style.opacity = '0';
+        preloader.remove();
+        return;
+      }
+
+      window.addEventListener('load', hidePreloader, { once: true });
+      setTimeout(hidePreloader, 3000);
+    })();
     
     // Mobile Menu Toggle
     window.toggleMobileMenu = function() {

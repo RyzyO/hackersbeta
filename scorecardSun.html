@@ -115,6 +115,10 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
+    .overflow-x-auto {
+      overflow-x: visible;
+    }
+
     @media (min-width: 769px) {
       .scorecard-table { table-layout: fixed; }
       .scorecard-table th,
@@ -127,11 +131,21 @@
       .scorecard-table { table-layout: fixed; }
       .scorecard-table th,
       .scorecard-table td {
-        width: 10%; min-width: 40px; max-width: 70px;
+        width: 10%;
+        min-width: 36px;
+        max-width: 64px;
+        font-size: 12px;
+        padding: 8px 8px;
       }
       .scorecard-table th:last-child,
       .scorecard-table td:last-child {
         width: 10%; min-width: 50px; max-width: 80px;
+      }
+
+      .stats-card {
+        width: 100%;
+        text-align: center;
+        align-items: center;
       }
     }
 
