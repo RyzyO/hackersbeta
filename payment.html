@@ -1,363 +1,824 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>Payment</title>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Payment Dashboard | Hackers Cup</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
-    ul {
-      color:black;
+    :root {
+      --success-gradient: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .status-badge.paid {
+      background: rgba(34, 197, 94, 0.12);
+      color: #22c55e;
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .status-badge.partial {
+      background: rgba(249, 115, 22, 0.12);
+      color: #f59e0b;
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .status-badge.pending {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .status-badge.warning {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .action-btn {
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    .action-btn:focus-visible {
+      outline: 2px solid rgba(56, 189, 248, 0.7);
+      outline-offset: 2px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        color: #111827;
+      }
+
+      nav,
+      .bottom-nav,
+      .action-btn {
+        display: none !important;
+      }
+
+      .print-summary {
+        display: block !important;
+      }
+    }
+
+    .print-summary {
+      display: none;
     }
   </style>
+<link rel="manifest" href="site.webmanifest">
 </head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
 
-<body>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        </div>
 
-  <!-- ***** Header Area Start ***** -->
- <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- ***** Logo Start ***** -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <!-- ***** Logo End ***** -->
-            <!-- ***** Menu Start ***** -->
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html" class="active">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-            </ul>
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-          </nav>
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
         </div>
       </div>
     </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
 
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>Payment</h3>
-          <span class="breadcrumb" id="user-name">Loading...</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-8 items-center">
+        <div class="space-y-6 animate-slide-up">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="wallet" class="w-4 h-4 text-hackers-sky"></i>
+            <span class="text-sm font-medium text-gray-300">Payment Dashboard</span>
+          </div>
+
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+            Keep your
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Hackers Cup</span>
+            balance on track.
+          </h1>
+
+          <p id="user-name" class="text-lg text-gray-300">Welcome back, Loading...</p>
+          <p id="last-updated" class="text-xs uppercase tracking-[0.2em] text-gray-400">Last updated: --</p>
         </div>
+
+        <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-[0.25em] text-gray-400">Outstanding Balance</p>
+              <p id="amt-outstanding" class="text-4xl font-bold text-white mt-2">$0</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="dollar-sign" class="w-6 h-6 text-hackers-sky"></i>
+            </div>
+          </div>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <div class="status-badge pending" id="status-badge">Processing</div>
+            <span class="text-sm text-gray-400">Paid, Partial, or Pending</span>
+          </div>
+
+          <div class="mt-6 grid grid-cols-2 gap-4">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Status</p>
+              <p id="financial-status" class="text-lg font-semibold mt-2">Pending</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4" id="due-card">
+              <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Due Date</p>
+              <p class="text-lg font-semibold mt-2" id="due-date-value">Jul 21</p>
+              <p class="text-xs text-gray-400" id="due-date-year">2026</p>
+              <div class="status-badge warning mt-3" id="due-badge">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                Payment Required
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Status Grid -->
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Total Package</p>
+            <div class="w-11 h-11 rounded-xl bg-hackers-gold/20 flex items-center justify-center">
+              <i data-lucide="receipt" class="w-5 h-5 text-hackers-gold"></i>
+            </div>
+          </div>
+          <p id="total-package" class="text-2xl font-bold text-white mt-4">$650.00</p>
+          <p class="text-sm text-gray-400 mt-2">Full weekend cost</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Amount Paid</p>
+            <div class="w-11 h-11 rounded-xl bg-emerald-400/20 flex items-center justify-center">
+              <i data-lucide="banknote" class="w-5 h-5 text-emerald-300"></i>
+            </div>
+          </div>
+          <p id="amount-paid" class="text-2xl font-bold text-white mt-4">$0.00</p>
+          <p class="text-sm text-gray-400 mt-2">Applied to your balance</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Reference</p>
+            <div class="w-11 h-11 rounded-xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="fingerprint" class="w-5 h-5 text-hackers-sky"></i>
+            </div>
+          </div>
+          <p id="ref-value" class="text-lg font-semibold text-white mt-4">HC26 + Your Name</p>
+          <p class="text-sm text-gray-400 mt-2">Use this in transfers</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Support</p>
+            <div class="w-11 h-11 rounded-xl bg-purple-400/20 flex items-center justify-center">
+              <i data-lucide="life-buoy" class="w-5 h-5 text-purple-300"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-white mt-4">Need help?</p>
+          <a href="mailto:info@hackerscup.live" class="inline-flex items-center gap-2 text-sm font-semibold text-hackers-sky mt-2">
+            Contact the crew
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Details Section -->
+  <section class="py-12 md:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div class="glass-card rounded-3xl p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="package" class="w-6 h-6 text-hackers-sky"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold">What's Included</h2>
+              <p class="text-sm text-gray-400">Everything in your weekend package.</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="golf" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Golf Weekend</p>
+                <p class="text-sm text-gray-400">Full rounds Saturday and Sunday with carts included</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="bed" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Accommodation</p>
+                <p class="text-sm text-gray-400">2 nights - Friday and Saturday</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="utensils" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Full Breakfast Buffet</p>
+                <p class="text-sm text-gray-400">Both mornings included</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="trophy" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Prizes and Awards</p>
+                <p class="text-sm text-gray-400">Green Jacket, HC Cup, Spirit Award, and more</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="gift" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Memorabilia</p>
+                <p class="text-sm text-gray-400">This year's edition of Hackers Cup memorabilia</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-6 h-6 text-hackers-gold"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold">Optional Add-On</h2>
+                <p class="text-sm text-gray-400">Level up your weekend with Friday skins.</p>
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-400/5 border border-amber-300/20 p-5">
+              <div class="flex items-center justify-between">
+                <p class="text-lg font-semibold">Friday Skins</p>
+                <span class="text-xl font-bold text-amber-200">$80</span>
+              </div>
+              <p class="text-sm text-amber-100/80 mt-2">Get a head start on the competition. Cash on the day.</p>
+            </div>
+
+            <div class="mt-5 space-y-3">
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="golf" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Friday Golf Round</p>
+                  <p class="text-sm text-gray-400">Full 18 holes to warm up</p>
+                </div>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="car" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Golf Carts</p>
+                  <p class="text-sm text-gray-400">Included for Friday round</p>
+                </div>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="coins" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Skins Pool</p>
+                  <p class="text-sm text-gray-400">Contribution to competitive pool</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-3">
+              <button class="action-btn w-full rounded-2xl bg-gradient-to-r from-hackers-sky to-hackers-light text-hackers-dark font-semibold py-3 flex items-center justify-center gap-2" onclick="copyBankDetails()">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                Copy Payment Details
+              </button>
+              <button class="action-btn w-full rounded-2xl bg-white/5 border border-white/10 text-white font-semibold py-3 flex items-center justify-center gap-2" onclick="downloadSummaryPdf()">
+                <i data-lucide="file-down" class="w-4 h-4"></i>
+                Download PDF
+              </button>
+              <button class="action-btn w-full rounded-2xl bg-white/5 border border-white/10 text-white font-semibold py-3 flex items-center justify-center gap-2" onclick="window.location.href='mailto:info@hackerscup.live'">
+                <i data-lucide="help-circle" class="w-4 h-4"></i>
+                Need Help?
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+                <i data-lucide="building-2" class="w-6 h-6 text-hackers-sky"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold">Bank Transfer Details</h2>
+                <p class="text-sm text-gray-400">Use these details when paying your balance.</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">BSB</span>
+                <span class="font-mono text-lg">062-217</span>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">Account</span>
+                <span class="font-mono text-lg">10521045</span>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">Reference</span>
+                <p class="font-mono text-lg mt-2" id="ref-value-card">HC26 + Your Name</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="print-summary">
+    <h3>Payment Summary - Hackers Cup 2026</h3>
+    <div class="print-summary-row">
+      <span>Player Name:</span>
+      <span id="print-name">-</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Package Cost:</span>
+      <span>$650.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Amount Paid:</span>
+      <span id="print-paid">$0.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Outstanding Balance:</span>
+      <span id="print-outstanding">$0.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Payment Status:</span>
+      <span id="print-status">Pending</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Payment Due Date:</span>
+      <span>July 21, 2026</span>
+    </div>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <p><strong>Bank Transfer Details:</strong></p>
+      <p>BSB: 062-217</p>
+      <p>Account Number: 10521045</p>
+      <p id="print-reference">Reference: HC26 + Your Name</p>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1 text-white">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
       </div>
     </div>
   </div>
 
-  
-  <div class="contact-page section">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-6 align-self-center">
-          <div class="left-text">
-            <div class="section-heading">
-              <h6>Balance</h6>
-              <h2 id="amt-outstanding">Loading amount...</h2><br>
-              <h6>Financial Status</h6>
-    <h2 id="financial-status">Loading amount...</h2>
-            </div>
-            <div class="section-heading">
-              <h5>Cost is $650 Which Includes:</h5>
-              <p>
-                  
-                      <p>- Golf Saturday and Sunday<br><br>
-                        - Carts Saturday and Sunday<br><br>
-                      - 2 Nights Accommodation (Friday and Saturday nights)<br><br>
-                      - Full buffet breakfast both days<br><br>
-                      - This year’s edition of Hackers Cup memorabilia.<br><br>
-                  - Prizes: daily winners and place getters, overall Champion, nearest to Pins, long Drives, Bradman prize, 5 year awards, 10 year awards, 15 year awards, 20 year awards, 25 year awards and some lucky loser prizes will be on offer.<br><br>
-                      - The champions Fluro Green Jacket, the massive HC Cup and the “spirit of hackers” award will as always be highly sought after.
-            
-                  
-              </p>
-
-              <h5>Optional Friday Skins:</h5> <br><br>
-              <p>- Cost is $80 per player, including: <br><br>
-                - Carts <br><br>
-                - Friday Golf<br><br>
-                - Contribution to the skins pool
-
-
-              </p>
-
-		    <h5>Transfer Details</h5>
-		    <p>BSB: 062-217<br>
-		    Account Number: 10521045<br>
-		    Reference: HC25 and your name</p>
-          </div>
-           
-          </div>
-        </div>
-        
-                    </div>
-                  </div>
-                </form>
-              </div>
-            
-
-
-
-  
-
- 
-  <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
-
   <!-- Scripts -->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
   <script src="assets/js/custom.js"></script>
-	<script type="module">
-   
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
-            authDomain: "hackers-cup.firebaseapp.com",
-            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
-            projectId: "hackers-cup",
-            storageBucket: "hackers-cup.appspot.com",
-            messagingSenderId: "765736070872",
-            appId: "1:765736070872:web:86a51c41916e7af75631ad",
-            measurementId: "G-6E1M14F510"
-        };
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
 
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase();
-        const db = getFirestore(app);
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
 
-        const auth = getAuth(app);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
 
-       function getDisplayName(user) {
-    const userRef = ref(database, `users/${user.uid}/displayName`);
-    onValue(userRef, (snapshot) => {
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+    const database = getDatabase();
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const totalCost = 650;
+
+    function formatCurrency(value) {
+      const numberValue = Number(value);
+      if (Number.isNaN(numberValue)) {
+        return '$0.00';
+      }
+      return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: 2
+      }).format(numberValue);
+    }
+
+    function updateLastUpdated() {
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString('en-AU')}`;
+    }
+
+    function setDisplayNameUI(displayName) {
+      const name = displayName && displayName.trim() !== '' ? displayName.trim() : 'Player';
+      document.getElementById('user-name').textContent = `Welcome back, ${name}`;
+      document.getElementById('ref-value').textContent = `HC26 ${name}`;
+      document.getElementById('ref-value-card').textContent = `HC26 ${name}`;
+      document.getElementById('print-name').textContent = name;
+      document.getElementById('print-reference').textContent = `Reference: HC26 ${name}`;
+      window.userDisplayName = name;
+    }
+
+    function updateAmountPaid(outstandingValue) {
+      const paid = totalCost - (Number.isNaN(outstandingValue) ? 0 : outstandingValue);
+      document.getElementById('amount-paid').textContent = formatCurrency(Math.max(paid, 0));
+      document.getElementById('print-paid').textContent = formatCurrency(Math.max(paid, 0));
+    }
+
+    function getDisplayName(user) {
+      const userRef = ref(database, `users/${user.uid}/displayName`);
+      onValue(userRef, (snapshot) => {
         const displayName = snapshot.val();
         if (displayName) {
-            document.getElementById('user-name').textContent = displayName;
+          setDisplayNameUI(displayName);
         } else {
-            const name = prompt('Please enter your display name:');
-            if (name && name.trim() !== '') {
-                set(userRef, name.trim())
-                    .then(() => {
-                        document.getElementById('user-name').textContent = name.trim();
-                    })
-                    .catch((error) => {
-                        console.error('Error updating display name:', error);
-                    });
-            }
+          setDisplayNameUI('');
         }
-    });
-}
+        updateLastUpdated();
+      });
+    }
 
-function getHackerNumber(user) {
-    const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
-    onValue(hackerRef, (snapshot) => {
-        const hackerNumber = snapshot.val();
-        if (hackerNumber) {
-            document.getElementById('hacker-number').textContent = '  ' + hackerNumber + '';
-        } else {
-            document.getElementById('hacker-number').textContent = ' (Hackers number not assigned yet)';
-        }
-    });
-}
-
-function getAmtOutstanding(user) {
-    const userRef = doc(db, "users", user.uid);
-    getDoc(userRef).then((docSnap) => {
+    function getAmtOutstanding(user) {
+      const userRef = doc(db, "users", user.uid);
+      getDoc(userRef).then((docSnap) => {
         if (docSnap.exists()) {
-            const amtOutstandingValue = docSnap.data().amtOutstanding;
-            if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
-                document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
-            } else {
-                document.getElementById('amt-outstanding').textContent = 'Payment not assigned yet.';
-            }
+          const amtOutstandingValue = docSnap.data().amtOutstanding;
+          if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
+            const formatted = formatCurrency(amtOutstandingValue);
+            document.getElementById('amt-outstanding').textContent = formatted;
+            document.getElementById('print-outstanding').textContent = formatted;
+            updateAmountPaid(Number(amtOutstandingValue));
+            updatePaymentIndicators(amtOutstandingValue, document.getElementById('financial-status').textContent);
+          } else {
+            document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+            document.getElementById('print-outstanding').textContent = formatCurrency(0);
+            updateAmountPaid(0);
+            updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
+          }
         } else {
-            console.log("No such document!");
+          console.log("No such document!");
+          document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+          document.getElementById('print-outstanding').textContent = formatCurrency(0);
+          updateAmountPaid(0);
+          updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
         }
-    }).catch((error) => {
+        updateLastUpdated();
+      }).catch((error) => {
         console.error("Error getting document:", error);
-    });
-}
+        document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+        document.getElementById('print-outstanding').textContent = formatCurrency(0);
+      });
+    }
 
-function getFinancialStatus(user) {
-    const userRef = doc(db, "users", user.uid);
-    getDoc(userRef).then((docSnap) => {
+    function getFinancialStatus(user) {
+      const userRef = doc(db, "users", user.uid);
+      getDoc(userRef).then((docSnap) => {
         if (docSnap.exists()) {
-            const financialStatusValue = docSnap.data().financialStatus;
-            if (financialStatusValue !== null && financialStatusValue !== undefined) {
-                document.getElementById('financial-status').textContent = `${financialStatusValue}`;
-            } else {
-                document.getElementById('financial-status').textContent = 'Payment not assigned yet.';
-            }
-        } else {
-            console.log("No such document!");
-        }
-    }).catch((error) => {
-        console.error("Error getting document:", error);
-    });
-}
+          const financialStatusValue = docSnap.data().financialStatus;
+          if (financialStatusValue !== null && financialStatusValue !== undefined) {
+            document.getElementById('financial-status').textContent = financialStatusValue;
+            document.getElementById('print-status').textContent = financialStatusValue;
 
-auth.onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = 'index.html';
-    } else {
+            const badge = document.getElementById('status-badge');
+            badge.className = 'status-badge';
+
+            if (financialStatusValue.toLowerCase() === 'paid') {
+              badge.classList.add('paid');
+              badge.textContent = 'Paid';
+            } else if (financialStatusValue.toLowerCase() === 'partial') {
+              badge.classList.add('partial');
+              badge.textContent = 'Partial Payment';
+            } else {
+              badge.classList.add('pending');
+              badge.textContent = 'Payment Pending';
+            }
+            updatePaymentIndicators(getOutstandingValue(), financialStatusValue);
+          } else {
+            document.getElementById('financial-status').textContent = 'Pending';
+            document.getElementById('status-badge').textContent = 'Payment Pending';
+            document.getElementById('print-status').textContent = 'Pending';
+            updatePaymentIndicators(getOutstandingValue(), 'Pending');
+          }
+        } else {
+          console.log("No such document!");
+          document.getElementById('financial-status').textContent = 'Pending';
+          document.getElementById('status-badge').textContent = 'Payment Pending';
+          document.getElementById('print-status').textContent = 'Pending';
+          updatePaymentIndicators(getOutstandingValue(), 'Pending');
+        }
+        updateLastUpdated();
+      }).catch((error) => {
+        console.error("Error getting document:", error);
+        document.getElementById('financial-status').textContent = 'Pending';
+        document.getElementById('status-badge').textContent = 'Payment Pending';
+        document.getElementById('print-status').textContent = 'Pending';
+      });
+    }
+
+    function getOutstandingValue() {
+      const text = document.getElementById('amt-outstanding').textContent;
+      const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
+      return Number.isNaN(numeric) ? 0 : numeric;
+    }
+
+    function updatePaymentIndicators(outstandingValue, statusValue) {
+      const normalizedStatus = (statusValue || '').toLowerCase();
+      const dueCard = document.getElementById('due-card');
+      const dueBadge = document.getElementById('due-badge');
+      const dueValue = document.getElementById('due-date-value');
+      const dueYear = document.getElementById('due-date-year');
+
+      if (outstandingValue <= 0 || normalizedStatus === 'paid') {
+        document.getElementById('financial-status').textContent = 'Paid';
+        const badge = document.getElementById('status-badge');
+        badge.className = 'status-badge paid';
+        badge.textContent = 'Paid';
+
+        dueCard.classList.remove('warning');
+        dueValue.textContent = 'No Payment Due';
+        dueValue.style.color = '#22c55e';
+        dueYear.textContent = '';
+        dueBadge.className = 'status-badge paid';
+        dueBadge.style.display = 'none';
+        return;
+      }
+
+      dueCard.classList.add('warning');
+      dueValue.textContent = 'Jul 21';
+      dueValue.style.color = '';
+      dueYear.textContent = '2026';
+      dueBadge.className = 'status-badge warning';
+      dueBadge.innerHTML = '<i data-lucide="clock" class="w-3.5 h-3.5"></i> Payment Required';
+      dueBadge.style.display = 'inline-flex';
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
         getDisplayName(user);
         getAmtOutstanding(user);
         getFinancialStatus(user);
-    }
-});
+      }
+    });
 
-auth.onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = 'login.html';
-    } else {
-        getDisplayName(user);
-        getHackerNumber(user);
-    }
-});
+    window.copyBankDetails = function() {
+      const reference = document.getElementById('ref-value').textContent;
+      const details = `BSB: 062-217\nAccount: 10521045\nReference: ${reference}`;
+      navigator.clipboard.writeText(details).then(() => {
+        const btn = event.target.closest('.action-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Copied!';
+        btn.style.background = 'var(--success-gradient)';
 
-
-        function leave() {
-            auth.signOut()
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    console.error('Sign Out Error', error);
-                });
+        if (window.lucide) {
+          window.lucide.createIcons();
         }
 
-        
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style.background = '';
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy. Please copy manually.');
+      });
+    };
 
-        function toggleSettingsPanel() {
-            const settingsPanel = document.getElementById('settings-panel');
-            settingsPanel.classList.toggle('show');
-        }
+    window.downloadSummaryPdf = function() {
+      const userName = document.getElementById('user-name').textContent.replace('Welcome back, ', '');
+      const outstanding = document.getElementById('amt-outstanding').textContent;
+      const status = document.getElementById('financial-status').textContent;
+      const reference = document.getElementById('ref-value').textContent;
+      const outstandingNum = parseFloat(outstanding.replace(/[^0-9.]/g, ''));
+      const amountPaid = totalCost - (Number.isNaN(outstandingNum) ? 0 : outstandingNum);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-        function updateCountdown() {
-            const targetDate = new Date("August 23, 2024 11:00:00 GMT+1000");
-            const currentDate = new Date();
-            const timeDifference = targetDate - currentDate;
+      doc.setFontSize(16);
+      doc.text('Payment Summary - Hackers Cup 2026', 14, 18);
+      doc.setFontSize(12);
+      doc.text(`Player Name: ${userName}`, 14, 30);
+      doc.text(`Package Cost: ${formatCurrency(totalCost)}`, 14, 38);
+      doc.text(`Amount Paid: ${formatCurrency(amountPaid)}`, 14, 46);
+      doc.text(`Outstanding Balance: ${outstanding}`, 14, 54);
+      doc.text(`Payment Status: ${status}`, 14, 62);
+      doc.text('Payment Due Date: July 21, 2026', 14, 70);
 
-            if (timeDifference < 0) {
-                document.getElementById('countdown').textContent = 'Hackers Cup has begun!';
-                return;
-            }
+      doc.setFontSize(13);
+      doc.text('Bank Transfer Details', 14, 84);
+      doc.setFontSize(12);
+      doc.text('BSB: 062-217', 14, 92);
+      doc.text('Account Number: 10521045', 14, 100);
+      doc.text(`Reference: ${reference}`, 14, 108);
 
-            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
-
-            document.getElementById('days').textContent = padZeroes(days);
-            document.getElementById('hours').textContent = padZeroes(hours);
-            document.getElementById('minutes').textContent = padZeroes(minutes);
-            document.getElementById('seconds').textContent = padZeroes(seconds);
-        }
-
-        // Function to add leading zeroes to numbers less than 10
-        function padZeroes(num) {
-            return num < 10 ? '0' + num : num;
-        }
-
-        // Initial call to update the countdown timer
-        updateCountdown();
-
-        // Call the updateCountdown function every second
-        setInterval(updateCountdown, 1000);
-    </script>
-    <script>
-        function toggleSettingsPanel() {
-            const settingsPanel = document.getElementById('settings-panel');
-            settingsPanel.classList.toggle('show');
-        }
-    </script>
-    <script>
-       function changeWallpaper(option) {
-    var backgroundImageUrl = "10th.jpg";
-
-    if (option === "none") {
-        backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
-        document.getElementById('header').classList.remove('light-text');
-        document.getElementById('countdown').classList.remove('light-text');
-        document.getElementById('header').classList.add('dark-text');
-        document.getElementById('countdown').classList.add('dark-text');
-    } else {
-        if (option === "golf1") {
-           
-        } else if (option === "golf2") {
-            backgroundImageUrl = "kiama.jpg"; // Update with the correct image URL
-        } else if (option === "golf3") {
-            backgroundImageUrl = "greenwell.jpg"; // Update with the correct image URL
-        }
-		  document.addEventListener('DOMContentLoaded', function() {
-        var wallpaper = document.getElementById('wallpaper');
-        wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
-        
-        // Apply background image to wallpaper element
-        document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
-
-        // Remove dark-text class and add light-text class
-        document.getElementById('details').classList.remove('dark-text');
-        document.getElementById('countdown').classList.remove('dark-text');
-        document.getElementById('details').classList.add('light-text');
-        document.getElementById('countdown').classList.add('light-text');
-    }
-
-    
-    }
-  
-}
-
-    </script>
+      doc.save('hackers-cup-payment-summary.pdf');
+    };
+  </script>
 </body>
 </html>

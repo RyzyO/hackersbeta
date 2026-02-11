@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, maximum-scale=1.0">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Payment</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+    <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+
+  <style>
+    ul {
+      color:black;
+    }
+  </style>
+<link rel="manifest" href="site.webmanifest">
+</head>
+
+<body>
+
+  <!-- ***** Header Area Start ***** -->
+ <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- ***** Logo Start ***** -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="" style="width: 158px;">
+            </a>
+            <!-- ***** Logo End ***** -->
+            <!-- ***** Menu Start ***** -->
+            <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html" class="active">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class='menu-trigger'>
+              <span>Menu</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>Payment</h3>
+          <span class="breadcrumb" id="user-name">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="contact-page section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 align-self-center">
+          <div class="left-text">
+            <div class="section-heading">
+              <h6>Balance</h6>
+              <h2 id="amt-outstanding">Loading amount...</h2><br>
+              <h6>Financial Status</h6>
+    <h2 id="financial-status">Loading amount...</h2>
+            </div>
+            <div class="section-heading">
+              <h5>Cost is $650 Which Includes:</h5>
+              <p>
+                  
+                      <p>- Golf Saturday and Sunday<br><br>
+                        - Carts Saturday and Sunday<br><br>
+                      - 2 Nights Accommodation (Friday and Saturday nights)<br><br>
+                      - Full buffet breakfast both days<br><br>
+                      - This year’s edition of Hackers Cup memorabilia.<br><br>
+                  - Prizes: daily winners and place getters, overall Champion, nearest to Pins, long Drives, Bradman prize, 5 year awards, 10 year awards, 15 year awards, 20 year awards, 25 year awards and some lucky loser prizes will be on offer.<br><br>
+                      - The champions Fluro Green Jacket, the massive HC Cup and the “spirit of hackers” award will as always be highly sought after.
+            
+                  
+              </p>
+
+              <h5>Optional Friday Skins:</h5> <br><br>
+              <p>- Cost is $80 per player, including: <br><br>
+                - Carts <br><br>
+                - Friday Golf<br><br>
+                - Contribution to the skins pool
+
+
+              </p>
+
+		    <h5>Transfer Details</h5>
+		    <p>BSB: 062-217<br>
+		    Account Number: 10521045<br>
+		    Reference: HC25 and your name</p>
+          </div>
+           
+          </div>
+        </div>
+        
+                    </div>
+                  </div>
+                </form>
+              </div>
+            
+
+
+
+  
+
+ 
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+	<script type="module">
+   
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+            authDomain: "hackers-cup.firebaseapp.com",
+            databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+            projectId: "hackers-cup",
+            storageBucket: "hackers-cup.appspot.com",
+            messagingSenderId: "765736070872",
+            appId: "1:765736070872:web:86a51c41916e7af75631ad",
+            measurementId: "G-6E1M14F510"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase();
+        const db = getFirestore(app);
+
+        const auth = getAuth(app);
+
+
+       function getDisplayName(user) {
+    const userRef = ref(database, `users/${user.uid}/displayName`);
+    onValue(userRef, (snapshot) => {
+        const displayName = snapshot.val();
+        if (displayName) {
+            document.getElementById('user-name').textContent = displayName;
+        } else {
+            const name = prompt('Please enter your display name:');
+            if (name && name.trim() !== '') {
+                set(userRef, name.trim())
+                    .then(() => {
+                        document.getElementById('user-name').textContent = name.trim();
+                    })
+                    .catch((error) => {
+                        console.error('Error updating display name:', error);
+                    });
+            }
+        }
+    });
+}
+
+function getHackerNumber(user) {
+    const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+    onValue(hackerRef, (snapshot) => {
+        const hackerNumber = snapshot.val();
+        if (hackerNumber) {
+            document.getElementById('hacker-number').textContent = '  ' + hackerNumber + '';
+        } else {
+            document.getElementById('hacker-number').textContent = ' (Hackers number not assigned yet)';
+        }
+    });
+}
+
+function getAmtOutstanding(user) {
+    const userRef = doc(db, "users", user.uid);
+    getDoc(userRef).then((docSnap) => {
+        if (docSnap.exists()) {
+            const amtOutstandingValue = docSnap.data().amtOutstanding;
+            if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
+                document.getElementById('amt-outstanding').textContent = `${amtOutstandingValue}`;
+            } else {
+                document.getElementById('amt-outstanding').textContent = 'Payment not assigned yet.';
+            }
+        } else {
+            console.log("No such document!");
+        }
+    }).catch((error) => {
+        console.error("Error getting document:", error);
+    });
+}
+
+function getFinancialStatus(user) {
+    const userRef = doc(db, "users", user.uid);
+    getDoc(userRef).then((docSnap) => {
+        if (docSnap.exists()) {
+            const financialStatusValue = docSnap.data().financialStatus;
+            if (financialStatusValue !== null && financialStatusValue !== undefined) {
+                document.getElementById('financial-status').textContent = `${financialStatusValue}`;
+            } else {
+                document.getElementById('financial-status').textContent = 'Payment not assigned yet.';
+            }
+        } else {
+            console.log("No such document!");
+        }
+    }).catch((error) => {
+        console.error("Error getting document:", error);
+    });
+}
+
+auth.onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+    } else {
+        getDisplayName(user);
+        getAmtOutstanding(user);
+        getFinancialStatus(user);
+    }
+});
+
+auth.onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = 'login.html';
+    } else {
+        getDisplayName(user);
+        getHackerNumber(user);
+    }
+});
+
+
+        function leave() {
+            auth.signOut()
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error('Sign Out Error', error);
+                });
+        }
+
+        
+
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+
+        function updateCountdown() {
+            const targetDate = new Date("August 23, 2024 11:00:00 GMT+1000");
+            const currentDate = new Date();
+            const timeDifference = targetDate - currentDate;
+
+            if (timeDifference < 0) {
+                document.getElementById('countdown').textContent = 'Hackers Cup has begun!';
+                return;
+            }
+
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = padZeroes(days);
+            document.getElementById('hours').textContent = padZeroes(hours);
+            document.getElementById('minutes').textContent = padZeroes(minutes);
+            document.getElementById('seconds').textContent = padZeroes(seconds);
+        }
+
+        // Function to add leading zeroes to numbers less than 10
+        function padZeroes(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        // Initial call to update the countdown timer
+        updateCountdown();
+
+        // Call the updateCountdown function every second
+        setInterval(updateCountdown, 1000);
+    </script>
+    <script>
+        function toggleSettingsPanel() {
+            const settingsPanel = document.getElementById('settings-panel');
+            settingsPanel.classList.toggle('show');
+        }
+    </script>
+    <script>
+       function changeWallpaper(option) {
+    var backgroundImageUrl = "10th.jpg";
+
+    if (option === "none") {
+        backgroundImageUrl = "10th.jpg"; // Update with the correct image URL
+        document.getElementById('header').classList.remove('light-text');
+        document.getElementById('countdown').classList.remove('light-text');
+        document.getElementById('header').classList.add('dark-text');
+        document.getElementById('countdown').classList.add('dark-text');
+    } else {
+        if (option === "golf1") {
+           
+        } else if (option === "golf2") {
+            backgroundImageUrl = "kiama.jpg"; // Update with the correct image URL
+        } else if (option === "golf3") {
+            backgroundImageUrl = "greenwell.jpg"; // Update with the correct image URL
+        }
+		  document.addEventListener('DOMContentLoaded', function() {
+        var wallpaper = document.getElementById('wallpaper');
+        wallpaper.style.backgroundImage = "url('10th.jpg')"; // Default wallpaper URL
+        
+        // Apply background image to wallpaper element
+        document.getElementById('wallpaper').style.backgroundImage = "url('" + backgroundImageUrl + "')";
+
+        // Remove dark-text class and add light-text class
+        document.getElementById('details').classList.remove('dark-text');
+        document.getElementById('countdown').classList.remove('dark-text');
+        document.getElementById('details').classList.add('light-text');
+        document.getElementById('countdown').classList.add('light-text');
+    }
+
+    
+    }
+  
+}
+
+    </script>
+</body>
+</html>

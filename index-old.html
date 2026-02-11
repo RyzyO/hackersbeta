@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="manifest" href="site.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -20,538 +20,40 @@
 
     <!-- Additional CSS Files -->
     <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <!-- Removed templatemo-lugx-gaming.css to prevent style conflicts with custom design -->
+    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+   <link rel="stylesheet" href="assets/css/navbar.css">
     <link rel="stylesheet" href="assets/css/owl.css">
     <link rel="stylesheet" href="assets/css/animate.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
   
     <style>
-      /* Base resets */
-      *, *::before, *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      html, body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-
-      a {
-        text-decoration: none;
-      }
-
-      ul, li {
-        list-style: none;
-      }
-
-      img {
-        max-width: 100%;
-        height: auto;
-      }
-
-      :root {
-        --bg-main: #0b0e12;
-        --bg-deep: #0f1520;
-        --surface: #121a24;
-        --surface-strong: #162131;
-        --surface-soft: #1b2737;
-        --text-primary: #f8fafc;
-        --text-secondary: #9aa7b8;
-        --border-color: #263241;
-        --accent: #23d3b5;
-        --accent-strong: #14b8a6;
-        --accent-warm: #f97316;
-        --accent-blue: #38bdf8;
-        --shadow-soft: 0 18px 45px rgba(6, 10, 15, 0.45);
-        --shadow-card: 0 26px 64px rgba(6, 10, 15, 0.55);
-      }
-
-      body.index-neo * {
-        box-sizing: border-box;
-      }
-
-      body.index-neo {
-        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-        background: radial-gradient(circle at 18% 15%, rgba(35, 211, 181, 0.14), transparent 50%),
-          radial-gradient(circle at 80% 12%, rgba(249, 115, 22, 0.12), transparent 42%),
-          linear-gradient(120deg, #0b0e12 0%, #0f1520 50%, #0b0e12 100%);
-        color: var(--text-primary);
-        min-height: 100vh;
-        padding-bottom: 80px;
-      }
-
-      @media (min-width: 992px) {
-        body.index-neo {
-          padding-bottom: 0;
-        }
-      }
-
-      body.index-neo::before,
-      body.index-neo::after {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: -1;
-      }
-
-      body.index-neo::before {
-        background: radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.1), transparent 55%),
-          radial-gradient(circle at 88% 85%, rgba(34, 197, 94, 0.1), transparent 60%);
-      }
-
-      body.index-neo::after {
-        background: linear-gradient(0deg, rgba(11, 14, 18, 0.75), rgba(11, 14, 18, 0.75));
-        mix-blend-mode: multiply;
-      }
-
-      body.index-neo h1,
-      body.index-neo h2,
-      body.index-neo h3,
-      body.index-neo h4,
-      body.index-neo h5,
-      body.index-neo h6 {
-        font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
-        color: var(--text-primary);
-        letter-spacing: -0.01em;
-      }
-
-      body.index-neo #hi {
+      
+      #hi { 
         font-size: 20px;
         color: #ffffff;
       }
-
-      body.index-neo #dates {
-        font-weight: 700;
-        color: var(--accent-blue);
-        letter-spacing: 0.08em;
+      #dates {
+        font-weight: 750;
       }
-
-      body.index-neo #countdown {
-        font-size: 0.95rem;
+      
+      /* Basic styling for the countdown timer */
+      #countdown {
+       
+        font-size: 17px;
         text-transform: uppercase;
-        color: var(--text-primary);
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        margin-top: 24px;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 16px;
-        border-radius: 999px;
-        border: 1px solid rgba(35, 211, 181, 0.35);
-        background: rgba(18, 26, 36, 0.8);
-        box-shadow: var(--shadow-soft);
+        color: #fff;
+        font-weight: 500;
+        font-style: italic;
+        letter-spacing: 0.5px;
+        margin-top: 20px;
       }
-
-      body.index-neo #countdown span {
-        font-family: "IBM Plex Mono", "Courier New", monospace;
-      }
-
-      body.index-neo .thumb img {
+      .thumb img {
         max-width: 100%;
         height: auto;
       }
-
-      body.index-neo .header-area {
-        background: rgba(10, 14, 20, 0.95);
-        border-bottom: 1px solid rgba(38, 50, 65, 0.7);
-        backdrop-filter: blur(14px);
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        padding: 15px 0;
-        transition: all 0.3s ease;
-      }
-
-      body.index-neo .header-area .container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      body.index-neo .header-area .main-nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-      }
-
-      body.index-neo .header-area .main-nav .logo img {
-        filter: drop-shadow(0 10px 20px rgba(6, 10, 15, 0.45));
-      }
-
-      body.index-neo .header-area .nav {
-        display: flex;
-        gap: 24px;
-      }
-
-      body.index-neo .header-area .nav li a {
-        color: var(--text-secondary);
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        padding: 8px 0;
-        transition: color 0.2s ease;
-      }
-
-      body.index-neo .header-area .nav li a.active,
-      body.index-neo .header-area .nav li a:hover {
-        color: var(--accent);
-      }
-
-      body.index-neo .header-area .menu-trigger {
-        display: none;
-        cursor: pointer;
-        color: var(--text-primary);
-      }
-
-      @media (max-width: 991px) {
-        body.index-neo .header-area .nav {
-          display: none;
-        }
-        body.index-neo .header-area .menu-trigger {
-          display: block;
-        }
-      }
-
-      /* Preloader */
-      body.index-neo .js-preloader {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--bg-main);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        transition: opacity 0.3s ease;
-      }
-
-      body.index-neo .js-preloader.loaded {
-        opacity: 0;
-        visibility: hidden;
-      }
-
-      body.index-neo .preloader-inner {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      body.index-neo .preloader-inner .dot,
-      body.index-neo .preloader-inner .dots span {
-        width: 12px;
-        height: 12px;
-        background: var(--accent);
-        border-radius: 50%;
-        animation: pulse 1s infinite ease-in-out;
-      }
-
-      body.index-neo .preloader-inner .dots {
-        display: flex;
-        gap: 6px;
-      }
-
-      body.index-neo .preloader-inner .dots span:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-
-      body.index-neo .preloader-inner .dots span:nth-child(3) {
-        animation-delay: 0.4s;
-      }
-
-      @keyframes pulse {
-        0%, 100% { transform: scale(0.8); opacity: 0.5; }
-        50% { transform: scale(1); opacity: 1; }
-      }
-
-      body.index-neo .main-banner {
-        position: relative;
-        padding: 160px 0 110px;
-      }
-
-      body.index-neo .main-banner::before {
-        content: "";
-        position: absolute;
-        inset: 40px 8% auto 8%;
-        height: 420px;
-        border-radius: 40px;
-        background: radial-gradient(circle at 10% 10%, rgba(35, 211, 181, 0.18), transparent 50%),
-          radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.16), transparent 50%),
-          linear-gradient(120deg, rgba(18, 26, 36, 0.9), rgba(15, 23, 42, 0.6));
-        border: 1px solid rgba(38, 50, 65, 0.8);
-        box-shadow: var(--shadow-card);
-        z-index: 0;
-      }
-
-      body.index-neo .main-banner .container {
-        position: relative;
-        z-index: 1;
-      }
-
-      body.index-neo .main-banner .caption.header-text h6 {
-        color: var(--text-secondary);
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      body.index-neo #hacker-number {
-        font-size: 0.95rem;
-        letter-spacing: 0.3em;
-        color: var(--accent);
-        margin-bottom: 10px;
-      }
-
-      body.index-neo #user-name {
-        font-size: clamp(2.6rem, 4vw, 4rem);
-        margin: 0 0 6px;
-      }
-
-      body.index-neo .main-banner .caption.header-text h6 + br + h6 {
-        color: var(--text-primary);
-      }
-
-      body.index-neo .main-banner .right-image img {
-        border-radius: 26px;
-        box-shadow: 0 26px 60px rgba(6, 10, 15, 0.55);
-        border: 1px solid rgba(38, 50, 65, 0.8);
-        transform: rotate(-1.5deg);
-      }
-
-      body.index-neo .features {
-        margin-top: -70px;
-        position: relative;
-        z-index: 2;
-      }
-
-      body.index-neo .features a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      body.index-neo .features .item {
-        background: var(--surface);
-        border-radius: 20px;
-        padding: 24px 18px;
-        border: 1px solid rgba(38, 50, 65, 0.8);
-        box-shadow: var(--shadow-soft);
-        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      body.index-neo .features .item:hover {
-        transform: translateY(-6px);
-        border-color: rgba(35, 211, 181, 0.6);
-        box-shadow: 0 22px 46px rgba(6, 10, 15, 0.6);
-      }
-
-      body.index-neo .features .item h4 {
-        color: var(--text-primary);
-        letter-spacing: 0.2em;
-        font-weight: 600;
-        font-size: 14px;
-        margin-top: 12px;
-      }
-
-      body.index-neo .features .item .image {
-        background: rgba(35, 211, 181, 0.12);
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      }
-
-      body.index-neo .features .item .image img {
-        filter: drop-shadow(0 8px 16px rgba(6, 10, 15, 0.45));
-      }
-
-      body.index-neo .trending .col-lg-3 {
-        margin-bottom: 24px;
-      }
-
-      body.index-neo .section {
-        margin-top: 80px;
-        padding-bottom: 60px;
-      }
-
-      body.index-neo .section.trending {
-        padding-top: 40px;
-      }
-
-      body.index-neo .section-heading {
-        margin-bottom: 50px;
-      }
-
-      body.index-neo .section-heading h6 {
-        color: var(--accent);
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-      }
-
-      body.index-neo .section-heading h2 {
-        font-size: clamp(2rem, 3vw, 2.8rem);
-        margin-top: 12px;
-      }
-
-      body.index-neo .trending .item {
-        background: var(--surface);
-        border-radius: 20px;
-        border: 1px solid rgba(38, 50, 65, 0.8);
-        box-shadow: var(--shadow-soft);
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-
-      body.index-neo .trending .item:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 26px 50px rgba(6, 10, 15, 0.6);
-      }
-
-      body.index-neo .trending .item .thumb {
-        border-radius: 20px;
-        overflow: hidden;
-      }
-
-      body.index-neo .thumb video {
-        width: 100%;
-        height: auto;
-        border-radius: 20px;
-        cursor: pointer;
-      }
-
-      body.index-neo .thumb a {
-        cursor: pointer;
-      }
-
-      body.index-neo .thumb .price {
-        background: rgba(15, 23, 42, 0.85);
-        color: var(--text-primary);
-        border: 1px solid rgba(35, 211, 181, 0.4);
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        letter-spacing: 0.08em;
-      }
-
-      body.index-neo .down-content {
-        padding: 18px;
-      }
-
-      body.index-neo .down-content .category {
-        color: var(--text-secondary);
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        font-weight: 600;
-        font-size: 0.75rem;
-      }
-
-      body.index-neo .down-content h4 {
-        margin-top: 6px;
-        color: var(--text-primary);
-      }
-
-      body.index-neo .main-button a {
-        background: linear-gradient(135deg, #23d3b5 0%, #14b8a6 100%);
-        color: #031016;
-        border-radius: 999px;
-        padding: 12px 24px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        box-shadow: var(--shadow-soft);
-        border: none;
-      }
-
-      body.index-neo .main-button a:hover {
-        background: linear-gradient(135deg, #38bdf8 0%, #22c55e 100%);
-        color: #031016;
-      }
-
-      body.index-neo .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(18, 26, 36, 0.9);
-        border-top: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-around;
-        padding: 12px 0;
-        z-index: 999;
-        backdrop-filter: blur(12px);
-      }
-
-      body.index-neo .bottom-nav a {
-        color: var(--text-secondary);
-        text-decoration: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        font-weight: 500;
-        transition: color 0.2s ease;
-      }
-
-      body.index-neo .bottom-nav a i {
-        font-size: 18px;
-      }
-
-      body.index-neo .bottom-nav a:hover,
-      body.index-neo .bottom-nav a.active {
-        color: var(--accent);
-      }
-
-      @media (min-width: 992px) {
-        body.index-neo .bottom-nav {
-          display: none;
-        }
-      }
-
-      @media (max-width: 992px) {
-        body.index-neo .main-banner::before {
-          inset: 40px 4% auto 4%;
-          height: 520px;
-        }
-
-        body.index-neo .main-banner {
-          padding-top: 140px;
-        }
-
-        body.index-neo .features {
-          margin-top: -40px;
-        }
-
-        body.index-neo .main-banner .right-image img {
-          transform: none;
-        }
-      }
-
-      @media (max-width: 768px) {
-        body.index-neo .main-banner {
-          padding: 130px 0 90px;
-        }
-
-        body.index-neo #countdown {
-          flex-wrap: wrap;
-          row-gap: 6px;
-        }
-
-        body.index-neo .main-banner::before {
-          height: 560px;
-        }
-      }
-
+      
       /* Video Modal Styles */
-      body.index-neo .video-modal {
+      .video-modal {
         display: none;
         position: fixed;
         z-index: 9999;
@@ -562,13 +64,13 @@
         overflow: auto;
         background-color: rgba(0,0,0,0.9);
       }
-      body.index-neo .video-modal-content {
+      .video-modal-content {
         position: relative;
         margin: 5% auto;
         width: 90%;
         max-width: 1200px;
       }
-      body.index-neo .video-modal-close {
+      .video-modal-close {
         position: absolute;
         top: -40px;
         right: 0;
@@ -578,18 +80,27 @@
         cursor: pointer;
         z-index: 10000;
       }
-      body.index-neo .video-modal-close:hover {
+      .video-modal-close:hover {
         color: #ccc;
       }
-      body.index-neo #modalVideo {
+      #modalVideo {
         width: 100%;
         height: auto;
-        border-radius: 16px;
+        border-radius: 8px;
+      }
+      .thumb video {
+        width: 100%;
+        height: auto;
+        border-radius: 23px;
+        cursor: pointer;
+      }
+      .thumb a {
+        cursor: pointer;
       }
     </style>
   </head>
 
-  <body class="index-neo">
+  <body>
 
     <!-- ***** Preloader Start ***** -->
     <div id="js-preloader" class="js-preloader">
@@ -726,6 +237,8 @@
         </div>
       </div>
     </div>
+
+   
 
     <div class="section trending">
       <div class="container">
@@ -885,7 +398,7 @@
               </div>
             </div>
           </div>
-
+          
           <!-- Hole 9 -->
           <div class="col-lg-3 col-md-6">
             <div class="item">
@@ -1089,6 +602,9 @@
 <br><br><br>
 <br><br><br>
 
+
+
+    
 <div class="bottom-nav">
   <a href="index.html">
     <i class="fas fa-home"></i>
