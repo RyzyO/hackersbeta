@@ -94,7 +94,8 @@
     }
 
     .trending-box {
-      grid-auto-rows: 1fr;
+      width: 100%;
+      align-items: stretch;
     }
 
     .trending-items {
@@ -897,13 +898,6 @@
     </div>
   </div>
 
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
-
   <script>
     function toggleMobileMenu() {
       const menu = document.getElementById('mobile-menu');
@@ -916,12 +910,30 @@
       }
 
       const filterLinks = document.querySelectorAll('.trending-filter a');
+      const cards = document.querySelectorAll('.trending-items');
+
+      const applyFilter = (filterValue) => {
+        cards.forEach(card => {
+          if (filterValue === '*') {
+            card.classList.remove('hidden');
+            return;
+          }
+          const className = filterValue.replace('.', '');
+          card.classList.toggle('hidden', !card.classList.contains(className));
+        });
+      };
+
       filterLinks.forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          const filterValue = link.getAttribute('data-filter') || '*';
           filterLinks.forEach(item => item.classList.remove('is_active'));
           link.classList.add('is_active');
+          applyFilter(filterValue);
         });
       });
+
+      applyFilter('*');
     });
   </script>
 </body>
