@@ -339,6 +339,35 @@
       </div>
     </div>
 
+    <!-- Rain Radar -->
+    <div class="mb-8">
+      <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2">
+        <i data-lucide="radar" class="w-6 h-6 text-hackers-sky"></i>
+        Rain Radar
+      </h2>
+      <div class="glass-card rounded-3xl p-4 md:p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Live Radar (RainViewer)</h3>
+            <p class="text-sm text-gray-400">Zoom and pan for local showers around Worrigee.</p>
+          </div>
+          <a href="https://www.rainviewer.com/map.html?loc=-34.878,150.744,9" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold text-hackers-sky">
+            Open full map
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+        <div class="rounded-2xl overflow-hidden border border-white/10 bg-black/20">
+          <iframe
+            title="RainViewer Radar"
+            src="https://www.rainviewer.com/map.html?loc=-34.878,150.744,9&layer=radar&sm=1&sn=1"
+            class="w-full h-[360px] md:h-[420px]"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+
     <!-- Additional Weather Information -->
     <div class="mb-8">
       <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2">
