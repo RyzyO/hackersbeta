@@ -1,156 +1,168 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <link rel="icon" type="image/x-icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
     <meta charset="utf-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="favicon.png">
-<link rel="apple-touch-startup-image" href="splash.png">
-    <link rel="manifest" href="site.webmanifest" />
-    <title>Hackers Cup</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="manifest" href="site.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <link rel="apple-touch-startup-image" href="splash.png">
-    <title>Hackers Cup</title>
+    <link rel="manifest" href="site.webmanifest">
+    <title>Login | Hackers Cup</title>
 
-    <!-- Bootstrap core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Additional CSS Files -->
-    <link rel="stylesheet" href="assets/css/fontawesome.css">
-    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-    <link rel="stylesheet" href="assets/css/owl.css">
-    <link rel="stylesheet" href="assets/css/animate.css">
-    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        hackers: {
+                            dark: '#0f172a',
+                            navy: '#1e3a5f',
+                            sky: '#0ea5e9',
+                            light: '#38bdf8',
+                            gold: '#f59e0b',
+                            surface: '#1e293b',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-
-        /* Body styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #6caedf
-;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: white;
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
         }
-
-        /* Login container */
-        .login-container {
-            background-color: #0171f9;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-        }
-
-        /* Logo styles */
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .logo img {
-            max-width: 150px;
-        }
-
-        /* Form styles */
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
             border-radius: 4px;
-            border: 1px solid #ccc;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
 
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            background-color: #007bff;
-            color: #fff;
-            cursor: pointer;
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        button:hover {
-            background-color: #0056b3;
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        #error-message {
-            color: red;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        #forgot-password {
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        #forgot-password a {
-            color: white;
-            text-decoration: none;
-        }
-
-        #forgot-password a:hover {
-            text-decoration: underline;
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
         }
     </style>
 </head>
 
-<body>
-
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- ***** Logo Start ***** -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <!-- ***** Logo End ***** -->
-            <!-- ***** Menu Start ***** -->
-          
-            
-            <!-- ***** Menu End ***** -->
-          </nav>
+<body class="bg-hackers-dark text-white font-sans antialiased min-h-screen">
+    <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+                        <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+                    </div>
+                    <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+                    <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
+    </nav>
 
-<body>
+    <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient min-h-screen flex items-center">
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+        </div>
+
+        <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div class="grid lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6 animate-slide-up">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+                        <i data-lucide="lock" class="w-4 h-4 text-hackers-sky"></i>
+                        <span class="text-sm font-medium text-gray-300">Member Login</span>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+                        Welcome back to
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Hackers Cup</span>
+                    </h1>
+                    <p class="text-lg text-gray-300 max-w-lg">Sign in to see your registration details, payments, scores, and notifications.</p>
+                    <div class="flex items-center gap-3 text-sm text-gray-400">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-hackers-sky"></i>
+                        Secure Firebase authentication
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label for="email" class="text-sm text-gray-300">Email</label>
+                            <input type="email" id="email" name="email" required class="mt-2 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" placeholder="you@example.com">
+                        </div>
+                        <div>
+                            <label for="password" class="text-sm text-gray-300">Password</label>
+                            <input type="password" id="password" name="password" required class="mt-2 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-hackers-sky to-hackers-light text-hackers-dark font-semibold py-3">Sign In</button>
+                    </form>
+
+                    <div class="flex items-center justify-between text-sm text-gray-400 mt-4">
+                        <button id="forgot-password-link" class="text-hackers-sky hover:text-hackers-light">Forgot password?</button>
+                        <a href="register.html" class="text-gray-300 hover:text-white">Need an account?</a>
+                    </div>
+                    <p id="error-message" class="text-sm text-rose-300 mt-4"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -165,70 +177,47 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase();
+        getAnalytics(app);
         const auth = getAuth(app);
 
-        document.getElementById('login-form').addEventListener('submit', function (event) {
-            event.preventDefault();
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const forgotLink = document.getElementById('forgot-password-link');
 
-            const email = document.getElementById('email').value;
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            errorMessage.textContent = '';
+
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
+                .then(() => {
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    document.getElementById('error-message').innerText = errorMessage;
+                    errorMessage.textContent = error.message;
                 });
         });
 
-        document.getElementById('forgot-password-link').addEventListener('click', function (event) {
+        forgotLink.addEventListener('click', (event) => {
             event.preventDefault();
+            errorMessage.textContent = '';
 
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             if (!email) {
-                document.getElementById('error-message').innerText = "Please enter your email to reset password.";
+                errorMessage.textContent = 'Please enter your email to reset password.';
                 return;
             }
 
             sendPasswordResetEmail(auth, email)
                 .then(() => {
-                    document.getElementById('error-message').innerText = "Password reset email sent!";
+                    errorMessage.textContent = 'Password reset email sent!';
                 })
                 .catch((error) => {
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    document.getElementById('error-message').innerText = errorMessage;
+                    errorMessage.textContent = error.message;
                 });
         });
     </script>
-
-    <div class="login-container">
-        <div class="logo">
-            <!-- Your logo here -->
-            <img src="assets/images/logo.png" alt="Your Logo">
-        </div>
-        <form id="login-form">
-            <div class="input-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="input-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password">
-            </div>
-            <button type="submit">Login</button>
-        </form>
-        <div id="forgot-password">
-            <a href="#" id="forgot-password-link">Forgot Password?</a>
-        </div>
-        <p id="error-message"></p>
-    </div>
-
-  
+</body>
 </html>
