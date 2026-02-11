@@ -589,10 +589,12 @@
           <div class="animate-float">
             <i data-lucide="${iconName}" class="weather-icon-large text-hackers-light"></i>
           </div>
-          <div class="text-center md:text-left">
-            <div class="temp-display mb-2">${Math.round(current.temperature_2m)}°</div>
-            <p class="text-lg md:text-xl text-gray-300 mb-1">${description}</p>
-            <p class="text-sm text-gray-400">Updated just now</p>
+          <div class="flex items-center gap-4">
+            <div class="temp-display">${Math.round(current.temperature_2m)}°</div>
+            <div class="text-left">
+              <p class="text-lg md:text-xl text-gray-300">${description}</p>
+              <p class="text-sm text-gray-400">Updated just now</p>
+            </div>
           </div>
         </div>
       `;
@@ -639,7 +641,7 @@
       
       for (let i = 0; i < 7; i++) {
         const date = new Date(daily.time[i]);
-        const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : days[date.getDay()];
+        const dayName = days[date.getDay()];
         const dateStr = `${date.getDate()} ${months[date.getMonth()]}`;
         const iconName = getWeatherIcon(daily.weather_code[i]);
         const maxTemp = Math.round(daily.temperature_2m_max[i]);
