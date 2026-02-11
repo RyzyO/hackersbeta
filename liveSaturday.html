@@ -166,6 +166,78 @@
       border-collapse: collapse;
       font-family: 'Inter', sans-serif;
       color: #ffffff;
+      min-width: 520px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    .mobile-leaderboard {
+      display: none;
+      gap: 8px;
+    }
+
+    .leaderboard-card {
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .leaderboard-rank {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .leaderboard-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaderboard-mini {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+      white-space: nowrap;
+    }
+
+    .leaderboard-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .leaderboard-mobile-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+      padding: 6px 10px;
+      margin-bottom: 6px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
     }
 
     #data-table thead tr {
@@ -196,11 +268,29 @@
     }
 
     @media screen and (max-width: 767px) {
+      body {
+        overflow-x: hidden;
+      }
+
       .column-e, .column-f {
         display: none;
       }
       .column-c, .column-a, .column-b, .column-d, .column-g {
         font-size: 0.8em;
+      }
+
+      #data-table th,
+      #data-table td {
+        padding: 8px 8px;
+        font-size: 12px;
+      }
+
+      .table-wrap {
+        display: none;
+      }
+
+      .mobile-leaderboard {
+        display: grid;
       }
     }
 
@@ -334,7 +424,7 @@
             </button>
           </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-wrap">
           <table id="data-table">
             <thead>
               <tr id="header-row"></tr>
@@ -342,6 +432,7 @@
             <tbody id="data-rows"></tbody>
           </table>
         </div>
+        <div id="mobile-cards" class="mobile-leaderboard"></div>
       </div>
     </div>
   </section>
@@ -448,6 +539,7 @@
         }
       });
       
+      const cardsContainer = document.getElementById('mobile-cards');
       const searchInput = document.getElementById('leaderboard-search');
       const applySearchFilter = () => {
         const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
@@ -456,6 +548,14 @@
           const text = row.textContent.toLowerCase();
           row.classList.toggle('hidden', query !== '' && !text.includes(query));
         });
+
+        if (cardsContainer) {
+          const cards = cardsContainer.querySelectorAll('.leaderboard-card');
+          cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.classList.toggle('hidden', query !== '' && !text.includes(query));
+          });
+        }
       };
 
       if (searchInput) {
@@ -523,6 +623,33 @@
         });
         
         dataRows.appendChild(tr);
+
+        if (cardsContainer) {
+          const playerName = row.c[2] ? row.c[2].v : `Player${index + 1}`;
+          const displayName = typeof playerName === 'string' ? playerName : playerName;
+          const pointsValue = row.c[3] ? row.c[3].v : '';
+          const throughValue = row.c[6] ? row.c[6].v : '';
+          const handicapValue = handicapMap[playerName] ? handicapMap[playerName] : '';
+          const nameWithHandicap = handicapValue !== '' ? `${displayName} (${handicapValue})` : displayName;
+
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'leaderboard-card text-left';
+          card.addEventListener('click', () => {
+            window.location.href = `scorecard.html?player=${encodeURIComponent(playerName)}`;
+          });
+
+          card.innerHTML = `
+            <div class="leaderboard-row">
+              <span class="leaderboard-rank">#${rankValue}</span>
+              <span class="leaderboard-name">${nameWithHandicap}</span>
+              <span class="leaderboard-value">${throughValue !== '' ? throughValue : '--'}</span>
+              <span class="leaderboard-value">${pointsValue !== '' ? pointsValue : '--'}</span>
+            </div>
+          `;
+
+          cardsContainer.appendChild(card);
+        }
       });
 
       const avgScore = totalPlayers ? (totalPoints / totalPlayers).toFixed(1) : '0.0';

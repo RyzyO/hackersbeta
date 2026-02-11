@@ -167,6 +167,78 @@
       border-collapse: collapse;
       font-family: 'Inter', sans-serif;
       color: #ffffff;
+      min-width: 520px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    .mobile-leaderboard {
+      display: none;
+      gap: 8px;
+    }
+
+    .leaderboard-card {
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .leaderboard-rank {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .leaderboard-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaderboard-mini {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+      white-space: nowrap;
+    }
+
+    .leaderboard-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .leaderboard-mobile-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+      padding: 6px 10px;
+      margin-bottom: 6px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
     }
 
     #data-table thead tr {
@@ -197,6 +269,10 @@
     }
 
     @media screen and (max-width: 767px) {
+      body {
+        overflow-x: hidden;
+      }
+
       #data-table th,
       #data-table td {
         display: none;
@@ -207,6 +283,14 @@
       #data-table td:nth-child(2),
       #data-table th:nth-child(5),
       #data-table td:nth-child(5),
+
+      .table-wrap {
+        display: none;
+      }
+
+      .mobile-leaderboard {
+        display: grid;
+      }
       #data-table th:nth-child(6),
       #data-table td:nth-child(6) {
         display: table-cell;
@@ -347,14 +431,15 @@
             </button>
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table id="data-table">
+        <div class="table-wrap">
+          <table id="data-table" class="data-table">
             <thead>
               <tr id="header-row"></tr>
             </thead>
             <tbody id="data-rows"></tbody>
           </table>
         </div>
+        <div id="mobile-cards" class="mobile-leaderboard"></div>
       </div>
     </div>
   </section>
@@ -460,6 +545,14 @@
             const text = row.textContent.toLowerCase();
             row.classList.toggle('hidden', query !== '' && !text.includes(query));
           });
+
+          if (cardsContainer) {
+            const cards = cardsContainer.querySelectorAll('.leaderboard-card');
+            cards.forEach(card => {
+              const text = card.textContent.toLowerCase();
+              card.classList.toggle('hidden', query !== '' && !text.includes(query));
+            });
+          }
         };
 
         if (searchInput) {
@@ -477,6 +570,8 @@
         let through18 = 0;
 
         const parFallback = 72;
+
+        const cardsContainer = document.getElementById('mobile-cards');
 
         // Populate the table rows
         const dataRows = document.getElementById('data-rows');
@@ -502,6 +597,39 @@
           });
 
           dataRows.appendChild(tr);
+
+          if (cardsContainer) {
+            const rankValue = row.c[1] ? row.c[1].v : '';
+            const displayName = typeof playerName === 'string' ? playerName.replace(/-/g, ' & ') : playerName;
+            const nettValue = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : '') : '';
+            const throughValue = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : '') : '';
+            const handicapValue = handicapIdx >= 0 ? (row.c[handicapIdx + sliceOffset] ? row.c[handicapIdx + sliceOffset].v : '') : '';
+            const nameWithHandicap = handicapValue !== '' ? `${displayName} (${handicapValue})` : displayName;
+            const nameParts = typeof nameWithHandicap === 'string'
+              ? nameWithHandicap.split(' & ').map(part => part.trim()).filter(Boolean)
+              : [nameWithHandicap];
+            const nameMarkup = nameParts
+              .map(part => `<span>${part}</span>`)
+              .join('');
+
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'leaderboard-card text-left';
+            card.addEventListener('click', () => {
+              window.location.href = `scorecardSun.html?player=${encodeURIComponent(playerName)}`;
+            });
+
+            card.innerHTML = `
+              <div class="leaderboard-row">
+                <span class="leaderboard-rank">#${rankValue}</span>
+                <span class="leaderboard-name leaderboard-name-stack">${nameMarkup}</span>
+                <span class="leaderboard-value">${throughValue !== '' ? throughValue : '--'}</span>
+                <span class="leaderboard-value">${nettValue !== '' ? nettValue : '--'}</span>
+              </div>
+            `;
+
+            cardsContainer.appendChild(card);
+          }
 
           const nettValue = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : null) : null;
           const handicapValue = handicapIdx >= 0 ? (row.c[handicapIdx + sliceOffset] ? row.c[handicapIdx + sliceOffset].v : null) : null;
