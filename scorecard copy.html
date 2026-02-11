@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Player Scorecard</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="assets/css/fontawesome.css">
+     <link rel="stylesheet" href="assets/css/navbar.css">
+  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
+  <link rel="stylesheet" href="assets/css/owl.css">
+  <link rel="stylesheet" href="assets/css/animate.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  
+  <!-- Custom Table Styling -->
+  <style>
+    /* Scorecard table styling matching the leaderboard page */
+    h3 {
+      color: white;
+    }
+    .scorecard-table {
+      width: 100%;
+      margin: 20px 0;
+      border-collapse: collapse;
+      font-family: 'Poppins', sans-serif;
+      color: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    /* Header row styling: dark background with uppercase, spaced text */
+    .scorecard-table thead tr {
+      background-color: #2a2a2a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    /* Header and cell padding, with subtle borders */
+    .scorecard-table th,
+    .scorecard-table td {
+      padding: 12px 15px;
+      border: 1px solid #444;
+      text-align: center;
+    }
+    /* Zebra-striping for table rows */
+    .scorecard-table tbody tr:nth-child(even) {
+      background-color: #333333;
+    }
+    .scorecard-table tbody tr:nth-child(odd) {
+      background-color: #2e2e2e;
+    }
+    /* Hover effect for rows */
+    .scorecard-table tbody tr:hover {
+      background-color: #555555;
+      cursor: pointer;
+    }
+    /* Stats card styling */
+    .stats-card {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #333333;
+      border-radius: 10px;
+      color: #ffffff;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    /* ----------------------------
+       DESKTOP (>= 769px) STYLING
+       ---------------------------- */
+    @media (min-width: 769px) {
+      .scorecard-table {
+        table-layout: fixed;
+      }
+      /* Force all 10 columns to 10% so they line up nicely */
+      .scorecard-table th,
+      .scorecard-table td {
+        width: 10%;
+        min-width: 60px;
+        max-width: 90px;
+        font-size: 14px;
+        padding: 8px 10px;
+        text-align: center;
+      }
+    }
+
+    /* ----------------------------
+       MOBILE (<= 768px) STYLING
+       ---------------------------- */
+    @media (max-width: 768px) {
+      .scorecard-table {
+        table-layout: fixed;
+      }
+      .scorecard-table th,
+      .scorecard-table td {
+        width: 10%;
+        min-width: 40px;
+        max-width: 70px;
+      }
+      /* Fix width for the last column ("Out" or "In") */
+      .scorecard-table th:last-child,
+      .scorecard-table td:last-child {
+        width: 10%;
+        min-width: 50px;
+        max-width: 80px;
+      }
+    }
+    
+    /* Shared styles for both Front Nine and Back Nine tables */
+.scorecard-table th,
+.scorecard-table td {
+  font-size: 14px; /* Match the size for readability */
+  padding: 8px 10px; /* Reduce padding for narrower cells */
+  text-align: center;
+}
+
+/* Force equal column widths */
+.scorecard-table th,
+.scorecard-table td {
+  width: 5%; /* Adjust as needed to fit the table within the page */
+}
+    
+  </style>
+</head>
+<body>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- Logo -->
+            <a href="index.html" class="logo">
+              <img src="assets/images/logo.png" alt="Logo" style="width: 158px;" />
+            </a>
+            <!-- Menu -->
+           <ul class="nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="register.html">Register</a></li>
+              <li><a href="venue.html">Venue</a></li>
+              <li><a href="payment.html" class="active">Payment</a></li>
+              <li><a href="podcast.html">Podcast</a></li>
+              <li><a href="schedule.html">Schedule</a></li>
+              <li><a href="honour-roll.html">Honour Roll</a></li>
+            </ul>
+            <a class="menu-trigger"><span>Menu</span></a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <!-- Page heading with a blue background -->
+  <div class="page-heading header-text">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3>SATURDAY LEADERBOARD</h3>
+          <span class="breadcrumb">Stableford Format</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats header row -->
+    <div class="row align-items-center py-3">
+      <!-- Left side: Player name and handicap -->
+      <div class="col-12 col-md-6 text-md-left">
+        <h2 id="player-name" class="m-0">Player Name</h2>
+        <h4 id="player-handicap" class="m-0"></h4>
+      </div>
+      <!-- Right side: Stats card -->
+      <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end mt-3 mt-md-0">
+        <div class="stats-card" style="padding: 15px 20px; border-radius: 10px;">
+          <div>Score: <span id="total-points">0</span></div>
+          <div>Rank: <span id="player-rank">N/A</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Front Nine Table -->
+    <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
+      <thead>
+        <tr>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+          <th>6</th>
+          <th>7</th>
+          <th>8</th>
+          <th>9</th>
+          <th>Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row: Par for holes 1-9 + Par total (Out) -->
+        <tr>
+          <td id="par1"></td>
+          <td id="par2"></td>
+          <td id="par3"></td>
+          <td id="par4"></td>
+          <td id="par5"></td>
+          <td id="par6"></td>
+          <td id="par7"></td>
+          <td id="par8"></td>
+          <td id="par9"></td>
+          <td id="parOut"></td>
+        </tr>
+        <!-- Row: Score for holes 1-9 + Score total (Out) -->
+        <tr>
+          <td id="score1"></td>
+          <td id="score2"></td>
+          <td id="score3"></td>
+          <td id="score4"></td>
+          <td id="score5"></td>
+          <td id="score6"></td>
+          <td id="score7"></td>
+          <td id="score8"></td>
+          <td id="score9"></td>
+          <td id="scoreOut"></td>
+        </tr>
+        <!-- Row: Points for holes 1-9 + Points total (Out) -->
+        <tr>
+          <td id="points1"></td>
+          <td id="points2"></td>
+          <td id="points3"></td>
+          <td id="points4"></td>
+          <td id="points5"></td>
+          <td id="points6"></td>
+          <td id="points7"></td>
+          <td id="points8"></td>
+          <td id="points9"></td>
+          <td id="pointsOut"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Back Nine Table -->
+    <table id="back-nine-table" class="scorecard-table" style="margin-top: 30px;">
+      <thead>
+        <tr>
+          <th>10</th>
+          <th>11</th>
+          <th>12</th>
+          <th>13</th>
+          <th>14</th>
+          <th>15</th>
+          <th>16</th>
+          <th>17</th>
+          <th>18</th>
+          <th>In</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row: Par for holes 10-18 + Par total (In) -->
+        <tr>
+          <td id="par10"></td>
+          <td id="par11"></td>
+          <td id="par12"></td>
+          <td id="par13"></td>
+          <td id="par14"></td>
+          <td id="par15"></td>
+          <td id="par16"></td>
+          <td id="par17"></td>
+          <td id="par18"></td>
+          <td id="parIn"></td>
+        </tr>
+        <!-- Row: Score for holes 10-18 + Score total (In) -->
+        <tr>
+          <td id="score10"></td>
+          <td id="score11"></td>
+          <td id="score12"></td>
+          <td id="score13"></td>
+          <td id="score14"></td>
+          <td id="score15"></td>
+          <td id="score16"></td>
+          <td id="score17"></td>
+          <td id="score18"></td>
+          <td id="scoreIn"></td>
+        </tr>
+        <!-- Row: Points for holes 10-18 + Points total (In) -->
+        <tr>
+          <td id="points10"></td>
+          <td id="points11"></td>
+          <td id="points12"></td>
+          <td id="points13"></td>
+          <td id="points14"></td>
+          <td id="points15"></td>
+          <td id="points16"></td>
+          <td id="points17"></td>
+          <td id="points18"></td>
+          <td id="pointsIn"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+  
+  <div class="bottom-nav">
+  <a href="index.html">
+    <i class="fas fa-home"></i>
+    Home
+  </a>
+  <a href="payment.html">
+    <i class="fas fa-dollar-sign"></i>
+    Payment
+  </a>
+  <a href="podcast.html">
+    <i class="fas fa-podcast"></i>
+    Podcast
+  </a>
+  <a href="score.html">
+    <i class="fas fa-chart-line"></i>
+    Score
+  </a>
+</div>
+
+  <!-- Scripts -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+
+  <!-- Main Script to Fetch & Populate Scorecard Data -->
+  <script>
+  /****************************************************
+   * 1) Get the player name from the URL parameter
+   ****************************************************/
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerName = urlParams.get('player') || "Unknown Player";
+  document.getElementById('player-name').textContent = playerName;
+
+  /****************************************************
+   * Hole order (exactly as requested)
+   ****************************************************/
+  const frontOrder = [1, 2, 3, 4, 5, 6, 7, 8, 24];              // "Out"
+  const backOrder  = [25, 9, 19, 20, 21, 17, 18, 10, 27];       // "In"
+
+  // Convenience helpers
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const sumByOrder = (arr, order) => order.reduce((s, h) => s + (Number(arr[h]) || 0), 0);
+
+  /****************************************************
+   * 2) Fetch the Google Sheet data for the scorecard
+   *    Each row = 1 hole, with columns:
+   *    E (index 4) = hole #, F (index 5) = par,
+   *    I (index 8) = score, M (index 12) = points
+   ****************************************************/
+  const sheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I';
+  const fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+
+  // Arrays indexed by hole number (can contain 24, 25, 27, etc.)
+  const holePars = [];
+  const holeScores = [];
+  const holePoints = [];
+
+  fetch(fetchUrl)
+    .then(response => response.text())
+    .then(text => {
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const rows = json.table.rows;
+
+      rows.forEach(r => {
+        const holeNum  = r.c[4]  ? parseInt(r.c[4].v, 10)  : 0;  // E
+        const parVal   = r.c[5]  ? parseInt(r.c[5].v, 10)  : 0;  // F
+        const scoreVal = r.c[8]  ? parseInt(r.c[8].v, 10)  : 0;  // I
+        const ptsVal   = r.c[12] ? parseInt(r.c[12].v, 10) : 0;  // M
+
+        // Accept holes 1..27 (covers 24, 25, 27)
+        if (holeNum >= 1 && holeNum <= 27) {
+          holePars[holeNum]   = parVal;
+          holeScores[holeNum] = scoreVal;
+          holePoints[holeNum] = ptsVal;
+        }
+      });
+
+      /****************************************************
+       * Update table HEADERS to reflect custom order
+       ****************************************************/
+      const frontHeads = document.querySelectorAll('#front-nine-table thead th');
+      for (let i = 0; i < 9; i++) frontHeads[i].textContent = frontOrder[i];
+      frontHeads[9].textContent = 'Out';
+
+      const backHeads = document.querySelectorAll('#back-nine-table thead th');
+      for (let i = 0; i < 9; i++) backHeads[i].textContent = backOrder[i];
+      backHeads[9].textContent = 'In';
+
+      /****************************************************
+       * Populate FRONT (positions 1..9 map to frontOrder)
+       ****************************************************/
+      let outParSum = 0, outScoreSum = 0, outPointsSum = 0;
+      for (let i = 0; i < 9; i++) {
+        const hole = frontOrder[i];
+        const pos  = i + 1; // column ids 1..9
+        setText(`par${pos}`,    holePars[hole]   ?? 0);
+        setText(`score${pos}`,  holeScores[hole] ?? 0);
+        setText(`points${pos}`, holePoints[hole] ?? 0);
+      }
+      outParSum    = sumByOrder(holePars,   frontOrder);
+      outScoreSum  = sumByOrder(holeScores, frontOrder);
+      outPointsSum = sumByOrder(holePoints, frontOrder);
+      setText("parOut",    outParSum);
+      setText("scoreOut",  outScoreSum);
+      setText("pointsOut", outPointsSum);
+
+      /****************************************************
+       * Populate BACK (positions 10..18 map to backOrder)
+       ****************************************************/
+      let inParSum = 0, inScoreSum = 0, inPointsSum = 0;
+      for (let i = 0; i < 9; i++) {
+        const hole = backOrder[i];
+        const pos  = 10 + i; // column ids 10..18
+        setText(`par${pos}`,    holePars[hole]   ?? 0);
+        setText(`score${pos}`,  holeScores[hole] ?? 0);
+        setText(`points${pos}`, holePoints[hole] ?? 0);
+      }
+      inParSum    = sumByOrder(holePars,   backOrder);
+      inScoreSum  = sumByOrder(holeScores, backOrder);
+      inPointsSum = sumByOrder(holePoints, backOrder);
+      setText("parIn",    inParSum);
+      setText("scoreIn",  inScoreSum);
+      setText("pointsIn", inPointsSum);
+
+      // After you compute outPointsSum and inPointsSum:
+const totalPts = outPointsSum + inPointsSum;
+document.getElementById("total-points").textContent = totalPts;
+
+
+      /****************************************************
+       * 3) Color-code the SCORE cells by difference (Score - Par)
+       *    We color by POSITION (cell id) using the mapped hole.
+       ****************************************************/
+      function colorScoreCellFor(holeNumber, cellId) {
+        const par = holePars[holeNumber] || 0;
+        const scr = holeScores[holeNumber] || 0;
+        const diff = scr - par;
+        const cell = document.getElementById(cellId);
+        if (!cell) return;
+
+        // Reset any previous styling
+        cell.style.backgroundColor = "";
+        cell.style.color = "";
+
+        if (diff === 0) {
+          cell.style.backgroundColor = "white";
+          cell.style.color = "black";
+        } else if (diff === -1) {
+          cell.style.backgroundColor = "#add8e6"; // Light blue
+          cell.style.color = "black";
+        } else if (diff === -2) {
+          cell.style.backgroundColor = "blue";
+          cell.style.color = "white";
+        } else if (diff === -3) {
+          cell.style.backgroundColor = "navy";
+          cell.style.color = "white";
+        } else if (diff === 1) {
+          cell.style.backgroundColor = "orange";
+          cell.style.color = "black";
+        } else if (diff >= 2) {
+          cell.style.backgroundColor = "red";
+          cell.style.color = "white";
+        }
+      }
+
+      // Apply colors for front positions 1..9
+      for (let i = 0; i < 9; i++) {
+        colorScoreCellFor(frontOrder[i], `score${i + 1}`);
+      }
+      // Apply colors for back positions 10..18
+      for (let i = 0; i < 9; i++) {
+        colorScoreCellFor(backOrder[i], `score${10 + i}`);
+      }
+    })
+    .catch(err => console.error("Error fetching or parsing scorecard data:", err));
+
+  /****************************************************
+   * 4) Leaderboard rank & total points (unchanged)
+   ****************************************************/
+  
+// 4) Leaderboard rank ONLY (don’t overwrite total-points)
+
+// 4) Leaderboard RANK — compute from Points so it's always correct
+
+// 4) Leaderboard RANK — compute from Points, match player by col B or C
+const leaderboardSheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I'; // same doc as scorecard
+const leaderboardGid = '1551828927'; // your leaderboard tab
+const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${leaderboardSheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
+
+fetch(leaderboardUrl)
+  .then(r => r.text())
+  .then(text => {
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+    const cols = (json.table.cols || []).map(c => (c && c.label ? c.label.toString().trim().toLowerCase() : ''));
+    const rows = json.table.rows || [];
+
+    // Explicit column assumptions per your note:
+    // B = index 1 (a.k.a. c[1])  -> nameB
+    // C = index 2 (a.k.a. c[2])  -> nameC
+    // Points likely in D = index 3, but detect by header if possible
+    const NAME_B_COL = 1;
+    const NAME_C_COL = 2;
+    const pointsIdxByLabel = cols.findIndex(l => ['points','total points','score','total'].includes(l));
+    const POINTS_COL = pointsIdxByLabel >= 0 ? pointsIdxByLabel : 3; // fallback to D
+
+    const getV  = c => (c ? (c.v ?? c.f ?? '') : '');
+    const norm  = s => String(s ?? '').trim().toLowerCase();
+    const toNum = v => {
+      if (typeof v === 'number') return v;
+      const n = parseFloat(String(v).replace(/[^\d.-]/g,''));
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const target = norm(playerName);
+
+    // Build entries {nameB, nameC, points}
+    const entries = rows.map(r => ({
+      nameB: norm(getV(r.c[NAME_B_COL])),
+      nameC: norm(getV(r.c[NAME_C_COL])),
+      points: toNum(getV(r.c[POINTS_COL]))
+    }));
+
+    // Sort by points desc
+    entries.sort((a, b) => b.points - a.points);
+
+    // Standard competition ranking (ties share rank)
+    let rank = 'N/A';
+    for (let i = 0; i < entries.length; ) {
+      const start = i;
+      const pts = entries[i].points;
+      while (i < entries.length && entries[i].points === pts) i++;
+      const group = entries.slice(start, i);
+      // match either B OR C name to the playerName
+      if (group.some(g => g.nameB === target || g.nameC === target)) {
+        rank = start + 1; // 1-based rank
+        break;
+      }
+    }
+
+    document.getElementById('player-rank').textContent = rank;
+    // Do NOT touch #total-points here — it’s set from the scorecard calc.
+  })
+  .catch(err => console.error('Error computing rank from leaderboard:', err));
+
+
+
+
+  /****************************************************
+   * 5) Handicap (unchanged)
+   ****************************************************/
+  const handicapSheetName = 'Handicaps';
+  const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(handicapSheetName)}`;
+
+  fetch(handicapUrl)
+    .then(response => response.text())
+    .then(text => {
+      const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
+      const rows = json.table.rows;
+      let handicap = "N/A";
+      rows.forEach(r => {
+        if (r.c[0] && r.c[0].v.trim().toLowerCase() === playerName.trim().toLowerCase()) {
+          handicap = r.c[1] ? r.c[1].v : "N/A";
+        }
+      });
+      document.getElementById("player-handicap").textContent = `Handicap: ${handicap}`;
+    })
+    .catch(err => console.error("Error fetching handicap data:", err));
+
+    
+</script>
+</body>
+</html>

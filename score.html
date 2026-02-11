@@ -2,158 +2,278 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"><meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hackers Cup 25 Scoring</title>
-    <!-- Bootstrap core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Additional CSS Files -->
-    <link rel="stylesheet" href="assets/css/fontawesome.css" />
-       <link rel="stylesheet" href="assets/css/navbar.css">
-    <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css" />
-    <link rel="stylesheet" href="assets/css/owl.css" />
-    <link rel="stylesheet" href="assets/css/animate.css" />
-    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              hackers: {
+                dark: '#0f172a',
+                navy: '#1e3a5f',
+                sky: '#0ea5e9',
+                light: '#38bdf8',
+                gold: '#f59e0b',
+                surface: '#1e293b',
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'slide-up': 'slideUp 0.6s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
+      .glass {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .glass-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+      }
+
+      .glass-card:hover {
+        background: rgba(30, 41, 59, 0.8);
+        border-color: rgba(14, 165, 233, 0.3);
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .hero-gradient {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 50;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      @media (min-width: 768px) {
+        .bottom-nav {
+          display: none;
+        }
+      }
+    </style>
   </head>
-  <body>
-    <!-- Header Area Start -->
-    <header class="header-area header-sticky">
-      <div class="container">
-        <div class="row">
-          <div class="col-12">
-            <nav class="main-nav">
-              <!-- Logo -->
-              <a href="index.html" class="logo">
-                <img src="assets/images/logo.png" alt="" style="width: 158px;" />
-              </a>
-              <!-- Navigation Links -->
-              <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html" class="active">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-            </ul>
-              <a class="menu-trigger">
-                <span>Menu</span>
-              </a>
-            </nav>
+  <body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+    <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex-shrink-0 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+              <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain" />
+            </div>
+            <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
           </div>
-        </div>
-      </div>
-    </header>
-    <!-- Header Area End -->
 
-    <!-- Page Heading -->
-    <div class="page-heading header-text">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-12">
-            <h3>LIVE SCORING</h3>
-            <span class="breadcrumb"><a href="#">Hackers Cup 25</a></span>
+          <div class="hidden md:flex items-center space-x-1">
+            <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+            <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+            <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+            <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+            <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+            <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+            <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="single-product section">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-6 align-self-center">
-             <a id="apple-podcasts-btn" href="https://docs.google.com/spreadsheets/d/1YzCv3jY5wnfUI1ECZfIIhwqWHyFrCYSLS9wXWs_Rhlw/edit?usp=sharing" target="_blank" rel="noopener noreferrer"
-      style="display:inline-block;background:#056812;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:18px;min-width:220px;text-align:center;">
-      Friday Live Scoring
-    </a><br><br>
-     <a id="apple-podcasts-btn" href="https://docs.google.com/spreadsheets/d/1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I/edit?usp=sharing" target="_blank" rel="noopener noreferrer"
-      style="display:inline-block;background:#056812;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:18px;min-width:220px;text-align:center;">
-    Saturday Live Scoring
-    </a><br><br>
-     <a id="apple-podcasts-btn" href="https://docs.google.com/spreadsheets/d/13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI/edit?usp=sharing" target="_blank" rel="noopener noreferrer"
-      style="display:inline-block;background:#056812;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:18px;min-width:220px;text-align:center;">
-      Sunday Live Scoring
-    </a><br><br>
-     <a id="apple-podcasts-btn" href="liveSaturday.html" target="_blank" rel="noopener noreferrer"
-      style="display:inline-block;background:#0745d5;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:18px;min-width:220px;text-align:center;">
-      Saturday Leaderboard
-    </a><br><br>
-     <a id="apple-podcasts-btn" href="liveSunday.html"
-      style="display:inline-block;background:#0745d5;color:#fff;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:18px;min-width:220px;text-align:center;">
-      Sunday Leaderboard
-    </a><br><br>
-            <form id="scorecard-form" action="#">
-              
-            </form>
-          </div>
-        </div>
-        <!-- Archived Scores Section -->
-        <div class="row mt-5">
-          <div class="col-lg-12">
-            <h4>Archived Scores</h4>
-            <ul>
-              <li>
-                <a href="liveSaturday24.html">Saturday 2024 Leaderboard</a>
-              </li>
-              <li>
-                <a href="liveSunday24.html">Sunday 2024 Leaderboard</a>
-              </li>
-              <li>
-                <a href="liveSaturday23.html">Saturday 2023 Leaderboard</a>
-              </li>
-              <li>
-                <a href="liveSunday23.html">Sunday 2023 Leaderboard</a>
-              </li>
-              <li>
-                <a href="overall24.html">Overall 2024 Leaderboard</a>
-              </li>
-              <li>
-                <a href="overall23.html">Overall 2023 Leaderboard</a>
-              </li>
-            </ul>
+          <div class="md:hidden">
+            <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+              <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
           </div>
         </div>
       </div>
-    </div>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br><br><br><br><br><br>
-    <!-- Footer -->
-   
+
+      <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+        <div class="px-4 pt-2 pb-3 space-y-1">
+          <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+          <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+          <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+          <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+          <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+          <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+          <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+      <div class="absolute inset-0 opacity-20">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+      </div>
+
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div class="space-y-6 animate-slide-up">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+              <i data-lucide="activity" class="w-4 h-4 text-hackers-sky"></i>
+              <span class="text-sm font-medium text-gray-300">Hackers Cup 25</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+              Live Scoring
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Command Center</span>
+            </h1>
+            <p class="text-lg text-gray-300 max-w-lg">Jump into live sheets, leaderboards, and past results with a single tap.</p>
+          </div>
+          <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+            <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Quick Picks</p>
+            <div class="mt-5 grid gap-3">
+              <a href="liveSaturday.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm font-semibold text-white">
+                Saturday Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="liveSunday.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm font-semibold text-white">
+                Sunday Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-10 md:py-14 -mt-8 relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-6 md:grid-cols-2">
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <h2 class="text-2xl font-bold">Live Scoring Sheets</h2>
+            <p class="text-sm text-gray-400 mt-2">Google Sheets for each day of play.</p>
+            <div class="mt-6 grid gap-3">
+              <a href="https://docs.google.com/spreadsheets/d/1YzCv3jY5wnfUI1ECZfIIhwqWHyFrCYSLS9wXWs_Rhlw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-between rounded-2xl bg-emerald-500/20 border border-emerald-400/30 px-4 py-3 text-sm font-semibold text-emerald-100">
+                Friday Live Scoring
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+              <a href="https://docs.google.com/spreadsheets/d/1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-between rounded-2xl bg-emerald-500/20 border border-emerald-400/30 px-4 py-3 text-sm font-semibold text-emerald-100">
+                Saturday Live Scoring
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+              <a href="https://docs.google.com/spreadsheets/d/13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-between rounded-2xl bg-emerald-500/20 border border-emerald-400/30 px-4 py-3 text-sm font-semibold text-emerald-100">
+                Sunday Live Scoring
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <h2 class="text-2xl font-bold">Archived Scores</h2>
+            <p class="text-sm text-gray-400 mt-2">Previous leaderboards and overall results.</p>
+            <div class="mt-6 grid gap-3 text-sm">
+              <a href="liveSaturday24.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Saturday 2024 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="liveSunday24.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Sunday 2024 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="liveSaturday23.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Saturday 2023 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="liveSunday23.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Sunday 2023 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="overall24.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Overall 2024 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+              <a href="overall23.html" class="inline-flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white">
+                Overall 2023 Leaderboard
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
+      <div class="max-w-7xl mx-auto px-6 py-3">
+        <div class="flex items-center justify-between text-xs text-gray-300">
+          <a href="index.html" class="flex flex-col items-center gap-1">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            Home
+          </a>
+          <a href="payment.html" class="flex flex-col items-center gap-1">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+            Payment
+          </a>
+          <a href="podcast.html" class="flex flex-col items-center gap-1">
+            <i data-lucide="mic" class="w-5 h-5"></i>
+            Podcast
+          </a>
+          <a href="score.html" class="flex flex-col items-center gap-1 text-white">
+            <i data-lucide="line-chart" class="w-5 h-5"></i>
+            Score
+          </a>
+        </div>
+      </div>
+    </div>
 
-    <!-- Scripts -->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-    <script src="assets/js/isotope.min.js"></script>
-    <script src="assets/js/owl-carousel.js"></script>
-    <script src="assets/js/counter.js"></script>
-    <script src="assets/js/custom.js"></script>
+    <script>
+      function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.toggle('hidden');
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+    </script>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";

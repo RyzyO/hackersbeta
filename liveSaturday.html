@@ -1,169 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>Leaderboard</title>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-     <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
-  
-  <!-- Custom Leaderboard Styling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saturday Leaderboard | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    /* Use the same font-family as the rest of the site */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
     #data-table {
       width: 100%;
-      margin: 15px 0;
       border-collapse: collapse;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Inter', sans-serif;
       color: #ffffff;
     }
-    /* Header row styling: dark background with uppercase, spaced text */
+
     #data-table thead tr {
-      background-color: #2a2a2a;
+      background-color: rgba(30, 41, 59, 0.9);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.08em;
     }
-    /* Header and cell padding, with subtle borders */
+
     #data-table th,
     #data-table td {
-      padding: 12px 15px;
-      border: 1px solid #444;
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
       text-align: center;
       font-size: 14px;
     }
-    /* Zebra-striping for table rows */
+
     #data-table tbody tr:nth-child(even) {
-      background-color: #333333;
+      background-color: rgba(30, 41, 59, 0.45);
     }
+
     #data-table tbody tr:nth-child(odd) {
-      background-color: #2e2e2e;
+      background-color: rgba(15, 23, 42, 0.6);
     }
-    /* Hover effect for rows */
+
     #data-table tbody tr:hover {
-      background-color: #555555;
+      background-color: rgba(56, 189, 248, 0.2);
       cursor: pointer;
     }
-    /* Refresh button styling to match modern aesthetics */
-    .refresh-button {
-      background: transparent;
-      border: none;
-      margin-bottom: 10px;
-      outline: none;
-      cursor: pointer;
-    }
-    .refresh-button img {
-      width: 40px;
-      height: 40px;
-    }
-    /* Mobile specific styles */
+
     @media screen and (max-width: 767px) {
-      /* Hide Front and Back columns (column-e and column-f) */
       .column-e, .column-f {
         display: none;
       }
-      /* Make the Name column font smaller (Name column is column-c) */
       .column-c, .column-a, .column-b, .column-d, .column-g {
-        font-size: 0.8  em; /* Adjust as needed */
+        font-size: 0.8em;
+      }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
       }
     }
   </style>
-  
 </head>
-<body>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
 
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- ***** Logo Start ***** -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <!-- ***** Logo End ***** -->
-            <!-- ***** Menu Start ***** -->
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html">Payment</a></li>
-         
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-            </ul>
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-            <!-- ***** Menu End ***** -->
-          </nav>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
         </div>
       </div>
     </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
 
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>SATURDAY LEADERBOARD</h3>
-          <span class="breadcrumb">Stableford Format</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-4 animate-slide-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+          <i data-lucide="flag" class="w-4 h-4 text-hackers-sky"></i>
+          <span class="text-sm font-medium text-gray-300">Stableford Format</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">Saturday Leaderboard</h1>
+        <p class="text-lg text-gray-300">Live standings for Saturday play.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Leaderboard</h2>
+          <button class="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm font-semibold text-white" onclick="location.reload();">
+            <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+            Refresh
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table id="data-table">
+            <thead>
+              <tr id="header-row"></tr>
+            </thead>
+            <tbody id="data-rows"></tbody>
+          </table>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="container">
-    <button class="refresh-button" onclick="location.reload();">
-        <img src="/assets/images/refresh.png" alt="Refresh">
-    </button>
-  
-    <table id="data-table">
-        <thead>
-            <tr id="header-row"></tr>
-        </thead>
-        <tbody id="data-rows"></tbody>
-    </table>
-  </div>
-  
- <br>
-  <br>
-   <br>
-    <br>
-     <br>
-      <br>
-      
   <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
-  
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1 text-white">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
+
   <script type="text/javascript">
     const sheetId = '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I';
     const leaderboardGid = '1551828927'; // Leaderboard sheet
@@ -264,14 +357,5 @@
     })
     .catch(error => console.error('Error fetching data:', error));
   </script>
-  
-  <!-- Scripts -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
-
 </body>
 </html>

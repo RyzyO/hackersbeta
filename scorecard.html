@@ -2,79 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>Player Scorecard</title>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-     <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
-  
-  <!-- Custom Table Styling -->
-  <style>
-    /* Scorecard table styling matching the leaderboard page */
-    h3 {
-      color: white;
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Scorecard | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          }
+        }
+      }
     }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
     .scorecard-table {
       width: 100%;
       margin: 20px 0;
       border-collapse: collapse;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Inter', sans-serif;
       color: #ffffff;
       border-radius: 18px;
       overflow: hidden;
     }
-    /* Header row styling: dark background with uppercase, spaced text */
+
     .scorecard-table thead tr {
-      background-color: #2a2a2a;
+      background-color: rgba(30, 41, 59, 0.9);
       text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    /* Header and cell padding, with subtle borders */
-    .scorecard-table th,
-    .scorecard-table td {
-      padding: 12px 15px;
-      border: 1px solid #444;
-      text-align: center;
-    }
-    /* Zebra-striping for table rows */
-    .scorecard-table tbody tr:nth-child(even) {
-      background-color: #333333;
-    }
-    .scorecard-table tbody tr:nth-child(odd) {
-      background-color: #2e2e2e;
-    }
-    /* Hover effect for rows */
-    .scorecard-table tbody tr:hover {
-      background-color: #555555;
-      cursor: pointer;
-    }
-    /* Stats card styling */
-    .stats-card {
-      display: inline-block;
-      padding: 10px 15px;
-      background-color: #333333;
-      border-radius: 10px;
-      color: #ffffff;
-      text-align: center;
-      min-width: 120px;
+      letter-spacing: 0.08em;
     }
 
-    /* ----------------------------
-       DESKTOP (>= 769px) STYLING
-       ---------------------------- */
+    .scorecard-table th,
+    .scorecard-table td {
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .scorecard-table tbody tr:nth-child(even) {
+      background-color: rgba(30, 41, 59, 0.45);
+    }
+
+    .scorecard-table tbody tr:nth-child(odd) {
+      background-color: rgba(15, 23, 42, 0.6);
+    }
+
+    .scorecard-table tbody tr:hover {
+      background-color: rgba(56, 189, 248, 0.2);
+      cursor: pointer;
+    }
+
+    .stats-card {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 18px;
+      background-color: rgba(15, 23, 42, 0.7);
+      border-radius: 14px;
+      color: #ffffff;
+      text-align: left;
+      min-width: 160px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
     @media (min-width: 769px) {
       .scorecard-table {
         table-layout: fixed;
       }
-      /* Force all 10 columns to 10% so they line up nicely */
       .scorecard-table th,
       .scorecard-table td {
         width: 10%;
@@ -86,9 +130,6 @@
       }
     }
 
-    /* ----------------------------
-       MOBILE (<= 768px) STYLING
-       ---------------------------- */
     @media (max-width: 768px) {
       .scorecard-table {
         table-layout: fixed;
@@ -99,7 +140,6 @@
         min-width: 40px;
         max-width: 70px;
       }
-      /* Fix width for the last column ("Out" or "In") */
       .scorecard-table th:last-child,
       .scorecard-table td:last-child {
         width: 10%;
@@ -107,233 +147,253 @@
         max-width: 80px;
       }
     }
-    
-    /* Shared styles for both Front Nine and Back Nine tables */
-.scorecard-table th,
-.scorecard-table td {
-  font-size: 14px; /* Match the size for readability */
-  padding: 8px 10px; /* Reduce padding for narrower cells */
-  text-align: center;
-}
 
-/* Force equal column widths */
-.scorecard-table th,
-.scorecard-table td {
-  width: 5%; /* Adjust as needed to fit the table within the page */
-}
-    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+    }
   </style>
 </head>
-<body>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
 
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- Logo -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="Logo" style="width: 158px;" />
-            </a>
-            <!-- Menu -->
-           <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html" class="active">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-            </ul>
-            <a class="menu-trigger"><span>Menu</span></a>
-          </nav>
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain" />
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
         </div>
       </div>
     </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
 
-  <!-- Page heading with a blue background -->
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>SATURDAY LEADERBOARD</h3>
-          <span class="breadcrumb">Stableford Format</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-4">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+          <i data-lucide="clipboard-list" class="w-4 h-4 text-hackers-sky"></i>
+          <span class="text-sm font-medium text-gray-300">Stableford Format</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">Player Scorecard</h1>
+        <p class="text-lg text-gray-300">Live hole-by-hole scoring breakdown.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 id="player-name" class="text-2xl font-semibold">Player Name</h2>
+            <p id="player-handicap" class="text-sm text-gray-400"></p>
+          </div>
+          <div class="stats-card">
+            <div>Score: <span id="total-points">0</span></div>
+            <div>Rank: <span id="player-rank">N/A</span></div>
+          </div>
+        </div>
+
+        <div class="mt-6 space-y-6">
+          <div class="overflow-x-auto">
+            <table id="front-nine-table" class="scorecard-table">
+              <thead>
+                <tr>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>3</th>
+                  <th>4</th>
+                  <th>5</th>
+                  <th>6</th>
+                  <th>7</th>
+                  <th>8</th>
+                  <th>9</th>
+                  <th>Out</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="par1"></td>
+                  <td id="par2"></td>
+                  <td id="par3"></td>
+                  <td id="par4"></td>
+                  <td id="par5"></td>
+                  <td id="par6"></td>
+                  <td id="par7"></td>
+                  <td id="par8"></td>
+                  <td id="par9"></td>
+                  <td id="parOut"></td>
+                </tr>
+                <tr>
+                  <td id="score1"></td>
+                  <td id="score2"></td>
+                  <td id="score3"></td>
+                  <td id="score4"></td>
+                  <td id="score5"></td>
+                  <td id="score6"></td>
+                  <td id="score7"></td>
+                  <td id="score8"></td>
+                  <td id="score9"></td>
+                  <td id="scoreOut"></td>
+                </tr>
+                <tr>
+                  <td id="points1"></td>
+                  <td id="points2"></td>
+                  <td id="points3"></td>
+                  <td id="points4"></td>
+                  <td id="points5"></td>
+                  <td id="points6"></td>
+                  <td id="points7"></td>
+                  <td id="points8"></td>
+                  <td id="points9"></td>
+                  <td id="pointsOut"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table id="back-nine-table" class="scorecard-table">
+              <thead>
+                <tr>
+                  <th>10</th>
+                  <th>11</th>
+                  <th>12</th>
+                  <th>13</th>
+                  <th>14</th>
+                  <th>15</th>
+                  <th>16</th>
+                  <th>17</th>
+                  <th>18</th>
+                  <th>In</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="par10"></td>
+                  <td id="par11"></td>
+                  <td id="par12"></td>
+                  <td id="par13"></td>
+                  <td id="par14"></td>
+                  <td id="par15"></td>
+                  <td id="par16"></td>
+                  <td id="par17"></td>
+                  <td id="par18"></td>
+                  <td id="parIn"></td>
+                </tr>
+                <tr>
+                  <td id="score10"></td>
+                  <td id="score11"></td>
+                  <td id="score12"></td>
+                  <td id="score13"></td>
+                  <td id="score14"></td>
+                  <td id="score15"></td>
+                  <td id="score16"></td>
+                  <td id="score17"></td>
+                  <td id="score18"></td>
+                  <td id="scoreIn"></td>
+                </tr>
+                <tr>
+                  <td id="points10"></td>
+                  <td id="points11"></td>
+                  <td id="points12"></td>
+                  <td id="points13"></td>
+                  <td id="points14"></td>
+                  <td id="points15"></td>
+                  <td id="points16"></td>
+                  <td id="points17"></td>
+                  <td id="points18"></td>
+                  <td id="pointsIn"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="container">
-    <!-- Stats header row -->
-    <div class="row align-items-center py-3">
-      <!-- Left side: Player name and handicap -->
-      <div class="col-12 col-md-6 text-md-left">
-        <h2 id="player-name" class="m-0">Player Name</h2>
-        <h4 id="player-handicap" class="m-0"></h4>
-      </div>
-      <!-- Right side: Stats card -->
-      <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end mt-3 mt-md-0">
-        <div class="stats-card" style="padding: 15px 20px; border-radius: 10px;">
-          <div>Score: <span id="total-points">0</span></div>
-          <div>Rank: <span id="player-rank">N/A</span></div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Front Nine Table -->
-    <table id="front-nine-table" class="scorecard-table" style="margin-bottom: 30px;">
-      <thead>
-        <tr>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>Out</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Row: Par for holes 1-9 + Par total (Out) -->
-        <tr>
-          <td id="par1"></td>
-          <td id="par2"></td>
-          <td id="par3"></td>
-          <td id="par4"></td>
-          <td id="par5"></td>
-          <td id="par6"></td>
-          <td id="par7"></td>
-          <td id="par8"></td>
-          <td id="par9"></td>
-          <td id="parOut"></td>
-        </tr>
-        <!-- Row: Score for holes 1-9 + Score total (Out) -->
-        <tr>
-          <td id="score1"></td>
-          <td id="score2"></td>
-          <td id="score3"></td>
-          <td id="score4"></td>
-          <td id="score5"></td>
-          <td id="score6"></td>
-          <td id="score7"></td>
-          <td id="score8"></td>
-          <td id="score9"></td>
-          <td id="scoreOut"></td>
-        </tr>
-        <!-- Row: Points for holes 1-9 + Points total (Out) -->
-        <tr>
-          <td id="points1"></td>
-          <td id="points2"></td>
-          <td id="points3"></td>
-          <td id="points4"></td>
-          <td id="points5"></td>
-          <td id="points6"></td>
-          <td id="points7"></td>
-          <td id="points8"></td>
-          <td id="points9"></td>
-          <td id="pointsOut"></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Back Nine Table -->
-    <table id="back-nine-table" class="scorecard-table" style="margin-top: 30px;">
-      <thead>
-        <tr>
-          <th>10</th>
-          <th>11</th>
-          <th>12</th>
-          <th>13</th>
-          <th>14</th>
-          <th>15</th>
-          <th>16</th>
-          <th>17</th>
-          <th>18</th>
-          <th>In</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Row: Par for holes 10-18 + Par total (In) -->
-        <tr>
-          <td id="par10"></td>
-          <td id="par11"></td>
-          <td id="par12"></td>
-          <td id="par13"></td>
-          <td id="par14"></td>
-          <td id="par15"></td>
-          <td id="par16"></td>
-          <td id="par17"></td>
-          <td id="par18"></td>
-          <td id="parIn"></td>
-        </tr>
-        <!-- Row: Score for holes 10-18 + Score total (In) -->
-        <tr>
-          <td id="score10"></td>
-          <td id="score11"></td>
-          <td id="score12"></td>
-          <td id="score13"></td>
-          <td id="score14"></td>
-          <td id="score15"></td>
-          <td id="score16"></td>
-          <td id="score17"></td>
-          <td id="score18"></td>
-          <td id="scoreIn"></td>
-        </tr>
-        <!-- Row: Points for holes 10-18 + Points total (In) -->
-        <tr>
-          <td id="points10"></td>
-          <td id="points11"></td>
-          <td id="points12"></td>
-          <td id="points13"></td>
-          <td id="points14"></td>
-          <td id="points15"></td>
-          <td id="points16"></td>
-          <td id="points17"></td>
-          <td id="points18"></td>
-          <td id="pointsIn"></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-  
   <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1 text-white">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
+      </div>
+    </div>
+  </div>
 
-  <!-- Scripts -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
 
   <!-- Main Script to Fetch & Populate Scorecard Data -->
   <script>
