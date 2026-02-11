@@ -129,10 +129,47 @@
     }
 
     .archive-controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-      gap: 12px;
-      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .archive-play-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 233, 0.45);
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.4), rgba(14, 165, 233, 0.2));
+      color: #e0f2fe;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 26px rgba(2, 132, 199, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .archive-play-btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 18px 30px rgba(2, 132, 199, 0.35);
+    }
+
+    .archive-skip-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(30, 41, 59, 0.55);
+      color: #e2e8f0;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .archive-skip-btn:hover {
+      background: rgba(51, 65, 85, 0.7);
+      transform: translateY(-1px);
     }
 
     .archive-button {
@@ -152,6 +189,12 @@
     .archive-button:hover {
       background: rgba(14, 165, 233, 0.3);
       transform: translateY(-1px);
+    }
+
+    .archive-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .archive-button.secondary {
@@ -401,14 +444,15 @@
               <span class="duration">0:00</span>
             </div>
             <div class="archive-controls">
-              <button class="archive-button secondary skip-back" type="button">-30</button>
-              <button class="archive-button play-btn" type="button" aria-pressed="false">
-                <span class="play-label">Play</span>
+              <button class="archive-skip-btn skip-back" type="button" aria-label="Back 30 seconds">-30</button>
+              <button class="archive-play-btn play-btn" type="button" aria-pressed="false" aria-label="Play">
+                <i class="icon-play" data-lucide="play"></i>
+                <i class="icon-pause hidden" data-lucide="pause"></i>
               </button>
-              <button class="archive-button secondary skip-forward" type="button">+30</button>
-              <button class="archive-button secondary mute-btn" type="button" aria-pressed="false">Mute</button>
+              <button class="archive-skip-btn skip-forward" type="button" aria-label="Forward 30 seconds">+30</button>
             </div>
             <div class="archive-row text-xs text-gray-300">
+              <button class="archive-button secondary mute-btn" type="button" aria-pressed="false">Mute</button>
               <label class="flex items-center gap-2">Volume
                 <input class="archive-slider volume-slider" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume">
               </label>
@@ -477,17 +521,33 @@
           const audio = player.querySelector('audio');
           if (!audio || audio.paused) return;
           audio.pause();
-          const label = player.querySelector('.play-label');
+          const playIcon = player.querySelector('.icon-play');
+          const pauseIcon = player.querySelector('.icon-pause');
           const button = player.querySelector('.play-btn');
-          if (label) label.textContent = 'Play';
-          if (button) button.setAttribute('aria-pressed', 'false');
+          if (playIcon) playIcon.classList.remove('hidden');
+          if (pauseIcon) pauseIcon.classList.add('hidden');
+          if (button) {
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', 'Play');
+          }
         });
+      };
+
+      const setPlayUi = (player, isPlaying) => {
+        const playIcon = player.querySelector('.icon-play');
+        const pauseIcon = player.querySelector('.icon-pause');
+        const button = player.querySelector('.play-btn');
+        if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
+        if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
+        if (button) {
+          button.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+          button.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        }
       };
 
       players.forEach((player) => {
         const audio = player.querySelector('audio');
         const playButton = player.querySelector('.play-btn');
-        const playLabel = player.querySelector('.play-label');
         const progress = player.querySelector('.archive-progress');
         const fill = player.querySelector('.archive-progress-fill');
         const currentTimeEl = player.querySelector('.current-time');
@@ -500,7 +560,21 @@
 
         if (!audio) return;
 
-        audio.src = player.dataset.audioSrc || '';
+        const source = player.dataset.audioSrc || '';
+        const supportsMp3 = audio.canPlayType('audio/mpeg') !== '';
+
+        if (!source || !supportsMp3) {
+          const controls = player.querySelectorAll('button, input, select');
+          controls.forEach((control) => {
+            control.disabled = true;
+          });
+          const button = player.querySelector('.play-btn');
+          if (button) button.setAttribute('aria-label', 'Unavailable');
+          return;
+        }
+
+        audio.src = source;
+        audio.load();
 
         audio.addEventListener('loadedmetadata', () => {
           if (durationEl) {
@@ -519,32 +593,28 @@
         });
 
         audio.addEventListener('ended', () => {
-          if (playLabel) playLabel.textContent = 'Play';
-          if (playButton) playButton.setAttribute('aria-pressed', 'false');
+          setPlayUi(player, false);
         });
 
         audio.addEventListener('play', () => {
           pauseOtherPlayers(player);
-          if (playLabel) playLabel.textContent = 'Pause';
-          if (playButton) playButton.setAttribute('aria-pressed', 'true');
+          setPlayUi(player, true);
         });
 
         audio.addEventListener('pause', () => {
-          if (playLabel) playLabel.textContent = 'Play';
-          if (playButton) playButton.setAttribute('aria-pressed', 'false');
+          setPlayUi(player, false);
         });
 
         if (playButton) {
           playButton.addEventListener('click', () => {
             if (audio.paused) {
               pauseOtherPlayers(player);
-              audio.play();
-              if (playLabel) playLabel.textContent = 'Pause';
-              playButton.setAttribute('aria-pressed', 'true');
+              audio.play().catch(() => {
+                setPlayUi(player, false);
+              });
             } else {
               audio.pause();
-              if (playLabel) playLabel.textContent = 'Play';
-              playButton.setAttribute('aria-pressed', 'false');
+              setPlayUi(player, false);
             }
           });
         }
