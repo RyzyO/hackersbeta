@@ -192,7 +192,7 @@
 
     .leaderboard-row {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      grid-template-columns: auto minmax(0, 1fr) 48px 56px;
       gap: 10px;
       align-items: center;
     }
@@ -231,7 +231,7 @@
 
     .leaderboard-mobile-head {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      grid-template-columns: auto minmax(0, 1fr) 48px 56px;
       gap: 10px;
       align-items: center;
       padding: 6px 10px;
@@ -610,7 +610,7 @@
               : [nameWithHandicap];
             const nameMarkup = nameParts
               .map(part => `<span>${part}</span>`)
-              .join('');
+              .join('<br>');
 
             const card = document.createElement('button');
             card.type = 'button';
