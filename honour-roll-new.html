@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Honour Roll | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .filter-pill.is_active {
+      background: rgba(14, 165, 233, 0.2);
+      color: #ffffff;
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10">Honour Roll</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div class="space-y-6 animate-slide-up">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="award" class="w-4 h-4 text-hackers-sky"></i>
+            <span class="text-sm font-medium text-gray-300">Est. 2000</span>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+            Honour Roll
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Champions</span>
+          </h1>
+          <p class="text-lg text-gray-300 max-w-lg">A history of champions, spirit awards, and the crews that made each road trip legendary.</p>
+        </div>
+        <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+              <i data-lucide="trophy" class="w-6 h-6 text-hackers-gold"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Latest Champions</p>
+              <p class="text-xl font-semibold">HC24 Worrigee Links</p>
+              <p class="text-sm text-gray-400 mt-1">Stableford: Willie Cooper | Champion: Matt Kennerson</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-wrap gap-3 mb-8 trending-filter">
+          <a class="filter-pill is_active px-4 py-2 rounded-full border border-white/10 text-sm font-semibold text-gray-300" href="#!" data-filter="*">Show All</a>
+          <a class="filter-pill px-4 py-2 rounded-full border border-white/10 text-sm font-semibold text-gray-300" href="#!" data-filter=".adv">Worrigee Links</a>
+          <a class="filter-pill px-4 py-2 rounded-full border border-white/10 text-sm font-semibold text-gray-300" href="#!" data-filter=".str">Nelson Bay</a>
+          <a class="filter-pill px-4 py-2 rounded-full border border-white/10 text-sm font-semibold text-gray-300" href="#!" data-filter=".rac">Other</a>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4 trending-box">
+        <!-- 2024 - Worrigee Links (adv) -->
+        <div class="glass-card rounded-2xl p-5 trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2024</span>
+            <span class="text-xs font-bold text-hackers-sky">HC24</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Willie Cooper</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Tamas Mendik, Matt Kennerson</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Matt Kennerson</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Steve Press</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">67</p>
+            </div>
+          </div>
+        </div>
+        <!-- 2023 - Nelson Bay (str) -->
+        <div class="glass-card rounded-2xl p-5 trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2023</span>
+            <span class="text-xs font-bold text-hackers-sky">HC23</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Chris Chilcott</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Dave Dollard, Daniel Bennett</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Brendan Oakes</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Brad Rogers</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">66</p>
+            </div>
+          </div>
+        </div>
+        <!-- 2022 - Worrigee Links (adv) -->
+        <div class="glass-card rounded-2xl p-5 trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2022</span>
+            <span class="text-xs font-bold text-hackers-sky">HC22</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Mick Whittaker</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Mick Whittaker, Glen Marler</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Mick Whittaker</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">John Winter</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">51</p>
+            </div>
+          </div>
+        </div>
+        <!-- 2021 - Nelson Bay (str) -->
+        <div class="glass-card rounded-2xl p-5 trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2021</span>
+            <span class="text-xs font-bold text-hackers-sky">HC21</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Ross Chippendale</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Scott Austin, Josh Fryer</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Scott Austin</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Darryn Rooks</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">56</p>
+            </div>
+          </div>
+        </div>
+        <!-- 2019 - Worrigee Links (adv) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2019</span>
+              <h3>Worrigee Links</h3>
+              <span class="category">Stableford</span>
+              <h4>Duane Roy</h4>
+              <span class="category">Ambrose</span>
+              <h4>Steve Shaw<br>Jacob Peters</h4>
+              <p class="category">Champion</p>
+              <h4>Matthew Zibert</h4>
+              <p>Spirit of Hackers</p>
+              <h4>Scott Austin</h4>
+              <p>Attendees</p>
+              <h4>69</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2018 - Nelson Bay (str) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2018</span>
+              <h3>Nelson Bay</h3>
+              <span class="category">Stableford</span>
+              <h4>Ross Chippendale</h4>
+              <span class="category">Ambrose</span>
+              <h4>Paul Murray<br>Dan Sullivan</h4>
+              <p class="category">Champion</p>
+              <h4>Daniel Graham</h4>
+              <p>Spirit of Hackers</p>
+              <h4>Shaun Ware</h4>
+              <p>Attendees</p>
+              <h4>67</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2017 - Worrigee Links (adv) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2017</span>
+              <h3>Worrigee Links</h3>
+              <span class="category">Stableford</span>
+              <h4>Mark Lever</h4>
+              <span class="category">Ambrose</span>
+              <h4>Matthew Zibert<br>Ernie Zibert</h4>
+              <p class="category">Champion</p>
+              <h4>Daniel Graham</h4>
+              <p>Spirit of Hackers</p>
+              <h4>Trevor Brown</h4>
+              <p>Attendees</p>
+              <h4>68</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2016 - Nelson Bay (str) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2016</span>
+              <h3>Nelson Bay</h3>
+              <span class="category">Stableford</span>
+              <h4>Ken Roberts</h4>
+              <span class="category">Ambrose</span>
+              <h4>Dave Dollard<br>Dan Bennett</h4>
+              <p class="category">Champion</p>
+              <h4>Dan Bennett</h4>
+              <p>Spirit of Hackers</p>
+              <h4>Tony Wicht</h4>
+              <p>Attendees</p>
+              <h4>72</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2015 - Worrigee Links (adv) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2015</span>
+              <h3>Worrigee Links</h3>
+              <span class="category">Stableford</span>
+              <h4>Chris Chilcot</h4>
+              <span class="category">Ambrose</span>
+              <h4>Shaun Ware<br>Marcus McDonald</h4>
+              <p class="category">Champion</p>
+              <h4>Matthew Zibert</h4>
+              <p>Spirit of Hackers</p>
+              <h4>Adam Paton</h4>
+              <p>Attendees</p>
+              <h4>78</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2014 - Nelson Bay (str) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2014</span>
+              <h3>Nelson Bay</h3>
+              <span class="category">Stableford</span>
+              <h4>Shane McDonald</h4>
+              <span class="category">Ambrose</span>
+              <h4>Steve Press<br>Dempster Bleechmore</h4>
+              <p class="category">Champion</p>
+              <h4>Steve Walters</h4>
+              <p>Attendees</p>
+              <h4>79</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2013 - Worrigee Links (adv) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2013</span>
+              <h3>Worrigee Links</h3>
+              <span class="category">Stableford</span>
+              <h4>Justin Knight</h4>
+              <span class="category">Ambrose</span>
+              <h4>Martyn Budden<br>Daniel Graham</h4>
+              <p class="category">Champion</p>
+              <h4>Martyn Budden</h4>
+              <p>Attendees</p>
+              <h4>79</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2012 - Orange (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2012</span>
+              <h3>Orange</h3>
+              <span class="category">Stableford</span>
+              <h4>Ross Chippdendale</h4>
+              <span class="category">Ambrose</span>
+              <h4>Nick Brady<br>James Brady</h4>
+              <p class="category">Champion</p>
+              <h4>Nick Brady</h4>
+              <p>Attendees</p>
+              <h4>67</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2011 - Port Macquarie (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2011</span>
+              <h3>Port Macquarie</h3>
+              <span class="category">Stableford</span>
+              <h4>Christian Fox</h4>
+              <span class="category">Ambrose</span>
+              <h4>Matthew Zibert<br>Ernie Zibert</h4>
+              <p class="category">Champion</p>
+              <h4>Matthew Zibert</h4>
+              <p>Attendees</p>
+              <h4>88</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2010 - Worrigee Links (adv) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2010</span>
+              <h3>Worrigee Links</h3>
+              <span class="category">Stableford</span>
+              <h4>Tony Best</h4>
+              <span class="category">Ambrose</span>
+              <h4>Paul Kedwell<br>Glenn Roberts</h4>
+              <p class="category">Champion</p>
+              <h4>Paul Kedwell</h4>
+              <p>Attendees</p>
+              <h4>92</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2009 - Orange (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2009</span>
+              <h3>Orange</h3>
+              <span class="category">Stableford</span>
+              <h4>Martyn Budden</h4>
+              <span class="category">Ambrose</span>
+              <h4>Tony Best<br>Noel Jago</h4>
+              <p class="category">Champion</p>
+              <h4>Noel Jago</h4>
+              <p>Attendees</p>
+              <h4>73</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2008 - Port Macquarie (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2008</span>
+              <h3>Port Macquarie</h3>
+              <span class="category">Stableford</span>
+              <h4>Mick Cooper</h4>
+              <span class="category">Ambrose</span>
+              <h4>James Singleton<br>Luke Singleton</h4>
+              <p class="category">Champion</p>
+              <h4>Mick Cooper</h4>
+              <p>Attendees</p>
+              <h4>70</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2007 - Canberra (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2007</span>
+              <h3>Canberra</h3>
+              <span class="category">Stableford</span>
+              <h4>Christian Fox</h4>
+              <span class="category">Ambrose</span>
+              <h4>James Singleton<br>Luke Singleton</h4>
+              <p class="category">Champion</p>
+              <h4>Christian Fox</h4>
+              <p>Attendees</p>
+              <h4>52</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2006 - Orange (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2006</span>
+              <h3>Orange</h3>
+              <span class="category">Stableford</span>
+              <h4>Chris Campbell</h4>
+              <span class="category">Ambrose</span>
+              <h4>Shane McDonald<br>Nathan McDonald</h4>
+              <p class="category">Champion</p>
+              <h4>Shane McDonald</h4>
+              <p>Attendees</p>
+              <h4>39</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2005 - Forster / Tuncurry (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2005</span>
+              <h3>Forster / Tuncurry</h3>
+              <span class="category">Stableford</span>
+              <h4>Brendan Oakes</h4>
+              <span class="category">Ambrose</span>
+              <h4>Andrew Murray<br>Brendan Oakes</h4>
+              <p class="category">Champion</p>
+              <h4>Brendan Oakes</h4>
+              <p>Attendees</p>
+              <h4>40</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2004 - Gerringong / Kiama (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2004</span>
+              <h3>Gerringong / Kiama</h3>
+              <span class="category">Stableford</span>
+              <h4>Daniel McFadden</h4>
+              <span class="category">Ambrose</span>
+              <h4>Damien Starcic<br>Cameron Wark<br>Simon Day</h4>
+              <p class="category">Champion</p>
+              <h4>Cameron Wark</h4>
+              <p>Attendees</p>
+              <h4>29</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2003 - Orange (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2003</span>
+              <h3>Orange</h3>
+              <span class="category">Stableford</span>
+              <h4>Martyn Budden</h4>
+              <span class="category">Ambrose</span>
+              <h4>Martyn Budden<br>Adam Paton</h4>
+              <p class="category">Champion</p>
+              <h4>Martyn Budden</h4>
+              <p>Attendees</p>
+              <h4>24</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2002 - Wollongong (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2002</span>
+              <h3>Wollongong</h3>
+              <span class="category">Stableford</span>
+              <h4>Dale Puxty</h4>
+              <span class="category">Ambrose</span>
+              <h4>Scott Anderson<br>Steve Clark<br>Phil Carney</h4>
+              <p class="category">Champion</p>
+              <h4>Ian Keogh</h4>
+              <p>Attendees</p>
+              <h4>34</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2001 - Nelson Bay (str) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2001</span>
+              <h3>Nelson Bay</h3>
+              <span class="category">Stableford</span>
+              <h4>Andrew Bunting</h4>
+              <span class="category">Ambrose</span>
+              <h4>Peter Keen<br>Ken Roberts</h4>
+              <p class="category">Champion</p>
+              <h4>Dale Puxty</h4>
+              <p>Attendees</p>
+              <h4>24</h4>
+            </div>
+          </div>
+        </div>
+        <!-- 2000 - Blue Mountains (rac) -->
+        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
+          <div class="item">
+            <div class="down-content">
+              <span class="category">2000</span>
+              <h3>Blue Mountains</h3>
+              <span class="category">Stableford</span>
+              <h4>Scott Anderson</h4>
+              <span class="category">Ambrose</span>
+              <h4>Mat Beasly<br>Martyn Budden</h4>
+              <p class="category">Champion</p>
+              <h4>Martyn Budden</h4>
+              <p>Attendees</p>
+              <h4>12</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="bottom-nav">
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/js/isotope.min.js"></script>
+  <script src="assets/js/owl-carousel.js"></script>
+  <script src="assets/js/counter.js"></script>
+  <script src="assets/js/custom.js"></script>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      const filterLinks = document.querySelectorAll('.trending-filter a');
+      filterLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          filterLinks.forEach(item => item.classList.remove('is_active'));
+          link.classList.add('is_active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
