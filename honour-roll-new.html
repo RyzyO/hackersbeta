@@ -93,6 +93,14 @@
       border-color: rgba(56, 189, 248, 0.4);
     }
 
+    .trending-box {
+      grid-auto-rows: 1fr;
+    }
+
+    .trending-items {
+      width: 100%;
+    }
+
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -199,9 +207,9 @@
           <a class="filter-pill px-4 py-2 rounded-full border border-white/10 text-sm font-semibold text-gray-300" href="#!" data-filter=".rac">Other</a>
         </div>
 
-        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4 trending-box">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4 trending-box items-stretch">
         <!-- 2024 - Worrigee Links (adv) -->
-        <div class="glass-card rounded-2xl p-5 trending-items adv">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
           <div class="flex items-center justify-between">
             <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2024</span>
             <span class="text-xs font-bold text-hackers-sky">HC24</span>
@@ -231,7 +239,7 @@
           </div>
         </div>
         <!-- 2023 - Nelson Bay (str) -->
-        <div class="glass-card rounded-2xl p-5 trending-items str">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
           <div class="flex items-center justify-between">
             <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2023</span>
             <span class="text-xs font-bold text-hackers-sky">HC23</span>
@@ -261,7 +269,7 @@
           </div>
         </div>
         <!-- 2022 - Worrigee Links (adv) -->
-        <div class="glass-card rounded-2xl p-5 trending-items adv">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
           <div class="flex items-center justify-between">
             <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2022</span>
             <span class="text-xs font-bold text-hackers-sky">HC22</span>
@@ -291,7 +299,7 @@
           </div>
         </div>
         <!-- 2021 - Nelson Bay (str) -->
-        <div class="glass-card rounded-2xl p-5 trending-items str">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
           <div class="flex items-center justify-between">
             <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2021</span>
             <span class="text-xs font-bold text-hackers-sky">HC21</span>
@@ -321,352 +329,542 @@
           </div>
         </div>
         <!-- 2019 - Worrigee Links (adv) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2019</span>
-              <h3>Worrigee Links</h3>
-              <span class="category">Stableford</span>
-              <h4>Duane Roy</h4>
-              <span class="category">Ambrose</span>
-              <h4>Steve Shaw<br>Jacob Peters</h4>
-              <p class="category">Champion</p>
-              <h4>Matthew Zibert</h4>
-              <p>Spirit of Hackers</p>
-              <h4>Scott Austin</h4>
-              <p>Attendees</p>
-              <h4>69</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2019</span>
+            <span class="text-xs font-bold text-hackers-sky">HC20</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Duane Roy</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Steve Shaw, Jacob Peters</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Matthew Zibert</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Scott Austin</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">69</p>
             </div>
           </div>
         </div>
         <!-- 2018 - Nelson Bay (str) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2018</span>
-              <h3>Nelson Bay</h3>
-              <span class="category">Stableford</span>
-              <h4>Ross Chippendale</h4>
-              <span class="category">Ambrose</span>
-              <h4>Paul Murray<br>Dan Sullivan</h4>
-              <p class="category">Champion</p>
-              <h4>Daniel Graham</h4>
-              <p>Spirit of Hackers</p>
-              <h4>Shaun Ware</h4>
-              <p>Attendees</p>
-              <h4>67</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2018</span>
+            <span class="text-xs font-bold text-hackers-sky">HC19</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Ross Chippendale</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Paul Murray, Dan Sullivan</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Daniel Graham</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Shaun Ware</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">67</p>
             </div>
           </div>
         </div>
         <!-- 2017 - Worrigee Links (adv) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2017</span>
-              <h3>Worrigee Links</h3>
-              <span class="category">Stableford</span>
-              <h4>Mark Lever</h4>
-              <span class="category">Ambrose</span>
-              <h4>Matthew Zibert<br>Ernie Zibert</h4>
-              <p class="category">Champion</p>
-              <h4>Daniel Graham</h4>
-              <p>Spirit of Hackers</p>
-              <h4>Trevor Brown</h4>
-              <p>Attendees</p>
-              <h4>68</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2017</span>
+            <span class="text-xs font-bold text-hackers-sky">HC18</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Mark Lever</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Matthew Zibert, Ernie Zibert</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Daniel Graham</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Trevor Brown</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">68</p>
             </div>
           </div>
         </div>
         <!-- 2016 - Nelson Bay (str) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2016</span>
-              <h3>Nelson Bay</h3>
-              <span class="category">Stableford</span>
-              <h4>Ken Roberts</h4>
-              <span class="category">Ambrose</span>
-              <h4>Dave Dollard<br>Dan Bennett</h4>
-              <p class="category">Champion</p>
-              <h4>Dan Bennett</h4>
-              <p>Spirit of Hackers</p>
-              <h4>Tony Wicht</h4>
-              <p>Attendees</p>
-              <h4>72</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2016</span>
+            <span class="text-xs font-bold text-hackers-sky">HC17</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Ken Roberts</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Dave Dollard, Dan Bennett</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Dan Bennett</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Tony Wicht</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">72</p>
             </div>
           </div>
         </div>
         <!-- 2015 - Worrigee Links (adv) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2015</span>
-              <h3>Worrigee Links</h3>
-              <span class="category">Stableford</span>
-              <h4>Chris Chilcot</h4>
-              <span class="category">Ambrose</span>
-              <h4>Shaun Ware<br>Marcus McDonald</h4>
-              <p class="category">Champion</p>
-              <h4>Matthew Zibert</h4>
-              <p>Spirit of Hackers</p>
-              <h4>Adam Paton</h4>
-              <p>Attendees</p>
-              <h4>78</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2015</span>
+            <span class="text-xs font-bold text-hackers-sky">HC16</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Chris Chilcot</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Shaun Ware, Marcus McDonald</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Matthew Zibert</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Spirit of Hackers</p>
+              <p class="font-semibold">Adam Paton</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">78</p>
             </div>
           </div>
         </div>
         <!-- 2014 - Nelson Bay (str) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2014</span>
-              <h3>Nelson Bay</h3>
-              <span class="category">Stableford</span>
-              <h4>Shane McDonald</h4>
-              <span class="category">Ambrose</span>
-              <h4>Steve Press<br>Dempster Bleechmore</h4>
-              <p class="category">Champion</p>
-              <h4>Steve Walters</h4>
-              <p>Attendees</p>
-              <h4>79</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2014</span>
+            <span class="text-xs font-bold text-hackers-sky">HC15</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Shane McDonald</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Steve Press, Dempster Bleechmore</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Steve Walters</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">79</p>
             </div>
           </div>
         </div>
         <!-- 2013 - Worrigee Links (adv) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2013</span>
-              <h3>Worrigee Links</h3>
-              <span class="category">Stableford</span>
-              <h4>Justin Knight</h4>
-              <span class="category">Ambrose</span>
-              <h4>Martyn Budden<br>Daniel Graham</h4>
-              <p class="category">Champion</p>
-              <h4>Martyn Budden</h4>
-              <p>Attendees</p>
-              <h4>79</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2013</span>
+            <span class="text-xs font-bold text-hackers-sky">HC14</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Justin Knight</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Martyn Budden, Daniel Graham</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">79</p>
             </div>
           </div>
         </div>
         <!-- 2012 - Orange (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2012</span>
-              <h3>Orange</h3>
-              <span class="category">Stableford</span>
-              <h4>Ross Chippdendale</h4>
-              <span class="category">Ambrose</span>
-              <h4>Nick Brady<br>James Brady</h4>
-              <p class="category">Champion</p>
-              <h4>Nick Brady</h4>
-              <p>Attendees</p>
-              <h4>67</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2012</span>
+            <span class="text-xs font-bold text-hackers-sky">HC13</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Orange</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Ross Chippdendale</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Nick Brady, James Brady</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Nick Brady</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">67</p>
             </div>
           </div>
         </div>
         <!-- 2011 - Port Macquarie (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2011</span>
-              <h3>Port Macquarie</h3>
-              <span class="category">Stableford</span>
-              <h4>Christian Fox</h4>
-              <span class="category">Ambrose</span>
-              <h4>Matthew Zibert<br>Ernie Zibert</h4>
-              <p class="category">Champion</p>
-              <h4>Matthew Zibert</h4>
-              <p>Attendees</p>
-              <h4>88</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2011</span>
+            <span class="text-xs font-bold text-hackers-sky">HC12</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Port Macquarie</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Christian Fox</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Matthew Zibert, Ernie Zibert</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Matthew Zibert</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">88</p>
             </div>
           </div>
         </div>
         <!-- 2010 - Worrigee Links (adv) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items adv">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2010</span>
-              <h3>Worrigee Links</h3>
-              <span class="category">Stableford</span>
-              <h4>Tony Best</h4>
-              <span class="category">Ambrose</span>
-              <h4>Paul Kedwell<br>Glenn Roberts</h4>
-              <p class="category">Champion</p>
-              <h4>Paul Kedwell</h4>
-              <p>Attendees</p>
-              <h4>92</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items adv">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2010</span>
+            <span class="text-xs font-bold text-hackers-sky">HC11</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Worrigee Links</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Tony Best</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Paul Kedwell, Glenn Roberts</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Paul Kedwell</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">92</p>
             </div>
           </div>
         </div>
         <!-- 2009 - Orange (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2009</span>
-              <h3>Orange</h3>
-              <span class="category">Stableford</span>
-              <h4>Martyn Budden</h4>
-              <span class="category">Ambrose</span>
-              <h4>Tony Best<br>Noel Jago</h4>
-              <p class="category">Champion</p>
-              <h4>Noel Jago</h4>
-              <p>Attendees</p>
-              <h4>73</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2009</span>
+            <span class="text-xs font-bold text-hackers-sky">HC10</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Orange</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Tony Best, Noel Jago</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Noel Jago</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">73</p>
             </div>
           </div>
         </div>
         <!-- 2008 - Port Macquarie (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2008</span>
-              <h3>Port Macquarie</h3>
-              <span class="category">Stableford</span>
-              <h4>Mick Cooper</h4>
-              <span class="category">Ambrose</span>
-              <h4>James Singleton<br>Luke Singleton</h4>
-              <p class="category">Champion</p>
-              <h4>Mick Cooper</h4>
-              <p>Attendees</p>
-              <h4>70</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2008</span>
+            <span class="text-xs font-bold text-hackers-sky">HC9</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Port Macquarie</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Mick Cooper</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">James Singleton, Luke Singleton</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Mick Cooper</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">70</p>
             </div>
           </div>
         </div>
         <!-- 2007 - Canberra (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2007</span>
-              <h3>Canberra</h3>
-              <span class="category">Stableford</span>
-              <h4>Christian Fox</h4>
-              <span class="category">Ambrose</span>
-              <h4>James Singleton<br>Luke Singleton</h4>
-              <p class="category">Champion</p>
-              <h4>Christian Fox</h4>
-              <p>Attendees</p>
-              <h4>52</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2007</span>
+            <span class="text-xs font-bold text-hackers-sky">HC8</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Canberra</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Christian Fox</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">James Singleton, Luke Singleton</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Christian Fox</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">52</p>
             </div>
           </div>
         </div>
         <!-- 2006 - Orange (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2006</span>
-              <h3>Orange</h3>
-              <span class="category">Stableford</span>
-              <h4>Chris Campbell</h4>
-              <span class="category">Ambrose</span>
-              <h4>Shane McDonald<br>Nathan McDonald</h4>
-              <p class="category">Champion</p>
-              <h4>Shane McDonald</h4>
-              <p>Attendees</p>
-              <h4>39</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2006</span>
+            <span class="text-xs font-bold text-hackers-sky">HC7</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Orange</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Chris Campbell</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Shane McDonald, Nathan McDonald</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Shane McDonald</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">39</p>
             </div>
           </div>
         </div>
         <!-- 2005 - Forster / Tuncurry (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2005</span>
-              <h3>Forster / Tuncurry</h3>
-              <span class="category">Stableford</span>
-              <h4>Brendan Oakes</h4>
-              <span class="category">Ambrose</span>
-              <h4>Andrew Murray<br>Brendan Oakes</h4>
-              <p class="category">Champion</p>
-              <h4>Brendan Oakes</h4>
-              <p>Attendees</p>
-              <h4>40</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2005</span>
+            <span class="text-xs font-bold text-hackers-sky">HC6</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Forster / Tuncurry</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Brendan Oakes</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Andrew Murray, Brendan Oakes</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Brendan Oakes</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">40</p>
             </div>
           </div>
         </div>
         <!-- 2004 - Gerringong / Kiama (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2004</span>
-              <h3>Gerringong / Kiama</h3>
-              <span class="category">Stableford</span>
-              <h4>Daniel McFadden</h4>
-              <span class="category">Ambrose</span>
-              <h4>Damien Starcic<br>Cameron Wark<br>Simon Day</h4>
-              <p class="category">Champion</p>
-              <h4>Cameron Wark</h4>
-              <p>Attendees</p>
-              <h4>29</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2004</span>
+            <span class="text-xs font-bold text-hackers-sky">HC5</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Gerringong / Kiama</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Daniel McFadden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Damien Starcic, Cameron Wark, Simon Day</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Cameron Wark</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">29</p>
             </div>
           </div>
         </div>
         <!-- 2003 - Orange (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2003</span>
-              <h3>Orange</h3>
-              <span class="category">Stableford</span>
-              <h4>Martyn Budden</h4>
-              <span class="category">Ambrose</span>
-              <h4>Martyn Budden<br>Adam Paton</h4>
-              <p class="category">Champion</p>
-              <h4>Martyn Budden</h4>
-              <p>Attendees</p>
-              <h4>24</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2003</span>
+            <span class="text-xs font-bold text-hackers-sky">HC4</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Orange</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Martyn Budden, Adam Paton</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">24</p>
             </div>
           </div>
         </div>
         <!-- 2002 - Wollongong (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2002</span>
-              <h3>Wollongong</h3>
-              <span class="category">Stableford</span>
-              <h4>Dale Puxty</h4>
-              <span class="category">Ambrose</span>
-              <h4>Scott Anderson<br>Steve Clark<br>Phil Carney</h4>
-              <p class="category">Champion</p>
-              <h4>Ian Keogh</h4>
-              <p>Attendees</p>
-              <h4>34</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2002</span>
+            <span class="text-xs font-bold text-hackers-sky">HC3</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Wollongong</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Dale Puxty</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Scott Anderson, Steve Clark, Phil Carney</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Ian Keogh</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">34</p>
             </div>
           </div>
         </div>
         <!-- 2001 - Nelson Bay (str) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items str">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2001</span>
-              <h3>Nelson Bay</h3>
-              <span class="category">Stableford</span>
-              <h4>Andrew Bunting</h4>
-              <span class="category">Ambrose</span>
-              <h4>Peter Keen<br>Ken Roberts</h4>
-              <p class="category">Champion</p>
-              <h4>Dale Puxty</h4>
-              <p>Attendees</p>
-              <h4>24</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items str">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2001</span>
+            <span class="text-xs font-bold text-hackers-sky">HC2</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Nelson Bay</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Andrew Bunting</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Peter Keen, Ken Roberts</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Dale Puxty</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">24</p>
             </div>
           </div>
         </div>
         <!-- 2000 - Blue Mountains (rac) -->
-        <div class="col-lg-3 col-md-6 align-self-center mb-30 trending-items rac">
-          <div class="item">
-            <div class="down-content">
-              <span class="category">2000</span>
-              <h3>Blue Mountains</h3>
-              <span class="category">Stableford</span>
-              <h4>Scott Anderson</h4>
-              <span class="category">Ambrose</span>
-              <h4>Mat Beasly<br>Martyn Budden</h4>
-              <p class="category">Champion</p>
-              <h4>Martyn Budden</h4>
-              <p>Attendees</p>
-              <h4>12</h4>
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-full trending-items rac">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.3em] text-gray-400">2000</span>
+            <span class="text-xs font-bold text-hackers-sky">HC1</span>
+          </div>
+          <h3 class="text-xl font-semibold mt-3">Blue Mountains</h3>
+          <div class="mt-4 space-y-3 text-sm text-gray-300">
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Stableford</p>
+              <p class="font-semibold">Scott Anderson</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Ambrose</p>
+              <p class="font-semibold">Mat Beasly, Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Champion</p>
+              <p class="font-semibold">Martyn Budden</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Attendees</p>
+              <p class="font-semibold">12</p>
             </div>
           </div>
         </div>
