@@ -172,6 +172,20 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
 
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(8px);
+    }
+
+    .hole-clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .hole-clickable:hover {
+      background-color: rgba(56, 189, 248, 0.25);
+    }
+
     @media (min-width: 768px) {
       .bottom-nav {
         display: none;
@@ -395,6 +409,44 @@
     </div>
   </div>
 
+  <div id="holeModal" class="fixed inset-0 z-[60] hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+      <button onclick="closeHoleModal()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition-colors">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <div class="grid md:grid-cols-2 gap-0 bg-hackers-dark">
+        <div id="holeModalVideoWrap" class="bg-black">
+          <video id="holeModalVideo" controls class="w-full aspect-video" playsinline>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 id="holeModalTitle" class="text-2xl font-semibold text-white">Hole</h3>
+          </div>
+          <div class="flex items-center gap-4 text-sm text-gray-300">
+            <div class="flex items-center gap-1">
+              <i data-lucide="ruler" class="w-4 h-4"></i>
+              <span id="holeModalMeters">--</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <i data-lucide="move-horizontal" class="w-4 h-4"></i>
+              <span id="holeModalYards">--</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs text-gray-300">
+            <span id="holeModalPar" class="px-3 py-1 rounded-full bg-hackers-sky/20 text-hackers-sky text-xs font-semibold border border-hackers-sky/20">Par</span>
+            <span id="holeModalIndex1" class="px-2 py-1 rounded-full bg-white/10 border border-white/10">Index 1: --</span>
+            <span id="holeModalIndex2" class="px-2 py-1 rounded-full bg-white/10 border border-white/10">Index 2: --</span>
+          </div>
+          <p id="holeModalNote" class="text-sm text-gray-300"></p>
+          <p id="holeModalNoVideo" class="text-sm text-gray-500 hidden">Flyover coming soon.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     function toggleMobileMenu() {
       const menu = document.getElementById('mobile-menu');
@@ -422,6 +474,137 @@
    ****************************************************/
   const frontOrder = [1, 2, 3, 4, 5, 6, 7, 8, 24];              // "Out"
   const backOrder  = [25, 9, 19, 20, 21, 17, 18, 10, 27];       // "In"
+
+  const baseUrl = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
+  const holeDetails = {
+    1: { num: 1, par: 5, dist: 468, yards: 473, index1: 10, index2: 23, video: 'hole_1-1080p.mp4',
+      note: "The opening hole at Worrigee Links is a relatively short par 5 with little trouble and a good opportunity to start with a birdie. A straight drive to the right of the fairway bunkers will set up an approachable second shot. Like most holes at Worrigee Links, the best place to miss is short of the green for an easy chip to a long, flat, narrow putting surface. Avoid missing pin-high due to rough lies and little green to work with."
+    },
+    2: { num: 2, par: 3, dist: 202, yards: 210, index1: 1, index2: 26, video: 'hole_2-1080p.mp4',
+      note: "The second hole is a long par 3 and rated the hardest hole on the course for good reason. Avoid the water hazard down the left side. The ideal tee shot here, if you miss the green, is just short, which leaves an easy chip to an uphill sloping green. Par on this hole is always a great score."
+    },
+    3: { num: 3, par: 4, dist: 324, yards: 330, index1: 12, index2: 29, video: 'hole_3-1080p.mp4',
+      note: "The third hole is a slight dogleg left, a strong par 4. A good drive right of the fairway bunker will leave a shorter approach. Two bunkers sit left of the green, but otherwise a reasonably straightaway hole with a long, undulating green."
+    },
+    4: { num: 4, par: 4, dist: 279, yards: 292, index1: 16, index2: 32, video: 'hole_4-1080p-1.mp4' },
+    5: { num: 5, par: 4, dist: 370, yards: 360, index1: 3, index2: 21, video: 'hole_5-1080p.mp4',
+      note: "The fifth is a long par 4 and the key here is a good straight drive. Avoid the out of bounds all down the left side and the cluster of trees down the right side. A mid-to-short iron second shot should find a large green with bunkers left and right."
+    },
+    6: { num: 6, par: 3, dist: 162, yards: 165, index1: 15, index2: 36, video: 'hole_6-1080p.mp4',
+      note: "The sixth hole is a tough par 3, with out of bounds to the left and right. Three bunkers surround a large green, one short left and two on the right. The tee shot can be deceiving. Most come up just short, which is desirable and leaves an easy chip."
+    },
+    7: { num: 7, par: 5, dist: 478, yards: 497, index1: 6, index2: 19, video: 'hole_7-1080p.mp4',
+      note: "Par 5, the seventh is the signature hole at Worrigee Links. The tee shot from the tee presents a spectacular view on this dogleg left hole with out of bounds all the way down the left side. Aim for the bunkers in the distance, where a nice straight drive over the water will set you up well for your second shot. Always keep left with your approach into a long, narrow green. This is a three-shot par 5, which should be played conservatively. The green is too long and narrow to attempt going for it. Play smart, stay left of the bunkers with your approach shot, which will give you a great angle to the green."
+    },
+    8: { num: 8, par: 3, dist: 157, yards: 160, index1: 8, index2: 31, video: 'hole_8-1080p.mp4',
+      note: "The par 3 eighth hole is guarded by greenside bunkers. If you miss the green, short is the most desirable position for an easy chip to a very large, narrow green. Avoid missing pin-high either side as you will have very little green to work with."
+    },
+    9: { num: 9, par: 4, dist: 346, yards: 350, index1: 4, index2: 20, video: 'hole_9-1080p.mp4',
+      note: "The par 4 ninth requires a layup short of the water hazard for the long hitters, 250 meters to the water from the tee. The water hazard continues up the right side, but otherwise a straightforward approach shot to an uphill sloping green with bunkers left and right. Miss short for an easy chip up the slope. Avoid missing pin-high or face a very difficult sloping chip shot."
+    },
+    10: { num: 10, par: 4, dist: 335, yards: 335, index1: 7, index2: 22, video: 'hole_10-1080p.mp4',
+      note: "The 10th hole is a dogleg right par 4. Aim for the pine trees on the left side with your tee shot, avoiding the right-hand fairway bunkers. This will leave you with a nice approach shot to a very long, narrow green with one bunker on the left side. Avoid missing right, which leaves a very difficult chip shot."
+    },
+    11: { num: 11, par: 5, dist: 444, yards: 444, index1: 11, index2: 30, video: 'hole_11-1080p.mp4',
+      note: "The par 5 11th hole presents itself as a very real birdie opportunity. With little trouble off the tee, the longer hitters will reach the green in two. Avoid missing the green right as you will face a tough downhill chip shot. Short left is the ideal miss for an easy chip to this uphill sloping green."
+    },
+    12: { num: 12, par: 3, dist: 185, yards: 185, index1: 2, index2: 27, video: 'hole_12-1080p.mp4',
+      note: "The 12th hole is a long par 3 with out of bounds all down the left side. There is a bunker short right and another long left. The best place to miss this green is just short for an easy chip shot to a long, narrow, undulating green."
+    },
+    13: { num: 13, par: 4, dist: 280, yards: 280, index1: 17, index2: 33, video: 'hole_13-1080p-1.mp4' },
+    14: { num: 14, par: 3, dist: 175, yards: 175, index1: 5, index2: 25, video: 'hole_14-1080p.mp4',
+      note: "The 14th hole looks straightforward, but there is a water hazard lurking down the right side and out of bounds to the left. The ideal tee shot, if you miss the green, is just short, leaving a simple chip to a long flat green. Avoid missing pin-high right with little green to work with and a greenside bunker left."
+    },
+    15: { num: 15, par: 4, dist: 242, yards: 242, index1: 18, index2: 34, video: 'hole_15-1080p.mp4',
+      note: "The short, powerful 15th hole is rated the easiest hole on the course. The long hitters will drive the green if they can fly the two well-positioned bunkers. The water hazard to the right creates a good visual, but isn't really in play as the fairway doglegs from left to right, so there's plenty of room to the left. Massive green and a good birdie opportunity."
+    },
+    16: { num: 16, par: 4, dist: 350, yards: 350, index1: 9, index2: 24, video: 'hole_16-1080p.mp4',
+      note: "The 16th is a long dogleg left, powerful hole. No real problems other than keeping your drive to the right of the fairway bunker, for a good approach shot into a big flat green with two bunkers to the left and one to the right. There are two big grassy mounds to avoid on the right side of the fairway."
+    },
+    17: { num: 17, par: 3, dist: 132, yards: 132, index1: 13, index2: 35, video: 'hole_17-1080p.mp4',
+      note: "The 17th hole is a short par 3 with a palm tree to the left and bunkers surrounding the green. Out of bounds right, but should be a relatively easy tee shot. The wind can be a factor with club selection. If you miss the green, best to come up just short for an easy chip up to a sloping green."
+    },
+    18: { num: 18, par: 5, dist: 445, yards: 445, index1: 14, index2: 28, video: 'hole_18-1080p.mp4',
+      note: "The 18th is a good par 5 finishing hole. Not much trouble other than a few fairway bunkers on the left, but otherwise fine. Avoid the grassy mound short left of the green, and bunkers either side. The long, narrow green is best approached by landing just short for an easy chip and a great opportunity to finish your round well."
+    }
+  };
+
+  function bindHoleColumnClicks(tableId, order) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const headers = table.querySelectorAll('thead th');
+    const rows = table.querySelectorAll('tbody tr');
+
+    const makeClickable = (cell, holeNumber) => {
+      if (!cell) return;
+      cell.classList.add('hole-clickable');
+      cell.addEventListener('click', () => openHoleModal(holeNumber));
+    };
+
+    order.forEach((holeNumber, index) => {
+      makeClickable(headers[index], holeNumber);
+      rows.forEach(row => {
+        makeClickable(row.children[index], holeNumber);
+      });
+    });
+  }
+
+  function openHoleModal(holeNumber) {
+    const modal = document.getElementById('holeModal');
+    const video = document.getElementById('holeModalVideo');
+    const source = video.querySelector('source');
+    const videoWrap = document.getElementById('holeModalVideoWrap');
+    const noVideo = document.getElementById('holeModalNoVideo');
+    const hole = holeDetails[holeNumber];
+
+    document.getElementById('holeModalTitle').textContent = `Hole ${holeNumber}`;
+    document.getElementById('holeModalPar').textContent = hole && hole.par ? `Par ${hole.par}` : 'Par -';
+    document.getElementById('holeModalMeters').textContent = hole && hole.dist ? `${hole.dist}m` : '--';
+    document.getElementById('holeModalYards').textContent = hole && hole.yards ? `${hole.yards} yd` : '--';
+    document.getElementById('holeModalIndex1').textContent = hole && hole.index1 ? `Index 1: ${hole.index1}` : 'Index 1: --';
+    document.getElementById('holeModalIndex2').textContent = hole && hole.index2 ? `Index 2: ${hole.index2}` : 'Index 2: --';
+    document.getElementById('holeModalNote').textContent = hole && hole.note ? hole.note : 'Transcript coming soon.';
+
+    if (hole && hole.video) {
+      source.src = baseUrl + hole.video;
+      video.load();
+      videoWrap.classList.remove('hidden');
+      noVideo.classList.add('hidden');
+      video.play().catch(() => {});
+    } else {
+      source.src = '';
+      video.load();
+      video.pause();
+      videoWrap.classList.add('hidden');
+      noVideo.classList.remove('hidden');
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeHoleModal() {
+    const modal = document.getElementById('holeModal');
+    const video = document.getElementById('holeModalVideo');
+    const source = video.querySelector('source');
+    video.pause();
+    source.src = '';
+    video.load();
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('holeModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      closeHoleModal();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeHoleModal();
+    }
+  });
 
   // Convenience helpers
   const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -471,6 +654,9 @@
       const backHeads = document.querySelectorAll('#back-nine-table thead th');
       for (let i = 0; i < 9; i++) backHeads[i].textContent = backOrder[i];
       backHeads[9].textContent = 'In';
+
+      bindHoleColumnClicks('front-nine-table', frontOrder);
+      bindHoleColumnClicks('back-nine-table', backOrder);
 
       /****************************************************
        * Populate FRONT (positions 1..9 map to frontOrder)
