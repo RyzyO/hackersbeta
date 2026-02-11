@@ -533,6 +533,24 @@
         });
       };
 
+      const setNowPlaying = (player) => {
+        if (!('mediaSession' in navigator)) return;
+        const title = player.querySelector('.archive-title')?.textContent?.trim() || 'Hackers Cup Podcast';
+        const album = 'From the Archives';
+        const artist = 'Hackers Cup Podcast';
+        const cover = player.querySelector('.archive-cover')?.getAttribute('src') || '';
+        const artwork = cover
+          ? [{ src: cover, sizes: '512x512', type: 'image/png' }]
+          : [];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title,
+          artist,
+          album,
+          artwork,
+        });
+      };
+
       const setPlayUi = (player, isPlaying) => {
         const playIcon = player.querySelector('.icon-play');
         const pauseIcon = player.querySelector('.icon-pause');
@@ -598,6 +616,7 @@
 
         audio.addEventListener('play', () => {
           pauseOtherPlayers(player);
+          setNowPlaying(player);
           setPlayUi(player, true);
         });
 
@@ -609,6 +628,7 @@
           playButton.addEventListener('click', () => {
             if (audio.paused) {
               pauseOtherPlayers(player);
+              setNowPlaying(player);
               audio.play().catch(() => {
                 setPlayUi(player, false);
               });
