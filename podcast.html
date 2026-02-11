@@ -95,6 +95,125 @@
       border-radius: 16px;
     }
 
+    .archive-player {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .archive-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .archive-cover {
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .archive-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .archive-meta {
+      font-size: 0.85rem;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .archive-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .archive-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      background: rgba(14, 165, 233, 0.15);
+      color: #7dd3fc;
+      font-weight: 600;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .archive-button:hover {
+      background: rgba(14, 165, 233, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .archive-button.secondary {
+      border-color: rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.5);
+    }
+
+    .archive-button.secondary:hover {
+      background: rgba(51, 65, 85, 0.6);
+    }
+
+    .archive-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .archive-progress {
+      position: relative;
+      height: 8px;
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .archive-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+      border-radius: 999px;
+    }
+
+    .archive-play {
+      min-width: 86px;
+    }
+
+    .archive-audio {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .archive-slider {
+      width: 120px;
+      accent-color: #38bdf8;
+    }
+
+    .archive-select {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -256,6 +375,58 @@
           </div>
         </div>
       </div>
+
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <div>
+            <p class="text-xs uppercase tracking-[0.25em] text-gray-400">From the Archives</p>
+            <h2 class="text-2xl font-bold">Early Podcast Editions</h2>
+           
+          </div>
+        </div>
+        <div class="grid gap-4">
+          <div class="archive-player" data-audio-src="assets/audio/HC18P1.mp3">
+            <div class="archive-header">
+              <img class="archive-cover" src="assets/images/PLOGO.png" alt="Episode 1 cover">
+              <div>
+                <div class="archive-title">Episode 1</div>
+                <div class="archive-meta">Recorded 2018 • Lane Cove Love Shack</div>
+              </div>
+            </div>
+            <div class="archive-progress" role="slider" aria-label="Audio progress" tabindex="0">
+              <div class="archive-progress-fill"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-2">
+              <span class="current-time">0:00</span>
+              <span class="duration">0:00</span>
+            </div>
+            <div class="archive-controls">
+              <button class="archive-button secondary skip-back" type="button">-30</button>
+              <button class="archive-button play-btn" type="button" aria-pressed="false">
+                <span class="play-label">Play</span>
+              </button>
+              <button class="archive-button secondary skip-forward" type="button">+30</button>
+              <button class="archive-button secondary mute-btn" type="button" aria-pressed="false">Mute</button>
+            </div>
+            <div class="archive-row text-xs text-gray-300">
+              <label class="flex items-center gap-2">Volume
+                <input class="archive-slider volume-slider" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume">
+              </label>
+              <label class="flex items-center gap-2">Speed
+                <select class="archive-select speed-select" aria-label="Playback speed">
+                  <option value="0.75">0.75x</option>
+                  <option value="1" selected>1x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2">2x</option>
+                </select>
+              </label>
+            </div>
+            <audio class="archive-audio" preload="metadata"></audio>
+          </div>
+
+        </div>
+      </div>
     </div>
   </section>
 
@@ -290,6 +461,144 @@
       if (window.lucide) {
         window.lucide.createIcons();
       }
+
+      const players = Array.from(document.querySelectorAll('.archive-player'));
+
+      const formatTime = (seconds) => {
+        if (!Number.isFinite(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const remaining = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${remaining}`;
+      };
+
+      const pauseOtherPlayers = (currentPlayer) => {
+        players.forEach((player) => {
+          if (player === currentPlayer) return;
+          const audio = player.querySelector('audio');
+          if (!audio || audio.paused) return;
+          audio.pause();
+          const label = player.querySelector('.play-label');
+          const button = player.querySelector('.play-btn');
+          if (label) label.textContent = 'Play';
+          if (button) button.setAttribute('aria-pressed', 'false');
+        });
+      };
+
+      players.forEach((player) => {
+        const audio = player.querySelector('audio');
+        const playButton = player.querySelector('.play-btn');
+        const playLabel = player.querySelector('.play-label');
+        const progress = player.querySelector('.archive-progress');
+        const fill = player.querySelector('.archive-progress-fill');
+        const currentTimeEl = player.querySelector('.current-time');
+        const durationEl = player.querySelector('.duration');
+        const skipBack = player.querySelector('.skip-back');
+        const skipForward = player.querySelector('.skip-forward');
+        const muteButton = player.querySelector('.mute-btn');
+        const volumeSlider = player.querySelector('.volume-slider');
+        const speedSelect = player.querySelector('.speed-select');
+
+        if (!audio) return;
+
+        audio.src = player.dataset.audioSrc || '';
+
+        audio.addEventListener('loadedmetadata', () => {
+          if (durationEl) {
+            durationEl.textContent = formatTime(audio.duration);
+          }
+        });
+
+        if (volumeSlider) {
+          audio.volume = Number(volumeSlider.value);
+        }
+
+        audio.addEventListener('timeupdate', () => {
+          const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+          if (fill) fill.style.width = `${percent}%`;
+          if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+        });
+
+        audio.addEventListener('ended', () => {
+          if (playLabel) playLabel.textContent = 'Play';
+          if (playButton) playButton.setAttribute('aria-pressed', 'false');
+        });
+
+        audio.addEventListener('play', () => {
+          pauseOtherPlayers(player);
+          if (playLabel) playLabel.textContent = 'Pause';
+          if (playButton) playButton.setAttribute('aria-pressed', 'true');
+        });
+
+        audio.addEventListener('pause', () => {
+          if (playLabel) playLabel.textContent = 'Play';
+          if (playButton) playButton.setAttribute('aria-pressed', 'false');
+        });
+
+        if (playButton) {
+          playButton.addEventListener('click', () => {
+            if (audio.paused) {
+              pauseOtherPlayers(player);
+              audio.play();
+              if (playLabel) playLabel.textContent = 'Pause';
+              playButton.setAttribute('aria-pressed', 'true');
+            } else {
+              audio.pause();
+              if (playLabel) playLabel.textContent = 'Play';
+              playButton.setAttribute('aria-pressed', 'false');
+            }
+          });
+        }
+
+        if (progress) {
+          progress.addEventListener('click', (event) => {
+            const rect = progress.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            if (Number.isFinite(percent) && audio.duration) {
+              audio.currentTime = Math.max(0, Math.min(1, percent)) * audio.duration;
+            }
+          });
+        }
+
+        if (skipBack) {
+          skipBack.addEventListener('click', () => {
+            audio.currentTime = Math.max(0, audio.currentTime - 30);
+          });
+        }
+
+        if (skipForward) {
+          skipForward.addEventListener('click', () => {
+            if (!audio.duration) return;
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 30);
+          });
+        }
+
+        if (muteButton) {
+          muteButton.addEventListener('click', () => {
+            audio.muted = !audio.muted;
+            muteButton.textContent = audio.muted ? 'Unmute' : 'Mute';
+            muteButton.setAttribute('aria-pressed', audio.muted ? 'true' : 'false');
+          });
+        }
+
+        if (volumeSlider) {
+          volumeSlider.addEventListener('input', () => {
+            audio.volume = Number(volumeSlider.value);
+            if (audio.muted && audio.volume > 0) {
+              audio.muted = false;
+              if (muteButton) {
+                muteButton.textContent = 'Mute';
+                muteButton.setAttribute('aria-pressed', 'false');
+              }
+            }
+          });
+        }
+
+        if (speedSelect) {
+          speedSelect.addEventListener('change', () => {
+            audio.playbackRate = Number(speedSelect.value);
+          });
+        }
+      });
     });
   </script>
 
