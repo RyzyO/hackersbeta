@@ -157,6 +157,18 @@
     .pulse-stat.tone-amber { --tone: rgba(251, 146, 60, 0.9); }
     .pulse-stat.tone-violet { --tone: rgba(168, 85, 247, 0.9); }
 
+    :root {
+      --pulse-top: 0px;
+      --pulse-bottom: 0px;
+    }
+
+    @media (max-width: 767px) {
+      :root {
+        --pulse-top: 64px;
+        --pulse-bottom: calc(64px + env(safe-area-inset-bottom));
+      }
+    }
+
     .pulse-toggle {
       display: inline-flex;
       align-items: center;
@@ -184,7 +196,10 @@
 
     .pulse-overlay {
       position: fixed;
-      inset: 0;
+      top: var(--pulse-top);
+      right: 0;
+      bottom: var(--pulse-bottom);
+      left: 0;
       background: rgba(2, 6, 23, 0);
       opacity: 0;
       pointer-events: none;
@@ -199,11 +214,11 @@
 
     .pulse-drawer {
       position: fixed;
-      top: 0;
+      top: var(--pulse-top);
       right: 0;
-      height: 100vh;
+      height: calc(100vh - var(--pulse-top) - var(--pulse-bottom));
       width: min(94vw, 420px);
-      padding: 18px 16px 24px;
+      padding: 18px 16px 20px;
       background: rgba(15, 23, 42, 0.92);
       border-left: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: -18px 0 30px rgba(2, 6, 23, 0.28);
@@ -211,7 +226,6 @@
       transition: transform 0.25s ease;
       z-index: 70;
       overflow-y: auto;
-      padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
 
     .pulse-drawer.is-open {
@@ -220,6 +234,10 @@
 
     @media (min-width: 768px) {
       .pulse-toggle {
+        display: none;
+      }
+
+      .pulse-close {
         display: none;
       }
 
