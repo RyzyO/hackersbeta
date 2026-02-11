@@ -71,124 +71,9 @@
       border-collapse: collapse;
       font-family: 'Inter', sans-serif;
       color: #ffffff;
-      border-radius: 10px;
+      border-radius: 18px;
       overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.35);
     }
-
-    .scorecard-desktop {
-      display: block;
-    }
-
-    .scorecard-mobile {
-      display: block;
-    }
-
-    .mobile-summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .mobile-summary-card {
-      background: rgba(15, 23, 42, 0.7);
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 10px 12px;
-      text-align: center;
-    }
-
-    .mobile-summary-label {
-      display: block;
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .mobile-summary-value {
-      display: block;
-      font-size: 18px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-top: 4px;
-    }
-
-    .mobile-holes-grid {
-      display: grid;
-      gap: 12px;
-    }
-
-    .hole-card {
-      width: 100%;
-      text-align: left;
-      background: rgba(30, 41, 59, 0.55);
-      border-radius: 16px;
-      padding: 14px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-    }
-
-    .hole-card:hover {
-      border-color: rgba(56, 189, 248, 0.4);
-      background: rgba(30, 41, 59, 0.75);
-      transform: translateY(-1px);
-    }
-
-    .hole-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .hole-card-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    .hole-card-sub {
-      font-size: 12px;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .hole-card-metrics {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .metric-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: rgba(148, 163, 184, 0.85);
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .metric-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 32px;
-      width: 100%;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 14px;
-      background: rgba(15, 23, 42, 0.7);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .score-par { background: #ffffff; color: #0f172a; }
-    .score-birdie { background: #add8e6; color: #0f172a; }
-    .score-eagle { background: #1d4ed8; color: #ffffff; }
-    .score-albatross { background: #0f172a; color: #ffffff; }
-    .score-bogey { background: #f59e0b; color: #0f172a; }
-    .score-double { background: #ef4444; color: #ffffff; }
 
     .scorecard-table thead tr {
       background-color: rgba(30, 41, 59, 0.9);
@@ -202,13 +87,6 @@
       border: 1px solid rgba(148, 163, 184, 0.2);
       text-align: center;
       font-size: 14px;
-    }
-
-    .scorecard-total {
-      font-size: 4px;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
     }
 
     .scorecard-table tbody tr:nth-child(even) {
@@ -237,235 +115,6 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .scorecard-shell {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .scorecard-head {
-      display: grid;
-      gap: 20px;
-    }
-
-    .stack-lg {
-      display: grid;
-      gap: 24px;
-    }
-
-    .stack-md {
-      display: grid;
-      gap: 16px;
-    }
-
-    .player-card {
-      background:
-        radial-gradient(120% 140% at 0% 0%, rgba(56, 189, 248, 0.2), transparent 55%),
-        radial-gradient(120% 140% at 100% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
-        rgba(15, 23, 42, 0.7);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      padding: 18px 20px;
-      display: grid;
-      gap: 18px;
-    }
-
-    .player-info {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .player-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .player-label {
-      font-size: 10px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .player-name {
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    .player-meta {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-    }
-
-    .player-meta-label {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .player-meta-value {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .player-kpis {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .kpi-chip {
-      background: rgba(2, 6, 23, 0.55);
-      border-radius: 16px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      padding: 12px 14px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .kpi-chip.kpi-accent {
-      background: rgba(2, 6, 23, 0.55);
-      border-color: rgba(56, 189, 248, 0.2);
-    }
-
-    .kpi-label {
-      font-size: 10px;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
-    }
-
-    .kpi-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-      .scorecard-stats {
-        background:
-          radial-gradient(140% 120% at 0% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
-          radial-gradient(140% 120% at 100% 0%, rgba(245, 158, 11, 0.2), transparent 55%),
-          rgba(15, 23, 42, 0.6);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        padding: 20px;
-        display: grid;
-        gap: 18px;
-        box-shadow: 0 18px 50px rgba(2, 6, 23, 0.45);
-      }
-
-      .stats-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .stats-title {
-        font-size: 13px;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: transparent;
-        background: linear-gradient(90deg, #38bdf8, #f59e0b);
-        -webkit-background-clip: text;
-        background-clip: text;
-      }
-
-      .stats-subtitle {
-        font-size: 12px;
-        color: rgba(148, 163, 184, 0.9);
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-      }
-
-      .stats-panel-card {
-        --tone: rgba(14, 165, 233, 0.7);
-        position: relative;
-        background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 12px 14px;
-        display: grid;
-        gap: 6px;
-        overflow: hidden;
-        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.35);
-      }
-
-      .stats-panel-card::before {
-        content: '';
-        position: absolute;
-        inset: 0 0 auto 0;
-        height: 2px;
-        background: linear-gradient(90deg, var(--tone), transparent 80%);
-      }
-
-      .stats-panel-title {
-        font-size: 10px;
-        letter-spacing: 0.24em;
-        text-transform: uppercase;
-        color: rgba(148, 163, 184, 0.85);
-      }
-
-      .stats-panel-value {
-        font-size: 22px;
-        font-weight: 700;
-        color: #ffffff;
-      }
-
-      .stats-panel-card.tone-sky { --tone: rgba(56, 189, 248, 0.9); }
-      .stats-panel-card.tone-emerald { --tone: rgba(16, 185, 129, 0.9); }
-      .stats-panel-card.tone-gold { --tone: rgba(245, 158, 11, 0.9); }
-      .stats-panel-card.tone-rose { --tone: rgba(244, 63, 94, 0.9); }
-      .stats-panel-card.tone-amber { --tone: rgba(251, 146, 60, 0.9); }
-      .stats-panel-card.tone-violet { --tone: rgba(168, 85, 247, 0.9); }
-      .stats-panel-card.tone-slate { --tone: rgba(148, 163, 184, 0.9); }
-
-      .stats-pill-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .stats-pill {
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7));
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        font-size: 12px;
-        color: #ffffff;
-      }
-
-      .stats-pill-label {
-        color: rgba(148, 163, 184, 0.85);
-        margin-right: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.18em;
-        font-size: 9px;
-      }
-
-      .hint-card {
-        padding: 8px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(15, 23, 42, 0.6);
-      }
-
     .overflow-x-auto {
       overflow-x: visible;
     }
@@ -482,17 +131,6 @@
         font-size: 14px;
         padding: 8px 10px;
         text-align: center;
-      }
-    }
-
-    @media (min-width: 768px) {
-      .scorecard-head {
-        grid-template-columns: 1fr;
-      }
-
-      .player-card {
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-        align-items: stretch;
       }
     }
 
@@ -519,22 +157,6 @@
         width: 100%;
         text-align: center;
         align-items: center;
-      }
-
-      .player-name {
-        font-size: 22px;
-      }
-
-      .kpi-value {
-        font-size: 20px;
-      }
-
-      .scorecard-desktop {
-        display: block;
-      }
-
-      .scorecard-mobile {
-        display: block;
       }
     }
 
@@ -635,36 +257,21 @@
 
   <section class="py-10 md:py-14 -mt-8 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="scorecard-shell">
-        <div class="scorecard-head">
-          <div class="player-card">
-            <div class="player-info">
-              <span class="player-label">Player</span>
-              <div class="player-top">
-                <h2 id="player-name" class="player-name">Player Name</h2>
-                <div class="player-meta">
-                  <span class="player-meta-label">Handicap</span>
-                  <span id="player-handicap" class="player-meta-value">--</span>
-                </div>
-              </div>
-            </div>
-            <div class="player-kpis">
-              <div class="kpi-chip">
-                <span class="kpi-label">Score</span>
-                <span id="total-points" class="kpi-value">0</span>
-              </div>
-              <div class="kpi-chip kpi-accent">
-                <span class="kpi-label">Rank</span>
-                <span id="player-rank" class="kpi-value">N/A</span>
-              </div>
-            </div>
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 id="player-name" class="text-2xl font-semibold">Player Name</h2>
+            <p id="player-handicap" class="text-sm text-gray-400"></p>
+          </div>
+          <div class="stats-card">
+            <div>Score: <span id="total-points">0</span></div>
+            <div>Rank: <span id="player-rank">N/A</span></div>
           </div>
         </div>
 
-        <div class="stack-lg">
-          <div class="scorecard-desktop">
-            <div class="overflow-x-auto">
-              <table id="front-nine-table" class="scorecard-table">
+        <div class="mt-6 space-y-6">
+          <div class="overflow-x-auto">
+            <table id="front-nine-table" class="scorecard-table">
               <thead>
                 <tr>
                   <th>1</th>
@@ -676,7 +283,7 @@
                   <th>7</th>
                   <th>8</th>
                   <th>9</th>
-                  <th class="scorecard-total">Out</th>
+                  <th>Out</th>
                 </tr>
               </thead>
               <tbody>
@@ -716,12 +323,12 @@
                   <td id="points9"></td>
                   <td id="pointsOut"></td>
                 </tr>
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
+          </div>
 
-            <div class="overflow-x-auto">
-              <table id="back-nine-table" class="scorecard-table">
+          <div class="overflow-x-auto">
+            <table id="back-nine-table" class="scorecard-table">
               <thead>
                 <tr>
                   <th>10</th>
@@ -733,7 +340,7 @@
                   <th>16</th>
                   <th>17</th>
                   <th>18</th>
-                  <th class="scorecard-total">In</th>
+                  <th>In</th>
                 </tr>
               </thead>
               <tbody>
@@ -773,78 +380,9 @@
                   <td id="points18"></td>
                   <td id="pointsIn"></td>
                 </tr>
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
-
-        </div>
-
-        <div class="scorecard-stats">
-          <div class="stats-header">
-            <div class="stats-title">Ryzy Performance Pulse</div>
-            <div class="stats-subtitle">Auto-calculated from the scorecard</div>
-          </div>
-          <div class="stats-grid">
-            <div class="stats-panel-card tone-sky">
-              <div class="stats-panel-title">Eagles</div>
-              <div id="stat-eagles" class="stats-panel-value">0</div>
-            </div>
-            <div class="stats-panel-card tone-emerald">
-              <div class="stats-panel-title">Birdies</div>
-              <div id="stat-birdies" class="stats-panel-value">0</div>
-            </div>
-            <div class="stats-panel-card tone-gold">
-              <div class="stats-panel-title">Pars</div>
-              <div id="stat-pars" class="stats-panel-value">0</div>
-            </div>
-            <div class="stats-panel-card tone-rose">
-              <div class="stats-panel-title">Bogeys</div>
-              <div id="stat-bogeys" class="stats-panel-value">0</div>
-            </div>
-            <div class="stats-panel-card tone-amber">
-              <div class="stats-panel-title">Double+</div>
-              <div id="stat-double" class="stats-panel-value">0</div>
-            </div>
-            <div class="stats-panel-card tone-violet">
-              <div class="stats-panel-title">Avg Points</div>
-              <div id="stat-avg-points" class="stats-panel-value">0.0</div>
-            </div>
-          </div>
-          <div class="stats-pill-group">
-            <div class="stats-pill"><span class="stats-pill-label">To Par</span><span id="stat-to-par">0</span></div>
-            <div class="stats-pill"><span class="stats-pill-label">Birdie+</span><span id="stat-birdie-plus">0</span></div>
-            <div class="stats-pill"><span class="stats-pill-label">Bogey+</span><span id="stat-bogey-plus">0</span></div>
-          </div>
-          <div class="stats-grid">
-            <div class="stats-panel-card tone-slate">
-              <div class="stats-panel-title">Best Holes</div>
-              <div id="stat-best-holes" class="stats-panel-value">--</div>
-            </div>
-            <div class="stats-panel-card tone-slate">
-              <div class="stats-panel-title">Worst Holes</div>
-              <div id="stat-worst-holes" class="stats-panel-value">--</div>
-            </div>
-          </div>
-        </div>
-
-          <div class="scorecard-mobile stack-md">
-          <div class="mobile-summary">
-            <div class="mobile-summary-card">
-              <span class="mobile-summary-label">Out</span>
-              <span id="mobile-out" class="mobile-summary-value">0</span>
-            </div>
-            <div class="mobile-summary-card">
-              <span class="mobile-summary-label">In</span>
-              <span id="mobile-in" class="mobile-summary-value">0</span>
-            </div>
-            <div class="mobile-summary-card">
-              <span class="mobile-summary-label">Total</span>
-              <span id="mobile-total" class="mobile-summary-value">0</span>
-            </div>
-          </div>
-            <p class="hint-card text-xs text-gray-400">Tap any hole to view the flyover and details.</p>
-          <div id="mobile-holes" class="mobile-holes-grid"></div>
         </div>
       </div>
     </div>
@@ -1160,64 +698,6 @@
 const totalPts = outPointsSum + inPointsSum;
 document.getElementById("total-points").textContent = totalPts;
 
-  const mobileOut = document.getElementById('mobile-out');
-  const mobileIn = document.getElementById('mobile-in');
-  const mobileTotal = document.getElementById('mobile-total');
-  if (mobileOut) mobileOut.textContent = outPointsSum;
-  if (mobileIn) mobileIn.textContent = inPointsSum;
-  if (mobileTotal) mobileTotal.textContent = totalPts;
-
-      const fullOrder = frontOrder.concat(backOrder);
-      const validHoles = fullOrder.filter(h => (holePars[h] || 0) > 0);
-      const holeStats = validHoles.map(hole => {
-        const par = holePars[hole] || 0;
-        const scr = holeScores[hole] || 0;
-        const pts = holePoints[hole] || 0;
-        return { hole, par, scr, pts, diff: scr - par };
-      });
-
-      const countBy = predicate => holeStats.filter(predicate).length;
-      const eagles = countBy(h => h.diff === -2);
-      const birdies = countBy(h => h.diff === -1);
-      const pars = countBy(h => h.diff === 0);
-      const bogeys = countBy(h => h.diff === 1);
-      const doublePlus = countBy(h => h.diff >= 2);
-      const birdiePlus = countBy(h => h.diff <= -1);
-      const bogeyPlus = countBy(h => h.diff >= 1);
-      const totalDiff = holeStats.reduce((sum, h) => sum + h.diff, 0);
-      const avgPoints = validHoles.length
-        ? (holeStats.reduce((sum, h) => sum + h.pts, 0) / validHoles.length).toFixed(1)
-        : '0.0';
-
-      const bestHoles = [...holeStats]
-        .sort((a, b) => b.pts - a.pts || a.diff - b.diff || a.hole - b.hole)
-        .slice(0, 3)
-        .map(h => `H${h.hole}`)
-        .join(', ') || '--';
-
-      const worstHoles = [...holeStats]
-        .sort((a, b) => a.pts - b.pts || b.diff - a.diff || a.hole - b.hole)
-        .slice(0, 3)
-        .map(h => `H${h.hole}`)
-        .join(', ') || '--';
-
-      const setStat = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-      };
-
-      setStat('stat-eagles', eagles);
-      setStat('stat-birdies', birdies);
-      setStat('stat-pars', pars);
-      setStat('stat-bogeys', bogeys);
-      setStat('stat-double', doublePlus);
-      setStat('stat-avg-points', avgPoints);
-      setStat('stat-to-par', totalDiff > 0 ? `+${totalDiff}` : `${totalDiff}`);
-      setStat('stat-birdie-plus', birdiePlus);
-      setStat('stat-bogey-plus', bogeyPlus);
-      setStat('stat-best-holes', bestHoles);
-      setStat('stat-worst-holes', worstHoles);
-
 
       /****************************************************
        * 3) Color-code the SCORE cells by difference (Score - Par)
@@ -1262,56 +742,6 @@ document.getElementById("total-points").textContent = totalPts;
       // Apply colors for back positions 10..18
       for (let i = 0; i < 9; i++) {
         colorScoreCellFor(backOrder[i], `score${10 + i}`);
-      }
-
-      const mobileContainer = document.getElementById('mobile-holes');
-      if (mobileContainer) {
-        mobileContainer.innerHTML = '';
-        fullOrder.forEach(holeNumber => {
-          const par = holePars[holeNumber] ?? 0;
-          const scr = holeScores[holeNumber] ?? 0;
-          const pts = holePoints[holeNumber] ?? 0;
-          const diff = par ? scr - par : null;
-          const hole = holeDetails[holeNumber];
-          const holeTitle = hole ? `Hole ${hole.num}` : `Hole ${holeNumber}`;
-          const holeMeta = hole && hole.dist ? `${hole.dist}m` : 'Course hole';
-
-          let scoreClass = '';
-          if (diff === 0) scoreClass = 'score-par';
-          else if (diff === -1) scoreClass = 'score-birdie';
-          else if (diff === -2) scoreClass = 'score-eagle';
-          else if (diff === -3) scoreClass = 'score-albatross';
-          else if (diff === 1) scoreClass = 'score-bogey';
-          else if (diff !== null && diff >= 2) scoreClass = 'score-double';
-
-          const card = document.createElement('button');
-          card.type = 'button';
-          card.className = 'hole-card';
-          card.addEventListener('click', () => openHoleModal(holeNumber));
-          card.innerHTML = `
-            <div class="hole-card-head">
-              <div>
-                <div class="hole-card-title">${holeTitle}</div>
-                <div class="hole-card-sub">${holeMeta}</div>
-              </div>
-            </div>
-            <div class="hole-card-metrics">
-              <div>
-                <span class="metric-label">Par</span>
-                <span class="metric-pill">${par}</span>
-              </div>
-              <div>
-                <span class="metric-label">Score</span>
-                <span class="metric-pill ${scoreClass}">${scr}</span>
-              </div>
-              <div>
-                <span class="metric-label">Points</span>
-                <span class="metric-pill">${pts}</span>
-              </div>
-            </div>
-          `;
-          mobileContainer.appendChild(card);
-        });
       }
     })
     .catch(err => console.error("Error fetching or parsing scorecard data:", err));
@@ -1404,7 +834,7 @@ fetch(leaderboardUrl)
           handicap = r.c[1] ? r.c[1].v : "N/A";
         }
       });
-      document.getElementById("player-handicap").textContent = `${handicap}`;
+      document.getElementById("player-handicap").textContent = `Handicap: ${handicap}`;
     })
     .catch(err => console.error("Error fetching handicap data:", err));
 
