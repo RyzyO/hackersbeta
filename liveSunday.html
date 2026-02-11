@@ -337,14 +337,13 @@
             <h2 class="text-xl font-semibold">Leaderboard</h2>
             <p class="text-sm text-gray-400">Search by player name or rank.</p>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="relative">
+          <div class="flex flex-nowrap items-center gap-2">
+            <div class="relative flex-1 min-w-[180px]">
               <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
               <input id="leaderboard-search" type="text" placeholder="Search players" class="pl-9 pr-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" />
             </div>
-            <button class="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm font-semibold text-white" onclick="location.reload();">
+            <button class="inline-flex items-center justify-center rounded-full bg-white/5 border border-white/10 w-10 h-10 text-white" aria-label="Refresh" onclick="location.reload();">
               <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
-              Refresh
             </button>
           </div>
         </div>
