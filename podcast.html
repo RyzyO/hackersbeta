@@ -535,7 +535,10 @@
 
       const setNowPlaying = (player) => {
         if (!('mediaSession' in navigator)) return;
-        const title = player.querySelector('.archive-title')?.textContent?.trim() || 'Hackers Cup Podcast';
+        const baseTitle = player.querySelector('.archive-title')?.textContent?.trim() || 'Hackers Cup Podcast';
+        const metaText = player.querySelector('.archive-meta')?.textContent || '';
+        const yearMatch = metaText.match(/\b(19|20)\d{2}\b/);
+        const title = yearMatch ? `${baseTitle} - ${yearMatch[0]}` : baseTitle;
         const album = 'From the Archives';
         const artist = 'Hackers Cup Podcast';
         const cover = player.querySelector('.archive-cover')?.getAttribute('src') || '';
