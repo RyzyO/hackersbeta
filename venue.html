@@ -172,7 +172,7 @@
           <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Your Room</p>
           <p id="room-number" class="text-3xl font-semibold mt-3">Loading room number...</p>
           <p class="text-sm text-gray-400 mt-2">Assigned room at Shoalhaven Springs.</p>
-          <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+          <div id="room-level-card" class="mt-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
             <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Level</p>
             <p id="room-level" class="text-lg font-semibold">Loading level...</p>
           </div>
@@ -297,14 +297,25 @@
       }
     }
 
+    function setRoomLevelVisibility(isVisible) {
+      const levelCard = document.getElementById('room-level-card');
+      if (levelCard) {
+        levelCard.classList.toggle('hidden', !isVisible);
+      }
+    }
+
     function getRoomNumber(user) {
       const roomRef = ref(database, `users/${user.uid}/roomNumber`);
       onValue(roomRef, (snapshot) => {
         const roomNumber = snapshot.val();
         if (roomNumber) {
           setRoomNumber(`${roomNumber}`);
+          setRoomLevelVisibility(true);
+          getRoomLevel(user);
         } else {
           setRoomNumber('Room number not assigned yet.');
+          setRoomLevel('');
+          setRoomLevelVisibility(false);
         }
       });
     }
@@ -333,7 +344,6 @@
         window.location.href = 'login.html';
       } else {
         getRoomNumber(user);
-        getRoomLevel(user);
       }
     });
   </script>
