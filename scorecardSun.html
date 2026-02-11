@@ -311,16 +311,9 @@
   <script>
     // ---- Config / Name handling
     const urlParams = new URLSearchParams(window.location.search);
-    let playerName = urlParams.get('player') || "Unknown Player";
-    const displayName = playerName.replace(/-/g, ' & ');
-    document.getElementById('player-name').textContent = displayName;
-
-// From the URL
-const playerNameRaw = urlParams.get('player') || "Unknown Player";
-
-// Pretty version for display only
-const playerNameDisplay = playerNameRaw.replace(/-/g, ' & ');
-document.getElementById('player-name').textContent = playerNameDisplay;
+    const playerNameRaw = urlParams.get('player') || "Unknown Player";
+    const playerNameDisplay = playerNameRaw.replace(/-/g, ' & ');
+    document.getElementById('player-name').textContent = playerNameDisplay;
 
 
     const sheetId = '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI';
@@ -338,7 +331,7 @@ document.getElementById('player-name').textContent = playerNameDisplay;
 
     // ---- Fetch the player's sheet (by sheet name) for pars/scores
     const playerSheetUrl =
-      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerNameRaw)}`;
 
     fetch(playerSheetUrl)
       .then(response => response.text())
@@ -432,7 +425,6 @@ document.getElementById('player-name').textContent = playerNameDisplay;
           const nameCell = r.c[2] && r.c[2].v ? r.c[2].v : "";
           const norm = String(nameCell).trim().toLowerCase();
          if (norm === playerNameRaw.trim().toLowerCase()) {
-unp
             // F = index 5, G = index 6
             if (r.c[5] && r.c[5].v != null) handicap = r.c[5].v;
             if (r.c[6] && r.c[6].v != null) nett = r.c[6].v;
