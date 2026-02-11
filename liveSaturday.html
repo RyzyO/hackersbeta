@@ -75,6 +75,88 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .pulse-card {
+      background:
+        radial-gradient(140% 120% at 0% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(140% 120% at 100% 0%, rgba(245, 158, 11, 0.2), transparent 55%),
+        rgba(15, 23, 42, 0.6);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      box-shadow: 0 18px 50px rgba(2, 6, 23, 0.45);
+    }
+
+    .pulse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pulse-title {
+      font-size: 13px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: transparent;
+      background: linear-gradient(90deg, #38bdf8, #f59e0b);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .pulse-subtitle {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .pulse-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .pulse-stat {
+      --tone: rgba(56, 189, 248, 0.9);
+      position: relative;
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(2, 6, 23, 0.35);
+    }
+
+    .pulse-stat::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--tone), transparent 80%);
+    }
+
+    .pulse-stat-label {
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .pulse-stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .pulse-stat.tone-sky { --tone: rgba(56, 189, 248, 0.9); }
+    .pulse-stat.tone-emerald { --tone: rgba(16, 185, 129, 0.9); }
+    .pulse-stat.tone-gold { --tone: rgba(245, 158, 11, 0.9); }
+    .pulse-stat.tone-rose { --tone: rgba(244, 63, 94, 0.9); }
+    .pulse-stat.tone-amber { --tone: rgba(251, 146, 60, 0.9); }
+    .pulse-stat.tone-violet { --tone: rgba(168, 85, 247, 0.9); }
+
     .hero-gradient {
       background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
     }
@@ -204,6 +286,38 @@
 
   <section class="py-10 md:py-14 -mt-8 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="pulse-card mb-6">
+        <div class="pulse-header">
+          <div class="pulse-title">Ryzy Performance Pulse</div>
+          <div class="pulse-subtitle">Live comp stats</div>
+        </div>
+        <div class="pulse-grid">
+          <div class="pulse-stat tone-sky">
+            <div class="pulse-stat-label">Avg Score</div>
+            <div id="pulse-avg-score" class="pulse-stat-value">0.0</div>
+          </div>
+          <div class="pulse-stat tone-emerald">
+            <div class="pulse-stat-label">Avg Handicap</div>
+            <div id="pulse-avg-handicap" class="pulse-stat-value">0.0</div>
+          </div>
+          <div class="pulse-stat tone-gold">
+            <div class="pulse-stat-label">36+ Points</div>
+            <div id="pulse-played" class="pulse-stat-value">0</div>
+          </div>
+          <div class="pulse-stat tone-rose">
+            <div class="pulse-stat-label">Under 36</div>
+            <div id="pulse-not-played" class="pulse-stat-value">0</div>
+          </div>
+          <div class="pulse-stat tone-amber">
+            <div class="pulse-stat-label">40+ Scores</div>
+            <div id="pulse-40plus" class="pulse-stat-value">0</div>
+          </div>
+          <div class="pulse-stat tone-violet">
+            <div class="pulse-stat-label">Through 18</div>
+            <div id="pulse-through" class="pulse-stat-value">0</div>
+          </div>
+        </div>
+      </div>
       <div class="glass-card rounded-3xl p-6 md:p-8">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <div>
@@ -351,6 +465,14 @@
 
       // Populate the table rows and append handicap to player names
       const dataRows = document.getElementById('data-rows');
+      let totalPlayers = 0;
+      let totalPoints = 0;
+      let totalHandicap = 0;
+      let handicapCount = 0;
+      let playedToHandicap = 0;
+      let notPlayedToHandicap = 0;
+      let scores40plus = 0;
+      let through18 = 0;
       tableData.forEach((row, index) => {
         const rankValue = row.c[1] ? row.c[1].v : 0;
         if (parseInt(rankValue, 10) === 0) return;
@@ -369,6 +491,31 @@
           td.classList.add(`column-${String.fromCharCode(98 + i)}`);
           tr.appendChild(td);
         });
+
+        const playerName = row.c[2] ? row.c[2].v : '';
+        const pointsRaw = row.c[3] ? row.c[3].v : 0;
+        const throughRaw = row.c[6] ? row.c[6].v : 0;
+        const points = parseFloat(pointsRaw) || 0;
+        const through = parseInt(throughRaw, 10) || 0;
+        const handicapValue = handicapMap[playerName] ? parseFloat(handicapMap[playerName]) : NaN;
+
+        totalPlayers += 1;
+        totalPoints += points;
+        if (!isNaN(handicapValue)) {
+          totalHandicap += handicapValue;
+          handicapCount += 1;
+        }
+        if (points >= 36) {
+          playedToHandicap += 1;
+        } else {
+          notPlayedToHandicap += 1;
+        }
+        if (points >= 40) {
+          scores40plus += 1;
+        }
+        if (through >= 18) {
+          through18 += 1;
+        }
         
         // Use the Name column (from column index 2 in the original data) for the scorecard link
         const playerNameForLink = row.c[2] ? row.c[2].v : `Player${index + 1}`;
@@ -378,6 +525,21 @@
         
         dataRows.appendChild(tr);
       });
+
+      const avgScore = totalPlayers ? (totalPoints / totalPlayers).toFixed(1) : '0.0';
+      const avgHandicap = handicapCount ? (totalHandicap / handicapCount).toFixed(1) : '0.0';
+
+      const setPulse = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      setPulse('pulse-avg-score', avgScore);
+      setPulse('pulse-avg-handicap', avgHandicap);
+      setPulse('pulse-played', playedToHandicap);
+      setPulse('pulse-not-played', notPlayedToHandicap);
+      setPulse('pulse-40plus', scores40plus);
+      setPulse('pulse-through', through18);
 
       applySearchFilter();
     })
