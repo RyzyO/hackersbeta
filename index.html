@@ -151,7 +151,11 @@
     
     /* Sponsor Animation */
     .sponsor-fade {
-      transition: opacity 0.5s ease-in-out;
+      transition: opacity 0.35s ease-in-out;
+    }
+
+    .sponsor-fade.is-fading {
+      opacity: 0;
     }
     
     /* Bottom Nav */
@@ -373,15 +377,15 @@
   </section>
 
   <!-- Sponsor Section -->
-  <section class="py-8 border-y border-white/5 bg-white/5">
+  <section class="py-10 border-y border-white/5 bg-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col md:flex-row items-center justify-center gap-8">
         <div class="text-center md:text-left">
           <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Proudly Supported By</p>
           <h3 class="text-xl font-bold text-white">Our Sponsors</h3>
         </div>
-        <div class="w-32 h-32 rounded-2xl glass flex items-center justify-center p-4 sponsor-fade" id="sponsor-container">
-          <img id="sponsor-slide-img" src="" alt="Sponsor" class="max-w-full max-h-full object-contain">
+        <div class="w-52 h-36 md:w-64 md:h-40 rounded-2xl bg-white flex items-center justify-center p-3 shadow-lg shadow-black/20 border border-white/30" id="sponsor-container">
+          <img id="sponsor-slide-img" src="" alt="Sponsor" class="w-full h-full object-contain sponsor-fade">
         </div>
       </div>
     </div>
@@ -678,16 +682,29 @@
     
     let sponsorIndex = 0;
     
+    let sponsorTransitioning = false;
+
     function rotateSponsor() {
       const img = document.getElementById('sponsor-slide-img');
-      if (img) {
-        img.style.opacity = '0';
-        setTimeout(() => {
-          sponsorIndex = (sponsorIndex + 1) % sponsorImages.length;
-          img.src = sponsorImages[sponsorIndex];
-          img.style.opacity = '1';
-        }, 500);
+      if (!img || sponsorTransitioning || sponsorImages.length === 0) {
+        return;
       }
+
+      const nextIndex = (sponsorIndex + 1) % sponsorImages.length;
+      const nextSrc = sponsorImages[nextIndex];
+      sponsorTransitioning = true;
+
+      const preload = new Image();
+      preload.onload = () => {
+        img.classList.add('is-fading');
+        setTimeout(() => {
+          img.src = nextSrc;
+          sponsorIndex = nextIndex;
+          img.classList.remove('is-fading');
+          sponsorTransitioning = false;
+        }, 300);
+      };
+      preload.src = nextSrc;
     }
     
     // Initialize sponsor
@@ -695,7 +712,8 @@
       const img = document.getElementById('sponsor-slide-img');
       if (img && sponsorImages.length > 0) {
         img.src = sponsorImages[0];
-        setInterval(rotateSponsor, 3000);
+        img.classList.remove('is-fading');
+        setInterval(rotateSponsor, 3500);
       }
       
       // Generate Hole Cards
