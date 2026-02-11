@@ -1,991 +1,548 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <title>Payment Dashboard - Hackers Cup</title>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Dashboard | Hackers Cup</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
     :root {
-      --bg-main: #0b0e12;
-      --bg-deep: #0f1520;
-      --surface: #121a24;
-      --surface-strong: #162131;
-      --surface-soft: #1b2737;
-      --text-primary: #f8fafc;
-      --text-secondary: #9aa7b8;
-      --border-color: #263241;
-      --accent: #23d3b5;
-      --accent-strong: #14b8a6;
-      --accent-warm: #f97316;
-      --success: #22c55e;
-      --warning: #f97316;
-      --danger: #ef4444;
-      --shadow-soft: 0 18px 45px rgba(6, 10, 15, 0.45);
-      --shadow-card: 0 24px 60px rgba(6, 10, 15, 0.55);
-    }
-    
-    body {
-      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at 20% 10%, rgba(35, 211, 181, 0.16), transparent 45%),
-        radial-gradient(circle at 80% 20%, rgba(249, 115, 22, 0.12), transparent 40%),
-        linear-gradient(120deg, #0b0e12 0%, #0f1520 50%, #0b0e12 100%);
-      color: var(--text-primary);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding-bottom: 80px;
-      position: relative;
+      --success-gradient: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
     }
 
-    body::before,
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: -1;
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
     }
 
-    body::before {
-      background: radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.08), transparent 55%),
-        radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.1), transparent 60%);
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    body::after {
-      background: linear-gradient(0deg, rgba(11, 14, 18, 0.7), rgba(11, 14, 18, 0.7));
-      mix-blend-mode: multiply;
-    }
-    
-    /* Ensure all text elements are light colored */
-    h1, h2, h3, h4, h5, h6 {
-      color: var(--text-primary);
-      font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
-      letter-spacing: -0.01em;
-    }
-    
-    p {
-      color: var(--text-primary);
-    }
-    
-    /* Ensure header displays correctly */
-    .header-area {
-      position: relative;
-      z-index: 1000;
-    }
-    
-    .header-area .container,
-    .header-area .row,
-    .header-area .col-12 {
-      display: block;
-    }
-    
-    /* Dashboard content box sizing */
-    .dashboard-container *,
-    .status-card *,
-    .content-card *,
-    .transfer-details *,
-    .action-btn * {
-      box-sizing: border-box;
-    }
-    
-    .dashboard-container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 104px 24px 56px;
-    }
-    
-    .dashboard-header {
-      margin-bottom: 36px;
-      animation: fadeInUp 0.6s ease;
-    }
-    
-    .dashboard-header h1 {
-      font-size: clamp(2rem, 3vw, 2.8rem);
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    
-    .dashboard-header p {
-      color: var(--text-secondary);
-      font-size: 1rem;
-      margin-bottom: 6px;
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
     }
 
-    .last-updated {
-      color: rgba(248, 250, 252, 0.65);
-      font-size: 0.85rem;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-
-
-    .name-input {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      border-radius: 12px;
-      padding: 10px 12px;
-      min-width: 240px;
-    }
-
-    .name-input:focus {
-      outline: 2px solid rgba(56, 189, 248, 0.5);
-      outline-offset: 2px;
-    }
-
-    .helper-text {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-    
-    .status-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-      margin-bottom: 40px;
-    }
-    
-    .status-card {
-      --card-accent: var(--accent);
-      background: var(--surface);
-      border-radius: 22px;
-      padding: 28px;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-soft);
-      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      animation: fadeInUp 0.6s ease;
-    }
-    
-    .status-card:hover {
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
       transform: translateY(-4px);
-      border-color: rgba(35, 211, 181, 0.45);
-      box-shadow: 0 28px 60px rgba(6, 10, 15, 0.6);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
-    
-    .status-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(120deg, transparent 0%, var(--card-accent) 50%, transparent 100%);
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
     }
-    
-    .status-card.success {
-      --card-accent: var(--success);
-    }
-    
-    .status-card.warning {
-      --card-accent: var(--accent-warm);
-    }
-    
-    .status-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .status-card-title {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      font-weight: 600;
-    }
-    
-    .status-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.15rem;
-      background: rgba(35, 211, 181, 0.12);
-      color: var(--accent);
-    }
-    
-    .status-icon.balance {
-      background: rgba(56, 189, 248, 0.12);
-      color: #38bdf8;
-    }
-    
-    .status-icon.status {
-      background: rgba(34, 197, 94, 0.12);
-      color: var(--success);
-    }
-    
-    .status-card-value {
-      font-size: clamp(1.9rem, 2.6vw, 2.6rem);
-      font-weight: 700;
-      margin-bottom: 10px;
-      color: var(--text-primary);
-    }
-    
-    .status-card-label {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-    
+
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 999px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      margin-top: 12px;
       border: 1px solid transparent;
     }
-    
+
     .status-badge.paid {
       background: rgba(34, 197, 94, 0.12);
-      color: var(--success);
-      border-color: rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+      border-color: rgba(34, 197, 94, 0.35);
     }
-    
-    .status-badge.pending {
-      background: rgba(239, 68, 68, 0.12);
-      color: var(--danger);
-      border-color: rgba(239, 68, 68, 0.35);
-    }
-    
+
     .status-badge.partial {
       background: rgba(249, 115, 22, 0.12);
-      color: var(--warning);
+      color: #f59e0b;
       border-color: rgba(249, 115, 22, 0.35);
     }
-    
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 40px;
-    }
-    
-    .content-card {
-      background: var(--surface);
-      border-radius: 22px;
-      padding: 32px;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-card);
-      animation: fadeInUp 0.6s ease;
-    }
-    
-    .content-card h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: var(--text-primary);
+
+    .status-badge.pending {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.35);
     }
 
-    .section-subtitle {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      margin-bottom: 20px;
-    }
-    
-    .content-card h3 i {
-      color: var(--accent);
-    }
-    
-    .package-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 16px 18px;
-      border: 1px solid rgba(38, 50, 65, 0.75);
-      border-radius: 16px;
-      background: var(--surface-soft);
+    .status-badge.warning {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.35);
     }
 
-    .package-item + .package-item {
-      margin-top: 12px;
-    }
-    
-    .package-item i {
-      color: var(--accent);
-      font-size: 1.1rem;
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(35, 211, 181, 0.14);
-    }
-    
-    .package-item-content {
-      flex: 1;
-    }
-    
-    .package-item h4 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-    
-    .package-item p {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin: 0;
-    }
-
-    .addon-highlight {
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(234, 179, 8, 0.08) 100%);
-      border: 1px solid rgba(249, 115, 22, 0.35);
-      border-radius: 18px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.06);
-    }
-
-    .addon-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .addon-note {
-      color: var(--text-secondary);
-      margin: 0;
-    }
-    
-    .price-tag {
-      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
-      color: #0b0e12;
-      padding: 8px 16px;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 1.15rem;
-      white-space: nowrap;
-    }
-    
-    .transfer-details {
-      background: linear-gradient(135deg, rgba(35, 211, 181, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%);
-      border-radius: 18px;
-      padding: 24px;
-      margin-top: 24px;
-      border: 1px solid rgba(35, 211, 181, 0.25);
-    }
-    
-    .transfer-details h4 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-primary);
-    }
-    
-    .transfer-info {
-      display: grid;
-      gap: 12px;
-    }
-    
-    .transfer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background: rgba(11, 14, 18, 0.6);
-      border-radius: 12px;
-      border: 1px solid rgba(38, 50, 65, 0.6);
-    }
-    
-    .transfer-label {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-    
-    .transfer-value {
-      font-weight: 600;
-      font-size: 1rem;
-      font-family: "IBM Plex Mono", "Courier New", monospace;
-      color: var(--text-primary);
-    }
-    
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-top: 24px;
-    }
-    
     .action-btn {
-      flex: 1;
-      padding: 16px 22px;
-      border: none;
-      border-radius: 14px;
-      font-weight: 600;
-      font-size: 0.98rem;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 12px 24px rgba(6, 10, 15, 0.35);
+      transition: all 0.3s ease;
     }
-    
-    .action-btn.primary {
-      background: linear-gradient(135deg, #23d3b5 0%, #14b8a6 100%);
-      color: #031016;
-    }
-    
-    .action-btn.secondary {
-      background: rgba(15, 23, 42, 0.7);
-      color: var(--text-primary);
-      border: 1px solid rgba(38, 50, 65, 0.9);
-    }
-    
+
     .action-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 18px 36px rgba(6, 10, 15, 0.5);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
     }
 
     .action-btn:focus-visible {
-      outline: 2px solid rgba(56, 189, 248, 0.6);
+      outline: 2px solid rgba(56, 189, 248, 0.7);
       outline-offset: 2px;
     }
 
-    .primary-cta {
-      grid-column: 1 / -1;
-      background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
-      color: #0b0e12;
-      font-size: 1.02rem;
-    }
-
-    .status-help {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .status-help i {
-      color: var(--accent);
-    }
-    
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    @media (max-width: 992px) {
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .dashboard-header h1 {
-        font-size: 2rem;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .dashboard-container {
-        padding: 80px 16px 40px;
-      }
-      
-      .status-cards {
-        grid-template-columns: 1fr;
-      }
-      
-      .quick-actions {
-        grid-template-columns: 1fr;
-      }
-      
-      .content-card {
-        padding: 24px;
-      }
-
-      .package-item {
-        padding: 14px 14px;
-      }
-
-      .transfer-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-      }
-
-      .transfer-value {
-        width: 100%;
-        word-break: break-word;
-      }
-
-      .name-input {
-        width: 100%;
-        min-width: 0;
-      }
-
-      .addon-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .primary-cta {
-        position: sticky;
-        bottom: 68px;
-        z-index: 998;
-      }
-    }
-    
-    /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(18, 26, 36, 0.9);
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-around;
-      padding: 12px 0;
-      z-index: 999;
-      backdrop-filter: blur(12px);
-    }
-    
-    .bottom-nav a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.75rem;
-      padding: 8px 12px;
-      border-radius: 12px;
-      transition: all 0.3s ease;
-      min-width: 70px;
-    }
-    
-    .bottom-nav a i {
-      font-size: 1.25rem;
-    }
-    
-    .bottom-nav a:hover,
-    .bottom-nav a.active {
-      color: var(--accent);
-      background: rgba(35, 211, 181, 0.12);
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
-    @media (min-width: 992px) {
+    @media (min-width: 768px) {
       .bottom-nav {
         display: none;
       }
     }
-    
-    @media (max-width: 768px) {
-      .bottom-nav a {
-        font-size: 0.7rem;
-        min-width: 60px;
-      }
-      
-      .bottom-nav a i {
-        font-size: 1.1rem;
-      }
-    }
-    
-    /* Print Styles */
+
     @media print {
       body {
-        background: white;
-        color: black;
-        padding: 0;
+        background: #ffffff;
+        color: #111827;
       }
-      
-      .header-area,
-      .bottom-nav,
-      .content-grid,
-      .action-btn,
+
       nav,
-      .quick-actions {
+      .bottom-nav,
+      .action-btn {
         display: none !important;
       }
-      
-      .dashboard-container {
-        padding: 20px;
-        max-width: 100%;
-      }
-      
-      .dashboard-header h1 {
-        color: #1e3a8a;
-        -webkit-text-fill-color: #1e3a8a;
-      }
-      
-      .dashboard-header p {
-        color: #666;
-      }
-      
-      .status-cards {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        page-break-inside: avoid;
-      }
-      
-      .status-card {
-        border: 2px solid #333;
-        background: white;
-        page-break-inside: avoid;
-      }
-      
-      .status-card::before {
-        background: #1e3a8a !important;
-      }
-      
-      .status-card-title,
-      .status-card-label,
-      .status-card-value,
-      .status-badge,
-      .transfer-label,
-      .transfer-value,
-      h1, h2, h3, h4, h5, h6, p {
-        color: black !important;
-        -webkit-text-fill-color: black !important;
-      }
-      
-      .status-icon {
-        border: 1px solid #333;
-      }
-      
-      .quick-actions {
-        display: none !important;
-      }
-      
+
       .print-summary {
         display: block !important;
-        margin-top: 30px;
-        padding: 20px;
-        border: 2px solid #333;
-        page-break-inside: avoid;
-      }
-      
-      .print-summary h3 {
-        color: #1e3a8a !important;
-        margin-bottom: 15px;
-      }
-      
-      .print-summary-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #ccc;
-      }
-      
-      .print-summary-row:last-child {
-        border-bottom: 2px solid #333;
-        font-weight: bold;
-        font-size: 1.2rem;
       }
     }
-    
+
     .print-summary {
       display: none;
     }
   </style>
 </head>
-
-<body>
-
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html" class="active">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-            </ul>
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
-
-  <!-- Modern Dashboard -->
-  <div class="dashboard-container">
-    <!-- Header -->
-    <div class="dashboard-header">
-      <h1>Payment Dashboard</h1>
-      <p id="user-name">Welcome back, Loading...</p>
-      <div class="last-updated" id="last-updated" aria-live="polite">Last updated: --</div>
-    </div>
-
-    <!-- Status Cards -->
-    <div class="status-cards">
-      <div class="status-card">
-        <div class="status-card-header">
-          <span class="status-card-title">Outstanding Balance</span>
-          <div class="status-icon balance">
-            <i class="fas fa-dollar-sign"></i>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
           </div>
-        </div>
-        <div class="status-card-value" id="amt-outstanding" aria-live="polite">$0</div>
-        <div class="status-card-label">Amount to be paid</div>
-      </div>
-
-      <div class="status-card success">
-        <div class="status-card-header">
-          <span class="status-card-title">Payment Status</span>
-          <div class="status-icon status">
-            <i class="fas fa-check-circle"></i>
-          </div>
-        </div>
-        <div class="status-card-value" style="font-size: 1.75rem;" id="financial-status" aria-live="polite">Pending</div>
-        <div class="status-badge pending" id="status-badge">Processing</div>
-        <div class="status-help" title="Paid = balance $0. Partial = payment received but balance remains. Pending = no payment recorded.">
-          <i class="fas fa-info-circle"></i>
-          Paid, Partial, or Pending
-        </div>
-      </div>
-
-      <div class="status-card">
-        <div class="status-card-header">
-          <span class="status-card-title">Total Package</span>
-          <div class="status-icon balance">
-            <i class="fas fa-receipt"></i>
-          </div>
-        </div>
-        <div class="status-card-value" id="total-package">$650.00</div>
-        <div class="status-card-label">Full package cost</div>
-      </div>
-
-      <div class="status-card warning" id="due-card">
-        <div class="status-card-header">
-          <span class="status-card-title">Payment Due Date</span>
-          <div class="status-icon balance">
-            <i class="fas fa-calendar-alt"></i>
-          </div>
-        </div>
-        <div class="status-card-value" style="font-size: 1.75rem;" id="due-date-value">Jul 21</div>
-        <div class="status-card-label" id="due-date-year">2026</div>
-        <div class="status-badge warning" id="due-badge" style="background: rgba(245, 87, 108, 0.15); color: #f5576c;">
-          <i class="fas fa-clock"></i> Payment Required
-        </div>
-      </div>
-    </div>
-
-    <!-- Content Grid -->
-    <div class="content-grid">
-      <!-- Package Includes -->
-      <div class="content-card">
-        <h3><i class="fas fa-box-open"></i> What's Included</h3>
-        <p class="section-subtitle">Everything in your weekend package.</p>
-        
-        <div class="package-item">
-          <i class="fas fa-golf-ball"></i>
-          <div class="package-item-content">
-            <h4>Golf Weekend</h4>
-            <p>Full rounds Saturday and Sunday with carts included</p>
-          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
         </div>
 
-        <div class="package-item">
-          <i class="fas fa-bed"></i>
-          <div class="package-item-content">
-            <h4>Accommodation</h4>
-            <p>2 nights - Friday & Saturday</p>
-          </div>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
         </div>
 
-        <div class="package-item">
-          <i class="fas fa-utensils"></i>
-          <div class="package-item-content">
-            <h4>Full Breakfast Buffet</h4>
-             <p>Both mornings included</p>
-          </div>
-        </div>
-
-        <div class="package-item">
-          <i class="fas fa-trophy"></i>
-          <div class="package-item-content">
-            <h4>Prizes & Awards</h4>
-            <p>Champion Green Jacket, HC Cup, Spirit Award, milestone awards, and more</p>
-          </div>
-        </div>
-
-        <div class="package-item">
-          <i class="fas fa-gift"></i>
-          <div class="package-item-content">
-            <h4>Memorabilia</h4>
-            <p>This year's edition of Hackers Cup memorabilia</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Optional Friday Skins -->
-      <div class="content-card">
-        <h3><i class="fas fa-plus-circle"></i> Optional Add-On</h3>
-        <p class="section-subtitle">Level up your weekend with Friday skins.</p>
-        
-        <div class="addon-highlight">
-          <div class="addon-header">
-            <h4 style="margin: 0; font-size: 1.25rem; color: var(--text-primary);">Friday Skins</h4>
-            <div class="price-tag">$80</div>
-          </div>
-          <p class="addon-note">Get a head start on the competition. Cash on the day.</p>
-        </div>
-
-        <div class="package-item">
-          <i class="fas fa-golf-ball"></i>
-          <div class="package-item-content">
-            <h4>Friday Golf Round</h4>
-            <p>Full 18 holes to warm up</p>
-          </div>
-        </div>
-
-        <div class="package-item">
-          <i class="fas fa-golf-ball"></i>
-          <div class="package-item-content">
-            <h4>Golf Carts</h4>
-            <p>Included for Friday round</p>
-          </div>
-        </div>
-
-        <div class="package-item">
-          <i class="fas fa-coins"></i>
-          <div class="package-item-content">
-            <h4>Skins Pool</h4>
-            <p>Contribution to competitive pool</p>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-          <button class="action-btn primary primary-cta" onclick="copyBankDetails()">
-            <i class="fas fa-copy"></i>
-            Copy Payment Details
-          </button>
-          <button class="action-btn secondary" onclick="downloadSummaryPdf()">
-            <i class="fas fa-file-pdf"></i>
-            Download PDF
-          </button>
-          <button class="action-btn secondary" onclick="window.location.href='contact.html'">
-            <i class="fas fa-question-circle"></i>
-            Need Help?
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <div class="content-card">
-      <h3><i class="fas fa-university"></i> Bank Transfer Details</h3>
-      <p class="section-subtitle">Use these details when paying your balance.</p>
-      <div class="transfer-details">
-        <div class="transfer-info">
-          <div class="transfer-row">
-            <span class="transfer-label">BSB</span>
-            <span class="transfer-value">062-217</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-8 items-center">
+        <div class="space-y-6 animate-slide-up">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="wallet" class="w-4 h-4 text-hackers-sky"></i>
+            <span class="text-sm font-medium text-gray-300">Payment Dashboard</span>
           </div>
-          <div class="transfer-row">
-            <span class="transfer-label">Account Number</span>
-            <span class="transfer-value">10521045</span>
+
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+            Keep your
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Hackers Cup</span>
+            balance on track.
+          </h1>
+
+          <p id="user-name" class="text-lg text-gray-300">Welcome back, Loading...</p>
+          <p id="last-updated" class="text-xs uppercase tracking-[0.2em] text-gray-400">Last updated: --</p>
+        </div>
+
+        <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-[0.25em] text-gray-400">Outstanding Balance</p>
+              <p id="amt-outstanding" class="text-4xl font-bold text-white mt-2">$0</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="dollar-sign" class="w-6 h-6 text-hackers-sky"></i>
+            </div>
           </div>
-          <div class="transfer-row">
-            <span class="transfer-label">Reference</span>
-            <span class="transfer-value" id="ref-value">HC26 + Your Name</span>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <div class="status-badge pending" id="status-badge">Processing</div>
+            <span class="text-sm text-gray-400">Paid, Partial, or Pending</span>
+          </div>
+
+          <div class="mt-6 grid grid-cols-2 gap-4">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Status</p>
+              <p id="financial-status" class="text-lg font-semibold mt-2">Pending</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4" id="due-card">
+              <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Due Date</p>
+              <p class="text-lg font-semibold mt-2" id="due-date-value">Jul 21</p>
+              <p class="text-xs text-gray-400" id="due-date-year">2026</p>
+              <div class="status-badge warning mt-3" id="due-badge">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                Payment Required
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Hidden Print Summary -->
-    <div class="print-summary">
-      <h3>Payment Summary - Hackers Cup 2026</h3>
-      <div class="print-summary-row">
-        <span>Player Name:</span>
-        <span id="print-name">-</span>
+  </section>
+
+  <!-- Status Grid -->
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Total Package</p>
+            <div class="w-11 h-11 rounded-xl bg-hackers-gold/20 flex items-center justify-center">
+              <i data-lucide="receipt" class="w-5 h-5 text-hackers-gold"></i>
+            </div>
+          </div>
+          <p id="total-package" class="text-2xl font-bold text-white mt-4">$650.00</p>
+          <p class="text-sm text-gray-400 mt-2">Full weekend cost</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Amount Paid</p>
+            <div class="w-11 h-11 rounded-xl bg-emerald-400/20 flex items-center justify-center">
+              <i data-lucide="banknote" class="w-5 h-5 text-emerald-300"></i>
+            </div>
+          </div>
+          <p id="amount-paid" class="text-2xl font-bold text-white mt-4">$0.00</p>
+          <p class="text-sm text-gray-400 mt-2">Applied to your balance</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Reference</p>
+            <div class="w-11 h-11 rounded-xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="fingerprint" class="w-5 h-5 text-hackers-sky"></i>
+            </div>
+          </div>
+          <p id="ref-value" class="text-lg font-semibold text-white mt-4">HC26 + Your Name</p>
+          <p class="text-sm text-gray-400 mt-2">Use this in transfers</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Support</p>
+            <div class="w-11 h-11 rounded-xl bg-purple-400/20 flex items-center justify-center">
+              <i data-lucide="life-buoy" class="w-5 h-5 text-purple-300"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-white mt-4">Need help?</p>
+          <a href="mailto:info@hackerscup.live" class="inline-flex items-center gap-2 text-sm font-semibold text-hackers-sky mt-2">
+            Contact the crew
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
       </div>
-      <div class="print-summary-row">
-        <span>Package Cost:</span>
-        <span>$650.00</span>
+    </div>
+  </section>
+
+  <!-- Details Section -->
+  <section class="py-12 md:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div class="glass-card rounded-3xl p-6 md:p-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+              <i data-lucide="package" class="w-6 h-6 text-hackers-sky"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold">What's Included</h2>
+              <p class="text-sm text-gray-400">Everything in your weekend package.</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="golf" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Golf Weekend</p>
+                <p class="text-sm text-gray-400">Full rounds Saturday and Sunday with carts included</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="bed" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Accommodation</p>
+                <p class="text-sm text-gray-400">2 nights - Friday and Saturday</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="utensils" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Full Breakfast Buffet</p>
+                <p class="text-sm text-gray-400">Both mornings included</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="trophy" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Prizes and Awards</p>
+                <p class="text-sm text-gray-400">Green Jacket, HC Cup, Spirit Award, and more</p>
+              </div>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 flex gap-4">
+              <i data-lucide="gift" class="w-5 h-5 text-hackers-light"></i>
+              <div>
+                <p class="font-semibold">Memorabilia</p>
+                <p class="text-sm text-gray-400">This year's edition of Hackers Cup memorabilia</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+                <i data-lucide="sparkles" class="w-6 h-6 text-hackers-gold"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold">Optional Add-On</h2>
+                <p class="text-sm text-gray-400">Level up your weekend with Friday skins.</p>
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-400/5 border border-amber-300/20 p-5">
+              <div class="flex items-center justify-between">
+                <p class="text-lg font-semibold">Friday Skins</p>
+                <span class="text-xl font-bold text-amber-200">$80</span>
+              </div>
+              <p class="text-sm text-amber-100/80 mt-2">Get a head start on the competition. Cash on the day.</p>
+            </div>
+
+            <div class="mt-5 space-y-3">
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="golf" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Friday Golf Round</p>
+                  <p class="text-sm text-gray-400">Full 18 holes to warm up</p>
+                </div>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="car" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Golf Carts</p>
+                  <p class="text-sm text-gray-400">Included for Friday round</p>
+                </div>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex gap-3">
+                <i data-lucide="coins" class="w-5 h-5 text-amber-200"></i>
+                <div>
+                  <p class="font-semibold">Skins Pool</p>
+                  <p class="text-sm text-gray-400">Contribution to competitive pool</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-3">
+              <button class="action-btn w-full rounded-2xl bg-gradient-to-r from-hackers-sky to-hackers-light text-hackers-dark font-semibold py-3 flex items-center justify-center gap-2" onclick="copyBankDetails()">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                Copy Payment Details
+              </button>
+              <button class="action-btn w-full rounded-2xl bg-white/5 border border-white/10 text-white font-semibold py-3 flex items-center justify-center gap-2" onclick="downloadSummaryPdf()">
+                <i data-lucide="file-down" class="w-4 h-4"></i>
+                Download PDF
+              </button>
+              <button class="action-btn w-full rounded-2xl bg-white/5 border border-white/10 text-white font-semibold py-3 flex items-center justify-center gap-2" onclick="window.location.href='mailto:info@hackerscup.live'">
+                <i data-lucide="help-circle" class="w-4 h-4"></i>
+                Need Help?
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-3xl p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+                <i data-lucide="building-2" class="w-6 h-6 text-hackers-sky"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold">Bank Transfer Details</h2>
+                <p class="text-sm text-gray-400">Use these details when paying your balance.</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">BSB</span>
+                <span class="font-mono text-lg">062-217</span>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">Account</span>
+                <span class="font-mono text-lg">10521045</span>
+              </div>
+              <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+                <span class="text-sm uppercase tracking-[0.2em] text-gray-400">Reference</span>
+                <p class="font-mono text-lg mt-2" id="ref-value-card">HC26 + Your Name</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="print-summary-row">
-        <span>Amount Paid:</span>
-        <span id="print-paid">$0.00</span>
-      </div>
-      <div class="print-summary-row">
-        <span>Outstanding Balance:</span>
-        <span id="print-outstanding">$0.00</span>
-      </div>
-      <div class="print-summary-row">
-        <span>Payment Status:</span>
-        <span id="print-status">Pending</span>
-      </div>
-      <div class="print-summary-row">
-        <span>Payment Due Date:</span>
-        <span>July 21, 2026</span>
-      </div>
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
-        <p><strong>Bank Transfer Details:</strong></p>
-        <p>BSB: 062-217</p>
-        <p>Account Number: 10521045</p>
-        <p id="print-reference">Reference: HC26 + Your Name</p>
-      </div>
+    </div>
+  </section>
+
+  <div class="print-summary">
+    <h3>Payment Summary - Hackers Cup 2026</h3>
+    <div class="print-summary-row">
+      <span>Player Name:</span>
+      <span id="print-name">-</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Package Cost:</span>
+      <span>$650.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Amount Paid:</span>
+      <span id="print-paid">$0.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Outstanding Balance:</span>
+      <span id="print-outstanding">$0.00</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Payment Status:</span>
+      <span id="print-status">Pending</span>
+    </div>
+    <div class="print-summary-row">
+      <span>Payment Due Date:</span>
+      <span>July 21, 2026</span>
+    </div>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <p><strong>Bank Transfer Details:</strong></p>
+      <p>BSB: 062-217</p>
+      <p>Account Number: 10521045</p>
+      <p id="print-reference">Reference: HC26 + Your Name</p>
     </div>
   </div>
 
   <div class="bottom-nav">
-    <a href="index.html">
-      <i class="fas fa-home"></i>
-      Home
-    </a>
-    <a href="payment.html" class="active">
-      <i class="fas fa-dollar-sign"></i>
-      Payment
-    </a>
-    <a href="podcast.html">
-      <i class="fas fa-podcast"></i>
-      Podcast
-    </a>
-    <a href="score.html">
-      <i class="fas fa-chart-line"></i>
-      Score
-    </a>
+    <div class="max-w-7xl mx-auto px-6 py-3">
+      <div class="flex items-center justify-between text-xs text-gray-300">
+        <a href="index.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="home" class="w-5 h-5"></i>
+          Home
+        </a>
+        <a href="payment.html" class="flex flex-col items-center gap-1 text-white">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+          Payment
+        </a>
+        <a href="podcast.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+          Podcast
+        </a>
+        <a href="score.html" class="flex flex-col items-center gap-1">
+          <i data-lucide="line-chart" class="w-5 h-5"></i>
+          Score
+        </a>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -993,12 +550,25 @@
   <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
   <script src="assets/js/custom.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -1013,10 +583,12 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    getAnalytics(app);
     const database = getDatabase();
     const db = getFirestore(app);
     const auth = getAuth(app);
+
+    const totalCost = 650;
 
     function formatCurrency(value) {
       const numberValue = Number(value);
@@ -1039,7 +611,16 @@
       const name = displayName && displayName.trim() !== '' ? displayName.trim() : 'Player';
       document.getElementById('user-name').textContent = `Welcome back, ${name}`;
       document.getElementById('ref-value').textContent = `HC26 ${name}`;
+      document.getElementById('ref-value-card').textContent = `HC26 ${name}`;
+      document.getElementById('print-name').textContent = name;
+      document.getElementById('print-reference').textContent = `Reference: HC26 ${name}`;
       window.userDisplayName = name;
+    }
+
+    function updateAmountPaid(outstandingValue) {
+      const paid = totalCost - (Number.isNaN(outstandingValue) ? 0 : outstandingValue);
+      document.getElementById('amount-paid').textContent = formatCurrency(Math.max(paid, 0));
+      document.getElementById('print-paid').textContent = formatCurrency(Math.max(paid, 0));
     }
 
     function getDisplayName(user) {
@@ -1063,20 +644,27 @@
           if (amtOutstandingValue !== null && amtOutstandingValue !== undefined) {
             const formatted = formatCurrency(amtOutstandingValue);
             document.getElementById('amt-outstanding').textContent = formatted;
+            document.getElementById('print-outstanding').textContent = formatted;
+            updateAmountPaid(Number(amtOutstandingValue));
             updatePaymentIndicators(amtOutstandingValue, document.getElementById('financial-status').textContent);
           } else {
             document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+            document.getElementById('print-outstanding').textContent = formatCurrency(0);
+            updateAmountPaid(0);
             updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
           }
         } else {
           console.log("No such document!");
           document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+          document.getElementById('print-outstanding').textContent = formatCurrency(0);
+          updateAmountPaid(0);
           updatePaymentIndicators(0, document.getElementById('financial-status').textContent);
         }
         updateLastUpdated();
       }).catch((error) => {
         console.error("Error getting document:", error);
         document.getElementById('amt-outstanding').textContent = formatCurrency(0);
+        document.getElementById('print-outstanding').textContent = formatCurrency(0);
       });
     }
 
@@ -1087,11 +675,11 @@
           const financialStatusValue = docSnap.data().financialStatus;
           if (financialStatusValue !== null && financialStatusValue !== undefined) {
             document.getElementById('financial-status').textContent = financialStatusValue;
-            
-            // Update badge
+            document.getElementById('print-status').textContent = financialStatusValue;
+
             const badge = document.getElementById('status-badge');
             badge.className = 'status-badge';
-            
+
             if (financialStatusValue.toLowerCase() === 'paid') {
               badge.classList.add('paid');
               badge.textContent = 'Paid';
@@ -1106,12 +694,14 @@
           } else {
             document.getElementById('financial-status').textContent = 'Pending';
             document.getElementById('status-badge').textContent = 'Payment Pending';
+            document.getElementById('print-status').textContent = 'Pending';
             updatePaymentIndicators(getOutstandingValue(), 'Pending');
           }
         } else {
           console.log("No such document!");
           document.getElementById('financial-status').textContent = 'Pending';
           document.getElementById('status-badge').textContent = 'Payment Pending';
+          document.getElementById('print-status').textContent = 'Pending';
           updatePaymentIndicators(getOutstandingValue(), 'Pending');
         }
         updateLastUpdated();
@@ -1119,6 +709,7 @@
         console.error("Error getting document:", error);
         document.getElementById('financial-status').textContent = 'Pending';
         document.getElementById('status-badge').textContent = 'Payment Pending';
+        document.getElementById('print-status').textContent = 'Pending';
       });
     }
 
@@ -1143,7 +734,7 @@
 
         dueCard.classList.remove('warning');
         dueValue.textContent = 'No Payment Due';
-        dueValue.style.color = 'var(--success)';
+        dueValue.style.color = '#22c55e';
         dueYear.textContent = '';
         dueBadge.className = 'status-badge paid';
         dueBadge.style.display = 'none';
@@ -1155,8 +746,11 @@
       dueValue.style.color = '';
       dueYear.textContent = '2026';
       dueBadge.className = 'status-badge warning';
-      dueBadge.innerHTML = '<i class="fas fa-clock"></i> Payment Required';
-      dueBadge.style.display = 'inline-block';
+      dueBadge.innerHTML = '<i data-lucide="clock" class="w-3.5 h-3.5"></i> Payment Required';
+      dueBadge.style.display = 'inline-flex';
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
     }
 
     auth.onAuthStateChanged((user) => {
@@ -1169,33 +763,37 @@
       }
     });
 
-    // Copy bank details function
     window.copyBankDetails = function() {
       const reference = document.getElementById('ref-value').textContent;
       const details = `BSB: 062-217\nAccount: 10521045\nReference: ${reference}`;
       navigator.clipboard.writeText(details).then(() => {
         const btn = event.target.closest('.action-btn');
         const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Copied!';
         btn.style.background = 'var(--success-gradient)';
-        
+
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+
         setTimeout(() => {
           btn.innerHTML = originalHTML;
           btn.style.background = '';
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
         }, 2000);
       }).catch(err => {
         console.error('Failed to copy:', err);
         alert('Failed to copy. Please copy manually.');
       });
     };
-    
-    // Download PDF summary
+
     window.downloadSummaryPdf = function() {
       const userName = document.getElementById('user-name').textContent.replace('Welcome back, ', '');
       const outstanding = document.getElementById('amt-outstanding').textContent;
       const status = document.getElementById('financial-status').textContent;
       const reference = document.getElementById('ref-value').textContent;
-      const totalCost = 650;
       const outstandingNum = parseFloat(outstanding.replace(/[^0-9.]/g, ''));
       const amountPaid = totalCost - (Number.isNaN(outstandingNum) ? 0 : outstandingNum);
       const { jsPDF } = window.jspdf;
