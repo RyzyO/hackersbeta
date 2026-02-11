@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Weather - Worrigee, NSW | Hackers Cup</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 3s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* Glassmorphism Utilities */
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Hero Gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+    
+    /* Loading Spinner */
+    .loader {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Weather specific styles */
+    .weather-icon-large {
+      font-size: 120px;
+      line-height: 1;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+    }
+
+    .temp-display {
+      font-size: 6rem;
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .forecast-day {
+      transition: all 0.3s ease;
+    }
+
+    .forecast-day:hover {
+      transform: translateY(-8px);
+    }
+
+    /* Weather background effects */
+    .weather-bg {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .weather-bg::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+      top: -250px;
+      right: -250px;
+      animation: pulse-slow 4s infinite;
+    }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  
+  <!-- Preloader -->
+  <div id="preloader" class="fixed inset-0 z-[100] bg-hackers-dark flex items-center justify-center transition-opacity duration-500">
+    <div class="text-center">
+      <div class="loader mx-auto mb-4"></div>
+      <p class="text-gray-400 text-sm tracking-wider uppercase">Loading Weather...</p>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+        
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="weather.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Weather</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        </div>
+        
+        <!-- Mobile Menu Button -->
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="weather.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Weather</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-20 px-4 pb-8 max-w-7xl mx-auto">
+    
+    <!-- Header -->
+    <div class="text-center mb-8 animate-fade-in">
+      <div class="flex items-center justify-center gap-3 mb-3">
+        <i data-lucide="cloud-sun" class="w-8 h-8 text-hackers-sky"></i>
+        <h1 class="text-3xl md:text-4xl font-bold">Weather Forecast</h1>
+      </div>
+      <p class="text-gray-400">Worrigee, NSW, Australia</p>
+      <p id="last-updated" class="text-sm text-gray-500 mt-2"></p>
+    </div>
+
+    <!-- Current Weather Section -->
+    <div class="mb-8 animate-slide-up">
+      <div class="glass-card rounded-3xl p-8 weather-bg">
+        <div class="relative z-10">
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-semibold mb-2 text-gray-300">Current Weather</h2>
+          </div>
+          
+          <div id="current-weather" class="flex flex-col items-center">
+            <!-- Loading state -->
+            <div class="loader mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-Day Forecast Section -->
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+        <i data-lucide="calendar-days" class="w-6 h-6 text-hackers-sky"></i>
+        7-Day Forecast
+      </h2>
+      <div id="forecast" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+        <!-- Forecast cards will be inserted here -->
+      </div>
+    </div>
+
+    <!-- Weather Details -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-hackers-sky/20 flex items-center justify-center">
+            <i data-lucide="wind" class="w-5 h-5 text-hackers-sky"></i>
+          </div>
+          <h3 class="font-semibold text-gray-300">Wind Speed</h3>
+        </div>
+        <p id="wind-speed" class="text-3xl font-bold text-white">--</p>
+        <p class="text-sm text-gray-400 mt-1">km/h</p>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+            <i data-lucide="droplets" class="w-5 h-5 text-blue-400"></i>
+          </div>
+          <h3 class="font-semibold text-gray-300">Humidity</h3>
+        </div>
+        <p id="humidity" class="text-3xl font-bold text-white">--</p>
+        <p class="text-sm text-gray-400 mt-1">%</p>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+            <i data-lucide="gauge" class="w-5 h-5 text-purple-400"></i>
+          </div>
+          <h3 class="font-semibold text-gray-300">Pressure</h3>
+        </div>
+        <p id="pressure" class="text-3xl font-bold text-white">--</p>
+        <p class="text-sm text-gray-400 mt-1">hPa</p>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+            <i data-lucide="cloud-rain" class="w-5 h-5 text-orange-400"></i>
+          </div>
+          <h3 class="font-semibold text-gray-300">Precipitation</h3>
+        </div>
+        <p id="precipitation" class="text-3xl font-bold text-white">--</p>
+        <p class="text-sm text-gray-400 mt-1">mm</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Mobile Navigation -->
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="weather.html" class="flex flex-col items-center justify-center w-full h-full text-hackers-sky">
+        <i data-lucide="cloud-sun" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Weather</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    // Hide preloader
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+          preloader.style.opacity = '0';
+          setTimeout(() => {
+            preloader.style.display = 'none';
+          }, 500);
+        }
+      }, 500);
+    });
+    
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    // Weather Icons mapping based on WMO Weather codes
+    function getWeatherIcon(weatherCode, isDay = true) {
+      const weatherIcons = {
+        0: 'sun',           // Clear sky
+        1: 'cloud-sun',     // Mainly clear
+        2: 'cloud',         // Partly cloudy
+        3: 'cloud',         // Overcast
+        45: 'cloud-fog',    // Fog
+        48: 'cloud-fog',    // Depositing rime fog
+        51: 'cloud-drizzle', // Light drizzle
+        53: 'cloud-drizzle', // Moderate drizzle
+        55: 'cloud-drizzle', // Dense drizzle
+        61: 'cloud-rain',   // Slight rain
+        63: 'cloud-rain',   // Moderate rain
+        65: 'cloud-rain',   // Heavy rain
+        71: 'cloud-snow',   // Slight snow
+        73: 'cloud-snow',   // Moderate snow
+        75: 'cloud-snow',   // Heavy snow
+        77: 'snowflake',    // Snow grains
+        80: 'cloud-rain',   // Slight rain showers
+        81: 'cloud-rain',   // Moderate rain showers
+        82: 'cloud-rain',   // Violent rain showers
+        85: 'cloud-snow',   // Slight snow showers
+        86: 'cloud-snow',   // Heavy snow showers
+        95: 'cloud-lightning', // Thunderstorm
+        96: 'cloud-lightning', // Thunderstorm with slight hail
+        99: 'cloud-lightning', // Thunderstorm with heavy hail
+      };
+      
+      return weatherIcons[weatherCode] || 'cloud';
+    }
+
+    function getWeatherDescription(weatherCode) {
+      const descriptions = {
+        0: 'Clear Sky',
+        1: 'Mainly Clear',
+        2: 'Partly Cloudy',
+        3: 'Overcast',
+        45: 'Foggy',
+        48: 'Foggy',
+        51: 'Light Drizzle',
+        53: 'Drizzle',
+        55: 'Heavy Drizzle',
+        61: 'Light Rain',
+        63: 'Rain',
+        65: 'Heavy Rain',
+        71: 'Light Snow',
+        73: 'Snow',
+        75: 'Heavy Snow',
+        77: 'Snow Grains',
+        80: 'Light Showers',
+        81: 'Showers',
+        82: 'Heavy Showers',
+        85: 'Snow Showers',
+        86: 'Heavy Snow Showers',
+        95: 'Thunderstorm',
+        96: 'Thunderstorm with Hail',
+        99: 'Severe Thunderstorm',
+      };
+      
+      return descriptions[weatherCode] || 'Unknown';
+    }
+
+    // Fetch weather data from Open-Meteo API
+    async function fetchWeather() {
+      try {
+        // Coordinates for Worrigee, NSW
+        const lat = -34.878;
+        const lon = 150.744;
+        
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia/Sydney`
+        );
+        
+        if (!response.ok) {
+          throw new Error('Weather data fetch failed');
+        }
+        
+        const data = await response.json();
+        displayCurrentWeather(data.current, data.current_units);
+        displayForecast(data.daily, data.daily_units);
+        
+        // Update last updated time
+        const now = new Date();
+        document.getElementById('last-updated').textContent = 
+          `Last updated: ${now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}`;
+        
+      } catch (error) {
+        console.error('Error fetching weather:', error);
+        document.getElementById('current-weather').innerHTML = `
+          <div class="text-center text-red-400">
+            <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-2"></i>
+            <p>Unable to load weather data</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    function displayCurrentWeather(current, units) {
+      const iconName = getWeatherIcon(current.weather_code, true);
+      const description = getWeatherDescription(current.weather_code);
+      
+      document.getElementById('current-weather').innerHTML = `
+        <div class="text-center animate-float">
+          <i data-lucide="${iconName}" class="weather-icon-large mx-auto mb-4 text-hackers-light"></i>
+        </div>
+        <div class="text-center">
+          <div class="temp-display mb-2">${Math.round(current.temperature_2m)}°</div>
+          <p class="text-xl text-gray-300 mb-1">${description}</p>
+          <p class="text-gray-400">Feels like ${Math.round(current.apparent_temperature)}°C</p>
+        </div>
+      `;
+      
+      // Update detail cards
+      document.getElementById('wind-speed').textContent = Math.round(current.wind_speed_10m);
+      document.getElementById('humidity').textContent = current.relative_humidity_2m;
+      document.getElementById('pressure').textContent = Math.round(current.surface_pressure);
+      document.getElementById('precipitation').textContent = current.precipitation.toFixed(1);
+      
+      lucide.createIcons();
+    }
+
+    function displayForecast(daily, units) {
+      const forecastContainer = document.getElementById('forecast');
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      let forecastHTML = '';
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(daily.time[i]);
+        const dayName = i === 0 ? 'Today' : days[date.getDay()];
+        const iconName = getWeatherIcon(daily.weather_code[i]);
+        const maxTemp = Math.round(daily.temperature_2m_max[i]);
+        const minTemp = Math.round(daily.temperature_2m_min[i]);
+        const rainChance = daily.precipitation_probability_max[i];
+        const precipitation = daily.precipitation_sum[i];
+        
+        forecastHTML += `
+          <div class="forecast-day glass-card rounded-2xl p-4 text-center">
+            <p class="font-semibold text-gray-300 mb-3">${dayName}</p>
+            <i data-lucide="${iconName}" class="w-12 h-12 mx-auto mb-3 text-hackers-light"></i>
+            <div class="mb-2">
+              <span class="text-2xl font-bold text-white">${maxTemp}°</span>
+              <span class="text-lg text-gray-400 ml-1">${minTemp}°</span>
+            </div>
+            ${rainChance > 0 ? `
+              <div class="flex items-center justify-center gap-1 text-sm text-blue-400">
+                <i data-lucide="droplets" class="w-4 h-4"></i>
+                <span>${rainChance}%</span>
+              </div>
+            ` : ''}
+            ${precipitation > 0 ? `
+              <p class="text-xs text-gray-500 mt-1">${precipitation.toFixed(1)}mm</p>
+            ` : ''}
+          </div>
+        `;
+      }
+      
+      forecastContainer.innerHTML = forecastHTML;
+      lucide.createIcons();
+    }
+
+    // Load weather on page load
+    fetchWeather();
+    
+    // Refresh weather every 10 minutes
+    setInterval(fetchWeather, 600000);
+  </script>
+</body>
+</html>
