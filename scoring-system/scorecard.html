@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hackers Cup | Edit Scorecard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background: #0f172a; color: #fff; font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border-radius: 16px; }
+    .kanit-heading { font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: 0.015em; }
+    .score-input { width: 60px; text-align: center; border-radius: 8px; border: 1px solid #38bdf8; background: #1e293b; color: #fff; font-size: 16px; padding: 6px; }
+    .score-input:focus { outline: none; border-color: #0ea5e9; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+  <div class="glass p-8 max-w-2xl w-full mx-auto mt-24">
+    <h1 class="kanit-heading text-2xl mb-6 text-center">Edit Your Scorecard</h1>
+    <div id="scorecard-info" class="mb-6 text-center text-lg"></div>
+    <form id="scorecard-form">
+      <table class="w-full mb-6">
+        <thead>
+          <tr>
+            <th>Hole</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="scorecard-rows"></tbody>
+      </table>
+      <button type="submit" class="w-full bg-hackers-sky hover:bg-hackers-light text-white font-bold py-3 rounded-lg transition-colors">Save Scores</button>
+    </form>
+    <div id="save-msg" class="mt-4 text-green-400 text-center hidden"></div>
+    <div id="error-msg" class="mt-4 text-red-400 text-center hidden"></div>
+  </div>
+  <script>
+    // Get params
+    const urlParams = new URLSearchParams(window.location.search);
+    const day = urlParams.get('day');
+    const displayName = urlParams.get('displayName');
+    document.getElementById('scorecard-info').textContent = `Day: ${day ? day.charAt(0).toUpperCase() + day.slice(1) : ''} | Player: ${displayName || ''}`;
+
+    // Sheet IDs for each day
+    const sheetIds = {
+      friday: '1YzCv3jY5wnfUI1ECZfIIhwqWHyFrCYSLS9wXWs_Rhlw',
+      saturday: '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I',
+      sunday: '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI'
+    };
+    const sheetId = sheetIds[day?.toLowerCase()] || sheetIds['saturday'];
+    const fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(displayName)}`;
+
+    const holes = Array.from({length: 18}, (_, i) => i + 1);
+    const scores = {};
+    holes.forEach(h => scores[h] = '');
+
+    // Fetch scores from Google Sheets
+    fetch(fetchUrl)
+      .then(response => response.text())
+      .then(text => {
+        const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
+        if (!match) throw new Error('Sheet not found or invalid format');
+        const json = JSON.parse(match[1]);
+        const rows = json.table.rows;
+        rows.forEach(r => {
+          const holeNum = r.c[4] ? parseInt(r.c[4].v, 10) : 0; // E
+          const scoreVal = r.c[8] ? parseInt(r.c[8].v, 10) : '';
+          if (holeNum >= 1 && holeNum <= 18) {
+            scores[holeNum] = scoreVal;
+          }
+        });
+      })
+      .catch(() => {
+        document.getElementById('error-msg').textContent = 'Scorecard not found for this player.';
+        document.getElementById('error-msg').classList.remove('hidden');
+      })
+      .finally(() => {
+        // Render score rows
+        const rows = document.getElementById('scorecard-rows');
+        rows.innerHTML = '';
+        holes.forEach(hole => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td class="py-2">${hole}</td><td><input type="number" min="1" max="15" class="score-input" name="score${hole}" value="${scores[hole]}"></td>`;
+          rows.appendChild(tr);
+        });
+      });
+
+    document.getElementById('scorecard-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Collect scores
+      const formData = new FormData(e.target);
+      const scoreData = {};
+      holes.forEach(hole => {
+        scoreData[hole] = formData.get(`score${hole}`);
+      });
+      // TODO: Save to Google Sheets (requires OAuth/server)
+      document.getElementById('save-msg').textContent = 'Scores saved! (Demo only)';
+      document.getElementById('save-msg').classList.remove('hidden');
+      setTimeout(() => document.getElementById('save-msg').classList.add('hidden'), 3000);
+    });
+  </script>
+</body>
+</html>

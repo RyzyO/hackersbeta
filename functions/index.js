@@ -1,3 +1,58 @@
+const functions = require('firebase-functions');
+const { google } = require('googleapis');
+
+// Google Sheets API credentials (Service Account or OAuth2)
+const SHEET_IDS = {
+  friday: '1YzCv3jY5wnfUI1ECZfIIhwqWHyFrCYSLS9wXWs_Rhlw',
+  saturday: '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I',
+  sunday: '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI'
+};
+
+// You must set these as environment variables or use a service account JSON file
+const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+const sheets = google.sheets('v4');
+const auth = new google.auth.JWT(
+  CLIENT_EMAIL,
+  null,
+  PRIVATE_KEY,
+  ['https://www.googleapis.com/auth/spreadsheets']
+);
+
+/**
+ * HTTPS function to update scores in Google Sheets
+ * Expects: { day, displayName, scores: {1: val, 2: val, ...} }
+ */
+exports.saveScorecardToSheet = functions.https.onRequest(async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+  const { day, displayName, scores } = req.body;
+  if (!day || !displayName || !scores) return res.status(400).send('Missing parameters');
+  const sheetId = SHEET_IDS[day.toLowerCase()] || SHEET_IDS.saturday;
+  try {
+    await auth.authorize();
+    // Prepare values for holes 1-18
+    const values = [];
+    for (let h = 1; h <= 18; h++) {
+      values.push([h, scores[h] || '']);
+    }
+    // Update the sheet named displayName, columns E (hole #) and I (score)
+    // You may need to adjust the range and columns as per your sheet structure
+    await sheets.spreadsheets.values.update({
+      auth,
+      spreadsheetId: sheetId,
+      range: `${displayName}!E2:I19`, // Example: rows 2-19, columns E-I
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: values.map(([hole, score]) => [hole, '', '', '', score]) // E=hole, I=score
+      }
+    });
+    res.status(200).send('Scores updated');
+  } catch (err) {
+    console.error('Sheet update error:', err);
+    res.status(500).send('Sheet update failed');
+  }
+});
 /* eslint-disable */
 const { onDocumentWritten } = require("firebase-functions/firestore");
 const { onValueWritten } = require("firebase-functions/v2/database");

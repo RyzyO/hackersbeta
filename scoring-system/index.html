@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hackers Cup | Scoring System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background: #0f172a; color: #fff; font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border-radius: 16px; }
+    .kanit-heading { font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: 0.015em; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+  <div class="glass p-8 max-w-md w-full mx-auto mt-24">
+    <h1 class="kanit-heading text-3xl mb-6 text-center">Hackers Cup Scoring</h1>
+    <form id="scoring-form" class="space-y-6">
+      <div>
+        <label for="day" class="block mb-2 font-semibold">Select Day</label>
+        <select id="day" class="w-full p-3 rounded-lg bg-hackers-dark text-white border border-hackers-sky">
+          <option value="">Choose...</option>
+          <option value="friday">Friday</option>
+          <option value="saturday">Saturday</option>
+          <option value="sunday">Sunday</option>
+        </select>
+      </div>
+      <div>
+        <label for="displayName" class="block mb-2 font-semibold">Enter Your Name</label>
+        <input type="text" id="displayName" class="w-full p-3 rounded-lg bg-hackers-dark text-white border border-hackers-sky" placeholder="Search your name..." autocomplete="off">
+      </div>
+      <button type="submit" class="w-full bg-hackers-sky hover:bg-hackers-light text-white font-bold py-3 rounded-lg transition-colors">Open Scorecard</button>
+    </form>
+    <div id="error-msg" class="mt-4 text-red-400 text-center hidden"></div>
+  </div>
+  <script>
+    document.getElementById('scoring-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const day = document.getElementById('day').value;
+      const displayName = document.getElementById('displayName').value.trim();
+      if (!day || !displayName) {
+        document.getElementById('error-msg').textContent = 'Please select a day and enter your name.';
+        document.getElementById('error-msg').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('error-msg').classList.add('hidden');
+      // Redirect to scorecard page with params
+      window.location.href = `scorecard.html?day=${encodeURIComponent(day)}&displayName=${encodeURIComponent(displayName)}`;
+    });
+  </script>
+</body>
+</html>

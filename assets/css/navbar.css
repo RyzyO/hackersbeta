@@ -1,3 +1,11 @@
+/* Force Kanit Bold Italic for Hackers Cup heading */
+.hackers-cup-heading {
+  font-family: 'Kanit', sans-serif !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.015em !important;
+}
 
   .bottom-nav {
     position: fixed;
