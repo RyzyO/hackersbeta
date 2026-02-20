@@ -382,7 +382,7 @@
           }
 
           // Modal for badge view
-          function showBadgeModal(img, title) {
+          window.showBadgeModal = function(img, title) {
             let modal = document.getElementById('badgeModal');
             if (!modal) {
               modal = document.createElement('div');
