@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Honour Roll Seeder | Hackers Cup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: { hackers: { dark: '#0f172a', navy: '#1e3a5f', sky: '#0ea5e9', light: '#38bdf8', gold: '#f59e0b', surface: '#1e293b' } },
+          animation: { 'fade-in': 'fadeIn 0.5s ease-in-out', 'slide-up': 'slideUp 0.6s ease-out' },
+          keyframes: { fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } }, slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } } }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* copy of site theme CSS (same as index) */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease; }
+    .glass-card:hover { background: rgba(30, 41, 59, 0.8); border-color: rgba(14,165,233,0.3); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); }
+    .badge { background: #0ea5e9; color: #fff; border-radius: 12px; padding: 6px 12px; font-size: 0.85em; margin: 2px; }
+    label { font-weight: 600; }
+    input, textarea { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); color: #e6eef8; padding: 0.6rem; border-radius: 0.5rem; width: 100%; }
+    .btn { background: linear-gradient(90deg,#0ea5e9,#38bdf8); color: #04263b; padding: 0.6rem 1rem; border-radius: 0.5rem; font-weight: 700; }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <!-- Navigation (copied) -->
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight hackers-cup-heading">HACKERS CUP 26</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Home</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="profile.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Profile</a>
+        </div>
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Home</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+        <a href="profile.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Profile</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-28 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="glass-card rounded-3xl p-8 md:p-10">
+      <h1 class="text-2xl md:text-3xl font-bold mb-4">Honour Roll Seeder</h1>
+      <p class="text-gray-300 mb-6">Seed winners (Stableford, Ambrose, Champion, Spirit of Hackers, etc.) into attendee profiles so they appear on user pages.</p>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <label>Event ID (e.g. HC25)</label>
+          <input id="eventId" placeholder="HC25" />
+        </div>
+        <div>
+          <label>Year</label>
+          <input id="eventYear" placeholder="2025" />
+        </div>
+        <div>
+          <label>Location</label>
+          <input id="location" placeholder="Nelson Bay" />
+        </div>
+        <div>
+          <label>Attendees (number)</label>
+          <input id="attendees" placeholder="72" />
+        </div>
+      </div>
+
+      <div class="mt-6 grid md:grid-cols-2 gap-6">
+        <div>
+          <label>Stableford Winner(s)</label>
+          <input id="stableford" placeholder="Name or comma-separated names" />
+        </div>
+        <div>
+          <label>Ambrose Winner(s)</label>
+          <input id="ambrose" placeholder="Name or comma-separated names" />
+        </div>
+        <div>
+          <label>Champion</label>
+          <input id="champion" placeholder="Name" />
+        </div>
+        <div>
+          <label>Spirit of Hackers</label>
+          <input id="spirit" placeholder="Name" />
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <label>Other awards (one per line in format Category: Name)</label>
+        <textarea id="otherAwards" rows="3" placeholder="Best Dress: John Doe\nLong Drive: Jane Smith"></textarea>
+      </div>
+
+      <div class="mt-6 flex items-center gap-3">
+        <button id="seedBtn" class="btn">Seed to Profiles</button>
+        <button id="seedAllBtn" class="btn bg-green-600">Seed Honour Roll (All)</button>
+        <button id="clearBtn" class="btn bg-gray-700 text-white" type="button">Clear</button>
+        <div id="seedStatus" class="text-sm text-gray-300 ml-4"></div>
+      </div>
+
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Results</h3>
+        <div id="results" class="space-y-2 text-sm text-gray-300"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Honour-roll data copied from honour-roll.html — one-click seed uses this
+    const honourRollData = [
+      { eventId: 'HC25', year: 2025, location: 'Nelson Bay', attendees: 72,
+        stableford: ['Brad Grant'], ambrose: ['Dave Dollard','Dan Bennett'], champion: ['Paul Zepernick'], spirit: ['Andrew Murray'] },
+      { eventId: 'HC24', year: 2024, location: 'Worrigee Links', attendees: 67,
+        stableford: ['Willie Cooper'], ambrose: ['Tamas Mendik','Matt Kennerson'], champion: ['Matt Kennerson'], spirit: ['Steve Press'] },
+      { eventId: 'HC23', year: 2023, location: 'Nelson Bay', attendees: 66,
+        stableford: ['Chris Chilcott'], ambrose: ['Dave Dollard','Daniel Bennett'], champion: ['Brendan Oakes'], spirit: ['Brad Rogers'] },
+      { eventId: 'HC22', year: 2022, location: 'Worrigee Links', attendees: 51,
+        stableford: ['Mick Whittaker'], ambrose: ['Mick Whittaker','Glen Marler'], champion: ['Mick Whittaker'], spirit: ['John Winter'] },
+      { eventId: 'HC21', year: 2021, location: 'Nelson Bay', attendees: 56,
+        stableford: ['Ross Chippendale'], ambrose: ['Scott Austin','Josh Fryer'], champion: ['Scott Austin'], spirit: ['Darryn Rooks'] },
+      { eventId: 'HC20', year: 2019, location: 'Worrigee Links', attendees: 69,
+        stableford: ['Duane Roy'], ambrose: ['Steve Shaw','Jacob Peters'], champion: ['Matthew Zibert'], spirit: ['Scott Austin'] },
+      { eventId: 'HC19', year: 2018, location: 'Nelson Bay', attendees: 67,
+        stableford: ['Ross Chippendale'], ambrose: ['Paul Murray','Dan Sullivan'], champion: ['Daniel Graham'], spirit: ['Shaun Ware'] },
+      { eventId: 'HC18', year: 2017, location: 'Worrigee Links', attendees: 68,
+        stableford: ['Mark Lever'], ambrose: ['Matthew Zibert','Ernie Zibert'], champion: ['Daniel Graham'], spirit: ['Trevor Brown'] },
+      { eventId: 'HC17', year: 2016, location: 'Nelson Bay', attendees: 72,
+        stableford: ['Ken Roberts'], ambrose: ['Dave Dollard','Dan Bennett'], champion: ['Dan Bennett'], spirit: ['Tony Wicht'] },
+      { eventId: 'HC16', year: 2015, location: 'Worrigee Links', attendees: 78,
+        stableford: ['Chris Chilcot'], ambrose: ['Shaun Ware','Marcus McDonald'], champion: ['Matthew Zibert'], spirit: ['Adam Paton'] },
+      { eventId: 'HC15', year: 2014, location: 'Nelson Bay', attendees: 79,
+        stableford: ['Shane McDonald'], ambrose: ['Steve Press','Dempster Bleechmore'], champion: ['Steve Walters'] },
+      { eventId: 'HC14', year: 2013, location: 'Worrigee Links', attendees: 79,
+        stableford: ['Justin Knight'], ambrose: ['Martyn Budden','Daniel Graham'], champion: ['Martyn Budden'] },
+      { eventId: 'HC13', year: 2012, location: 'Orange', attendees: 67,
+        stableford: ['Ross Chippdendale'], ambrose: ['Nick Brady','James Brady'], champion: ['Nick Brady'] },
+      { eventId: 'HC12', year: 2011, location: 'Port Macquarie', attendees: 88,
+        stableford: ['Christian Fox'], ambrose: ['Matthew Zibert','Ernie Zibert'], champion: ['Matthew Zibert'] },
+      { eventId: 'HC11', year: 2010, location: 'Worrigee Links', attendees: 92,
+        stableford: ['Tony Best'], ambrose: ['Paul Kedwell','Glenn Roberts'], champion: ['Paul Kedwell'] },
+      { eventId: 'HC10', year: 2009, location: 'Orange', attendees: 73,
+        stableford: ['Martyn Budden'], ambrose: ['Tony Best','Noel Jago'], champion: ['Noel Jago'] },
+      { eventId: 'HC9', year: 2008, location: 'Port Macquarie', attendees: 70,
+        stableford: ['Mick Cooper'], ambrose: ['James Singleton','Luke Singleton'], champion: ['Mick Cooper'] },
+      { eventId: 'HC8', year: 2007, location: 'Canberra', attendees: 52,
+        stableford: ['Christian Fox'], ambrose: ['James Singleton','Luke Singleton'], champion: ['Christian Fox'] },
+      { eventId: 'HC7', year: 2006, location: 'Orange', attendees: 39,
+        stableford: ['Chris Campbell'], ambrose: ['Shane McDonald','Nathan McDonald'], champion: ['Shane McDonald'] },
+      { eventId: 'HC6', year: 2005, location: 'Forster / Tuncurry', attendees: 40,
+        stableford: ['Brendan Oakes'], ambrose: ['Andrew Murray','Brendan Oakes'], champion: ['Brendan Oakes'] },
+      { eventId: 'HC5', year: 2004, location: 'Gerringong / Kiama', attendees: 29,
+        stableford: ['Daniel McFadden'], ambrose: ['Damien Starcic','Cameron Wark','Simon Day'], champion: ['Cameron Wark'] },
+      { eventId: 'HC4', year: 2003, location: 'Orange', attendees: 24,
+        stableford: ['Martyn Budden'], ambrose: ['Martyn Budden','Adam Paton'], champion: ['Martyn Budden'] },
+      { eventId: 'HC3', year: 2002, location: 'Wollongong', attendees: 34,
+        stableford: ['Dale Puxty'], ambrose: ['Scott Anderson','Steve Clark','Phil Carney'], champion: ['Ian Keogh'] },
+      { eventId: 'HC2', year: 2001, location: 'Nelson Bay', attendees: 24,
+        stableford: ['Andrew Bunting'], ambrose: ['Peter Keen','Ken Roberts'], champion: ['Dale Puxty'] },
+      { eventId: 'HC1', year: 2000, location: 'Blue Mountains', attendees: 12,
+        stableford: ['Scott Anderson'], ambrose: ['Mat Beasly','Martyn Budden'], champion: ['Martyn Budden'] }
+    ];
+
+    function splitNames(input) {
+      if (!input) return [];
+      return input.split(/,|\n| and /).map(s => s.trim()).filter(Boolean);
+    }
+
+    function addResult(msg, ok = true) {
+      const results = document.getElementById('results');
+      const el = document.createElement('div');
+      el.textContent = msg;
+      el.style.color = ok ? '#9ae6b4' : '#fda4af';
+      results.prepend(el);
+      console.log(msg);
+    }
+
+    async function seedAwardFor(name, honourObj, awardLabel, flags = {}) {
+      const docRef = db.collection('attendeeProfiles').doc(name);
+      try {
+        const base = { displayName: name };
+        const update = { ...base };
+        // add simple award label to otherAwards
+        update.otherAwards = firebase.firestore.FieldValue.arrayUnion(awardLabel);
+        // add structured honours entry
+        update.honours = firebase.firestore.FieldValue.arrayUnion(honourObj);
+        if (flags.champion) update.champion = true;
+        if (flags.spirit) update.spirit = true;
+        await docRef.set(update, { merge: true });
+        addResult(`Seeded ${awardLabel} → ${name}`);
+        return { ok: true };
+      } catch (e) {
+        addResult(`Error seeding ${awardLabel} → ${name}: ${e.message}`, false);
+        console.error(e);
+        return { ok: false };
+      }
+    }
+
+    document.getElementById('seedBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('seedBtn');
+      btn.disabled = true;
+      document.getElementById('seedStatus').textContent = 'Seeding...';
+      document.getElementById('results').innerHTML = '';
+
+      const eventId = (document.getElementById('eventId').value || '').trim();
+      const year = (document.getElementById('eventYear').value || '').trim();
+      const location = (document.getElementById('location').value || '').trim();
+      const attendees = (document.getElementById('attendees').value || '').trim();
+
+      if (!eventId) {
+        alert('Event ID is required (e.g. HC25)');
+        btn.disabled = false;
+        document.getElementById('seedStatus').textContent = '';
+        return;
+      }
+
+      const stablefordNames = splitNames(document.getElementById('stableford').value);
+      const ambroseNames = splitNames(document.getElementById('ambrose').value);
+      const championNames = splitNames(document.getElementById('champion').value);
+      const spiritNames = splitNames(document.getElementById('spirit').value);
+      const otherLines = (document.getElementById('otherAwards').value || '').split('\n').map(l => l.trim()).filter(Boolean);
+
+      let total = 0, success = 0, failed = 0;
+
+      const makeHonour = (category, nameLabel) => ({ eventId, year: parseInt(year) || null, location, category, text: `${category} - ${eventId}${location ? ' ' + location : ''}` });
+
+      // Stableford
+      for (const n of stablefordNames) {
+        total++;
+        const hon = makeHonour('Stableford');
+        const res = await seedAwardFor(n, hon, `Stableford - ${eventId} ${location}`);
+        if (res.ok) success++; else failed++;
+      }
+      // Ambrose
+      for (const n of ambroseNames) {
+        total++;
+        const hon = makeHonour('Ambrose');
+        const res = await seedAwardFor(n, hon, `Ambrose - ${eventId} ${location}`);
+        if (res.ok) success++; else failed++;
+      }
+      // Champion
+      for (const n of championNames) {
+        total++;
+        const hon = makeHonour('Champion');
+        const res = await seedAwardFor(n, hon, `Champion - ${eventId} ${location}`, { champion: true });
+        if (res.ok) success++; else failed++;
+      }
+      // Spirit
+      for (const n of spiritNames) {
+        total++;
+        const hon = makeHonour('Spirit of Hackers');
+        const res = await seedAwardFor(n, hon, `Spirit of Hackers - ${eventId} ${location}`, { spirit: true });
+        if (res.ok) success++; else failed++;
+      }
+      // Other awards (Category: Name)
+      for (const line of otherLines) {
+        const parts = line.split(':');
+        if (parts.length < 2) continue;
+        const category = parts[0].trim();
+        const names = splitNames(parts.slice(1).join(':'));
+        for (const n of names) {
+          total++;
+          const hon = makeHonour(category);
+          const res = await seedAwardFor(n, hon, `${category} - ${eventId} ${location}`);
+          if (res.ok) success++; else failed++;
+        }
+      }
+
+      // Optionally record attendees count in a central collection for the event
+      if (attendees) {
+        try {
+          await db.collection('events').doc(eventId).set({ attendees: parseInt(attendees) || attendees, location, year: parseInt(year) || year }, { merge: true });
+          addResult(`Saved attendees for ${eventId}: ${attendees}`);
+        } catch (e) {
+          addResult(`Failed to save attendees for ${eventId}: ${e.message}`, false);
+        }
+      }
+
+      document.getElementById('seedStatus').textContent = `Done — updated: ${success}, failed: ${failed}`;
+      btn.disabled = false;
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      ['eventId','eventYear','location','attendees','stableford','ambrose','champion','spirit','otherAwards'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('seedStatus').textContent = '';
+    });
+
+    // Seed the entire honour-roll dataset (one-click)
+    document.getElementById('seedAllBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('seedAllBtn');
+      btn.disabled = true;
+      document.getElementById('seedStatus').textContent = 'Seeding honour roll...';
+      document.getElementById('results').innerHTML = '';
+      let total = 0, success = 0, failed = 0;
+
+      for (const ev of honourRollData) {
+        // save event summary
+        try {
+          await db.collection('events').doc(ev.eventId).set({ year: ev.year, location: ev.location, attendees: ev.attendees }, { merge: true });
+          addResult(`Saved event ${ev.eventId} (${ev.location})`);
+        } catch (e) {
+          addResult(`Failed to save event ${ev.eventId}: ${e.message}`, false);
+        }
+
+        const makeHonour = (category, text) => ({ eventId: ev.eventId, year: ev.year, location: ev.location, category, text: text || `${category} - ${ev.eventId} ${ev.location}` });
+
+        // stableford
+        for (const n of (ev.stableford || [])) {
+          total++;
+          const res = await seedAwardFor(n, makeHonour('Stableford'), `Stableford - ${ev.eventId} ${ev.location}`);
+          if (res.ok) success++; else failed++;
+        }
+        // ambrose
+        for (const n of (ev.ambrose || [])) {
+          total++;
+          const res = await seedAwardFor(n, makeHonour('Ambrose'), `Ambrose - ${ev.eventId} ${ev.location}`);
+          if (res.ok) success++; else failed++;
+        }
+        // champions
+        for (const n of (ev.champion || [])) {
+          total++;
+          const res = await seedAwardFor(n, makeHonour('Champion'), `Champion - ${ev.eventId} ${ev.location}`, { champion: true });
+          if (res.ok) success++; else failed++;
+        }
+        // spirit
+        for (const n of (ev.spirit || [])) {
+          total++;
+          const res = await seedAwardFor(n, makeHonour('Spirit of Hackers'), `Spirit of Hackers - ${ev.eventId} ${ev.location}`, { spirit: true });
+          if (res.ok) success++; else failed++;
+        }
+      }
+
+      document.getElementById('seedStatus').textContent = `Honour-roll seed finished — updated: ${success}, failed: ${failed}`;
+      btn.disabled = false;
+    });
+
+    window.toggleMobileMenu = function() { const menu = document.getElementById('mobile-menu'); menu.classList.toggle('hidden'); };
+    lucide.createIcons();
+  </script>
+</body>
+</html>

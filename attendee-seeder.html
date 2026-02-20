@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hackers Attendee Seeder</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    .status { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h2>Hackers Attendee Seeder</h2>
+  <input type="file" id="csvFile" accept=".csv" />
+  <button id="uploadBtn">Upload & Seed</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    // TODO: Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function calculateBadges(years) {
+      const total = years.length;
+      const totalBadges = [];
+      [5,10,15,20,25].forEach(n => { if (total >= n) totalBadges.push(`${n} Year`); });
+      // Consecutive badges
+      let maxConsec = 0, current = 0;
+      years.sort((a,b) => a-b);
+      for (let i=1; i<years.length; i++) {
+        if (years[i] === years[i-1]+1) current++;
+        else current = 0;
+        if (current+1 > maxConsec) maxConsec = current+1;
+      }
+      const consecBadges = [];
+      [3,5,10,15,20,25].forEach(n => { if (maxConsec >= n) consecBadges.push(`${n} Consecutive`); });
+      return { totalBadges, consecBadges };
+    }
+
+    document.getElementById('uploadBtn').onclick = function() {
+      const fileInput = document.getElementById('csvFile');
+      const statusDiv = document.getElementById('status');
+      if (!fileInput.files.length) {
+        statusDiv.textContent = 'Please select a CSV file.';
+        return;
+      }
+      statusDiv.textContent = 'Parsing CSV...';
+      Papa.parse(fileInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          statusDiv.textContent = 'Seeding data to Firebase...';
+          const rows = results.data;
+          let seeded = 0;
+          let errors = 0;
+          const eventKeys = Object.keys(rows[0]).filter(k => k.startsWith('HC'));
+          (async function seedAll() {
+            for (const row of rows) {
+              const displayName = row['Name']?.trim();
+              if (!displayName) {
+                console.warn('Skipped row with empty displayName:', row);
+                continue;
+              }
+              // Get attended years
+              const attendedYears = [];
+              eventKeys.forEach((k,i) => {
+                if (row[k] && row[k].toString().trim() === '1') attendedYears.push(i+1);
+              });
+              const badges = calculateBadges(attendedYears);
+              const profile = {
+                displayName,
+                attendedYears,
+                totalBadges: badges.totalBadges,
+                consecutiveBadges: badges.consecBadges,
+                eventsAttended: attendedYears.length,
+                lastAttended: attendedYears.length ? attendedYears[attendedYears.length-1] : null
+              };
+              console.log(`Attempting to seed profile for: ${displayName}`, profile);
+              try {
+                await db.collection('attendeeProfiles').doc(displayName).set(profile);
+                seeded++;
+                console.log(`Seeded profile for: ${displayName}`);
+              } catch (e) {
+                errors++;
+                console.error(`Error seeding profile for: ${displayName}`, e);
+              }
+              statusDiv.textContent = `Seeded: ${seeded}, Errors: ${errors}`;
+            }
+          })();
+        }
+      });
+    };
+  </script>
+</body>
+</html>
