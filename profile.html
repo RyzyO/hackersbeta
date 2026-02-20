@@ -496,12 +496,20 @@
         return true;
       }).map(a => ({ category: a, text: a }));
 
-      // merge and dedupe by category+eventId+text
+      // merge and dedupe by normalized category+eventId+text+location
       const merged = filteredHonours.concat(filteredOtherAwards);
       const seen = new Set();
       const combined = [];
       for (const h of merged) {
-        const key = `${(h.category||'').toString().toLowerCase()}|${(h.eventId||'').toString().toLowerCase()}|${(h.text||'').toString().toLowerCase()}`.trim();
+        // Normalize key: remove extra spaces, collapse repeated text, include location
+        let cat = (h.category||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
+        let evt = (h.eventId||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
+        let txt = (h.text||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
+        let loc = (h.location||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
+        // Remove repeated phrases (e.g. "Champion - HC23 Nelson Bay" and "Champion")
+        if (txt.startsWith(cat)) txt = txt;
+        let key = `${cat}|${evt}|${txt}|${loc}`;
+        // Remove duplicate keys
         if (seen.has(key)) continue;
         seen.add(key);
         combined.push(h);
