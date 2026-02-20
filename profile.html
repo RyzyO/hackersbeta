@@ -191,23 +191,25 @@
       .badge i { opacity: .95; }
       .badge.total { background: linear-gradient(90deg,#f59e0b,#facc15); color: #0b1220; }
       .badge.consec { background: linear-gradient(90deg,#10b981,#059669); color: #04263b; }
-      .badge--muted { background: rgba(255,255,255,0.03); color: #9aa6b2; box-shadow: none; font-weight: 500; }
+      .badge--muted { background: rgba(255,255,255,0.03); color: #9aa6b2; box-shadow: none; font-weight: 500; border: 1px solid rgba(255,255,255,0.03); }
+
+      /* Pill containers (centered, wrapped, consistent spacing) */
+      .badges, #awardsList { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; align-items: center; max-width: 100%; }
+      .badges { margin-bottom: .75rem; }
 
       .events-list .year { background: rgba(255,255,255,0.03); padding: .35rem .6rem; border-radius: .5rem; color: #cfefff; font-weight: 700; }
 
-      .honour-card {
-        background: rgba(14, 25, 41, 0.55);
-        border: 1px solid rgba(255,255,255,0.04);
-        padding: .75rem;
-        border-radius: .75rem;
-        display: flex;
-        gap: .75rem;
-        align-items: flex-start;
-      }
+      /* Honour cards grid: equal-width, symmetric layout */
+      #honoursList { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+      .honour-card { background: rgba(14, 25, 41, 0.55); border: 1px solid rgba(255,255,255,0.04); padding: .75rem; border-radius: .75rem; display: flex; gap: .75rem; align-items: flex-start; min-height: 100px; }
       .honour-card .meta { color: #94a3b8; font-size: .85rem; }
       .honour-card .title { font-weight: 700; margin-top: .25rem; }
       .awards-section { border-top: 1px solid rgba(255,255,255,0.02); padding-top: 1rem; margin-top: 1rem; }
       .no-data { color: #94a3b8; font-size: .95rem; }
+
+      /* smooth-scroll highlight */
+      #honoursList.highlight { outline: 3px solid rgba(56,189,248,0.12); box-shadow: 0 10px 40px rgba(2,6,23,0.5); transition: outline .2s ease; }
+      @media (max-width: 640px) { #honoursList { grid-template-columns: 1fr; } }
       
     </style>
   </head>
@@ -359,31 +361,66 @@
       lucide.createIcons();
     }
 
+    // detect attendance milestone strings or honours so we don't duplicate them
+    function isAttendanceString(s) {
+      if (!s) return false;
+      const t = (s + '').trim();
+      if (/^\d+\s*Year(s)?$/i.test(t)) return true;            // "5 Year", "25 Years"
+      if (/^\d+\s*Consecutive$/i.test(t)) return true;        // "3 Consecutive"
+      if (/Consecutive/i.test(t) && /\d+/.test(t)) return true; // catch variants
+      return false;
+    }
+
     function renderAwards(profile) {
       const awardsList = document.getElementById('awardsList');
-      const items = [];
-      // Only show attendance-related badges here (avoid duplicating honours/cards below)
-      (profile.totalBadges || []).forEach(b => items.push(makeBadge(b, { type: 'total' })));
-      (profile.consecutiveBadges || []).forEach(b => items.push(makeBadge(b, { type: 'consec' })));
+      // Only show a compact honours-summary here (attendance badges are shown at top)
+      const honoursArray = Array.isArray(profile.honours) ? profile.honours.filter(h => !isAttendanceString(h.category || h.text)) : [];
+      const otherAwardsArray = Array.isArray(profile.otherAwards) ? profile.otherAwards.filter(a => !isAttendanceString(a)) : [];
 
-      // Show a single honours-summary badge that links to the detailed cards (no duplication)
-      const honoursCount = (Array.isArray(profile.honours) ? profile.honours.length : 0) + (Array.isArray(profile.otherAwards) ? profile.otherAwards.length : 0);
-      if (honoursCount > 0) {
-        items.push(`<a href="#honoursList" class="badge badge--muted" style="text-decoration:none">Honours (${honoursCount})</a>`);
-      }
+      // dedupe by text/category/eventId so the count is accurate
+      const seen = new Set();
+      const uniqHonours = [];
+      honoursArray.forEach(h => {
+        const key = `${h.category||''}|${h.eventId||''}|${h.text||''}`;
+        if (!seen.has(key)) { seen.add(key); uniqHonours.push(h); }
+      });
+      otherAwardsArray.forEach(a => {
+        const key = `${a}|${a}|${a}`;
+        if (!seen.has(key)) { seen.add(key); uniqHonours.push({ category: a, text: a }); }
+      });
 
-      awardsList.innerHTML = items.length ? items.join('') : `<div class="no-data">No awards recorded.</div>`;
+      const honoursCount = uniqHonours.length;
+      awardsList.innerHTML = honoursCount ? `<a href="#honoursList" class="badge badge--muted" style="text-decoration:none">Honours (${honoursCount})</a>` : `<div class="no-data">No awards recorded.</div>`;
     }
 
     function renderHonours(profile) {
       const honoursList = document.getElementById('honoursList');
+      // combine structured honours + free-text otherAwards (exclude attendance-only entries)
       const honours = Array.isArray(profile.honours) ? profile.honours.slice() : [];
-      if (!honours.length) {
+      const otherAwards = Array.isArray(profile.otherAwards) ? profile.otherAwards.slice() : [];
+
+      // filter out attendance milestone entries to avoid duplication
+      const filteredHonours = honours.filter(h => !isAttendanceString(h.category || h.text));
+      const filteredOtherAwards = otherAwards.filter(a => !isAttendanceString(a)).map(a => ({ category: a, text: a }));
+
+      // merge and dedupe by category+eventId+text
+      const merged = filteredHonours.concat(filteredOtherAwards);
+      const seen = new Set();
+      const combined = [];
+      for (const h of merged) {
+        const key = `${h.category||''}|${h.eventId||''}|${h.text||''}`.trim();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        combined.push(h);
+      }
+
+      if (!combined.length) {
         honoursList.innerHTML = `<p class="no-data">No honours recorded.</p>`;
         return;
       }
-      honours.sort((a,b) => (b.year || 0) - (a.year || 0));
-      honoursList.innerHTML = honours.map(h => {
+
+      combined.sort((a,b) => (b.year || 0) - (a.year || 0));
+      honoursList.innerHTML = combined.map(h => {
         const year = h.year || '';
         const eventId = h.eventId || '';
         const category = h.category || h.text || 'Award';
@@ -465,6 +502,28 @@
       const menu = document.getElementById('mobile-menu');
       menu.classList.toggle('hidden');
     };
+
+    // Smooth-scroll to honours section and add temporary highlight
+    function smoothScrollToHonours() {
+      const el = document.getElementById('honoursList');
+      if (!el) return;
+      const nav = document.querySelector('nav');
+      const navH = nav ? nav.offsetHeight : 80;
+      const top = el.getBoundingClientRect().top + window.scrollY - navH - 16;
+      window.scrollTo({ top, behavior: 'smooth' });
+      el.classList.add('highlight');
+      setTimeout(() => el.classList.remove('highlight'), 1400);
+    }
+
+    // Delegate clicks for any anchor that links to honoursList
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href="#honoursList"]');
+      if (a) {
+        e.preventDefault();
+        smoothScrollToHonours();
+      }
+    });
+
     lucide.createIcons();
   </script>
 </body>
