@@ -406,7 +406,15 @@
               let years = Array.isArray(profile.attendedYears) ? profile.attendedYears.slice().sort((a,b)=>a-b) : [];
               let index = badgeNum ? (badgeNum-1) : null;
               let hcNum = years[index] || null;
-              let year = hcNum ? (2000 + hcNum) : null;
+              let year = null;
+              if (hcNum) {
+                // HC1 = 2000, HC20 = 2019, HC21 = 2021 (2020 skipped)
+                if (hcNum <= 20) {
+                  year = 1999 + hcNum;
+                } else {
+                  year = 2000 + hcNum;
+                }
+              }
               let location = '';
               if (profile.eventLocations && hcNum && profile.eventLocations[hcNum]) {
                 location = profile.eventLocations[hcNum];
