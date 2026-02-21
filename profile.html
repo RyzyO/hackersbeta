@@ -458,23 +458,49 @@
       return false;
     }
 
+    // helper to normalize an award pair into a stable dedupe key
+    function makeKey(catRaw, txtRaw) {
+      let cat = (catRaw||'').toString();
+      let txt = (txtRaw||'').toString();
+      // when category and text are the same (free-text awards), try splitting
+      if (cat === txt || !txt) {
+        const parts = cat.split(/[-–—:]\s*/);
+        if (parts.length >= 2) {
+          cat = parts[0];
+          txt = parts.slice(1).join(' - ');
+        } else {
+          txt = cat;
+          cat = '';
+        }
+      }
+
+      cat = cat.toLowerCase().replace(/\s+/g,' ').trim();
+      txt = txt.toLowerCase().replace(/\s+/g,' ').trim();
+      if (cat && txt.startsWith(cat)) {
+        txt = txt.slice(cat.length).trim();
+        txt = txt.replace(/^[-–—:\s]+/, '');
+      }
+      txt = txt.replace(/\bhc\s*\d+\b/i, '').trim();
+      return `${cat}|${txt}`;
+    }
+
     function renderAwards(profile) {
       const awardsList = document.getElementById('awardsList');
       // Only show a compact honours-summary here (attendance badges are shown at top)
       const honoursArray = Array.isArray(profile.honours) ? profile.honours.filter(h => !isAttendanceString(h.category || h.text)) : [];
       const otherAwardsArray = Array.isArray(profile.otherAwards) ? profile.otherAwards.filter(a => !isAttendanceString(a)) : [];
 
-      // dedupe by text/category/eventId so the count is accurate
-      const seen = new Set();
-      const uniqHonours = [];
+      // dedupe by normalized category+text so the count is accurate
+      const deduped = new Map();
       honoursArray.forEach(h => {
-        const key = `${h.category||''}|${h.eventId||''}|${h.text||''}`;
-        if (!seen.has(key)) { seen.add(key); uniqHonours.push(h); }
+        const key = makeKey(h.category, h.text);
+        if (!deduped.has(key)) deduped.set(key, h);
       });
       otherAwardsArray.forEach(a => {
-        const key = `${a}|${a}|${a}`;
-        if (!seen.has(key)) { seen.add(key); uniqHonours.push({ category: a, text: a }); }
+        const key = makeKey(a, a);
+        if (!deduped.has(key)) deduped.set(key, { category: a, text: a });
       });
+      const uniqHonours = Array.from(deduped.values());
 
       const honoursCount = uniqHonours.length;
       awardsList.innerHTML = honoursCount ? `<a href="#honoursList" class="badge badge--muted" style="text-decoration:none">Honours (${honoursCount})</a>` : `<div class="no-data">No awards recorded.</div>`;
@@ -512,24 +538,23 @@
         return true;
       }).map(a => ({ category: a, text: a }));
 
-      // merge and dedupe by normalized category+eventId+text+location
+      // merge and dedupe using shared key helper, then merge any extra fields
       const merged = filteredHonours.concat(filteredOtherAwards);
-      const seen = new Set();
-      const combined = [];
+      const dedupedMap = new Map();
       for (const h of merged) {
-        // Normalize key: remove extra spaces, collapse repeated text, include location
-        let cat = (h.category||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
-        let evt = (h.eventId||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
-        let txt = (h.text||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
-        let loc = (h.location||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
-        // Remove repeated phrases (e.g. "Champion - HC23 Nelson Bay" and "Champion")
-        if (txt.startsWith(cat)) txt = txt;
-        let key = `${cat}|${evt}|${txt}|${loc}`;
-        // Remove duplicate keys
-        if (seen.has(key)) continue;
-        seen.add(key);
-        combined.push(h);
+        const key = makeKey(h.category, h.text);
+        if (dedupedMap.has(key)) {
+          const existing = dedupedMap.get(key);
+          ['eventId','year','location'].forEach(field => {
+            if (h[field] && !existing[field]) {
+              existing[field] = h[field];
+            }
+          });
+        } else {
+          dedupedMap.set(key, Object.assign({}, h));
+        }
       }
+      const combined = Array.from(dedupedMap.values());
 
       if (!combined.length) {
         honoursList.innerHTML = `<p class="no-data">No honours recorded.</p>`;
