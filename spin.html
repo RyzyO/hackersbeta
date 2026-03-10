@@ -1,1 +1,1027 @@
-test
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hackers Cup Random Hacker Generator</title>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --card: rgba(255,255,255,0.08);
+      --line: rgba(255,255,255,0.12);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #fbbf24;
+      --accent-2: #38bdf8;
+      --good: #22c55e;
+      --shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(251,191,36,0.18), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .app {
+      width: min(1200px, 100%);
+      min-height: calc(100vh - 48px);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .left {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 14px;
+      min-height: 0;
+      position: relative;
+      overflow: auto;
+    }
+
+    .right {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(28px, 3vw, 42px);
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .wheel-wrap {
+      position: relative;
+      width: min(64vw, 56vh, 620px);
+      height: min(64vw, 56vh, 620px);
+      max-width: 680px;
+      max-height: 680px;
+      display: grid;
+      place-items: center;
+      margin-top: 8px;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 22px solid transparent;
+      border-right: 22px solid transparent;
+      border-top: 42px solid var(--accent);
+      z-index: 5;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      box-shadow: inset 0 0 0 10px rgba(255,255,255,0.08), 0 18px 40px rgba(0,0,0,0.35);
+    }
+
+    .center-badge {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #f59e0b);
+      color: #111827;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 800;
+      line-height: 1.05;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      z-index: 3;
+      padding: 14px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .spin-btn {
+      background: linear-gradient(135deg, var(--accent), #f59e0b);
+      color: #111827;
+      min-width: 160px;
+    }
+
+    .secondary-btn {
+      background: rgba(255,255,255,0.10);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .field,
+    .result,
+    .stats,
+    .list-box {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15,23,42,0.65);
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .result h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .winner {
+      font-size: clamp(26px, 3vw, 38px);
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .winner-sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat .k {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .list-box {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .list-head h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .player-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      overflow: auto;
+      flex: 1;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .player-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+    }
+
+    .player-list li strong {
+      color: var(--accent);
+      min-width: 52px;
+    }
+
+    .footnote {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        padding: 14px;
+      }
+
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        min-height: calc(100vh - 28px);
+        height: auto;
+        gap: 14px;
+      }
+
+      .left,
+      .right {
+        min-height: auto;
+        overflow: visible;
+      }
+
+      .left {
+        padding: 20px 16px;
+      }
+
+      .right {
+        padding: 16px;
+        gap: 12px;
+      }
+
+      .panel {
+        border-radius: 18px;
+      }
+
+      h1 {
+        font-size: clamp(24px, 8vw, 34px);
+      }
+
+      .subtitle {
+        margin: 0 0 10px;
+      }
+
+      .wheel-wrap {
+        width: min(86vw, 430px);
+        height: min(86vw, 430px);
+        margin-top: 2px;
+      }
+
+      .center-badge {
+        width: 92px;
+        height: 92px;
+        font-size: 13px;
+      }
+
+      .pointer {
+        border-left-width: 16px;
+        border-right-width: 16px;
+        border-top-width: 30px;
+      }
+
+      .controls {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 6px;
+      }
+
+      .controls .spin-btn {
+        grid-column: 1 / -1;
+      }
+
+      .controls button {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 14px;
+      }
+
+      .winner {
+        font-size: clamp(22px, 8vw, 32px);
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .list-box {
+        max-height: 42vh;
+      }
+
+      .list-head {
+        margin-bottom: 8px;
+      }
+
+      .player-list li {
+        font-size: 13px;
+        padding: 9px 10px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .wheel-wrap {
+        width: min(84vw, 360px);
+        height: min(84vw, 360px);
+      }
+
+      .center-badge {
+        width: 82px;
+        height: 82px;
+        font-size: 12px;
+      }
+
+      .footnote {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel left">
+      <h1>Hackers Cup Spin Wheel</h1>
+      <p class="subtitle">Random Hacker Generator • Spin to draw a Hacker Cup number</p>
+
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="1400" height="1400"></canvas>
+        <div class="center-badge">HACKERS<br>CUP</div>
+      </div>
+
+      <div class="controls">
+        <button class="spin-btn" id="spinBtn">Spin Wheel</button>
+        <button class="secondary-btn" id="spinSearchBtn">Spin Filtered</button>
+        <button class="secondary-btn" id="resetBtn">Reset</button>
+      </div>
+    </section>
+
+    <aside class="panel right">
+      <div class="field">
+        <label class="label" for="searchInput">Filter players</label>
+        <input id="searchInput" type="text" placeholder="Type a name or number..." />
+      </div>
+
+      <div class="result">
+        <h2>Selected Hacker</h2>
+        <p class="winner" id="winnerName">Ready to spin</p>
+        <p class="winner-sub" id="winnerMeta">273 loaded</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Total loaded</div>
+          <div class="v" id="totalCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">Filtered pool</div>
+          <div class="v" id="filteredCount">0</div>
+        </div>
+      </div>
+
+      <div class="list-box">
+        <div class="list-head">
+          <h3>Hackers</h3>
+          <span class="footnote">Showing live filtered list</span>
+        </div>
+        <ul class="player-list" id="playerList"></ul>
+      </div>
+
+      
+    </aside>
+  </div>
+
+  <script>
+    const players = [
+      { no: 1, name: "Brendan Oakes" },
+      { no: 2, name: "Andrew Murray" },
+      { no: 3, name: "Tony Best" },
+      { no: 4, name: "Noel Jago" },
+      { no: 5, name: "Peter Keen" },
+      { no: 6, name: "Martyn Budden" },
+      { no: 7, name: "Scott Anderson" },
+      { no: 8, name: "Ashley Oakes" },
+      { no: 9, name: "Andrew Bunting" },
+      { no: 10, name: "Steve Brooks" },
+      { no: 11, name: "Mat Beasley" },
+      { no: 12, name: "Hayden Remnant" },
+      { no: 13, name: "Ken Roberts" },
+      { no: 14, name: "Paul Nelson" },
+      { no: 15, name: "Trevor Brown (Late)" },
+      { no: 16, name: "John LÉstrange" },
+      { no: 17, name: "Mat Jackson" },
+      { no: 18, name: "Dave Puxty" },
+      { no: 19, name: "Dale Puxty" },
+      { no: 20, name: "Ian Ward" },
+      { no: 21, name: "Brett Hinton" },
+      { no: 22, name: "Dave Hall" },
+      { no: 23, name: "Brian Haverty" },
+      { no: 24, name: "Scott Good" },
+      { no: 25, name: "John Scobie" },
+      { no: 26, name: "Ian Keogh" },
+      { no: 27, name: "Sam Koh" },
+      { no: 28, name: "John King" },
+      { no: 29, name: "Steve Rochaix" },
+      { no: 30, name: "Phil Carney" },
+      { no: 31, name: "Richard Skender" },
+      { no: 32, name: "Sebastian Baldwin" },
+      { no: 33, name: "Chris Chilcott" },
+      { no: 34, name: "Mathew Andrews" },
+      { no: 35, name: "David Wright" },
+      { no: 36, name: "Steve Clarke" },
+      { no: 37, name: "Ben Harper" },
+      { no: 38, name: "Damien Starcic" },
+      { no: 39, name: "Chris Caine" },
+      { no: 40, name: "Patrick Weinstein" },
+      { no: 41, name: "Daniel Graham" },
+      { no: 42, name: "Adam Buttifant" },
+      { no: 43, name: "Nathan McDonald" },
+      { no: 44, name: "Adam Paton" },
+      { no: 45, name: "Chris Campbell" },
+      { no: 46, name: "Cameron Wark" },
+      { no: 47, name: "Geoff Fletcher" },
+      { no: 48, name: "Emil Montibeler" },
+      { no: 49, name: "Mitch Buttifant" },
+      { no: 50, name: "Michael Maceijak" },
+      { no: 51, name: "Daniel McFadden" },
+      { no: 52, name: "Mat Rowan" },
+      { no: 53, name: "Neil Gowdie" },
+      { no: 54, name: "Steve Press" },
+      { no: 55, name: "Paul Kedwell" },
+      { no: 56, name: "Dempster Bleechmore" },
+      { no: 57, name: "Steve Walters" },
+      { no: 58, name: "Simon Day" },
+      { no: 59, name: "Mark Hawes" },
+      { no: 60, name: "Stan King" },
+      { no: 61, name: "Steve Phan" },
+      { no: 62, name: "Adam Dragic" },
+      { no: 63, name: "Bryan Davis" },
+      { no: 64, name: "Darren Younger" },
+      { no: 65, name: "Brett Davies" },
+      { no: 66, name: "Brian Farrelly" },
+      { no: 67, name: "Jimmy Lam" },
+      { no: 68, name: "Gavin Hoy" },
+      { no: 69, name: "Shane Curry" },
+      { no: 70, name: "Shane McDonald" },
+      { no: 71, name: "Phil Rayner" },
+      { no: 72, name: "Aaron Johnson" },
+      { no: 73, name: "Darryn Rooks" },
+      { no: 74, name: "Joel Bailey" },
+      { no: 75, name: "Christian Wood" },
+      { no: 76, name: "Alan Bampton" },
+      { no: 77, name: "Josh Fryer" },
+      { no: 78, name: "Jason Simpson" },
+      { no: 79, name: "Shaun Ware" },
+      { no: 80, name: "Andrew Kazaglis" },
+      { no: 81, name: "Luke Singleton" },
+      { no: 82, name: "James Singleton" },
+      { no: 83, name: "Daryl Symanski" },
+      { no: 84, name: "Andrew Wheeler" },
+      { no: 85, name: "Bruce Harper" },
+      { no: 86, name: "Scott Austin" },
+      { no: 87, name: "Wayne Tower" },
+      { no: 88, name: "Kevin Oliver" },
+      { no: 89, name: "Jez Clayton" },
+      { no: 90, name: "Andrew Murrie" },
+      { no: 91, name: "James Murphy" },
+      { no: 92, name: "Mick Cooper" },
+      { no: 93, name: "Craig Simmons" },
+      { no: 94, name: "Brian Gibson" },
+      { no: 95, name: "Christian Fox" },
+      { no: 96, name: "Mat Herbert" },
+      { no: 97, name: "Craig Broderick" },
+      { no: 98, name: "Les Connell" },
+      { no: 99, name: "David Timso" },
+      { no: 100, name: "James Mattinson" },
+      { no: 101, name: "Nick Brady" },
+      { no: 102, name: "Jarrod Hoddinott" },
+      { no: 103, name: "Bill Pearce" },
+      { no: 104, name: "Terry Takouridis" },
+      { no: 105, name: "Rob Crump" },
+      { no: 106, name: "Peter Stofka" },
+      { no: 107, name: "Matthew Zibert" },
+      { no: 108, name: "Tony Wicht" },
+      { no: 109, name: "Grant Hasell" },
+      { no: 110, name: "Dean Connelly" },
+      { no: 111, name: "Trevor Griffiths" },
+      { no: 112, name: "Matt Burns" },
+      { no: 113, name: "Mark Bewey" },
+      { no: 114, name: "Mark Lever" },
+      { no: 115, name: "Matt Ware" },
+      { no: 116, name: "Ben Lusher" },
+      { no: 117, name: "Tejas Bhatia" },
+      { no: 118, name: "Daniel Renoux" },
+      { no: 119, name: "Phil Lambert" },
+      { no: 120, name: "Bruce Brown" },
+      { no: 121, name: "Brenton Humphris" },
+      { no: 122, name: "Ashley Hastings" },
+      { no: 123, name: "Raymond Hastings" },
+      { no: 124, name: "Grant Hastings" },
+      { no: 125, name: "Greg Davies" },
+      { no: 126, name: "Jimmy Austin" },
+      { no: 127, name: "Simon Livingston" },
+      { no: 128, name: "Adam Vivelis" },
+      { no: 129, name: "Phil Vivelis" },
+      { no: 130, name: "Adam Wearing" },
+      { no: 131, name: "Ben Wearing" },
+      { no: 132, name: "Craig Upton" },
+      { no: 133, name: "Michael Whittaker" },
+      { no: 134, name: "Scott Tasker" },
+      { no: 135, name: "Dale Buttifant" },
+      { no: 136, name: "Warren Gibson" },
+      { no: 137, name: "Mark Bass" },
+      { no: 138, name: "Sam Ballieau" },
+      { no: 139, name: "Simon Harper" },
+      { no: 140, name: "Chris Godfrey" },
+      { no: 141, name: "Phil Buttifant" },
+      { no: 142, name: "Damien Lynch" },
+      { no: 143, name: "Ross Chippendale" },
+      { no: 144, name: "Rob Stavely" },
+      { no: 145, name: "Warren Mansell" },
+      { no: 146, name: "Ernie Zibert" },
+      { no: 147, name: "Geoff Roach" },
+      { no: 148, name: "John Winter" },
+      { no: 149, name: "Ed Henning" },
+      { no: 150, name: "Myles Carney" },
+      { no: 151, name: "Chris Bell" },
+      { no: 152, name: "Cam Cumming" },
+      { no: 153, name: "Glenn Roberts" },
+      { no: 154, name: "Griffin Czipri" },
+      { no: 155, name: "Gary Parker" },
+      { no: 156, name: "Joe Pajeska" },
+      { no: 157, name: "Chris Waters" },
+      { no: 158, name: "Brad Thomas" },
+      { no: 159, name: "Will Fahey" },
+      { no: 160, name: "James Balfour-Ogilvy" },
+      { no: 161, name: "Brenden Ball" },
+      { no: 162, name: "Martin McCausland" },
+      { no: 163, name: "James King" },
+      { no: 164, name: "Cam Mitchell" },
+      { no: 165, name: "Llewelyn Fourie" },
+      { no: 166, name: "Adrian Harper" },
+      { no: 167, name: "Justin Knight" },
+      { no: 168, name: "Paul Collis" },
+      { no: 169, name: "Oliver Adams" },
+      { no: 170, name: "Brad Younger" },
+      { no: 171, name: "Brad Grant" },
+      { no: 172, name: "Darren Grant" },
+      { no: 173, name: "Ian Allt" },
+      { no: 174, name: "Anthony Edwards" },
+      { no: 175, name: "Andrew Teitzel" },
+      { no: 176, name: "James Brady" },
+      { no: 177, name: "Cameron Allen" },
+      { no: 178, name: "Felix Lewandowski" },
+      { no: 179, name: "David Brown" },
+      { no: 180, name: "Michael Brown" },
+      { no: 181, name: "Stephen David" },
+      { no: 182, name: "Jacob Peters" },
+      { no: 183, name: "Andrew Graham" },
+      { no: 184, name: "Ben McFadden" },
+      { no: 185, name: "Tony Mills" },
+      { no: 186, name: "Michael Banzer" },
+      { no: 187, name: "Troy Hackett" },
+      { no: 188, name: "Adam Camilleri" },
+      { no: 189, name: "Jason Mills" },
+      { no: 190, name: "Glenn Lyall" },
+      { no: 191, name: "James Longford" },
+      { no: 192, name: "Phil Foo" },
+      { no: 193, name: "Jeffrey Dohnt" },
+      { no: 194, name: "Glenn Palmer" },
+      { no: 195, name: "Brad Rogers" },
+      { no: 196, name: "Marcus Macdonald" },
+      { no: 197, name: "Glen Marler" },
+      { no: 198, name: "Garry Kerr" },
+      { no: 199, name: "Sarkis Akle" },
+      { no: 200, name: "Glen Coddington" },
+      { no: 201, name: "Graeme Daines" },
+      { no: 202, name: "Johan Bustamante" },
+      { no: 203, name: "Warren McMahon" },
+      { no: 204, name: "Steve Shaw" },
+      { no: 205, name: "Paul Murray" },
+      { no: 206, name: "Daniel Bennett" },
+      { no: 207, name: "Mark Anderson" },
+      { no: 208, name: "Chris Stauber" },
+      { no: 209, name: "Kieran Prior" },
+      { no: 210, name: "Wayne Ritchie" },
+      { no: 211, name: "Michael Lagudi" },
+      { no: 212, name: "Nick Williams" },
+      { no: 213, name: "Dave Dollard" },
+      { no: 214, name: "Dan Sullivan" },
+      { no: 215, name: "Adam Goodall" },
+      { no: 216, name: "Mark Leaney" },
+      { no: 217, name: "Duane Roy" },
+      { no: 218, name: "Adrian Lockley" },
+      { no: 219, name: "Brian Spratt" },
+      { no: 220, name: "Paul Fawkes" },
+      { no: 221, name: "Glen Duley" },
+      { no: 222, name: "Robert Graham" },
+      { no: 223, name: "William Jackett" },
+      { no: 224, name: "Craig Board" },
+      { no: 225, name: "Nick Flanagan" },
+      { no: 226, name: "Glen Harding" },
+      { no: 227, name: "Mathew Rapa" },
+      { no: 228, name: "Thomas Moc (Late)" },
+      { no: 229, name: "Keiran Tanner" },
+      { no: 230, name: "David Clune" },
+      { no: 231, name: "Gavin Blick" },
+      { no: 232, name: "Mark Braund" },
+      { no: 233, name: "Stuart MacLennan" },
+      { no: 234, name: "Garry Giles" },
+      { no: 235, name: "Ed Howitt" },
+      { no: 236, name: "Luke O'Brien" },
+      { no: 237, name: "Luke Shafer" },
+      { no: 238, name: "Justinn Curan" },
+      { no: 239, name: "Antony Seel" },
+      { no: 240, name: "Glenn Clay" },
+      { no: 241, name: "Neil Watson" },
+      { no: 242, name: "Blake McIntosh" },
+      { no: 243, name: "Shaun Thompson" },
+      { no: 244, name: "Jeff Hawkins" },
+      { no: 245, name: "David Simpson" },
+      { no: 246, name: "Shane Cook" },
+      { no: 247, name: "Jacob Issa" },
+      { no: 248, name: "Anker Christensen" },
+      { no: 249, name: "Grant Pelley" },
+      { no: 250, name: "Riley Oakes" },
+      { no: 251, name: "Joel Shepherd" },
+      { no: 252, name: "Sam Edwards" },
+      { no: 253, name: "Ben Wood" },
+      { no: 254, name: "Jordan Whitehorn" },
+      { no: 255, name: "Derek Shepherd" },
+      { no: 256, name: "Paul Zepernick" },
+      { no: 257, name: "Brad Spurway" },
+      { no: 258, name: "Paul McLean" },
+      { no: 259, name: "Andrew Minnikin" },
+      { no: 260, name: "Tamas Mendick" },
+      { no: 261, name: "Joe Foia" },
+      { no: 262, name: "Matt Kennerson" },
+      { no: 263, name: "Matt Toohey" },
+      { no: 264, name: "Glenn Hickey" },
+      { no: 265, name: "Greg Gomes" },
+      { no: 266, name: "Edward O'Sullivan" },
+      { no: 267, name: "Willie Cooper" },
+      { no: 268, name: "Scott Griffiths" },
+      { no: 269, name: "Ray Vella" },
+      { no: 270, name: "Lachlan Hill" },
+      { no: 271, name: "John O'Toole" },
+      { no: 272, name: "Charlie Sharp" },
+      { no: 273, name: "Ryan Nancarrow" }
+    ];
+
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const spinSearchBtn = document.getElementById('spinSearchBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const searchInput = document.getElementById('searchInput');
+    const winnerName = document.getElementById('winnerName');
+    const winnerMeta = document.getElementById('winnerMeta');
+    const totalCount = document.getElementById('totalCount');
+    const filteredCount = document.getElementById('filteredCount');
+    const playerList = document.getElementById('playerList');
+    const wheelWrap = document.querySelector('.wheel-wrap');
+
+    let rotation = 0;
+    let spinning = false;
+    let filteredPlayers = [...players];
+    let wheelCacheCanvas = null;
+    let wheelCacheKey = '';
+
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function getPalette(i) {
+      const palettes = [
+        ['#0ea5e9', '#0369a1'],
+        ['#f59e0b', '#b45309'],
+        ['#22c55e', '#15803d'],
+        ['#a855f7', '#7e22ce'],
+        ['#ef4444', '#b91c1c'],
+        ['#14b8a6', '#0f766e'],
+        ['#eab308', '#a16207'],
+        ['#3b82f6', '#1d4ed8']
+      ];
+      return palettes[i % palettes.length];
+    }
+
+    function renderList() {
+      playerList.innerHTML = filteredPlayers
+        .slice(0, 273)
+        .map(p => `<li><strong>#${p.no}</strong><span>${p.name}</span></li>`)
+        .join('');
+    }
+
+    function getWheelCacheKey(pool) {
+      if (!pool.length) return 'empty';
+      return `${pool.length}:${pool[0].no}:${pool[pool.length - 1].no}:${canvas.width}x${canvas.height}`;
+    }
+
+    function buildWheelCache(pool = filteredPlayers) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) / 2 - 18;
+
+      const cached = document.createElement('canvas');
+      cached.width = w;
+      cached.height = h;
+      const cctx = cached.getContext('2d');
+
+      if (!pool.length) {
+        cctx.save();
+        cctx.translate(cx, cy);
+        cctx.beginPath();
+        cctx.arc(0, 0, radius, 0, Math.PI * 2);
+        cctx.fillStyle = '#334155';
+        cctx.fill();
+        cctx.fillStyle = '#ffffff';
+        cctx.font = 'bold 54px Inter, Arial';
+        cctx.textAlign = 'center';
+        cctx.textBaseline = 'middle';
+        cctx.fillText('No matches', 0, 0);
+        cctx.restore();
+        return cached;
+      }
+
+      const sliceAngle = (Math.PI * 2) / pool.length;
+
+      cctx.save();
+      cctx.translate(cx, cy);
+
+      for (let i = 0; i < pool.length; i++) {
+        const start = i * sliceAngle - Math.PI / 2;
+        const end = start + sliceAngle;
+        const [c1, c2] = getPalette(i);
+
+        const grad = cctx.createLinearGradient(
+          Math.cos(start) * radius,
+          Math.sin(start) * radius,
+          Math.cos(end) * radius,
+          Math.sin(end) * radius
+        );
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+
+        cctx.beginPath();
+        cctx.moveTo(0, 0);
+        cctx.arc(0, 0, radius, start, end);
+        cctx.closePath();
+        cctx.fillStyle = grad;
+        cctx.fill();
+
+        cctx.lineWidth = 2;
+        cctx.strokeStyle = 'rgba(255,255,255,0.22)';
+        cctx.stroke();
+
+        const mid = start + sliceAngle / 2;
+        cctx.save();
+        cctx.rotate(mid);
+        cctx.textAlign = 'right';
+        cctx.fillStyle = '#ffffff';
+
+        const showFullName = pool.length <= 120;
+        const text = showFullName ? `#${pool[i].no} ${pool[i].name}` : `#${pool[i].no}`;
+        const fontSize = Math.max(16, Math.min(30, 240 / Math.sqrt(pool.length)));
+        cctx.font = `700 ${fontSize}px Inter, Arial`;
+        cctx.translate(radius - 26, 0);
+        cctx.rotate(Math.PI / 2);
+
+        const maxWidth = radius * 0.72;
+        let output = text;
+        while (cctx.measureText(output).width > maxWidth && output.length > 12) {
+          output = output.slice(0, -2);
+        }
+        if (output !== text) output = output.trim() + '...';
+
+        cctx.fillText(output, 0, 0);
+        cctx.restore();
+      }
+
+      cctx.beginPath();
+      cctx.arc(0, 0, radius * 0.12, 0, Math.PI * 2);
+      cctx.fillStyle = 'rgba(255,255,255,0.9)';
+      cctx.fill();
+      cctx.restore();
+
+      return cached;
+    }
+
+    function ensureWheelCache(pool = filteredPlayers) {
+      const key = getWheelCacheKey(pool);
+      if (key !== wheelCacheKey || !wheelCacheCanvas) {
+        wheelCacheCanvas = buildWheelCache(pool);
+        wheelCacheKey = key;
+      }
+    }
+
+    function drawWheel(pool = filteredPlayers) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      ctx.clearRect(0, 0, w, h);
+      ensureWheelCache(pool);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.drawImage(wheelCacheCanvas, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+
+    function sizeCanvasToContainer() {
+      const rect = wheelWrap.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const displaySize = Math.max(220, Math.floor(Math.min(rect.width, rect.height)));
+      const internalSize = Math.floor(displaySize * dpr);
+
+      canvas.style.width = `${displaySize}px`;
+      canvas.style.height = `${displaySize}px`;
+
+      if (canvas.width !== internalSize || canvas.height !== internalSize) {
+        canvas.width = internalSize;
+        canvas.height = internalSize;
+        wheelCacheKey = '';
+      }
+    }
+
+    function getFilteredPlayers() {
+      const q = normalizeText(searchInput.value || '');
+      if (!q) return [...players];
+      return players.filter(p => {
+        return normalizeText(p.name).includes(q) || String(p.no).includes(q);
+      });
+    }
+
+    function updateFiltered() {
+      filteredPlayers = getFilteredPlayers();
+      filteredCount.textContent = filteredPlayers.length;
+      renderList();
+      wheelCacheKey = '';
+      drawWheel(filteredPlayers);
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function spin(pool) {
+      if (spinning || !pool.length) return;
+      spinning = true;
+      spinBtn.disabled = true;
+      spinSearchBtn.disabled = true;
+      resetBtn.disabled = true;
+
+      const targetIndex = Math.floor(Math.random() * pool.length);
+      const sliceAngle = (Math.PI * 2) / pool.length;
+
+      // Pointer is at 12 o'clock. Need selected slice midpoint to end there.
+      const targetMid = targetIndex * sliceAngle + sliceAngle / 2;
+      const current = rotation % (Math.PI * 2);
+      const extraSpins = (Math.PI * 2) * (5 + Math.random() * 2.5);
+      const desired = (-targetMid) - current;
+      const finalRotation = rotation + extraSpins + desired;
+      const startRotation = rotation;
+      const duration = 5200;
+      const start = performance.now();
+
+      function animate(now) {
+        const elapsed = now - start;
+        const t = Math.min(1, elapsed / duration);
+        rotation = startRotation + (finalRotation - startRotation) * easeOutCubic(t);
+        drawWheel(pool);
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          rotation = finalRotation;
+          drawWheel(pool);
+          const winner = pool[targetIndex];
+          winnerName.textContent = winner.name;
+          winnerMeta.textContent = `Hacker #${winner.no}`;
+          spinning = false;
+          spinBtn.disabled = false;
+          spinSearchBtn.disabled = false;
+          resetBtn.disabled = false;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    spinBtn.addEventListener('click', () => spin(players));
+    spinSearchBtn.addEventListener('click', () => spin(filteredPlayers));
+
+    resetBtn.addEventListener('click', () => {
+      rotation = 0;
+      winnerName.textContent = 'Ready to spin';
+      winnerMeta.textContent = `${players.length} loaded`;
+      searchInput.value = '';
+      filteredPlayers = [...players];
+      updateFiltered();
+    });
+
+    searchInput.addEventListener('input', updateFiltered);
+
+    window.addEventListener('resize', () => {
+      sizeCanvasToContainer();
+      drawWheel(filteredPlayers);
+    });
+
+    totalCount.textContent = players.length;
+    sizeCanvasToContainer();
+    updateFiltered();
+  </script>
+</body>
+</html>
