@@ -633,11 +633,43 @@
         const button = player.querySelector('.play-btn');
         if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
         if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
+      const setPlayUi = (player, isPlaying) => {
+        const playIcon = player.querySelector('.icon-play');
+        const pauseIcon = player.querySelector('.icon-pause');
+        const button = player.querySelector('.play-btn');
+        if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
+        if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
         if (button) {
           button.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
           button.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
         }
       };
+
+      // Dynamic metadata from Spreaker to lock screen
+      window.addEventListener('message', (event) => {
+        if (event.origin.includes('spreaker.com')) {
+          try {
+            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            
+            if (data && data.event === 'player:metadata' && 'mediaSession' in navigator) {
+              const metadata = data.metadata;
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: metadata.title || "Bonville, Cosmic Avenger and Balls on the Roof!",
+                artist: "Hackers Cup Podcast",
+                album: "Season 2026",
+                artwork: metadata.image_url ? [
+                  { src: metadata.image_url, sizes: '512x512', type: 'image/png' }
+                ] : [
+                  { src: 'assets/images/logo.png', sizes: '512x512', type: 'image/png' }
+                ]
+              });
+              navigator.mediaSession.playbackState = 'playing';
+            }
+          } catch (e) {
+            // Ignore non-JSON messages or parse errors
+          }
+        }
+      });
 
       // Handle lock screen / MediaSession for iframes
       if ('mediaSession' in navigator) {
