@@ -469,6 +469,14 @@
       font-weight: 600;
     }
 
+    .profile-anniversary-badge {
+      background: linear-gradient(135deg, #ff6b35, #d84315);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+    }
+
     .profile-years {
       display: flex;
       flex-wrap: wrap;
@@ -718,15 +726,28 @@
       document.getElementById('profileEventsAttended').textContent = profile.eventsAttended || '-';
       document.getElementById('profileLastAttended').textContent = profile.lastAttended ? `HC${profile.lastAttended}` : '-';
 
-      // Render badges
-      const totalBadges = (profile.totalBadges || []).filter(b => !/^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i.test(b));
-      const consecutiveBadges = (profile.consecutiveBadges || []).filter(b => !/^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i.test(b));
+      // Extract anniversary badges (5, 10, 15, 20, 25 year awards)
+      const allTotalBadges = profile.totalBadges || [];
+      const allConsecutiveBadges = profile.consecutiveBadges || [];
       
-      let allBadges = [...totalBadges, ...consecutiveBadges];
+      const anniversaryRegex = /^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i;
+      const anniversaryBadges = [...allTotalBadges, ...allConsecutiveBadges].filter(b => anniversaryRegex.test(b));
+      const regularBadges = [...allTotalBadges, ...allConsecutiveBadges].filter(b => !anniversaryRegex.test(b));
+      
+      // Render anniversary badges
+      const anniversarySection = document.getElementById('anniversarySection');
+      if (anniversaryBadges.length) {
+        anniversarySection.style.display = 'block';
+        document.getElementById('profileAnniversaryBadges').innerHTML = anniversaryBadges.map(b => `<div class="profile-badge profile-anniversary-badge">${b}</div>`).join('');
+      } else {
+        anniversarySection.style.display = 'none';
+      }
+      
+      // Render regular badges
       const badgesSection = document.getElementById('badgesSection');
-      if (allBadges.length) {
+      if (regularBadges.length) {
         badgesSection.style.display = 'block';
-        document.getElementById('profileBadges').innerHTML = allBadges.map(b => `<div class="profile-badge">${b}</div>`).join('');
+        document.getElementById('profileBadges').innerHTML = regularBadges.map(b => `<div class="profile-badge">${b}</div>`).join('');
       } else {
         badgesSection.style.display = 'none';
       }
@@ -749,7 +770,7 @@
         document.getElementById('profileHonours').innerHTML = honours.slice(0, 5).map(h => `
           <div class="profile-honour-card">
             <div class="profile-honour-title">${h.text || h.category || 'Award'}</div>
-            <div>${h.eventId ? `HC${h.eventId}` : ''} ${h.year ? `• ${h.year}` : ''} ${h.location ? `• ${h.location}` : ''}</div>
+            <div>${h.eventId ? `${h.eventId}` : ''} ${h.year ? `• ${h.year}` : ''} ${h.location ? `• ${h.location}` : ''}</div>
           </div>
         `).join('');
       } else {
