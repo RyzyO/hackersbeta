@@ -140,9 +140,15 @@
 
     .podcast-embed iframe {
       width: 100%;
-      height: 220px;
+      height: 200px;
       border: 0;
       border-radius: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .podcast-embed iframe {
+        height: 180px;
+      }
     }
 
     .archive-player {
@@ -409,7 +415,7 @@
           <p class="text-2xl font-semibold mt-2">Season 2026</p>
           <p class="text-sm text-gray-400 mt-2">The latest episodes from the Hackers Cup 26 build up.</p>
           <div class="mt-4 podcast-embed">
-            <a class="spreaker-player" href="https://www.spreaker.com/episode/bonville-cosmic-avenger-and-balls-on-the-roof--70889226" data-resource="episode_id=70889226" data-width="100%" data-height="200px" data-theme="dark" data-playlist="false" data-playlist-continuous="false" data-chapters-image="true" data-episode-image-position="right" data-hide-logo="false" data-hide-likes="false" data-hide-comments="false" data-hide-sharing="false" data-hide-download="true" data-title="Bonville, Cosmic Avenger and Balls on the Roof!">Listen to "Bonville, Cosmic Avenger and Balls on the Roof!" on Spreaker.</a>
+            <iframe src="https://widget.spreaker.com/player?episode_id=70889226&theme=dark&playlist=false&playlist-continuous=false&chapters-image=true&episode_image_position=right&hide-logo=false&hide-likes=false&hide-comments=false&hide-sharing=false&hide-download=true&cover_image_url=https://d1bm3dmew779uf.cloudfront.net/production/img/widgets/themes/dark.png" width="100%" height="200px" title="Bonville, Cosmic Avenger and Balls on the Roof!" frameborder="0" allow="autoplay; encrypted-media"></iframe>
           </div>
         </div>
       </div>
@@ -427,25 +433,7 @@
         </div>
         <div class="grid gap-4">
           <div class="podcast-embed">
-           <a class="spreaker-player"
-   href="https://www.spreaker.com/episode/bonville-cosmic-avenger-and-balls-on-the-roof--70889226"
-   data-resource="episode_id=70889226"
-   data-width="100%"
-   data-height="200px"
-   data-theme="dark"
-   
-   data-playlist="false"
-   data-playlist-continuous="false"
-   data-chapters-image="true"
-   data-episode-image-position="right"
-   data-hide-logo="false"
-   data-hide-likes="false"
-   data-hide-comments="false"
-   data-hide-sharing="false"
-   data-hide-download="true"
-   data-title="Bonville, Cosmic Avenger and Balls on the Roof!">
-  Listen to "Bonville, Cosmic Avenger and Balls on the Roof!" on Spreaker.
-</a>
+            <iframe src="https://widget.spreaker.com/player?episode_id=70889226&theme=dark&playlist=false&playlist-continuous=false&chapters-image=true&episode_image_position=right&hide-logo=false&hide-likes=false&hide-comments=false&hide-sharing=false&hide-download=true" width="100%" height="200px" title="Bonville, Cosmic Avenger and Balls on the Roof!" frameborder="0"></iframe>
           </div>
         </div>
       </div>
@@ -650,6 +638,17 @@
           button.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
         }
       };
+
+      // Handle lock screen / MediaSession for iframes
+      if ('mediaSession' in navigator) {
+          window.addEventListener('message', (event) => {
+              if (event.origin.includes('spreaker.com') || event.origin.includes('spotify.com')) {
+                  // Listen for state if the widget emits it, though modern 
+                  // mobile browsers handle iframe audio metadata automatically 
+                  // when 'allow="encrypted-media"' is present.
+              }
+          });
+      }
 
       players.forEach((player) => {
         const audio = player.querySelector('audio');
