@@ -3,428 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hackers Cup Spin Wheel</title>
+  <title>Hackers Cup Random Hacker Generator</title>
   <style>
-    :root {
-      --bg-primary: #0a0f1c;
-      --bg-secondary: #111827;
-      --bg-accent: #1e293b;
-      --text-primary: #f1f5f9;
-      --text-muted: #94a3b8;
-      --text-accent: #60a5fa;
-      --border: rgba(255, 255, 255, 0.1);
-      --border-light: rgba(255, 255, 255, 0.05);
-      --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.4);
-      --gradient-bg: linear-gradient(135deg, #0a0f1c 0%, #1e293b 100%);
-      --gradient-accent: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-      --radius: 16px;
-      --radius-lg: 24px;
+    :root{
+      --bg-900:#051226;
+      --bg-800:#071731;
+      --panel:#071827;
+      --muted:#9fb0c6;
+      --text:#e6eef7;
+      --accent-a:#ffb020;
+      --accent-b:#32c5ff;
+      --glass:rgba(255,255,255,0.04);
+      --glass-2:rgba(255,255,255,0.06);
+      --shadow: 0 18px 50px rgba(2,6,23,0.6);
+      --radius:18px;
+      --ctrl-h:48px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:var(--text);background:linear-gradient(180deg,var(--bg-900),var(--bg-800));
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;display:flex;align-items:center;justify-content:center;padding:28px;
     }
 
-    html, body {
-      height: 100%;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--gradient-bg);
-      color: var(--text-primary);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    .app{width:min(1180px,100%);display:grid;grid-template-columns:1.35fr .85fr;gap:26px}
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      min-height: 100vh;
-    }
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:22px;border:1px solid var(--glass-2);box-shadow:var(--shadow)}
 
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
-      align-items: start;
-    }
+    /* LEFT HERO */
+    .left{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px}
+    h1{margin:0;font-size:clamp(24px,3.4vw,36px);letter-spacing:0.02em;font-weight:800}
+    .subtitle{margin:0;color:var(--muted);font-size:14px}
 
-    @media (min-width: 768px) {
-      .container {
-        grid-template-columns: 1fr 400px;
-        gap: 32px;
-      }
-    }
+    .wheel-wrap{position:relative;width:min(64vw,560px);height:min(64vw,560px);display:grid;place-items:center}
+    .pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:44px solid var(--accent-a);filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));z-index:6}
 
-    .main-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 32px;
-    }
+    canvas{width:100%;height:100%;border-radius:999px;background:radial-gradient(1200px circle at 20% 20%, rgba(50,197,255,0.06), transparent 12%), rgba(255,255,255,0.02);box-shadow:inset 0 -16px 40px rgba(0,0,0,0.5),0 24px 60px rgba(0,0,0,0.6)}
 
-    .header {
-      text-align: center;
-      margin-bottom: 16px;
-    }
+    .center-badge{position:absolute;z-index:4;width:124px;height:124px;border-radius:999px;background:linear-gradient(135deg,var(--accent-a),#f59e0b);display:grid;place-items:center;color:#061426;font-weight:900;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
 
-    .header h1 {
-      font-size: clamp(28px, 5vw, 48px);
-      font-weight: 900;
-      margin-bottom: 8px;
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+    .controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px}
+    button{border:0;cursor:pointer;border-radius:999px;padding:12px 18px;font-weight:800}
+    .spin-btn{background:linear-gradient(90deg,var(--accent-a),var(--accent-b));color:#071426;padding:14px 20px;min-width:170px;box-shadow:0 8px 30px rgba(43,20,6,0.15)}
+    .spin-btn:active{transform:translateY(2px)}
+    .secondary-btn{background:transparent;border:1px solid var(--glass);color:var(--text);padding:10px 14px}
 
-    .header p {
-      font-size: 18px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
+    /* RIGHT COLUMN */
+    .right{display:flex;flex-direction:column;gap:14px}
+    .field,.result,.stats,.list-box{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;border:1px solid var(--glass)}
+    .label{font-size:12px;color:var(--muted);letter-spacing:0.09em;text-transform:uppercase;margin-bottom:8px;font-weight:700}
+    input[type="text"]{width:100%;border-radius:10px;border:1px solid var(--glass);background:rgba(5,10,18,0.4);color:var(--text);padding:10px 12px}
 
-    .wheel-container {
-      position: relative;
-      width: min(90vw, 500px);
-      height: min(90vw, 500px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto;
-    }
+    .result h2{margin:0;font-size:12px;color:var(--muted);text-transform:uppercase}
+    .winner{font-size:34px;margin:6px 0 0;font-weight:900}
+    .winner-sub{color:var(--muted);margin:8px 0 0}
 
-    .wheel-shadow {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, transparent 70%);
-      filter: blur(20px);
-      z-index: 1;
-    }
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stat{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid var(--glass)}
+    .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}
+    .stat .v{font-size:20px;font-weight:900}
 
-    .wheel {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      z-index: 2;
-    }
+    .player-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:45vh;overflow:auto}
+    .player-list li{display:flex;justify-content:space-between;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid var(--glass);}    
+    .player-list li strong{color:var(--accent-b)}
 
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    .footnote{font-size:12px;color:var(--muted)}
 
-    .pointer {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 24px solid transparent;
-      border-right: 24px solid transparent;
-      border-top: 48px solid #fbbf24;
-      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
-      z-index: 3;
-    }
-
-    .center-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: var(--gradient-accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #0a0f1c;
-      font-weight: 900;
-      font-size: 14px;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      z-index: 3;
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      align-items: center;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    @media (min-width: 480px) {
-      .controls {
-        flex-direction: row;
-        justify-content: center;
-      }
-    }
-
-    button {
-      appearance: none;
-      border: none;
-      border-radius: var(--radius);
-      padding: 16px 24px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      min-width: 160px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .spin-button {
-      background: var(--gradient-accent);
-      color: #0a0f1c;
-      box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3);
-    }
-
-    .spin-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(251, 191, 36, 0.4);
-    }
-
-    .spin-button:active {
-      transform: translateY(0);
-    }
-
-    .secondary-button {
-      background: transparent;
-      color: var(--text-primary);
-      border: 2px solid var(--border);
-    }
-
-    .secondary-button:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: var(--text-accent);
-    }
-
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--bg-accent);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: var(--shadow);
-      transition: box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-hover);
-    }
-
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      font-size: 16px;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-
-    .input-field:focus {
-      border-color: var(--text-accent);
-    }
-
-    .result-card {
-      text-align: center;
-    }
-
-    .winner-name {
-      font-size: clamp(24px, 4vw, 36px);
-      font-weight: 900;
-      margin: 8px 0;
-      color: var(--text-accent);
-    }
-
-    .winner-meta {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .stat-item {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: 900;
-      color: var(--text-primary);
-    }
-
-    .player-list {
-      list-style: none;
-      max-height: 300px;
-      overflow-y: auto;
-      margin: 0;
-      padding: 0;
-    }
-
-    .player-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: var(--radius);
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-light);
-      margin-bottom: 8px;
-      transition: background-color 0.2s ease;
-    }
-
-    .player-item:hover {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .player-number {
-      font-weight: 700;
-      color: var(--text-accent);
-      min-width: 40px;
-    }
-
-    .player-name {
-      flex: 1;
-      text-align: right;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-      background: var(--text-muted);
-    }
-
-    @media (max-width: 767px) {
-      .sidebar {
-        order: -1;
-      }
-
-      .wheel-container {
-        order: 1;
-      }
-
-      .controls {
-        order: 2;
-      }
+    /* Small screens */
+    @media (max-width:980px){
+      .app{grid-template-columns:1fr;gap:12px}
+      .wheel-wrap{width:min(86vw,420px);height:min(86vw,420px)}
+      .center-badge{width:96px;height:96px}
+      .controls{flex-direction:column}
+      .controls button{width:100%}
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <main class="main-section">
-      <header class="header">
-        <h1>Hackers Cup Spin Wheel</h1>
-        <p>Random Hacker Generator</p>
-      </header>
+  <div class="app">
+    <section class="panel left">
+      <h1>Hackers Cup Spin Wheel</h1>
+      <p class="subtitle">Random Hacker Generator • Spin to draw a Hackers Cup number</p>
 
-      <div class="wheel-container">
-        <div class="wheel-shadow"></div>
-        <div class="wheel">
-          <canvas id="wheel" width="1000" height="1000"></canvas>
-          <div class="pointer"></div>
-          <div class="center-logo">HACKERS<br>CUP</div>
-        </div>
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="1400" height="1400"></canvas>
+        <div class="center-badge">HACKERS<br>CUP</div>
       </div>
 
       <div class="controls">
-        <button class="spin-button" id="spinBtn">Spin Wheel</button>
-        <button class="secondary-button" id="spinSearchBtn">Spin Filtered</button>
-        <button class="secondary-button" id="resetBtn">Reset</button>
+        <button class="spin-btn" id="spinBtn">Spin Wheel</button>
+        <button class="secondary-btn" id="spinSearchBtn">Spin Filtered</button>
+        <button class="secondary-btn" id="resetBtn">Reset</button>
       </div>
-    </main>
+    </section>
 
-    <aside class="sidebar">
-      <div class="card">
-        <h3 class="card-title">Filter Players</h3>
-        <input id="searchInput" type="text" class="input-field" placeholder="Type a name or number..." />
-      </div>
-
-      <div class="card result-card">
-        <h3 class="card-title">Selected Hacker</h3>
-        <div class="winner-name" id="winnerName">Ready to spin</div>
-        <div class="winner-meta" id="winnerMeta">273 loaded</div>
+    <aside class="panel right">
+      <div class="field">
+        <label class="label" for="searchInput">Filter players</label>
+        <input id="searchInput" type="text" placeholder="Type a name or number..." />
       </div>
 
-      <div class="card">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-label">Total loaded</div>
-            <div class="stat-value" id="totalCount">0</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">Filtered pool</div>
-            <div class="stat-value" id="filteredCount">0</div>
-          </div>
+      <div class="result">
+        <h2>Selected Hacker</h2>
+        <p class="winner" id="winnerName">Ready to spin</p>
+        <p class="winner-sub" id="winnerMeta">273 loaded</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Total loaded</div>
+          <div class="v" id="totalCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">Filtered pool</div>
+          <div class="v" id="filteredCount">0</div>
         </div>
       </div>
 
-      <div class="card">
-        <h3 class="card-title">Hackers</h3>
-        <ul class="player-list scrollbar-thin" id="playerList"></ul>
+      <div class="list-box">
+        <div class="list-head">
+          <h3>Hackers</h3>
+          <span class="footnote">Showing live filtered list</span>
+        </div>
+        <ul class="player-list" id="playerList"></ul>
       </div>
+
+      
     </aside>
   </div>
 
@@ -752,7 +459,7 @@
     function renderList() {
       playerList.innerHTML = filteredPlayers
         .slice(0, 273)
-        .map(p => `<li class="player-item"><span class="player-number">#${p.no}</span><span class="player-name">${p.name}</span></li>`)
+        .map(p => `<li><strong>#${p.no}</strong><span>${p.name}</span></li>`)
         .join('');
     }
 
