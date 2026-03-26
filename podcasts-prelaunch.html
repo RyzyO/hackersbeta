@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Podcasts Prelaunch | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="manifest" href="site.webmanifest">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .archive-player {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .archive-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .archive-cover {
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .archive-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .archive-meta {
+      font-size: 0.85rem;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .archive-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .archive-play-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 233, 0.45);
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.4), rgba(14, 165, 233, 0.2));
+      color: #e0f2fe;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 26px rgba(2, 132, 199, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .archive-play-btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 18px 30px rgba(2, 132, 199, 0.35);
+    }
+
+    .archive-skip-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(30, 41, 59, 0.55);
+      color: #e2e8f0;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .archive-skip-btn:hover {
+      background: rgba(51, 65, 85, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .archive-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      background: rgba(14, 165, 233, 0.15);
+      color: #7dd3fc;
+      font-weight: 600;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .archive-button:hover {
+      background: rgba(14, 165, 233, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .archive-button.secondary {
+      border-color: rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.5);
+    }
+
+    .archive-button.secondary:hover {
+      background: rgba(51, 65, 85, 0.6);
+    }
+
+    .archive-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .archive-progress {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(51, 65, 85, 0.8);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .archive-progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+    }
+
+    .archive-audio {
+      display: none;
+    }
+
+    .archive-slider {
+      accent-color: #0ea5e9;
+    }
+
+    .archive-select {
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(30, 41, 59, 0.65);
+      color: #e2e8f0;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+    }
+
+    .locked-overlay {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .locked-message {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .password-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .password-input {
+      flex: 1;
+      min-width: 180px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(30, 41, 59, 0.65);
+      color: #e2e8f0;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    .locked-status {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      min-height: 18px;
+    }
+
+    .status-error {
+      color: #fca5a5;
+    }
+
+    .status-success {
+      color: #86efac;
+    }
+
+    .player-controls.locked {
+      opacity: 0.35;
+      pointer-events: none;
+      filter: saturate(0.35);
+    }
+  </style>
+</head>
+<body class="bg-hackers-dark text-white min-h-screen font-sans hero-gradient">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight" style="font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: 0.015em;">HACKERS CUP 26</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="podcasts-prelaunch.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10">Prelaunch</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <section class="pt-28 pb-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Private Listening</p>
+        <h1 class="text-3xl md:text-4xl font-black mt-2">Podcast Prelaunch Vault</h1>
+        <p class="text-gray-300 mt-3 max-w-2xl">Each unreleased episode is protected with its own password. Enter the right password on an episode card to unlock playback.</p>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <div>
+            <p class="text-xs uppercase tracking-[0.25em] text-gray-400">From the Archives Layout</p>
+            <h2 class="text-2xl font-bold">Prelaunch Episodes</h2>
+          </div>
+        </div>
+
+        <div class="grid gap-4">
+          <div class="archive-player" data-audio-src="assets/audio/HC26P1.mp3" data-password="gregnorman?">
+            <div class="archive-header">
+              <img class="archive-cover" src="assets/images/PLOGO.png" alt="Prelaunch episode 1 cover">
+              <div>
+                <div class="archive-title">Prelaunch Episode 1</div>
+                <div class="archive-meta">Unreleased • Private Cut</div>
+              </div>
+            </div>
+
+            <div class="player-controls locked">
+              <div class="archive-progress" role="slider" aria-label="Audio progress" tabindex="0">
+                <div class="archive-progress-fill"></div>
+              </div>
+              <div class="flex justify-between text-xs text-gray-400 mt-2">
+                <span class="current-time">0:00</span>
+                <span class="duration">0:00</span>
+              </div>
+              <div class="archive-controls">
+                <button class="archive-skip-btn skip-back" type="button" aria-label="Back 30 seconds">-30</button>
+                <button class="archive-play-btn play-btn" type="button" aria-pressed="false" aria-label="Play">
+                  <i class="icon-play" data-lucide="play"></i>
+                  <i class="icon-pause hidden" data-lucide="pause"></i>
+                </button>
+                <button class="archive-skip-btn skip-forward" type="button" aria-label="Forward 30 seconds">+30</button>
+              </div>
+              <div class="archive-row text-xs text-gray-300">
+                <button class="archive-button secondary mute-btn" type="button" aria-pressed="false">Mute</button>
+                <label class="flex items-center gap-2">Volume
+                  <input class="archive-slider volume-slider" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume">
+                </label>
+                <label class="flex items-center gap-2">Speed
+                  <select class="archive-select speed-select" aria-label="Playback speed">
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="locked-overlay">
+              <p class="locked-message">This episode is locked. Enter its password to unlock.</p>
+              <div class="password-row">
+                <input class="password-input" type="password" placeholder="Episode password">
+                <button class="archive-button unlock-btn" type="button">Unlock Episode</button>
+              </div>
+              <p class="locked-status" aria-live="polite"></p>
+            </div>
+
+            <audio class="archive-audio" preload="metadata"></audio>
+          </div>
+
+          
+           
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      const players = Array.from(document.querySelectorAll('.archive-player'));
+
+      const formatTime = (seconds) => {
+        if (!Number.isFinite(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const remaining = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${remaining}`;
+      };
+
+      const pauseOtherPlayers = (currentPlayer) => {
+        players.forEach((player) => {
+          if (player === currentPlayer) return;
+          const audio = player.querySelector('audio');
+          if (!audio || audio.paused) return;
+          audio.pause();
+          const playIcon = player.querySelector('.icon-play');
+          const pauseIcon = player.querySelector('.icon-pause');
+          const button = player.querySelector('.play-btn');
+          if (playIcon) playIcon.classList.remove('hidden');
+          if (pauseIcon) pauseIcon.classList.add('hidden');
+          if (button) {
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', 'Play');
+          }
+        });
+      };
+
+      const setPlayUi = (player, isPlaying) => {
+        const playIcon = player.querySelector('.icon-play');
+        const pauseIcon = player.querySelector('.icon-pause');
+        const button = player.querySelector('.play-btn');
+        if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
+        if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
+        if (button) {
+          button.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+          button.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        }
+      };
+
+      players.forEach((player) => {
+        const audio = player.querySelector('audio');
+        const controlsWrap = player.querySelector('.player-controls');
+        const unlockBtn = player.querySelector('.unlock-btn');
+        const passwordInput = player.querySelector('.password-input');
+        const lockedStatus = player.querySelector('.locked-status');
+        const overlay = player.querySelector('.locked-overlay');
+
+        const playButton = player.querySelector('.play-btn');
+        const progress = player.querySelector('.archive-progress');
+        const fill = player.querySelector('.archive-progress-fill');
+        const currentTimeEl = player.querySelector('.current-time');
+        const durationEl = player.querySelector('.duration');
+        const skipBack = player.querySelector('.skip-back');
+        const skipForward = player.querySelector('.skip-forward');
+        const muteButton = player.querySelector('.mute-btn');
+        const volumeSlider = player.querySelector('.volume-slider');
+        const speedSelect = player.querySelector('.speed-select');
+
+        if (!audio) return;
+
+        const source = player.dataset.audioSrc || '';
+        const expectedPassword = player.dataset.password || '';
+
+        audio.src = source;
+        audio.load();
+
+        const unlock = () => {
+          if (controlsWrap) controlsWrap.classList.remove('locked');
+          if (overlay) overlay.classList.add('hidden');
+          if (lockedStatus) {
+            lockedStatus.textContent = 'Episode unlocked.';
+            lockedStatus.classList.remove('status-error');
+            lockedStatus.classList.add('status-success');
+          }
+        };
+
+        if (unlockBtn) {
+          unlockBtn.addEventListener('click', () => {
+            const submitted = (passwordInput?.value || '').trim();
+            if (!submitted) {
+              if (lockedStatus) {
+                lockedStatus.textContent = 'Enter a password to continue.';
+                lockedStatus.classList.add('status-error');
+                lockedStatus.classList.remove('status-success');
+              }
+              return;
+            }
+
+            if (submitted === expectedPassword) {
+              unlock();
+            } else if (lockedStatus) {
+              lockedStatus.textContent = 'Incorrect password for this episode.';
+              lockedStatus.classList.add('status-error');
+              lockedStatus.classList.remove('status-success');
+            }
+          });
+        }
+
+        if (passwordInput) {
+          passwordInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              unlockBtn?.click();
+            }
+          });
+        }
+
+        audio.addEventListener('loadedmetadata', () => {
+          if (durationEl) durationEl.textContent = formatTime(audio.duration);
+        });
+
+        if (volumeSlider) audio.volume = Number(volumeSlider.value);
+
+        audio.addEventListener('timeupdate', () => {
+          const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+          if (fill) fill.style.width = `${percent}%`;
+          if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+        });
+
+        audio.addEventListener('ended', () => setPlayUi(player, false));
+        audio.addEventListener('play', () => {
+          pauseOtherPlayers(player);
+          setPlayUi(player, true);
+        });
+        audio.addEventListener('pause', () => setPlayUi(player, false));
+
+        if (playButton) {
+          playButton.addEventListener('click', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            if (audio.paused) {
+              pauseOtherPlayers(player);
+              audio.play().catch(() => {
+                setPlayUi(player, false);
+              });
+            } else {
+              audio.pause();
+              setPlayUi(player, false);
+            }
+          });
+        }
+
+        if (progress) {
+          progress.addEventListener('click', (event) => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            const rect = progress.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            if (Number.isFinite(percent) && audio.duration) {
+              audio.currentTime = Math.max(0, Math.min(1, percent)) * audio.duration;
+            }
+          });
+        }
+
+        if (skipBack) {
+          skipBack.addEventListener('click', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            audio.currentTime = Math.max(0, audio.currentTime - 30);
+          });
+        }
+
+        if (skipForward) {
+          skipForward.addEventListener('click', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            if (!audio.duration) return;
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 30);
+          });
+        }
+
+        if (muteButton) {
+          muteButton.addEventListener('click', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            audio.muted = !audio.muted;
+            muteButton.textContent = audio.muted ? 'Unmute' : 'Mute';
+            muteButton.setAttribute('aria-pressed', audio.muted ? 'true' : 'false');
+          });
+        }
+
+        if (volumeSlider) {
+          volumeSlider.addEventListener('input', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            audio.volume = Number(volumeSlider.value);
+            if (audio.muted && audio.volume > 0) {
+              audio.muted = false;
+              if (muteButton) {
+                muteButton.textContent = 'Mute';
+                muteButton.setAttribute('aria-pressed', 'false');
+              }
+            }
+          });
+        }
+
+        if (speedSelect) {
+          speedSelect.addEventListener('change', () => {
+            if (controlsWrap?.classList.contains('locked')) return;
+            audio.playbackRate = Number(speedSelect.value);
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
