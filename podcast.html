@@ -633,12 +633,6 @@
         const button = player.querySelector('.play-btn');
         if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
         if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
-      const setPlayUi = (player, isPlaying) => {
-        const playIcon = player.querySelector('.icon-play');
-        const pauseIcon = player.querySelector('.icon-pause');
-        const button = player.querySelector('.play-btn');
-        if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
-        if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
         if (button) {
           button.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
           button.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
