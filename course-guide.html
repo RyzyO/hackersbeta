@@ -230,6 +230,19 @@
               <p class="text-sm text-gray-400 mt-1">Index 1 and Index 2 are shown for each hole.</p>
             </div>
           </div>
+          <div class="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+            <div>
+              <p class="text-sm font-semibold text-white">Hackers Mode</p>
+              <p class="text-xs text-gray-400">Swap course notes to the unfiltered hackers guide.</p>
+            </div>
+            <label for="hackers-mode-toggle" class="inline-flex items-center cursor-pointer">
+              <input id="hackers-mode-toggle" type="checkbox" class="sr-only peer" aria-label="Toggle Hackers Mode">
+              <span class="relative w-12 h-7 rounded-full bg-white/20 peer-checked:bg-hackers-gold/70 transition-colors">
+                <span class="absolute top-1 left-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+              </span>
+            </label>
+          </div>
+          <p id="hackers-mode-status" class="mt-3 text-xs font-medium text-gray-400">Hackers Mode: Off</p>
         </div>
       </div>
     </div>
@@ -330,18 +343,61 @@
       }
     ];
 
+    const hackersNotes = {
+      1: 'The 1st is a reachable-in-two par 5. From the back tee, its 220m to reach the cluster of 3 round bunkers (195m from whites). Longer hitters can go straight over them to a nice landing area with no real trouble. The 2nd shot is 180m or less from here, and you can run it up onto the narrow green, but the entrance is narrow, guarded by bunkers either side. The green itself it a slut with putts going off the back or the wind blowing the ball off the green.',
+      2: 'The 2nd is a cunt of a par 3. Its long and if the wind is up, hitting the green is damn near impossible. From the back, can play 185m to the front. This hole can play anything from a 7 iron to a 3 wood. The only bunker is a deep one so, avoid it. Good luck...might only have 5 or 6 guys hit this fucking green all weekend.',
+      3: 'The 3rd is a slight dog-leg left. If the back tees are in play, the small fairway bunker on the left edge is just under 200m from the tee box. If tee is in front of the pond, bunker not in play. From the back, only a massive 300m drive will get you to the font edge, but you will need wind in your back. Best to hit your drive to a nice wide area beyond the fairway bunker. From here, it\'s a simple chip onto the green, that you will blade into the cow paddock beyond as you seeth with rage.',
+      4: 'On the 4th, the big hitters are going to want to go for this green, wind permitting. Front of green off elevated tee is between 255m and 265m. 2 bunkers punish the drive that is short and right (about 75% of the field). And to the right of the green is a thick wood. End up in there and you\'re fucked, might as well dig yourself a shallow grave. Also, there\'s water all the way down the left side of the fairway, which is where The Cock\'s hat and sunnies ended up last time when a sudden gust of wind made everyone\'s day.',
+      5: 'The 5th is a par 4 with OB all the way down the left. There is a deep pot centre of fairway which is 265m or 235m off the tee (depending on tee.) Good option is to leave your drive short of this bunker with only a wedge or short iron into a well-guarded green. Also, the last chance to take a shit so keep that in mind before moving to next hole.',
+      6: 'The 6th, a short par 3 is tougher than it looks, especially if the wind is up. Depending on tee position, can play 150m to 165m.You can\'t see it from tee, but over the back of the green feeds downhill to a pond. If you\'re going to miss, miss short which will provide a great opportunity to thin your chip over the back into said pond.',
+      7: 'The 7th is a sweeping par 5 that hugs a massive swamp. Probably 5 or 6 beers in by now so you will be tempted to take on the marshland because you are an idiot. From the back elevated tee, its 195m to reach the bunkers on the left side of fairway and 220m to clear them. Anything over 265m will put you in the far bunkers or behind that big fucking tree. If you are Dan Sullivan or Budsey, and wind permits; take a line just left of the big tree. A carry of 255m will clear the swamp and leave you a clear 2nd shot in. For the rest of us, take a long iron or fairway wood and drive right of the 2 bunkers to a generous landing area. If the Troll has driven his cart into the swamp, wave as you go past.',
+      8: 'The 8th is a straightforward par 3 that despite its apparent simplicity, you will still wipe. The green is quite deep so take note of pin position when selecting club.',
+      9: 'The 9th is a great hole to finish the front. Real strategy needs to be made before teeing off but once you have decided on your strategy, step up to the tee and hook it onto the road. With three very different tee boxes and wind a real possibility, a par here is as good as you can hope for but most of us will wipe this one also. From the back, 240m+ will put you in the creek or the 2 fairway bunkers beyond, so try to lay up with a tee shot of about 200m. From the centre tee box, you can clear the creek and bunkers with a drive of 245m or more.',
+      10: 'The 10th is a straightforward short par 4 which won\'t make a rats arse of difference because by now, your round is shot. If the tee is at the front and/or wind behind you, this green can be reached off the tee. No real trouble to speak of other than 2 pot bunkers 190m from the white or 215m from the back.',
+      11: 'The 11th is wide open and the scene of one of the longest drive holes. Not much trouble to speak of but try not to spray it right and end up on the steep grassy bank. You will have a shitty lie from there. Also, if you can hit it a long way, be sure to hit up on group in front who won\'t see it coming from the blind tee box.',
+      12: 'The 12th is a straightforward par 3. There\'s OB to the left and short, and some thick bushes if you are long, but not too much to stress over. By now, The Troll has called himself an ambulance.',
+      13: 'The 13th is another reachable par 4. Problem with this one is OB all the way down the left side and a pond if you are long. The safe play is to pick your 200m club off the tee. But you will take driver and will duff your drive trying to hit it too hard because you are drunk.',
+      14: 'The 14th is straight forward so long as the wind isn\'t blowing, which it is. At about 80kmph by now. With OB down the left and water down the right, you\'re basically toast.',
+      15: 'The 15th is a beautiful hole, or it would be if you could see. At just over 240m it\'s a reachable par 4 for good golfers, but not you. Its only 120m to clear the pond, but McBain will end up in there again.',
+      16: 'The 16th is another shortish par 4. But you are so drunk by now, that a savage hook into the lake is almost assured.',
+      17: 'The 17th is a short par 3. Grab a wedge, try and make your only par for the day and get on with your life.',
+      18: 'The 18th is a hole that has provided much confusion in the past. Don\'t be a fuckwit and hit your approach to the wrong green like we did in 2017. As you empty your cart of rubbish, keep an eye out for Muzzman\'s car keys.'
+    };
+
+    let hackersModeEnabled = false;
+
     const baseUrl = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
 
     function metersToYards(meters) {
       return Math.round(meters * 1.09361);
     }
 
+    function getHoleNote(hole) {
+      if (hackersModeEnabled) {
+        return hackersNotes[hole.num] ?? 'Transcript coming soon.';
+      }
+
+      return hole.note ?? 'Transcript coming soon.';
+    }
+
+    function updateHackersModeStatus() {
+      const status = document.getElementById('hackers-mode-status');
+      if (!status) return;
+
+      status.textContent = hackersModeEnabled ? 'Hackers Mode: On' : 'Hackers Mode: Off';
+      status.classList.toggle('text-hackers-gold', hackersModeEnabled);
+      status.classList.toggle('text-gray-400', !hackersModeEnabled);
+    }
+
     function generateHoleCards() {
       const grid = document.getElementById('holes-grid');
       if (!grid) return;
 
+      grid.innerHTML = '';
+
       holes.forEach(hole => {
         const yards = hole.yards ?? metersToYards(hole.dist);
+        const note = getHoleNote(hole);
         const card = document.createElement('div');
         card.className = 'glass-card rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full';
         card.onclick = () => openVideoModal(baseUrl + hole.video);
@@ -377,7 +433,7 @@
               <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10">Index 1: ${hole.index1}</span>
               <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10">Index 2: ${hole.index2}</span>
             </div>
-            ${hole.note ? `<p class="text-sm text-gray-400">${hole.note}</p>` : '<p class="text-sm text-gray-500">Transcript coming soon.</p>'}
+            <p class="text-sm ${note === 'Transcript coming soon.' ? 'text-gray-500' : 'text-gray-400'}">${note}</p>
             <div class="mt-auto flex items-center gap-2 text-sm text-gray-400">
               <i data-lucide="video" class="w-4 h-4"></i>
               <span>Watch flyover</span>
@@ -442,6 +498,15 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       generateHoleCards();
+      updateHackersModeStatus();
+
+      const hackersModeToggle = document.getElementById('hackers-mode-toggle');
+      hackersModeToggle?.addEventListener('change', (event) => {
+        hackersModeEnabled = event.target.checked;
+        updateHackersModeStatus();
+        generateHoleCards();
+      });
+
       lucide.createIcons();
     });
   </script>
