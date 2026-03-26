@@ -358,16 +358,245 @@
     }
 
     @media (max-width: 767px) {
-      .sidebar {
+      .main-section {
         order: -1;
       }
 
-      .wheel-container {
+      .sidebar {
         order: 1;
+      }
+    }
+
+    /* Profile Modal Styles */
+    .profile-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .profile-modal.active {
+      display: flex;
+    }
+
+    .profile-modal-content {
+      background: var(--bg-accent);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--shadow-hover);
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+
+    .profile-name {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--text-accent);
+      margin-bottom: 8px;
+    }
+
+    .profile-number {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .profile-stat {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .profile-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .profile-stat-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text-primary);
+    }
+
+    .profile-section {
+      margin-bottom: 24px;
+    }
+
+    .profile-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .profile-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .profile-badge {
+      background: var(--gradient-accent);
+      color: #0a0f1c;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .profile-years {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .profile-year {
+      background: rgba(60, 165, 245, 0.1);
+      border: 1px solid rgba(60, 165, 245, 0.3);
+      color: var(--text-accent);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .profile-honours {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .profile-honour-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .profile-honour-title {
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .profile-close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 28px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      transition: background 0.2s ease;
+    }
+
+    .profile-close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Mobile improvements */
+    @media (max-width: 640px) {
+      body {
+        padding: 8px;
+      }
+
+      .container {
+        gap: 16px;
+      }
+
+      .main-section {
+        gap: 20px;
+      }
+
+      .header h1 {
+        font-size: clamp(24px, 4vw, 32px);
+      }
+
+      .wheel-container {
+        width: min(80vw, 320px);
+        height: min(80vw, 320px);
       }
 
       .controls {
-        order: 2;
+        gap: 12px;
+      }
+
+      button {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-width: 120px;
+      }
+
+      .sidebar {
+        gap: 16px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .player-list {
+        max-height: 200px;
+      }
+
+      .profile-modal-content {
+        padding: 20px 16px;
+      }
+
+      .profile-name {
+        font-size: 24px;
+      }
+
+      .profile-stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .profile-stat-value {
+        font-size: 20px;
       }
     }
   </style>
@@ -406,6 +635,7 @@
         <h3 class="card-title">Selected Hacker</h3>
         <div class="winner-name" id="winnerName">Ready to spin</div>
         <div class="winner-meta" id="winnerMeta">273 loaded</div>
+        <button class="secondary-button" id="viewProfileBtn" style="display: none; margin-top: 16px; width: 100%;">View Profile</button>
       </div>
 
       <div class="card">
@@ -427,6 +657,142 @@
       </div>
     </aside>
   </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="profile-modal" onclick="if(event.target === this) closeProfileModal()">
+    <div class="profile-modal-content">
+      <button class="profile-close-btn" onclick="closeProfileModal()">&times;</button>
+      <div class="profile-header">
+        <div class="profile-name" id="profileName">Loading...</div>
+        <div class="profile-number" id="profileNumber"></div>
+      </div>
+      
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-label">Events Attended</div>
+          <div class="profile-stat-value" id="profileEventsAttended">-</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-label">Last Attended</div>
+          <div class="profile-stat-value" id="profileLastAttended">-</div>
+        </div>
+      </div>
+
+      <div class="profile-section" id="anniversarySection" style="display: none;">
+        <div class="profile-section-title">Milestone Badges</div>
+        <div class="profile-badges" id="profileAnniversaryBadges"></div>
+      </div>
+
+      <div class="profile-section" id="badgesSection" style="display: none;">
+        <div class="profile-section-title">Badges</div>
+        <div class="profile-badges" id="profileBadges"></div>
+      </div>
+
+      <div class="profile-section" id="yearsSection" style="display: none;">
+        <div class="profile-section-title">Years Attended</div>
+        <div class="profile-years" id="profileYears"></div>
+      </div>
+
+      <div class="profile-section" id="honoursSection" style="display: none;">
+        <div class="profile-section-title">Honours & Awards</div>
+        <div class="profile-honours" id="profileHonours"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase setup
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const database = firebase.database();
+
+    // Profile modal functions
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.remove('active');
+    }
+
+    function showProfileModal(displayName, hackerNumber) {
+      const modal = document.getElementById('profileModal');
+      modal.classList.add('active');
+      loadAndDisplayProfile(displayName, hackerNumber);
+    }
+
+    async function loadAndDisplayProfile(displayName, hackerNumber) {
+      const profileRef = db.collection('attendeeProfiles').doc(displayName);
+      
+      try {
+        const doc = await profileRef.get();
+        const profileData = doc.exists ? doc.data() : {};
+        
+        renderProfileModal(profileData, displayName, hackerNumber);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        document.getElementById('profileName').textContent = displayName;
+        document.getElementById('profileNumber').textContent = hackerNumber ? `Hacker #${hackerNumber}` : '';
+      }
+    }
+
+    function renderProfileModal(profile, displayName, hackerNumber) {
+      document.getElementById('profileName').textContent = displayName;
+      document.getElementById('profileNumber').textContent = hackerNumber ? `Hacker #${hackerNumber}` : '';
+      document.getElementById('profileEventsAttended').textContent = profile.eventsAttended || '-';
+      document.getElementById('profileLastAttended').textContent = profile.lastAttended ? `HC${profile.lastAttended}` : '-';
+
+      // Render badges
+      const totalBadges = (profile.totalBadges || []).filter(b => !/^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i.test(b));
+      const consecutiveBadges = (profile.consecutiveBadges || []).filter(b => !/^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i.test(b));
+      
+      let allBadges = [...totalBadges, ...consecutiveBadges];
+      const badgesSection = document.getElementById('badgesSection');
+      if (allBadges.length) {
+        badgesSection.style.display = 'block';
+        document.getElementById('profileBadges').innerHTML = allBadges.map(b => `<div class="profile-badge">${b}</div>`).join('');
+      } else {
+        badgesSection.style.display = 'none';
+      }
+
+      // Render years
+      const years = profile.attendedYears || [];
+      const yearsSection = document.getElementById('yearsSection');
+      if (years.length) {
+        yearsSection.style.display = 'block';
+        document.getElementById('profileYears').innerHTML = years.sort((a,b) => a-b).map(y => `<div class="profile-year">HC${y}</div>`).join('');
+      } else {
+        yearsSection.style.display = 'none';
+      }
+
+      // Render honours
+      const honours = profile.honours || [];
+      const honoursSection = document.getElementById('honoursSection');
+      if (honours.length) {
+        honoursSection.style.display = 'block';
+        document.getElementById('profileHonours').innerHTML = honours.slice(0, 5).map(h => `
+          <div class="profile-honour-card">
+            <div class="profile-honour-title">${h.text || h.category || 'Award'}</div>
+            <div>${h.eventId ? `HC${h.eventId}` : ''} ${h.year ? `• ${h.year}` : ''} ${h.location ? `• ${h.location}` : ''}</div>
+          </div>
+        `).join('');
+      } else {
+        honoursSection.style.display = 'none';
+      }
+    }
+  </script>
 
   <script>
     const players = [
@@ -718,7 +1084,7 @@
     const totalCount = document.getElementById('totalCount');
     const filteredCount = document.getElementById('filteredCount');
     const playerList = document.getElementById('playerList');
-    const wheelWrap = document.querySelector('.wheel-wrap');
+    const wheelContainer = document.querySelector('.wheel-container');
 
     let rotation = 0;
     let spinning = false;
@@ -876,7 +1242,7 @@
     }
 
     function sizeCanvasToContainer() {
-      const rect = wheelWrap.getBoundingClientRect();
+      const rect = wheelContainer.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const displaySize = Math.max(220, Math.floor(Math.min(rect.width, rect.height)));
       const internalSize = Math.floor(displaySize * dpr);
@@ -945,6 +1311,10 @@
           const winner = pool[targetIndex];
           winnerName.textContent = winner.name;
           winnerMeta.textContent = `Hacker #${winner.no}`;
+          viewProfileBtn.style.display = 'block';
+          viewProfileBtn.onclick = () => {
+            showProfileModal(winner.name, winner.no);
+          };
           spinning = false;
           spinBtn.disabled = false;
           spinSearchBtn.disabled = false;
@@ -976,6 +1346,7 @@
       rotation = 0;
       winnerName.textContent = 'Ready to spin';
       winnerMeta.textContent = `${players.length} loaded`;
+      viewProfileBtn.style.display = 'none';
       searchInput.value = '';
       filteredPlayers = [...players];
       updateFiltered();
