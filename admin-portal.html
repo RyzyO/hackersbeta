@@ -773,6 +773,24 @@
       return field === "amtOutstanding" || field === "financialStatus";
     }
 
+    function normalizeFinancialStatus(value) {
+      const normalized = normalize(value);
+      if (!normalized) return "";
+      if (normalized === "paid") return "Paid";
+      if (normalized === "partial") return "Partial";
+      return "Pending";
+    }
+
+    function getFinancialStatusOptions(selectedValue) {
+      const selected = normalizeFinancialStatus(selectedValue);
+      const options = ["", "Pending", "Partial", "Paid"];
+      return options.map((value) => {
+        const label = value || "-";
+        const isSelected = value === selected ? "selected" : "";
+        return `<option value="${value}" ${isSelected}>${label}</option>`;
+      }).join("");
+    }
+
     function getUniquePlayerNames() {
       const names = users
         .map((u) => asString(u.displayName).trim())

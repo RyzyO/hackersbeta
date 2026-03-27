@@ -365,6 +365,19 @@
     };
 
     let hackersModeEnabled = false;
+    const hackersAudioByHole = {
+      1: 'HOLE1.mp3',
+      2: 'HOLE2.mp3',
+      3: 'HOLE3.mp3',
+      4: 'HOLE4.mp3',
+      5: 'HOLE5.mp3'
+    };
+
+    let modalHackersAudio = null;
+    let modalSyncHandlersAttached = false;
+    let lastVideoCurrentTime = 0;
+    let isVideoLooping = false;
+    let videoHasEnded = false;
 
     const baseUrl = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
 
@@ -400,7 +413,7 @@
         const note = getHoleNote(hole);
         const card = document.createElement('div');
         card.className = 'glass-card rounded-2xl overflow-hidden group cursor-pointer flex flex-col h-full';
-        card.onclick = () => openVideoModal(baseUrl + hole.video);
+        card.onclick = () => openVideoModal(baseUrl + hole.video, hole.num);
 
         card.innerHTML = `
           <div class="video-thumb aspect-video relative bg-black">
@@ -457,15 +470,132 @@
       });
     }
 
-    window.openVideoModal = function(videoUrl) {
+    function cleanupModalHackersAudio() {
+      if (!modalHackersAudio) return;
+
+      modalHackersAudio.pause();
+      modalHackersAudio.currentTime = 0;
+      modalHackersAudio.src = '';
+      modalHackersAudio = null;
+    }
+
+    function attachModalSyncHandlers(video) {
+      if (modalSyncHandlersAttached || !video) return;
+
+      video.addEventListener('play', () => {
+        if (!modalHackersAudio) return;
+        videoHasEnded = false;
+        modalHackersAudio.playbackRate = video.playbackRate;
+        modalHackersAudio.currentTime = video.currentTime;
+        modalHackersAudio.play().catch(() => {});
+      });
+
+      video.addEventListener('pause', () => {
+        if (!modalHackersAudio) return;
+        // Don't pause audio if video just ended naturally
+        if (!videoHasEnded) {
+          modalHackersAudio.pause();
+        }
+      });
+
+      video.addEventListener('seeking', () => {
+        if (!modalHackersAudio) return;
+        modalHackersAudio.currentTime = video.currentTime;
+      });
+
+      video.addEventListener('ratechange', () => {
+        if (!modalHackersAudio) return;
+        modalHackersAudio.playbackRate = video.playbackRate;
+      });
+
+      video.addEventListener('timeupdate', () => {
+        if (!modalHackersAudio || video.paused) return;
+        // Normal sync: only sync if out of sync by more than threshold
+        if (Math.abs(modalHackersAudio.currentTime - video.currentTime) > 0.4) {
+          modalHackersAudio.currentTime = video.currentTime;
+        }
+      });
+
+      modalSyncHandlersAttached = true;
+    }
+
+    function prepareHackersAudio(holeNum, video) {
+      return new Promise((resolve) => {
+        const audioFile = hackersAudioByHole[holeNum];
+        if (!hackersModeEnabled || !audioFile || !video) {
+          resolve(null);
+          return;
+        }
+
+        const audio = new Audio(audioFile);
+        audio.preload = 'auto';
+
+        let done = false;
+        const finish = (result) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timeoutId);
+          resolve(result);
+        };
+
+        audio.addEventListener('loadedmetadata', () => finish(audio), { once: true });
+        audio.addEventListener('error', () => finish(null), { once: true });
+
+        const timeoutId = setTimeout(() => finish(null), 3000);
+        audio.load();
+      });
+    }
+
+    window.openVideoModal = async function(videoUrl, holeNum) {
       const modal = document.getElementById('videoModal');
       const video = document.getElementById('modalVideo');
       const source = video.querySelector('source');
 
+      cleanupModalHackersAudio();
+      lastVideoCurrentTime = 0;
+      isVideoLooping = false;
+      videoHasEnded = false;
+      attachModalSyncHandlers(video);
+
+      video.loop = false;
+      video.muted = false;
+
       source.src = videoUrl;
       video.load();
+
+      modalHackersAudio = await prepareHackersAudio(holeNum, video);
+
+      if (modalHackersAudio) {
+        video.muted = true;
+        modalHackersAudio.currentTime = 0;
+        modalHackersAudio.playbackRate = video.playbackRate;
+
+        // When video ends, keep audio playing on last frame
+        const handleVideoEnd = () => {
+          videoHasEnded = true;
+        };
+
+        video.addEventListener('ended', handleVideoEnd, { once: false });
+      }
+
       modal.classList.remove('hidden');
-      video.play();
+
+      // Wait for video to be fully loaded before playing both audio and video
+      const playBoth = () => {
+        if (modalHackersAudio) {
+          modalHackersAudio.play().catch(() => {});
+        }
+        video.play().catch(() => {});
+      };
+
+      if (video.readyState >= 2) {
+        // Video already loaded enough to play
+        playBoth();
+      } else {
+        // Wait for video to be ready
+        video.addEventListener('canplay', playBoth, { once: true });
+      }
+
       document.body.style.overflow = 'hidden';
     };
 
@@ -475,6 +605,12 @@
 
       video.pause();
       video.currentTime = 0;
+      video.loop = false;
+      video.muted = false;
+      lastVideoCurrentTime = 0;
+      isVideoLooping = false;
+      videoHasEnded = false;
+      cleanupModalHackersAudio();
       modal.classList.add('hidden');
       document.body.style.overflow = '';
     };
