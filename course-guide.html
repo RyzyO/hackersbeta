@@ -378,6 +378,7 @@
     let lastVideoCurrentTime = 0;
     let isVideoLooping = false;
     let videoHasEnded = false;
+    let lastSyncTime = 0;
 
     const baseUrl = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
 
@@ -511,6 +512,12 @@
 
       video.addEventListener('timeupdate', () => {
         if (!modalHackersAudio || video.paused) return;
+        
+        // Throttle sync checks to every 200ms to reduce mobile jank
+        const now = performance.now();
+        if (now - lastSyncTime < 200) return;
+        lastSyncTime = now;
+        
         // Normal sync: only sync if out of sync by more than threshold
         if (Math.abs(modalHackersAudio.currentTime - video.currentTime) > 0.4) {
           modalHackersAudio.currentTime = video.currentTime;
@@ -556,6 +563,7 @@
       lastVideoCurrentTime = 0;
       isVideoLooping = false;
       videoHasEnded = false;
+      lastSyncTime = 0;
       attachModalSyncHandlers(video);
 
       video.loop = false;
@@ -611,6 +619,7 @@
       lastVideoCurrentTime = 0;
       isVideoLooping = false;
       videoHasEnded = false;
+      lastSyncTime = 0;
       modalSyncHandlersAttached = false;
       cleanupModalHackersAudio();
       modal.classList.add('hidden');
