@@ -492,10 +492,11 @@
 
       video.addEventListener('pause', () => {
         if (!modalHackersAudio) return;
-        // Don't pause audio if video just ended naturally
-        if (!videoHasEnded) {
-          modalHackersAudio.pause();
-        }
+        // Never pause audio when it's still playing (let it finish)
+        if (modalHackersAudio.paused) return;
+        // Only pause audio if user explicitly paused the video (not auto-pause at end)
+        if (video.ended) return;
+        modalHackersAudio.pause();
       });
 
       video.addEventListener('seeking', () => {
@@ -610,6 +611,7 @@
       lastVideoCurrentTime = 0;
       isVideoLooping = false;
       videoHasEnded = false;
+      modalSyncHandlersAttached = false;
       cleanupModalHackersAudio();
       modal.classList.add('hidden');
       document.body.style.overflow = '';
