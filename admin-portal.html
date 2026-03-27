@@ -518,7 +518,12 @@
           <h3>Bulk Payment Update</h3>
           <div class="bulk-row">
             <input id="bulkAmtOutstanding" type="number" min="0" step="0.01" placeholder="Amt outstanding" />
-            <input id="bulkFinancialStatus" type="text" placeholder="Status (Paid/Partial/Pending)" />
+            <select id="bulkFinancialStatus">
+              <option value="">Status (no change)</option>
+              <option value="Pending">Pending</option>
+              <option value="Partial">Partial</option>
+              <option value="Paid">Paid</option>
+            </select>
           </div>
           <div class="bulk-row single">
             <button class="btn" id="applyPaymentBtn" type="button">Apply payment to selected</button>
