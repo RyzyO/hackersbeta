@@ -536,7 +536,8 @@
         }
 
         const audio = new Audio(audioFile);
-        audio.preload = 'auto';
+        // On mobile, use 'metadata' first to just get duration, then start loading when needed
+        audio.preload = 'metadata';
 
         let done = false;
         const finish = (result) => {
@@ -549,7 +550,8 @@
         audio.addEventListener('loadedmetadata', () => finish(audio), { once: true });
         audio.addEventListener('error', () => finish(null), { once: true });
 
-        const timeoutId = setTimeout(() => finish(null), 3000);
+        // Increase timeout on slow connections
+        const timeoutId = setTimeout(() => finish(null), 5000);
         audio.load();
       });
     }
