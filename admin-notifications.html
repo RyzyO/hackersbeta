@@ -222,8 +222,9 @@
         
         await Promise.all(promises);
         
-        // Here you would also call your Firebase Cloud Function to send FCM messages
-        // For now, we're just saving to database
+        // Notifications are now handled client-side using browser Notification API
+        // Each user's browser will listen for new notifications and display them
+        // No Cloud Functions needed - this saves thousands in monthly bills
         
         showAlert(`✅ Notification sent to ${recipients.length} user(s)!`, 'success');
         

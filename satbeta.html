@@ -33,55 +33,80 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { 
-    getFirestore, doc, getDoc, getDocs, collection 
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      getFirestore, collection, getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey:"AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
-    authDomain:"hackers-cup.firebaseapp.com",
-    projectId:"hackers-cup"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  async function loadLeaderboard() {
-    const mainRef = doc(
-      db,
-      "competitions","hackersCup26",
-      "rounds","saturday",
-      "leaderboards","main"
-    );
-
-    const lbDoc = await getDoc(mainRef);
-
-    if (lbDoc.exists()) {
-      const d = lbDoc.data();
-      document.getElementById("updated").textContent =
-        "Updated: " + (d.updatedAt?.toDate().toLocaleString() || "—");
+    // Client-side leaderboard calculation (replaces Cloud Functions)
+    function calculateStableford(par, strokes) {
+      const diff = par - strokes;
+      if (diff >= 2) return 4;
+      if (diff === 1) return 3;
+      if (diff === 0) return 2;
+      if (diff === -1) return 1;
+      return 0;
     }
 
-    const snap = await getDocs(collection(mainRef, "entries"));
+    function calculateLeaderboard(scorecards) {
+      const leaderboard = [];
+      scorecards.forEach((doc) => {
+        const d = doc.data();
+        let total = 0;
+        for (let i = 1; i <= 18; i++) {
+          const strokes = d[`hole${i}`];
+          if (!strokes) continue;
+          total += calculateStableford(4, strokes);
+        }
+        leaderboard.push({
+          id: doc.id,
+          name: d.playerName || doc.id,
+          stablefordTotal: total,
+        });
+      });
+      leaderboard.sort((a, b) => b.stablefordTotal - a.stablefordTotal);
+      return leaderboard;
+    }
 
-    const rows = [];
-    snap.forEach(docSnap => rows.push(docSnap.data()));
-    rows.sort((a,b)=>a.rank - b.rank);
+    const firebaseConfig = {
+      apiKey:"AIzaSyDuQNnLLtX6GrhvIbwenSGEHjWp2JOWUZ8",
+      authDomain:"hackers-cup.firebaseapp.com",
+      projectId:"hackers-cup"
+    };
 
-    const tbody = document.getElementById("lbBody");
-    tbody.innerHTML = "";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    rows.forEach(r => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${r.rank}</td>
-          <td>${r.name}</td>
-          <td>${r.stablefordTotal}</td>
-        </tr>
-      `;
-    });
-  }
+    async function loadLeaderboard() {
+      try {
+        // Fetch scorecards directly (free Firestore read)
+        const snap = await getDocs(
+          collection(db, "competitions", "hackersCup26", "rounds", "saturday", "scorecards")
+        );
 
-  loadLeaderboard();
+        const leaderboard = calculateLeaderboard(Array.from(snap.docs));
+
+        // Update timestamp
+        document.getElementById("updated").textContent =
+          "Updated: " + new Date().toLocaleString();
+
+        // Render leaderboard
+        const tbody = document.getElementById("lbBody");
+        tbody.innerHTML = "";
+
+        leaderboard.forEach((r, idx) => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${r.name}</td>
+              <td>${r.stablefordTotal}</td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error("Error loading leaderboard:", error);
+        document.getElementById("lbBody").innerHTML = `
+          <tr><td colspan="3">Error loading leaderboard</td></tr>
+        `;
+      }
 </script>
 
 </body>
