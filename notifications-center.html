@@ -239,17 +239,15 @@
     }
 
     async function enableNotifications() {
-      const OneSignal = window.OneSignal;
-      if (OneSignal) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
         try {
           // This will show the browser's native permission dialog
           await OneSignal.requestPermission();
         } catch (error) {
           console.error('Failed to request notification permissions:', error);
         }
-      } else {
-        console.log('OneSignal not yet initialized');
-      }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
