@@ -1,3 +1,30 @@
 {
-"display": "standalone"
+  "name": "Hackers Cup 26",
+  "short_name": "Hackers Cup",
+  "description": "The 26th Annual Hackers Cup Golf Event",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/index.html",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
