@@ -536,8 +536,26 @@
     </div>
   </footer>
 
-  <!-- Bottom Mobile Navigation -->
-  <div class="bottom-nav md:hidden">
+    <!-- Install Prompt Banner -->
+    <div id="installPrompt" class="hidden fixed bottom-24 md:bottom-0 left-0 right-0 z-40 glass border-t border-white/10 p-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
+        <div class="flex items-center gap-3 flex-1">
+          <i data-lucide="download" class="w-5 h-5 text-hackers-sky flex-shrink-0"></i>
+          <div class="text-sm">
+            <p class="font-semibold text-white">Add to Home Screen</p>
+            <p class="text-xs text-gray-400">Quick access like a native app</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="installBtn" class="px-4 py-2 bg-hackers-sky hover:bg-sky-600 text-white text-sm font-medium rounded-lg transition-colors">
+            Install
+          </button>
+          <button id="dismissInstallPrompt" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <i data-lucide="x" class="w-4 h-4 text-gray-400"></i>
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="flex justify-around items-center h-16 pb-safe">
       <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-hackers-sky">
         <i data-lucide="home" class="w-6 h-6 mb-1"></i>
@@ -706,6 +724,45 @@
 
     // Expose to global scope for inline onclick
     window.toggleMobileMenu = toggleMobileMenu;
+
+    // Install Prompt Handler
+    let installPromptEvent = null;
+    const installPromptBanner = document.getElementById('installPrompt');
+    const installBtn = document.getElementById('installBtn');
+    const dismissBtn = document.getElementById('dismissInstallPrompt');
+
+    // Only show install prompt if not in standalone mode (PWA not installed)
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      if (!isStandalone) {
+        e.preventDefault();
+        installPromptEvent = e;
+        installPromptBanner.classList.remove('hidden');
+      }
+    });
+
+    installBtn?.addEventListener('click', async () => {
+      if (installPromptEvent) {
+        installPromptEvent.prompt();
+        const { outcome } = await installPromptEvent.userChoice;
+        if (outcome === 'accepted') {
+          installPromptBanner.classList.add('hidden');
+          installPromptEvent = null;
+          localStorage.setItem('pwa_installed', '1');
+        }
+      }
+    });
+
+    dismissBtn?.addEventListener('click', () => {
+      installPromptBanner.classList.add('hidden');
+      localStorage.setItem('pwa_dismissed', '1');
+    });
+
+    // Don't show if already dismissed in this session
+    if (localStorage.getItem('pwa_dismissed') === '1' || localStorage.getItem('pwa_installed') === '1') {
+      installPromptBanner.classList.add('hidden');
+    }
 
     // Auto-close mobile menu when a link inside it is clicked
     document.getElementById('mobile-menu')?.addEventListener('click', (e) => {
