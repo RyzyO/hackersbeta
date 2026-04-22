@@ -198,6 +198,17 @@
     }
   </style>
 <link rel="manifest" href="site.webmanifest">
+
+<!-- OneSignal Push Notifications -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "6b6e57f8-1b0d-4441-ad62-14a1df3546cd",
+    });
+  });
+</script>
 </head>
 <body class="bg-hackers-dark text-white font-sans antialiased pb-24">
   
@@ -739,8 +750,8 @@
     
     // Service Worker Registration for Notifications
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .catch(err => console.log('SW registration failed:', err));
+      navigator.serviceWorker.register('/OneSignalSDK-v16-ServiceWorker/OneSignalSDKWorker.js', { scope: '/' })
+        .catch(err => console.log('OneSignal SW registration failed:', err));
     }
   </script>
   

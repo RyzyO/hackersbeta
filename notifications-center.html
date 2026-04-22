@@ -46,6 +46,17 @@
     }
   </script>
 
+  <!-- OneSignal Push Notifications -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "6b6e57f8-1b0d-4441-ad62-14a1df3546cd",
+      });
+    });
+  </script>
+
   <style>
     ::-webkit-scrollbar {
       width: 8px;
@@ -180,6 +191,20 @@
 
   <section class="py-12 md:py-16 -mt-8 relative z-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <div class="glass-card rounded-2xl p-6 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <i data-lucide="bell-ring" class="w-5 h-5 text-hackers-sky"></i>
+            <div>
+              <p class="font-semibold text-white">Enable Push Notifications</p>
+              <p class="text-sm text-gray-400">Get instant updates about schedule changes and announcements</p>
+            </div>
+          </div>
+          <button onclick="enableNotifications()" class="px-6 py-2 bg-gradient-to-r from-hackers-sky to-hackers-light text-white font-medium rounded-lg hover:shadow-lg hover:shadow-hackers-sky/50 transition-all whitespace-nowrap">
+            Enable
+          </button>
+        </div>
+      </div>
       <div id="notifications-container" class="space-y-4">
         <div class="glass-card rounded-2xl p-6 text-gray-300">Loading notifications...</div>
       </div>
@@ -211,6 +236,19 @@
     function toggleMobileMenu() {
       const menu = document.getElementById('mobile-menu');
       menu.classList.toggle('hidden');
+    }
+
+    async function enableNotifications() {
+      const OneSignal = window.OneSignal;
+      if (OneSignal) {
+        try {
+          await OneSignal.Slidedown.promptPush();
+        } catch (error) {
+          console.error('Failed to prompt for notifications:', error);
+        }
+      } else {
+        console.log('OneSignal not yet initialized');
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
