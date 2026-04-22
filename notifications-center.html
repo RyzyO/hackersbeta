@@ -242,9 +242,10 @@
       const OneSignal = window.OneSignal;
       if (OneSignal) {
         try {
-          await OneSignal.Slidedown.promptPush();
+          // This will show the browser's native permission dialog
+          await OneSignal.requestPermission();
         } catch (error) {
-          console.error('Failed to prompt for notifications:', error);
+          console.error('Failed to request notification permissions:', error);
         }
       } else {
         console.log('OneSignal not yet initialized');
