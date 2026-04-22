@@ -224,7 +224,13 @@
         btn.classList.remove('border-hackers-sky/30', 'bg-hackers-sky/10');
         btn.classList.add('border-white/10');
       });
-      event.target.closest('.target-btn').classList.add('border-hackers-sky/30', 'bg-hackers-sky/10');
+      
+      // Highlight the selected button
+      const selectedBtn = document.querySelector(`[data-target="${target}"]`);
+      if (selectedBtn) {
+        selectedBtn.classList.add('border-hackers-sky/30', 'bg-hackers-sky/10');
+        selectedBtn.classList.remove('border-white/10');
+      }
       
       // Show/hide conditional fields
       document.getElementById('specificUserField').classList.toggle('hidden', target !== 'specific');
