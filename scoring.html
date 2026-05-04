@@ -365,11 +365,11 @@
     updateTotals();
   }
 
-  function moveHole(delta) {
+  window.moveHole = function(delta) {
     if (!roundHoles.length) return;
     currentHoleIndex = (currentHoleIndex + delta + roundHoles.length) % roundHoles.length;
     renderCurrentHole();
-  }
+  };
 
   function setSaveStatus(message, kind) {
     const status = $('save-status');
@@ -1189,7 +1189,8 @@
 <!-- ── SHEET SEARCH ───────────────────────────────────────────── -->
 <div id="screen-login" class="screen">
   <div class="login-logo">HACKERS CUP</div>
-  <div class="login-sub">Google Sheets Stableford · 2025</div>
+  <div class="login-sub">LIVE SCORING · 2026<br><br>Developed by Riley Oakes in collaboration with Andrew Murray</div>
+ 
 
   <div class="login-box">
     <div class="field">
