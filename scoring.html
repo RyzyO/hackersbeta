@@ -14,7 +14,7 @@
   // ── END CONFIG ──────────────────────────────────────────────
 
   function proxiedAppScriptUrl(url) {
-    return `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+    return `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
   }
 
   async function fetchJsonViaProxy(url, options) {
