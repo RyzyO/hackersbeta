@@ -217,7 +217,6 @@
     show('scorecard-loading');
     hide('hole-view');
     hide('round-nav');
-    hide('btn-submit');
 
     try {
       // Use the first selected sheet to get canonical hole order and pars
@@ -535,42 +534,6 @@
       bar.appendChild(cell);
     });
   }
-
-  // ── SUBMIT ─────────────────────────────────────────────────────
-  window.handleSubmit = async function() {
-    const btn = $('btn-submit');
-    btn.textContent = 'Saving…';
-    btn.disabled = true;
-
-    try {
-      const missing = players.reduce((count, player) => {
-        return count + holeData.filter(h => player.scores[h.rowIndex] === undefined).length;
-      }, 0);
-
-      if (missing > 0) {
-        const ok = confirm(`${missing} score${missing > 1 ? 's' : ''} are still missing. Finish anyway?`);
-        if (!ok) {
-          btn.textContent = 'SUBMIT SCORES';
-          btn.disabled = false;
-          return;
-        }
-      }
-
-      hide('screen-scoring');
-      show('screen-success');
-      $('success-detail').textContent = `${players.length} player${players.length > 1 ? 's' : ''} ready.`;
-    } catch (err) {
-      alert('Save failed: ' + err.message);
-      btn.textContent = 'Submit Scores';
-      btn.disabled = false;
-    }
-  };
-
-  window.handleResubmit = function() {
-    hide('screen-success');
-    show('screen-scoring');
-    renderCurrentHole();
-  };
 
   function showError(msg) {
     console.error(msg);
@@ -1278,10 +1241,6 @@
     <button class="hole-nav-btn" onclick="moveHole(1)">Next Hole</button>
   </div>
 
-  <div class="submit-bar">
-    <button id="btn-submit" class="btn-primary hidden" onclick="handleSubmit()">SUBMIT SCORES</button>
-  </div>
-
   <div id="start-hole-overlay" class="start-hole-overlay hidden">
     <div class="start-hole-card">
       <div class="start-hole-title">Start on which hole?</div>
@@ -1290,17 +1249,6 @@
     </div>
   </div>
 
-</div>
-
-<!-- ── SUCCESS ─────────────────────────────────────────────────── -->
-<div id="screen-success" class="screen hidden">
-  <div class="success-icon">🏌️</div>
-  <div class="success-title">SCORES SAVED</div>
-  <div id="success-detail"></div>
-  <div class="success-actions">
-    <button class="btn-primary" onclick="handleResubmit()">UPDATE SCORES</button>
-    <button class="btn-ghost"   onclick="handleSignOut()">Change sheet</button>
-  </div>
 </div>
 
 </body>
