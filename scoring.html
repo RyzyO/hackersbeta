@@ -77,7 +77,11 @@
     }
 
     const normalized = query.toLowerCase();
-    const matches = allSheetNames.filter(name => name.toLowerCase().includes(normalized));
+    const ignoredNames = new Set(['database', 'course info', 'players', 'sheet5', 'sat leaderboard']);
+    const matches = allSheetNames.filter(name => {
+      const lower = name.toLowerCase().trim();
+      return lower.includes(normalized) && !ignoredNames.has(lower);
+    });
 
     if (!matches.length) {
       results.innerHTML = '<div class="sheet-empty">No matching sheets</div>';
@@ -1004,62 +1008,133 @@
     position: fixed;
     inset: 0;
     z-index: 30;
-    background: rgba(2, 6, 23, 0.82);
-    backdrop-filter: blur(8px);
+    background: rgba(2, 6, 23, 0.88);
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .start-hole-card {
     width: 100%;
     max-width: 420px;
-    background: rgba(15, 23, 42, 0.98);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(20, 30, 48, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.15);
     border-radius: 24px;
-    padding: 18px;
+    padding: 22px 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4),
+                0 0 1px rgba(139, 92, 246, 0.1) inset;
   }
 
   .start-hole-title {
     font-family: 'Kanit', sans-serif;
     font-style: italic;
-    font-size: 34px;
+    font-size: 28px;
     color: var(--light);
-    line-height: 1;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin: 0;
   }
 
   .start-hole-subtitle {
-    margin-top: 6px;
-    color: var(--muted);
+    margin-top: 5px;
+    color: rgba(148, 163, 184, 0.8);
     font-size: 12px;
+    font-weight: 500;
     letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.9;
   }
 
   .start-hole-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 16px;
+    gap: 9px;
+    margin-top: 18px;
   }
 
   .start-hole-btn {
     aspect-ratio: 1;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
+    border-radius: 14px;
+    border: 1.5px solid rgba(139, 92, 246, 0.2);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.5) 0%, rgba(30, 41, 59, 0.5) 100%);
     color: var(--text);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
+    font-family: 'Kanit', sans-serif;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .start-hole-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(59, 130, 246, 0.2) 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .start-hole-btn:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.7) 0%, rgba(30, 41, 59, 0.7) 100%);
+    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.15),
+                inset 0 1px 0 rgba(139, 92, 246, 0.2);
+  }
+
+  .start-hole-btn:hover::before {
+    opacity: 1;
   }
 
   .start-hole-btn:active {
-    background: var(--green-dim);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(59, 130, 246, 0.25) 100%);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3),
+                inset 0 0 10px rgba(139, 92, 246, 0.2);
+    transform: scale(0.98);
   }
 
   @media (max-width: 480px) {
+    .start-hole-overlay {
+      padding: 12px;
+    }
+
+    .start-hole-card {
+      padding: 16px 14px;
+      border-radius: 18px;
+    }
+
+    .start-hole-title {
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .start-hole-subtitle {
+      font-size: 10px;
+      margin-top: 3px;
+    }
+
     .start-hole-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .start-hole-btn {
+      font-size: 15px;
+      border-radius: 12px;
     }
 
     .hole-title {
