@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hackers Cup 25</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+
 <script type="module">
   // ── CONFIG ──────────────────────────────────────────────────
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8reFuNFbRmKGdpLkdFc9b88WMJwc4hguNCVi1hQyCeQEezZYRVWiMc46idCcYpMAc/exec';
@@ -30,11 +33,15 @@
   }
 
   // ── STATE ────────────────────────────────────────────────────
-  let selectedSheetName = '';
-  let allSheetNames     = [];
+  let selectedSheetNames = []; // up to 4 sheet/tab names selected for scoring
+  let allSheetNames      = [];
   let holeData        = [];   // array of hole objects from Apps Script
-  let scores          = {};   // { rowIndex: scoreValue }
-  let saveTimer       = null;
+  let players         = [];   // array of { sheetName, name, holes: [], scores: {rowIndex:score} }
+  let scores          = {};   // legacy single-player map (kept for compatibility)
+  let roundHoles      = [];   // hole order for the active round
+  let currentHoleIndex = 0;
+  let startHoleNumber  = null;
+  let saveTimer        = null;
 
   // ── DOM HELPERS ──────────────────────────────────────────────
   const $  = id => document.getElementById(id);
@@ -70,7 +77,7 @@
     }
 
     const normalized = query.toLowerCase();
-    const matches = allSheetNames.filter(name => name.toLowerCase().includes(normalized)).slice(0, 20);
+    const matches = allSheetNames.filter(name => name.toLowerCase().includes(normalized));
 
     if (!matches.length) {
       results.innerHTML = '<div class="sheet-empty">No matching sheets</div>';
@@ -82,21 +89,69 @@
       button.type = 'button';
       button.className = 'sheet-option';
       button.textContent = name;
-      button.onclick = () => selectSheet(name);
+      button.onclick = () => toggleSelectSheet(name, button);
+      // mark selected
+      if (selectedSheetNames.includes(name)) button.classList.add('mode-btn', 'active');
       results.appendChild(button);
+    });
+    renderSelectedList();
+  }
+
+  function renderSelectedList() {
+    const el = $('selected-list');
+    if (!el) return;
+    el.innerHTML = '';
+    selectedSheetNames.forEach(name => {
+      const chip = document.createElement('div');
+      chip.style.padding = '6px 10px';
+      chip.style.background = 'rgba(30,41,59,0.7)';
+      chip.style.border = '1px solid var(--border)';
+      chip.style.borderRadius = '999px';
+      chip.style.fontSize = '13px';
+      chip.style.color = 'var(--text)';
+      chip.textContent = name;
+      el.appendChild(chip);
     });
   }
 
+  function toggleSelectSheet(name, btnEl) {
+    const idx = selectedSheetNames.indexOf(name);
+    if (idx >= 0) {
+      selectedSheetNames.splice(idx, 1);
+      if (btnEl) btnEl.classList.remove('mode-btn', 'active');
+    } else {
+      if (selectedSheetNames.length >= 4) {
+        $('login-error').textContent = 'You can select up to 4 players.';
+        return;
+      }
+      selectedSheetNames.push(name);
+      if (btnEl) btnEl.classList.add('mode-btn', 'active');
+      $('login-error').textContent = '';
+    }
+    renderSelectedList();
+  }
+
   function selectSheet(name) {
-    selectedSheetName = name;
-    $('input-sheet-search').value = name;
-    $('login-error').textContent = '';
-    $('login-helper').textContent = `Selected sheet: ${name}`;
+    // legacy: direct open of a single sheet — toggle into selected list and start
+    toggleSelectSheet(name);
+  }
+
+  window.startScoring = function() {
+    if (!selectedSheetNames.length) {
+      $('login-error').textContent = 'Select at least one player to score.';
+      return;
+    }
+
+    // Prepare player placeholders
+    players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
+    scores = {};
+    roundHoles = [];
+    currentHoleIndex = 0;
+    startHoleNumber = null;
     hide('screen-login');
     show('screen-loading');
-    scores = {};
     loadHoles();
-  }
+  };
 
   window.searchSheets = function() {
     renderSheetSearch($('input-sheet-search').value.trim());
@@ -125,16 +180,24 @@
   };
 
   window.handleSignOut = function() {
-    selectedSheetName = '';
+    selectedSheetNames = [];
     holeData = [];
+    roundHoles = [];
+    currentHoleIndex = 0;
+    startHoleNumber = null;
+    players = [];
     scores = {};
     $('sheet-label').textContent = '';
     $('login-helper').textContent = 'Search for a sheet tab in the workbook.';
     $('input-sheet-search').value = '';
     $('sheet-results').innerHTML = '';
+    $('selected-list').innerHTML = '';
+    $('hole-view').innerHTML = '';
+    hide('start-hole-overlay');
     hide('screen-scoring');
     hide('screen-loading');
     show('screen-login');
+    $('login-helper').textContent = 'Select up to 4 players, then tap Start Round.';
   };
 
   // ── SCORING SCREEN ────────────────────────────────────────────
@@ -143,36 +206,41 @@
   }
 
   async function loadHoles() {
-    const sheetName = selectedSheetName;
-
-    if (!sheetName) {
+    // Multi-player flow: fetch hole template from first sheet, then fetch per-player holes
+    if (!players || !players.length) {
       hide('screen-loading');
       show('screen-login');
       return;
     }
 
-    $('scorecard-body').innerHTML = '';
-    $('sheet-label').textContent  = sheetName;
+    $('sheet-label').textContent  = players.map(p => p.name).join(' • ');
     show('scorecard-loading');
-    hide('scorecard-table');
+    hide('hole-view');
+    hide('round-nav');
     hide('btn-submit');
 
     try {
-      const data = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(sheetName)}`);
-      if (!data.success) throw new Error(data.error);
+      // Use the first selected sheet to get canonical hole order and pars
+      const templateResp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(players[0].sheetName)}`);
+      if (!templateResp.success) throw new Error(templateResp.error);
+      holeData = templateResp.holes;
 
-      holeData = data.holes;
-      // Pre-fill scores from existing sheet values
-      holeData.forEach(h => {
-        if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) {
-          scores[h.rowIndex] = h.currentScore;
-        }
-      });
+      // For each player, fetch their sheet holes to get currentScore and sheet points
+      await Promise.all(players.map(async (p, pidx) => {
+        const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
+        if (!resp.success) throw new Error(resp.error || `Failed to load ${p.sheetName}`);
+        p.holes = resp.holes || [];
+        p.scores = {};
+        p.holes.forEach(h => {
+          if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) {
+            p.scores[h.rowIndex] = h.currentScore;
+          }
+        });
+      }));
 
-      renderScorecard();
+      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+      renderStartHolePicker();
       hide('scorecard-loading');
-      show('scorecard-table');
-      show('btn-submit');
       hide('screen-loading');
       show('screen-scoring');
     } catch (err) {
@@ -182,50 +250,127 @@
     }
   }
 
-  function renderScorecard() {
-    const tbody = $('scorecard-body');
-    tbody.innerHTML = '';
+  function renderStartHolePicker() {
+    const overlay = $('start-hole-overlay');
+    const grid = $('start-hole-grid');
+    if (!overlay || !grid) return;
 
-    let frontHoles = holeData.filter(h => h.front);
-    let backHoles  = holeData.filter(h => !h.front);
+    const uniqueHoles = [...new Set(roundHoles.map(h => Number(h.hole)))].sort((a, b) => a - b);
+    grid.innerHTML = '';
+    uniqueHoles.forEach(holeNumber => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'start-hole-btn';
+      button.textContent = holeNumber;
+      button.onclick = () => startRoundAtHole(holeNumber);
+      grid.appendChild(button);
+    });
 
-    const buildRows = (holes, label) => {
-      const divider = document.createElement('tr');
-      divider.className = 'section-divider';
-      divider.innerHTML = `<td colspan="4">${label}</td>`;
-      tbody.appendChild(divider);
+    overlay.classList.remove('hidden');
+  }
 
-      holes.forEach(h => {
-        const tr = document.createElement('tr');
-        const existing = scores[h.rowIndex] ?? '';
-        tr.innerHTML = `
-          <td class="hole-num">${h.hole}</td>
-          <td class="par">Par ${h.par}</td>
-          <td class="score-cell">
-            <div class="score-controls">
-              <button class="score-btn minus" onclick="adjustScore(${h.rowIndex}, -1)">−</button>
-              <input
-                class="score-input"
-                id="score-${h.rowIndex}"
-                type="number"
-                inputmode="numeric"
-                min="1" max="20"
-                value="${existing}"
-                placeholder="—"
-                onchange="setScore(${h.rowIndex}, this.value)"
-              />
-              <button class="score-btn plus" onclick="adjustScore(${h.rowIndex}, 1)">+</button>
+  function startRoundAtHole(holeNumber) {
+    startHoleNumber = Number(holeNumber);
+    const startIndex = roundHoles.findIndex(h => Number(h.hole) === startHoleNumber);
+    currentHoleIndex = startIndex >= 0 ? startIndex : 0;
+    $('start-hole-overlay').classList.add('hidden');
+    $('hole-view').classList.remove('hidden');
+    $('round-nav').classList.remove('hidden');
+    $('btn-submit').classList.remove('hidden');
+    renderCurrentHole();
+  }
+
+  function getCurrentHole() {
+    if (!roundHoles.length) return null;
+    return roundHoles[currentHoleIndex] || roundHoles[0];
+  }
+
+  function getPlayerScoreSummary(player) {
+    let frontPoints = 0;
+    let backPoints = 0;
+
+    holeData.forEach(h => {
+      const score = player.scores[h.rowIndex];
+      const pts = getPointsFromData((player.holes || []).find(ph => ph.rowIndex === h.rowIndex) || h, score);
+      if (score !== undefined) {
+        if (h.front) frontPoints += Number(pts ?? 0);
+        else backPoints += Number(pts ?? 0);
+      }
+    });
+
+    return { frontPoints, backPoints, totalPoints: frontPoints + backPoints };
+  }
+
+  function getActiveHoleLabel() {
+    const hole = getCurrentHole();
+    if (!hole) return '';
+    return `Hole ${hole.hole}`;
+  }
+
+  function renderCurrentHole() {
+    const hole = getCurrentHole();
+    const view = $('hole-view');
+    if (!hole || !view) return;
+
+    const totalHoles = roundHoles.length;
+    const currentNumber = currentHoleIndex + 1;
+    const navLabel = `${currentNumber} / ${totalHoles}`;
+
+    const playerCards = players.map((player, pidx) => {
+      const playerHole = (player.holes || []).find(ph => ph.rowIndex === hole.rowIndex) || hole;
+      const existing = player.scores[hole.rowIndex] ?? '';
+      const pts = getPointsFromData(playerHole, existing);
+      const summary = getPlayerScoreSummary(player);
+
+      return `
+        <div class="player-card">
+          <div class="player-card-head">
+            <div>
+              <div class="player-name">${player.name}</div>
+              <div class="player-summary">${summary.totalPoints} pts</div>
             </div>
-          </td>
-          <td class="diff-cell" id="diff-${h.rowIndex}">${getDiff(h.par, existing)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    };
+            <div class="player-points" id="points-${pidx}-${hole.rowIndex}">${getPointsLabel(pts)}</div>
+          </div>
+          <div class="score-controls score-controls-mobile">
+            <button class="score-btn minus" onclick="adjustScoreForPlayer(${pidx}, ${hole.rowIndex}, -1)">−</button>
+            <input
+              class="score-input"
+              id="score-${pidx}-${hole.rowIndex}"
+              type="number"
+              inputmode="numeric"
+              min="1" max="20"
+              value="${existing}"
+              placeholder="—"
+              onchange="setScoreForPlayer(${pidx}, ${hole.rowIndex}, this.value)"
+            />
+            <button class="score-btn plus" onclick="adjustScoreForPlayer(${pidx}, ${hole.rowIndex}, 1)">+</button>
+          </div>
+        </div>
+      `;
+    }).join('');
 
-    buildRows(frontHoles, 'FRONT 9');
-    buildRows(backHoles,  'BACK 9');
+    view.innerHTML = `
+      <div class="hole-card">
+        <div class="hole-card-top">
+          <div>
+            <div class="hole-eyebrow">Hole ${hole.hole}</div>
+            <div class="hole-title">Par ${hole.par}</div>
+          </div>
+          <div class="hole-progress">${navLabel}</div>
+        </div>
+        <div class="hole-body">
+          ${playerCards}
+        </div>
+      </div>
+    `;
+
     updateTotals();
+  }
+
+  function moveHole(delta) {
+    if (!roundHoles.length) return;
+    currentHoleIndex = (currentHoleIndex + delta + roundHoles.length) % roundHoles.length;
+    renderCurrentHole();
   }
 
   function setSaveStatus(message, kind) {
@@ -241,9 +386,79 @@
   }
 
   async function autosaveScore(rowIndex) {
-    if (!selectedSheetName) return;
+    // Deprecated: use per-player autosave instead
+    return;
+  }
 
-    const score = scores[rowIndex];
+  window.setScore = function(rowIndex, val) {
+    // legacy single-player handler — forward to first player if present
+    const n = parseInt(val);
+    if (!players || !players.length) {
+      if (!isNaN(n) && n >= 1 && n <= 20) scores[rowIndex] = n;
+      else delete scores[rowIndex];
+      const hole = holeData.find(h => h.rowIndex === rowIndex);
+      const pointsCell = $(`points-${rowIndex}`);
+      if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(hole, scores[rowIndex]));
+      updateTotals();
+      return;
+    }
+    // apply to first player
+    setScoreForPlayer(0, rowIndex, val);
+  };
+
+  window.adjustScore = function(rowIndex, delta) {
+    // legacy single-player handler — forward to first player
+    if (!players || !players.length) {
+      const hole = holeData.find(h => h.rowIndex === rowIndex);
+      const current = scores[rowIndex] ?? hole.par;
+      const next = Math.max(1, Math.min(20, current + delta));
+      scores[rowIndex] = next;
+      const input = $(`score-${rowIndex}`);
+      if (input) input.value = next;
+      const pointsCell = $(`points-${rowIndex}`);
+      if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(hole, next));
+      updateTotals();
+      return;
+    }
+    adjustScoreForPlayer(0, rowIndex, delta);
+  };
+
+  // Per-player handlers
+  window.setScoreForPlayer = async function(playerIndex, rowIndex, val) {
+    const n = parseInt(val);
+    const player = players[playerIndex];
+    if (!player) return;
+    if (!isNaN(n) && n >= 1 && n <= 20) player.scores[rowIndex] = n;
+    else delete player.scores[rowIndex];
+
+    const hole = holeData.find(h => h.rowIndex === rowIndex);
+    const playerHole = (player.holes || []).find(ph => ph.rowIndex === rowIndex) || {};
+    const pointsCell = $(`points-${playerIndex}-${rowIndex}`);
+    if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(playerHole, player.scores[rowIndex]));
+    updateTotals();
+    await autosaveScoreForPlayer(playerIndex, rowIndex);
+  };
+
+  window.adjustScoreForPlayer = async function(playerIndex, rowIndex, delta) {
+    const player = players[playerIndex];
+    if (!player) return;
+    const hole = holeData.find(h => h.rowIndex === rowIndex);
+    const current = player.scores[rowIndex] ?? hole.par;
+    const next = Math.max(1, Math.min(20, current + delta));
+    player.scores[rowIndex] = next;
+    const input = $(`score-${playerIndex}-${rowIndex}`);
+    if (input) input.value = next;
+    const playerHole = (player.holes || []).find(ph => ph.rowIndex === rowIndex) || {};
+    const pointsCell = $(`points-${playerIndex}-${rowIndex}`);
+    if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(playerHole, next));
+    updateTotals();
+    await autosaveScoreForPlayer(playerIndex, rowIndex);
+  };
+
+  async function autosaveScoreForPlayer(playerIndex, rowIndex) {
+    const player = players[playerIndex];
+    if (!player || !player.sheetName) return;
+    const score = player.scores[rowIndex];
     setSaveStatus('Saving...', 'saving');
 
     try {
@@ -251,12 +466,19 @@
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-          sheetName: selectedSheetName,
+          sheetName: player.sheetName,
           scores: [{ rowIndex: Number(rowIndex), score }]
         })
       });
-
       if (!data.success) throw new Error(data.error);
+
+      // refresh that player's holes so sheet-calculated points (col M) are visible
+      const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`);
+      if (resp && resp.success) {
+        player.holes = resp.holes || [];
+      }
+
+      renderCurrentHole();
 
       setSaveStatus('Saved', 'saved');
       clearTimeout(saveTimer);
@@ -267,101 +489,76 @@
     }
   }
 
-  window.setScore = function(rowIndex, val) {
-    const n = parseInt(val);
-    if (!isNaN(n) && n >= 1 && n <= 20) {
-      scores[rowIndex] = n;
-    } else {
-      delete scores[rowIndex];
+  function getStablefordPoints(par, strokes) {
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
+
+    const diff = Number(par) - Number(strokes);
+    if (diff >= 2) return 4;
+    if (diff === 1) return 3;
+    if (diff === 0) return 2;
+    if (diff === -1) return 1;
+    return 0;
+  }
+
+  function getPointsLabel(points) {
+    if (points === null || points === undefined) return '<span class="diff-empty">—</span>';
+    return `<span class="points-value">${points}</span>`;
+  }
+
+  // Prefer points provided by the sheet (column M). If the API returns a
+  // points value for the hole (e.g. `hole.sheetPoints` / `hole.points` / `hole.currentPoints`),
+  // use that. Otherwise fall back to local Stableford calculation.
+  function getPointsFromData(hole, strokes) {
+    // Normalise possible fields returned by Apps Script
+    const sheetVal = hole.points ?? hole.sheetPoints ?? hole.currentPoints ?? hole.pointsFromSheet ?? null;
+    if (sheetVal !== null && sheetVal !== '' && sheetVal !== undefined) {
+      const n = Number(sheetVal);
+      return isNaN(n) ? null : n;
     }
-    const hole = holeData.find(h => h.rowIndex === rowIndex);
-    const diff = $(`diff-${rowIndex}`);
-    if (diff && hole) diff.innerHTML = getDiff(hole.par, scores[rowIndex]);
-    updateTotals();
-    autosaveScore(rowIndex);
-  };
 
-  window.adjustScore = function(rowIndex, delta) {
-    const hole = holeData.find(h => h.rowIndex === rowIndex);
-    const current = scores[rowIndex] ?? hole.par;
-    const next = Math.max(1, Math.min(20, current + delta));
-    scores[rowIndex] = next;
-    const input = $(`score-${rowIndex}`);
-    if (input) input.value = next;
-    const diff = $(`diff-${rowIndex}`);
-    if (diff && hole) diff.innerHTML = getDiff(hole.par, next);
-    updateTotals();
-    autosaveScore(rowIndex);
-  };
-
-  function getDiff(par, score) {
-    if (score === '' || score === null || score === undefined) return '<span class="diff-empty">—</span>';
-    const d = Number(score) - Number(par);
-    if (d === 0) return `<span class="diff-even">E</span>`;
-    if (d < 0)   return `<span class="diff-under">${d}</span>`;
-    return `<span class="diff-over">+${d}</span>`;
+    return getStablefordPoints(hole.par, strokes);
   }
 
   function updateTotals() {
-    let front = 0, back = 0, frontPar = 0, backPar = 0;
-    let frontFilled = true, backFilled = true;
+    const bar = $('player-summary-bar');
+    if (!bar) return;
 
-    holeData.forEach(h => {
-      const s = scores[h.rowIndex];
-      if (h.front) {
-        frontPar += Number(h.par);
-        if (s) front += Number(s); else frontFilled = false;
-      } else {
-        backPar += Number(h.par);
-        if (s) back += Number(s); else backFilled = false;
-      }
+    bar.innerHTML = '';
+    players.forEach((player, index) => {
+      const totals = getPlayerScoreSummary(player);
+      const cell = document.createElement('div');
+      cell.className = 'total-cell';
+      cell.innerHTML = `
+        <div class="total-label">${player.name}</div>
+        <div class="total-value">${totals.totalPoints}</div>
+      `;
+      bar.appendChild(cell);
     });
-
-    const total = front + back;
-    const totalPar = frontPar + backPar;
-    const diff = total - totalPar;
-
-    $('total-front').textContent = frontFilled ? front : '—';
-    $('total-back').textContent  = backFilled  ? back  : '—';
-    $('total-score').textContent = (frontFilled && backFilled) ? total : '—';
-    $('total-diff').innerHTML    = (frontFilled && backFilled) ? getDiff(totalPar, total) : '';
   }
 
   // ── SUBMIT ─────────────────────────────────────────────────────
   window.handleSubmit = async function() {
-    const filled  = holeData.filter(h => scores[h.rowIndex] !== undefined);
-    const missing = holeData.length - filled.length;
-
-    if (missing > 0) {
-      const ok = confirm(`${missing} hole${missing > 1 ? 's' : ''} without a score. Submit anyway?`);
-      if (!ok) return;
-    }
-
-    const sheetName = selectedSheetName;
-
-    const payload = {
-      sheetName,
-      scores: Object.entries(scores).map(([rowIndex, score]) => ({
-        rowIndex: Number(rowIndex),
-        score
-      }))
-    };
-
     const btn = $('btn-submit');
     btn.textContent = 'Saving…';
     btn.disabled = true;
 
     try {
-      const data = await fetchJsonViaProxy(APPS_SCRIPT_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'text/plain' }, // Apps Script needs text/plain to avoid CORS preflight
-        body:    JSON.stringify(payload)
-      });
-      if (!data.success) throw new Error(data.error);
+      const missing = players.reduce((count, player) => {
+        return count + holeData.filter(h => player.scores[h.rowIndex] === undefined).length;
+      }, 0);
+
+      if (missing > 0) {
+        const ok = confirm(`${missing} score${missing > 1 ? 's' : ''} are still missing. Finish anyway?`);
+        if (!ok) {
+          btn.textContent = 'SUBMIT SCORES';
+          btn.disabled = false;
+          return;
+        }
+      }
 
       hide('screen-scoring');
       show('screen-success');
-      $('success-detail').textContent = `${data.written} scores saved to "${sheetName}"`;
+      $('success-detail').textContent = `${players.length} player${players.length > 1 ? 's' : ''} ready.`;
     } catch (err) {
       alert('Save failed: ' + err.message);
       btn.textContent = 'Submit Scores';
@@ -372,7 +569,7 @@
   window.handleResubmit = function() {
     hide('screen-success');
     show('screen-scoring');
-    loadHoles(); // reload fresh from sheet
+    renderCurrentHole();
   };
 
   function showError(msg) {
@@ -389,29 +586,27 @@
 <style>
   /* ── TOKENS ─────────────────────────────────────────── */
   :root {
-    --bg:        #0a0f0d;
-    --surface:   #111916;
-    --surface2:  #1a2420;
-    --border:    #2a3830;
-    --green:     #3ddc84;
-    --green-dim: #1e6e42;
-    --red:       #ff5c5c;
-    --gold:      #d4a843;
-    --text:      #e8ede9;
-    --muted:     #6b7d72;
+    --bg:        #0f172a;
+    --surface:   #1e293b;
+    --surface2:  #1e3a5f;
+    --border:    rgba(255, 255, 255, 0.1);
+    --green:     #38bdf8;
+    --green-dim: rgba(14, 165, 233, 0.2);
+    --red:       #f59e0b;
+    --gold:      #f59e0b;
+    --text:      #f8fafc;
+    --muted:     #cbd5e1;
+    --sky:       #0ea5e9;
+    --light:     #38bdf8;
     --radius:    12px;
-    --font-head: 'Bebas Neue', 'Impact', sans-serif;
-    --font-body: 'DM Mono', 'Courier New', monospace;
   }
-
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: var(--font-body);
+    font-family: 'Inter', sans-serif;
     font-size: 14px;
     min-height: 100dvh;
     overscroll-behavior: none;
@@ -432,16 +627,17 @@
   /* ── LOGIN ──────────────────────────────────────────── */
   #screen-login {
     background:
-      radial-gradient(ellipse at 20% 50%, #1e3a2a 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, #0f2d1e 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 50%, rgba(14, 165, 233, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(56, 189, 248, 0.14) 0%, transparent 50%),
       var(--bg);
   }
 
   .login-logo {
-    font-family: var(--font-head);
+    font-family: 'Kanit', sans-serif;
+    font-style: italic;
     font-size: 56px;
-    letter-spacing: 4px;
-    color: var(--green);
+    letter-spacing: 1px;
+    color: var(--light);
     line-height: 1;
     text-align: center;
     margin-bottom: 4px;
@@ -464,6 +660,17 @@
     gap: 12px;
   }
 
+  .action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .action-row .btn-primary {
+    width: 100%;
+  }
+
   .field {
     display: flex;
     flex-direction: column;
@@ -478,18 +685,18 @@
   }
 
   .field input {
-    background: var(--surface);
+    background: rgba(30, 41, 59, 0.72);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
-    font-family: var(--font-body);
+    font-family: 'Inter', sans-serif;
     font-size: 16px;
     padding: 14px 16px;
     outline: none;
     transition: border-color .2s;
   }
 
-  .field input:focus { border-color: var(--green); }
+  .field input:focus { border-color: var(--sky); }
 
   #login-error {
     font-size: 12px;
@@ -503,7 +710,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
-    font-family: var(--font-body);
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     padding: 12px 14px;
     text-align: left;
@@ -523,13 +730,14 @@
 
   /* ── BUTTONS ────────────────────────────────────────── */
   .btn-primary {
-    background: var(--green);
-    color: #051009;
+    background: var(--sky);
+    color: #ffffff;
     border: none;
     border-radius: var(--radius);
-    font-family: var(--font-head);
-    font-size: 20px;
-    letter-spacing: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
     padding: 16px;
     cursor: pointer;
     width: 100%;
@@ -542,10 +750,10 @@
 
   .btn-ghost {
     background: transparent;
-    color: var(--muted);
+    color: var(--light);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    font-family: var(--font-body);
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     padding: 10px 20px;
     cursor: pointer;
@@ -554,7 +762,7 @@
   /* ── LOADING ────────────────────────────────────────── */
   #screen-loading {
     gap: 16px;
-    color: var(--muted);
+    color: var(--light);
     font-size: 13px;
     letter-spacing: 2px;
   }
@@ -580,7 +788,7 @@
   }
 
   .scoring-header {
-    background: var(--surface);
+    background: rgba(30, 41, 59, 0.82);
     border-bottom: 1px solid var(--border);
     padding: 16px 20px 12px;
     position: sticky;
@@ -596,16 +804,17 @@
   }
 
   .header-logo {
-    font-family: var(--font-head);
+    font-family: 'Kanit', sans-serif;
+    font-style: italic;
     font-size: 22px;
-    letter-spacing: 2px;
-    color: var(--green);
+    letter-spacing: 1px;
+    color: var(--light);
   }
 
   .signout-btn {
     background: none;
     border: none;
-    color: var(--muted);
+    color: var(--light);
     font-size: 11px;
     letter-spacing: 1px;
     cursor: pointer;
@@ -659,7 +868,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--muted);
-    font-family: var(--font-body);
+    font-family: 'Inter', sans-serif;
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -677,17 +886,23 @@
   /* Totals bar */
   .totals-bar {
     display: flex;
-    gap: 1px;
-    background: var(--border);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0 0;
+    scrollbar-width: none;
+  }
+
+  .totals-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .total-cell {
-    flex: 1;
+    min-width: 110px;
     background: var(--surface2);
-    padding: 8px 10px;
-    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: left;
   }
 
   .total-label {
@@ -698,16 +913,200 @@
   }
 
   .total-value {
-    font-size: 20px;
+    font-size: 22px;
     color: var(--text);
-    font-weight: 500;
+    font-weight: 600;
+    margin-top: 4px;
   }
 
-  /* Scorecard table */
+  /* Hole-by-hole view */
   .scorecard-wrap {
     overflow-y: auto;
     flex: 1;
-    padding-bottom: 100px;
+    padding: 16px 16px 110px;
+  }
+
+  #hole-view {
+    width: 100%;
+  }
+
+  .hole-card {
+    background: rgba(30, 41, 59, 0.86);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .hole-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .hole-eyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .hole-title {
+    font-family: 'Kanit', sans-serif;
+    font-style: italic;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--light);
+    margin-top: 2px;
+  }
+
+  .hole-progress {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding-top: 8px;
+  }
+
+  .hole-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player-card {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  .player-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .player-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .player-summary {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .player-points {
+    text-align: right;
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .score-controls-mobile {
+    justify-content: center;
+  }
+
+  .round-nav {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 16px;
+  }
+
+  .hole-nav-btn {
+    flex: 1;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .hole-nav-btn:disabled {
+    opacity: 0.35;
+  }
+
+  .start-hole-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(2, 6, 23, 0.82);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .start-hole-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .start-hole-title {
+    font-family: 'Kanit', sans-serif;
+    font-style: italic;
+    font-size: 34px;
+    color: var(--light);
+    line-height: 1;
+  }
+
+  .start-hole-subtitle {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .start-hole-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .start-hole-btn {
+    aspect-ratio: 1;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .start-hole-btn:active {
+    background: var(--green-dim);
+  }
+
+  @media (max-width: 480px) {
+    .start-hole-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hole-title {
+      font-size: 36px;
+    }
+
+    .player-points {
+      font-size: 24px;
+    }
   }
 
   #scorecard-loading {
@@ -717,51 +1116,6 @@
     font-size: 12px;
     letter-spacing: 2px;
   }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  tr.section-divider td {
-    background: var(--surface2);
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 8px 16px;
-    border-top: 2px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-
-  tr:not(.section-divider) {
-    border-bottom: 1px solid var(--border);
-    transition: background .1s;
-  }
-
-  tr:not(.section-divider):active { background: var(--surface2); }
-
-  td {
-    padding: 8px 10px;
-    vertical-align: middle;
-  }
-
-  .hole-num {
-    font-family: var(--font-head);
-    font-size: 24px;
-    color: var(--green);
-    width: 44px;
-    text-align: center;
-    padding-left: 14px;
-  }
-
-  .par {
-    font-size: 11px;
-    color: var(--muted);
-    width: 52px;
-  }
-
-  .score-cell { width: auto; }
 
   .score-controls {
     display: flex;
@@ -790,12 +1144,12 @@
 
   .score-input {
     width: 52px;
-    background: var(--surface2);
+    background: rgba(30, 41, 59, 0.85);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
-    font-family: var(--font-body);
-    font-size: 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
     font-weight: 500;
     text-align: center;
     padding: 6px 4px;
@@ -807,7 +1161,7 @@
   .score-input::-webkit-inner-spin-button,
   .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-  .score-input:focus { border-color: var(--green); }
+  .score-input:focus { border-color: var(--sky); }
 
   .diff-cell {
     width: 44px;
@@ -815,10 +1169,8 @@
     padding-right: 14px;
   }
 
-  .diff-even  { color: var(--muted); }
-  .diff-under { color: var(--green); font-weight: 500; }
-  .diff-over  { color: var(--red); }
   .diff-empty { color: var(--border); }
+  .points-value { color: var(--light); font-weight: 700; }
 
   /* Submit bar */
   .submit-bar {
@@ -846,10 +1198,11 @@
   }
 
   .success-title {
-    font-family: var(--font-head);
+    font-family: 'Kanit', sans-serif;
+    font-style: italic;
     font-size: 40px;
-    letter-spacing: 3px;
-    color: var(--green);
+    letter-spacing: 1px;
+    color: var(--light);
   }
 
   #success-detail {
@@ -874,7 +1227,7 @@
 <!-- ── SHEET SEARCH ───────────────────────────────────────────── -->
 <div id="screen-login" class="screen">
   <div class="login-logo">HACKERS CUP</div>
-  <div class="login-sub">Google Sheets Scoring · 2025</div>
+  <div class="login-sub">Google Sheets Stableford · 2025</div>
 
   <div class="login-box">
     <div class="field">
@@ -883,9 +1236,13 @@
              placeholder="Search sheets..." oninput="searchSheets()"
              onkeydown="if(event.key==='Enter') openSelectedSheet()">
     </div>
-    <div id="login-helper" style="font-size:12px;color:var(--muted);min-height:16px;">Search for a sheet tab in the workbook.</div>
+    <div id="selected-list" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;"></div>
+    <div id="login-helper" style="font-size:12px;color:var(--muted);min-height:16px;">Select up to 4 players, then tap Start Scoring.</div>
     <div id="login-error"></div>
-    <button id="btn-login" class="btn-primary" onclick="openSelectedSheet()">OPEN SHEET</button>
+    <div class="action-row">
+      <button id="btn-login" class="btn-primary" onclick="openSelectedSheet()">ADD PLAYER</button>
+      <button id="btn-start" class="btn-primary" onclick="startScoring()">START ROUND</button>
+    </div>
   </div>
 
   <div id="sheet-results" style="width:100%;max-width:360px;margin-top:16px;display:flex;flex-direction:column;gap:8px;"></div>
@@ -908,35 +1265,29 @@
     <div id="sheet-label"></div>
     <div id="save-status"></div>
 
-    <div class="totals-bar" style="margin: 10px -20px -12px;">
-      <div class="total-cell">
-        <div class="total-label">Front</div>
-        <div class="total-value" id="total-front">—</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Back</div>
-        <div class="total-value" id="total-back">—</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Total</div>
-        <div class="total-value" id="total-score">—</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">+/−</div>
-        <div class="total-value" id="total-diff"></div>
-      </div>
-    </div>
+    <div class="totals-bar" id="player-summary-bar"></div>
   </div>
 
   <div class="scorecard-wrap">
     <div id="scorecard-loading">LOADING HOLES…</div>
-    <table id="scorecard-table" class="hidden">
-      <tbody id="scorecard-body"></tbody>
-    </table>
+    <div id="hole-view" class="hidden"></div>
+  </div>
+
+  <div class="round-nav hidden" id="round-nav">
+    <button class="hole-nav-btn" onclick="moveHole(-1)">Prev Hole</button>
+    <button class="hole-nav-btn" onclick="moveHole(1)">Next Hole</button>
   </div>
 
   <div class="submit-bar">
     <button id="btn-submit" class="btn-primary hidden" onclick="handleSubmit()">SUBMIT SCORES</button>
+  </div>
+
+  <div id="start-hole-overlay" class="start-hole-overlay hidden">
+    <div class="start-hole-card">
+      <div class="start-hole-title">Start on which hole?</div>
+      <div class="start-hole-subtitle">Pick the hole you want to begin scoring from.</div>
+      <div id="start-hole-grid" class="start-hole-grid"></div>
+    </div>
   </div>
 
 </div>
