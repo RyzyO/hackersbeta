@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hackers Cup 25</title>
+
+<script type="module">
+  // ── CONFIG ──────────────────────────────────────────────────
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8reFuNFbRmKGdpLkdFc9b88WMJwc4hguNCVi1hQyCeQEezZYRVWiMc46idCcYpMAc/exec';
+  // ── END CONFIG ──────────────────────────────────────────────
+
+  function proxiedAppScriptUrl(url) {
+    return `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+  }
+
+  async function fetchJsonViaProxy(url, options) {
+    const response = await fetch(proxiedAppScriptUrl(url), options);
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(text || `Request failed with status ${response.status}`);
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error(`Expected JSON but received: ${text.slice(0, 120)}`);
+    }
+  }
+
+  // ── STATE ────────────────────────────────────────────────────
+  let selectedSheetName = '';
+  let allSheetNames     = [];
+  let holeData        = [];   // array of hole objects from Apps Script
+  let scores          = {};   // { rowIndex: scoreValue }
+  let saveTimer       = null;
+
+  // ── DOM HELPERS ──────────────────────────────────────────────
+  const $  = id => document.getElementById(id);
+  const show = id => $(id).classList.remove('hidden');
+  const hide = id => $(id).classList.add('hidden');
+
+  async function loadSheetNames() {
+    try {
+      const data = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getSheetNames`);
+      if (!data.success) throw new Error(data.error || 'Unable to load sheet names');
+      allSheetNames = data.sheets || [];
+      renderSheetSearch($('input-sheet-search').value.trim());
+
+      const urlSheet = new URLSearchParams(window.location.search).get('sheet');
+      if (urlSheet) {
+        const exact = allSheetNames.find(name => name.toLowerCase() === urlSheet.toLowerCase());
+        if (exact) selectSheet(exact);
+      }
+    } catch (err) {
+      $('login-error').textContent = err.message;
+      $('login-helper').textContent = 'Enter a sheet name manually if needed.';
+    }
+  }
+
+  function renderSheetSearch(query) {
+    const results = $('sheet-results');
+    if (!results) return;
+
+    results.innerHTML = '';
+    if (!allSheetNames.length) {
+      results.innerHTML = '<div class="sheet-empty">Loading sheet list…</div>';
+      return;
+    }
+
+    const normalized = query.toLowerCase();
+    const matches = allSheetNames.filter(name => name.toLowerCase().includes(normalized)).slice(0, 20);
+
+    if (!matches.length) {
+      results.innerHTML = '<div class="sheet-empty">No matching sheets</div>';
+      return;
+    }
+
+    matches.forEach(name => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sheet-option';
+      button.textContent = name;
+      button.onclick = () => selectSheet(name);
+      results.appendChild(button);
+    });
+  }
+
+  function selectSheet(name) {
+    selectedSheetName = name;
+    $('input-sheet-search').value = name;
+    $('login-error').textContent = '';
+    $('login-helper').textContent = `Selected sheet: ${name}`;
+    hide('screen-login');
+    show('screen-loading');
+    scores = {};
+    loadHoles();
+  }
+
+  window.searchSheets = function() {
+    renderSheetSearch($('input-sheet-search').value.trim());
+  };
+
+  window.openSelectedSheet = function() {
+    const query = $('input-sheet-search').value.trim();
+    if (!query) {
+      $('login-error').textContent = 'Enter a sheet name';
+      return;
+    }
+
+    const exact = allSheetNames.find(name => name.toLowerCase() === query.toLowerCase());
+    if (exact) {
+      selectSheet(exact);
+      return;
+    }
+
+    const partial = allSheetNames.find(name => name.toLowerCase().includes(query.toLowerCase()));
+    if (partial) {
+      selectSheet(partial);
+      return;
+    }
+
+    $('login-error').textContent = 'No sheet found with that name';
+  };
+
+  window.handleSignOut = function() {
+    selectedSheetName = '';
+    holeData = [];
+    scores = {};
+    $('sheet-label').textContent = '';
+    $('login-helper').textContent = 'Search for a sheet tab in the workbook.';
+    $('input-sheet-search').value = '';
+    $('sheet-results').innerHTML = '';
+    hide('screen-scoring');
+    hide('screen-loading');
+    show('screen-login');
+  };
+
+  // ── SCORING SCREEN ────────────────────────────────────────────
+  function initScoringScreen() {
+    loadHoles();
+  }
+
+  async function loadHoles() {
+    const sheetName = selectedSheetName;
+
+    if (!sheetName) {
+      hide('screen-loading');
+      show('screen-login');
+      return;
+    }
+
+    $('scorecard-body').innerHTML = '';
+    $('sheet-label').textContent  = sheetName;
+    show('scorecard-loading');
+    hide('scorecard-table');
+    hide('btn-submit');
+
+    try {
+      const data = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(sheetName)}`);
+      if (!data.success) throw new Error(data.error);
+
+      holeData = data.holes;
+      // Pre-fill scores from existing sheet values
+      holeData.forEach(h => {
+        if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) {
+          scores[h.rowIndex] = h.currentScore;
+        }
+      });
+
+      renderScorecard();
+      hide('scorecard-loading');
+      show('scorecard-table');
+      show('btn-submit');
+      hide('screen-loading');
+      show('screen-scoring');
+    } catch (err) {
+      $('scorecard-loading').textContent = '⚠ ' + err.message;
+      hide('screen-loading');
+      show('screen-scoring');
+    }
+  }
+
+  function renderScorecard() {
+    const tbody = $('scorecard-body');
+    tbody.innerHTML = '';
+
+    let frontHoles = holeData.filter(h => h.front);
+    let backHoles  = holeData.filter(h => !h.front);
+
+    const buildRows = (holes, label) => {
+      const divider = document.createElement('tr');
+      divider.className = 'section-divider';
+      divider.innerHTML = `<td colspan="4">${label}</td>`;
+      tbody.appendChild(divider);
+
+      holes.forEach(h => {
+        const tr = document.createElement('tr');
+        const existing = scores[h.rowIndex] ?? '';
+        tr.innerHTML = `
+          <td class="hole-num">${h.hole}</td>
+          <td class="par">Par ${h.par}</td>
+          <td class="score-cell">
+            <div class="score-controls">
+              <button class="score-btn minus" onclick="adjustScore(${h.rowIndex}, -1)">−</button>
+              <input
+                class="score-input"
+                id="score-${h.rowIndex}"
+                type="number"
+                inputmode="numeric"
+                min="1" max="20"
+                value="${existing}"
+                placeholder="—"
+                onchange="setScore(${h.rowIndex}, this.value)"
+              />
+              <button class="score-btn plus" onclick="adjustScore(${h.rowIndex}, 1)">+</button>
+            </div>
+          </td>
+          <td class="diff-cell" id="diff-${h.rowIndex}">${getDiff(h.par, existing)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    };
+
+    buildRows(frontHoles, 'FRONT 9');
+    buildRows(backHoles,  'BACK 9');
+    updateTotals();
+  }
+
+  function setSaveStatus(message, kind) {
+    const status = $('save-status');
+    if (!status) return;
+
+    status.textContent = message || '';
+    status.classList.remove('save-status-saving', 'save-status-saved', 'save-status-error');
+
+    if (kind) {
+      status.classList.add(`save-status-${kind}`);
+    }
+  }
+
+  async function autosaveScore(rowIndex) {
+    if (!selectedSheetName) return;
+
+    const score = scores[rowIndex];
+    setSaveStatus('Saving...', 'saving');
+
+    try {
+      const data = await fetchJsonViaProxy(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          sheetName: selectedSheetName,
+          scores: [{ rowIndex: Number(rowIndex), score }]
+        })
+      });
+
+      if (!data.success) throw new Error(data.error);
+
+      setSaveStatus('Saved', 'saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => setSaveStatus(''), 1000);
+    } catch (err) {
+      console.error('Autosave failed:', err);
+      setSaveStatus('Save failed', 'error');
+    }
+  }
+
+  window.setScore = function(rowIndex, val) {
+    const n = parseInt(val);
+    if (!isNaN(n) && n >= 1 && n <= 20) {
+      scores[rowIndex] = n;
+    } else {
+      delete scores[rowIndex];
+    }
+    const hole = holeData.find(h => h.rowIndex === rowIndex);
+    const diff = $(`diff-${rowIndex}`);
+    if (diff && hole) diff.innerHTML = getDiff(hole.par, scores[rowIndex]);
+    updateTotals();
+    autosaveScore(rowIndex);
+  };
+
+  window.adjustScore = function(rowIndex, delta) {
+    const hole = holeData.find(h => h.rowIndex === rowIndex);
+    const current = scores[rowIndex] ?? hole.par;
+    const next = Math.max(1, Math.min(20, current + delta));
+    scores[rowIndex] = next;
+    const input = $(`score-${rowIndex}`);
+    if (input) input.value = next;
+    const diff = $(`diff-${rowIndex}`);
+    if (diff && hole) diff.innerHTML = getDiff(hole.par, next);
+    updateTotals();
+    autosaveScore(rowIndex);
+  };
+
+  function getDiff(par, score) {
+    if (score === '' || score === null || score === undefined) return '<span class="diff-empty">—</span>';
+    const d = Number(score) - Number(par);
+    if (d === 0) return `<span class="diff-even">E</span>`;
+    if (d < 0)   return `<span class="diff-under">${d}</span>`;
+    return `<span class="diff-over">+${d}</span>`;
+  }
+
+  function updateTotals() {
+    let front = 0, back = 0, frontPar = 0, backPar = 0;
+    let frontFilled = true, backFilled = true;
+
+    holeData.forEach(h => {
+      const s = scores[h.rowIndex];
+      if (h.front) {
+        frontPar += Number(h.par);
+        if (s) front += Number(s); else frontFilled = false;
+      } else {
+        backPar += Number(h.par);
+        if (s) back += Number(s); else backFilled = false;
+      }
+    });
+
+    const total = front + back;
+    const totalPar = frontPar + backPar;
+    const diff = total - totalPar;
+
+    $('total-front').textContent = frontFilled ? front : '—';
+    $('total-back').textContent  = backFilled  ? back  : '—';
+    $('total-score').textContent = (frontFilled && backFilled) ? total : '—';
+    $('total-diff').innerHTML    = (frontFilled && backFilled) ? getDiff(totalPar, total) : '';
+  }
+
+  // ── SUBMIT ─────────────────────────────────────────────────────
+  window.handleSubmit = async function() {
+    const filled  = holeData.filter(h => scores[h.rowIndex] !== undefined);
+    const missing = holeData.length - filled.length;
+
+    if (missing > 0) {
+      const ok = confirm(`${missing} hole${missing > 1 ? 's' : ''} without a score. Submit anyway?`);
+      if (!ok) return;
+    }
+
+    const sheetName = selectedSheetName;
+
+    const payload = {
+      sheetName,
+      scores: Object.entries(scores).map(([rowIndex, score]) => ({
+        rowIndex: Number(rowIndex),
+        score
+      }))
+    };
+
+    const btn = $('btn-submit');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    try {
+      const data = await fetchJsonViaProxy(APPS_SCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' }, // Apps Script needs text/plain to avoid CORS preflight
+        body:    JSON.stringify(payload)
+      });
+      if (!data.success) throw new Error(data.error);
+
+      hide('screen-scoring');
+      show('screen-success');
+      $('success-detail').textContent = `${data.written} scores saved to "${sheetName}"`;
+    } catch (err) {
+      alert('Save failed: ' + err.message);
+      btn.textContent = 'Submit Scores';
+      btn.disabled = false;
+    }
+  };
+
+  window.handleResubmit = function() {
+    hide('screen-success');
+    show('screen-scoring');
+    loadHoles(); // reload fresh from sheet
+  };
+
+  function showError(msg) {
+    console.error(msg);
+    alert(msg);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    renderSheetSearch('');
+    loadSheetNames();
+  });
+</script>
+
+<style>
+  /* ── TOKENS ─────────────────────────────────────────── */
+  :root {
+    --bg:        #0a0f0d;
+    --surface:   #111916;
+    --surface2:  #1a2420;
+    --border:    #2a3830;
+    --green:     #3ddc84;
+    --green-dim: #1e6e42;
+    --red:       #ff5c5c;
+    --gold:      #d4a843;
+    --text:      #e8ede9;
+    --muted:     #6b7d72;
+    --radius:    12px;
+    --font-head: 'Bebas Neue', 'Impact', sans-serif;
+    --font-body: 'DM Mono', 'Courier New', monospace;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ── SCREENS ────────────────────────────────────────── */
+  .screen {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+  }
+
+  /* ── LOGIN ──────────────────────────────────────────── */
+  #screen-login {
+    background:
+      radial-gradient(ellipse at 20% 50%, #1e3a2a 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, #0f2d1e 0%, transparent 50%),
+      var(--bg);
+  }
+
+  .login-logo {
+    font-family: var(--font-head);
+    font-size: 56px;
+    letter-spacing: 4px;
+    color: var(--green);
+    line-height: 1;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .login-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .field input:focus { border-color: var(--green); }
+
+  #login-error {
+    font-size: 12px;
+    color: var(--red);
+    min-height: 16px;
+    text-align: center;
+  }
+
+  .sheet-option {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 12px 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .sheet-option:active {
+    background: var(--surface2);
+  }
+
+  .sheet-empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  /* ── BUTTONS ────────────────────────────────────────── */
+  .btn-primary {
+    background: var(--green);
+    color: #051009;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-head);
+    font-size: 20px;
+    letter-spacing: 2px;
+    padding: 16px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-primary:active { opacity: .85; transform: scale(.98); }
+  .btn-primary:disabled { opacity: .4; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+
+  /* ── LOADING ────────────────────────────────────────── */
+  #screen-loading {
+    gap: 16px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SCORING SCREEN ─────────────────────────────────── */
+  #screen-scoring {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .scoring-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .header-logo {
+    font-family: var(--font-head);
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--green);
+  }
+
+  .signout-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    padding: 4px 8px;
+  }
+
+  #player-name {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  #sheet-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  #save-status {
+    margin-top: 4px;
+    min-height: 14px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .save-status-saving {
+    color: var(--gold);
+  }
+
+  .save-status-saved {
+    color: var(--green);
+  }
+
+  .save-status-error {
+    color: var(--red);
+  }
+
+  /* Mode toggle */
+  #mode-toggle {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .mode-btn.active {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* Totals bar */
+  .totals-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .total-cell {
+    flex: 1;
+    background: var(--surface2);
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .total-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .total-value {
+    font-size: 20px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Scorecard table */
+  .scorecard-wrap {
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 100px;
+  }
+
+  #scorecard-loading {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  tr.section-divider td {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-top: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:not(.section-divider) {
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+
+  tr:not(.section-divider):active { background: var(--surface2); }
+
+  td {
+    padding: 8px 10px;
+    vertical-align: middle;
+  }
+
+  .hole-num {
+    font-family: var(--font-head);
+    font-size: 24px;
+    color: var(--green);
+    width: 44px;
+    text-align: center;
+    padding-left: 14px;
+  }
+
+  .par {
+    font-size: 11px;
+    color: var(--muted);
+    width: 52px;
+  }
+
+  .score-cell { width: auto; }
+
+  .score-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .score-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .1s;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .score-btn:active { background: var(--border); }
+
+  .score-input {
+    width: 52px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 20px;
+    font-weight: 500;
+    text-align: center;
+    padding: 6px 4px;
+    outline: none;
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  .score-input::-webkit-inner-spin-button,
+  .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .score-input:focus { border-color: var(--green); }
+
+  .diff-cell {
+    width: 44px;
+    text-align: center;
+    padding-right: 14px;
+  }
+
+  .diff-even  { color: var(--muted); }
+  .diff-under { color: var(--green); font-weight: 500; }
+  .diff-over  { color: var(--red); }
+  .diff-empty { color: var(--border); }
+
+  /* Submit bar */
+  .submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    display: flex;
+    justify-content: center;
+  }
+
+  .submit-bar .btn-primary {
+    max-width: 600px;
+  }
+
+  /* ── SUCCESS ────────────────────────────────────────── */
+  #screen-success {
+    gap: 16px;
+    text-align: center;
+  }
+
+  .success-icon {
+    font-size: 64px;
+    line-height: 1;
+  }
+
+  .success-title {
+    font-family: var(--font-head);
+    font-size: 40px;
+    letter-spacing: 3px;
+    color: var(--green);
+  }
+
+  #success-detail {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    max-width: 300px;
+  }
+
+  .success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── SHEET SEARCH ───────────────────────────────────────────── -->
+<div id="screen-login" class="screen">
+  <div class="login-logo">HACKERS CUP</div>
+  <div class="login-sub">Google Sheets Scoring · 2025</div>
+
+  <div class="login-box">
+    <div class="field">
+      <label for="input-sheet-search">Sheet name</label>
+      <input id="input-sheet-search" type="text" autocomplete="off" autocapitalize="none"
+             placeholder="Search sheets..." oninput="searchSheets()"
+             onkeydown="if(event.key==='Enter') openSelectedSheet()">
+    </div>
+    <div id="login-helper" style="font-size:12px;color:var(--muted);min-height:16px;">Search for a sheet tab in the workbook.</div>
+    <div id="login-error"></div>
+    <button id="btn-login" class="btn-primary" onclick="openSelectedSheet()">OPEN SHEET</button>
+  </div>
+
+  <div id="sheet-results" style="width:100%;max-width:360px;margin-top:16px;display:flex;flex-direction:column;gap:8px;"></div>
+</div>
+
+<!-- ── LOADING ─────────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen hidden">
+  <div class="spinner"></div>
+  <div>LOADING</div>
+</div>
+
+<!-- ── SCORING ─────────────────────────────────────────────────── -->
+<div id="screen-scoring" class="screen hidden">
+
+  <div class="scoring-header">
+    <div class="header-top">
+      <div class="header-logo">⛳ HACKERS CUP</div>
+      <button class="signout-btn" onclick="handleSignOut()">Change sheet</button>
+    </div>
+    <div id="sheet-label"></div>
+    <div id="save-status"></div>
+
+    <div class="totals-bar" style="margin: 10px -20px -12px;">
+      <div class="total-cell">
+        <div class="total-label">Front</div>
+        <div class="total-value" id="total-front">—</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Back</div>
+        <div class="total-value" id="total-back">—</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Total</div>
+        <div class="total-value" id="total-score">—</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">+/−</div>
+        <div class="total-value" id="total-diff"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scorecard-wrap">
+    <div id="scorecard-loading">LOADING HOLES…</div>
+    <table id="scorecard-table" class="hidden">
+      <tbody id="scorecard-body"></tbody>
+    </table>
+  </div>
+
+  <div class="submit-bar">
+    <button id="btn-submit" class="btn-primary hidden" onclick="handleSubmit()">SUBMIT SCORES</button>
+  </div>
+
+</div>
+
+<!-- ── SUCCESS ─────────────────────────────────────────────────── -->
+<div id="screen-success" class="screen hidden">
+  <div class="success-icon">🏌️</div>
+  <div class="success-title">SCORES SAVED</div>
+  <div id="success-detail"></div>
+  <div class="success-actions">
+    <button class="btn-primary" onclick="handleResubmit()">UPDATE SCORES</button>
+    <button class="btn-ghost"   onclick="handleSignOut()">Change sheet</button>
+  </div>
+</div>
+
+</body>
+</html>
