@@ -183,7 +183,7 @@
     $('login-error').textContent = 'No sheet found with that name';
   };
 
-  window.handleSignOut = function() {
+  window.handleSignOut = async function() {
     selectedSheetNames = [];
     holeData = [];
     roundHoles = [];
@@ -202,6 +202,7 @@
     hide('screen-loading');
     show('screen-login');
     $('login-helper').textContent = 'Select up to 4 players, then tap Start Round.';
+    await loadSheetNames();
   };
 
   // ── SCORING SCREEN ────────────────────────────────────────────
@@ -464,20 +465,26 @@
     setSaveStatus('Saving...', 'saving');
 
     try {
-      const data = await fetchJsonViaProxy(APPS_SCRIPT_URL, {
+      await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           sheetName: player.sheetName,
           scores: [{ rowIndex: Number(rowIndex), score }]
         })
       });
-      if (!data.success) throw new Error(data.error);
+
+      await new Promise(resolve => setTimeout(resolve, 750));
 
       // refresh that player's holes so sheet-calculated points (col M) are visible
       const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`);
       if (resp && resp.success) {
         player.holes = resp.holes || [];
+        const refreshedHole = (player.holes || []).find(ph => ph.rowIndex === rowIndex);
+        if (refreshedHole && String(refreshedHole.currentScore ?? '') !== String(score ?? '')) {
+          throw new Error('Save did not complete');
+        }
       }
 
       renderCurrentHole();
