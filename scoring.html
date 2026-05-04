@@ -7,11 +7,32 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+<link rel="manifest" href="site.webmanifest">
 
 <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
   // ── CONFIG ──────────────────────────────────────────────────
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8reFuNFbRmKGdpLkdFc9b88WMJwc4hguNCVi1hQyCeQEezZYRVWiMc46idCcYpMAc/exec';
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
+    authDomain: 'hackers-cup.firebaseapp.com',
+    databaseURL: 'https://hackers-cup-default-rtdb.firebaseio.com',
+    projectId: 'hackers-cup',
+    storageBucket: 'hackers-cup.appspot.com',
+    messagingSenderId: '765736070872',
+    appId: '1:765736070872:web:86a51c41916e7af75631ad',
+    measurementId: 'G-6E1M14F510'
+  };
+  const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v2';
+  const SESSION_QUEUE_KEY = 'hackerscup.scoring.queue.v2';
   // ── END CONFIG ──────────────────────────────────────────────
+
+  const firebaseApp = initializeApp(FIREBASE_CONFIG);
+  const firebaseAuth = getAuth(firebaseApp);
+  const firebaseDb = getDatabase(firebaseApp);
 
   function proxiedAppScriptUrl(url) {
     return `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
@@ -41,12 +62,274 @@
   let roundHoles      = [];   // hole order for the active round
   let currentHoleIndex = 0;
   let startHoleNumber  = null;
+  let sessionStage     = 'draft';
   let saveTimer        = null;
+  let sessionSyncTimer = null;
+  let firebaseUid      = null;
+  let pendingRemoteSession = null;
+  let pendingScoreUpdates   = [];
+  let pendingFlushPromise   = null;
+  let resumeSessionCandidate = null;
+
+  try {
+    const storedQueue = localStorage.getItem(SESSION_QUEUE_KEY);
+    if (storedQueue) pendingScoreUpdates = JSON.parse(storedQueue) || [];
+  } catch (err) {
+    pendingScoreUpdates = [];
+  }
 
   // ── DOM HELPERS ──────────────────────────────────────────────
   const $  = id => document.getElementById(id);
   const show = id => $(id).classList.remove('hidden');
   const hide = id => $(id).classList.add('hidden');
+
+  function safeParseJson(value) {
+    try {
+      return JSON.parse(value);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function getSessionSnapshot() {
+    return {
+      version: 1,
+      stage: sessionStage,
+      selectedSheetNames: [...selectedSheetNames],
+      players: players.map(player => ({
+        sheetName: player.sheetName,
+        name: player.name,
+        scores: { ...(player.scores || {}) }
+      })),
+      scores: { ...scores },
+      currentHoleIndex,
+      startHoleNumber,
+      savedAt: Date.now()
+    };
+  }
+
+  function saveLocalSession(snapshot) {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    } catch (err) {
+      console.warn('Unable to save local scoring session:', err);
+    }
+  }
+
+  function loadLocalSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      return raw ? safeParseJson(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function clearLocalSession() {
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (err) {
+      console.warn('Unable to clear local scoring session:', err);
+    }
+  }
+
+  function savePendingQueue() {
+    try {
+      localStorage.setItem(SESSION_QUEUE_KEY, JSON.stringify(pendingScoreUpdates));
+    } catch (err) {
+      console.warn('Unable to save pending score queue:', err);
+    }
+  }
+
+  function setResumeSessionCandidate(session) {
+    resumeSessionCandidate = session || null;
+    const card = $('session-resume-card');
+    const meta = $('session-resume-meta');
+    if (!card || !meta) return;
+
+    if (!session) {
+      card.classList.add('hidden');
+      meta.textContent = '';
+      return;
+    }
+
+    const names = (session.selectedSheetNames || []).join(' • ');
+    const updated = session.savedAt ? new Date(session.savedAt).toLocaleString() : 'Recently';
+    meta.textContent = `${names}${names ? ' • ' : ''}${session.stage === 'active' ? 'In progress' : 'Draft'} • Saved ${updated}`;
+    card.classList.remove('hidden');
+  }
+
+  function persistScoringSession() {
+    const snapshot = getSessionSnapshot();
+    saveLocalSession(snapshot);
+    pendingRemoteSession = snapshot;
+    setResumeSessionCandidate(snapshot);
+
+    clearTimeout(sessionSyncTimer);
+    sessionSyncTimer = setTimeout(() => {
+      flushRemoteSession(snapshot);
+    }, 300);
+  }
+
+  async function flushRemoteSession(snapshot = pendingRemoteSession) {
+    if (!firebaseUid || !snapshot) return;
+    if (!navigator.onLine) return;
+
+    try {
+      await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`), snapshot);
+      pendingRemoteSession = null;
+    } catch (err) {
+      console.warn('Unable to sync scoring session to Firebase:', err);
+    }
+  }
+
+  async function loadRemoteSession() {
+    if (!firebaseUid) return null;
+
+    try {
+      const snap = await get(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`));
+      return snap.exists() ? snap.val() : null;
+    } catch (err) {
+      console.warn('Unable to load scoring session from Firebase:', err);
+      return null;
+    }
+  }
+
+  async function refreshResumeCandidate() {
+    const localSession = loadLocalSession();
+    let remoteSession = null;
+
+    if (firebaseUid) {
+      remoteSession = await loadRemoteSession();
+    }
+
+    const chosen = [localSession, remoteSession]
+      .filter(Boolean)
+      .sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0))[0] || null;
+
+    setResumeSessionCandidate(chosen);
+    return chosen;
+  }
+
+  function restoreSessionSnapshot(snapshot) {
+    if (!snapshot) return;
+
+    sessionStage = snapshot.stage || 'draft';
+    selectedSheetNames = Array.isArray(snapshot.selectedSheetNames) ? [...snapshot.selectedSheetNames] : [];
+    players = Array.isArray(snapshot.players) && snapshot.players.length
+      ? snapshot.players.map(player => ({
+          sheetName: player.sheetName,
+          name: player.name || player.sheetName,
+          holes: [],
+          scores: { ...(player.scores || {}) }
+        }))
+      : selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
+    scores = snapshot.scores || {};
+    currentHoleIndex = Number(snapshot.currentHoleIndex || 0);
+    startHoleNumber = snapshot.startHoleNumber ?? null;
+
+    $('input-sheet-search').value = '';
+    $('login-error').textContent = '';
+    renderSelectedList();
+    renderSheetSearch('');
+  }
+
+  async function continueSavedSession(snapshot) {
+    if (!snapshot) return;
+    restoreSessionSnapshot(snapshot);
+    hide('screen-login');
+    show('screen-loading');
+    await loadHoles();
+  }
+
+  window.continueSavedScoringSession = async function() {
+    await continueSavedSession(resumeSessionCandidate || loadLocalSession());
+  };
+
+  function resetCurrentSession(keepSavedSnapshot = false) {
+    selectedSheetNames = [];
+    holeData = [];
+    roundHoles = [];
+    currentHoleIndex = 0;
+    startHoleNumber = null;
+    sessionStage = 'draft';
+    players = [];
+    scores = {};
+    pendingRemoteSession = null;
+
+    $('sheet-label').textContent = '';
+    $('login-helper').textContent = 'Search for a sheet tab in the workbook.';
+    $('input-sheet-search').value = '';
+    $('sheet-results').innerHTML = '';
+    $('selected-list').innerHTML = '';
+    $('hole-view').innerHTML = '';
+    hide('start-hole-overlay');
+    hide('screen-scoring');
+    hide('screen-loading');
+    show('screen-login');
+    $('login-helper').textContent = 'Select up to 4 players, then tap Start Round.';
+
+    if (!keepSavedSnapshot) {
+      clearLocalSession();
+      setResumeSessionCandidate(null);
+    } else {
+      setResumeSessionCandidate(loadLocalSession());
+    }
+  }
+
+  async function queueScoreUpdate(player, rowIndex, score) {
+    pendingScoreUpdates.push({
+      sheetName: player.sheetName,
+      rowIndex: Number(rowIndex),
+      score,
+      savedAt: Date.now()
+    });
+    savePendingQueue();
+
+    if (!navigator.onLine) return;
+    if (!pendingFlushPromise) {
+      pendingFlushPromise = flushPendingScoreUpdates().finally(() => {
+        pendingFlushPromise = null;
+      });
+    }
+    await pendingFlushPromise;
+  }
+
+  async function flushPendingScoreUpdates() {
+    if (!pendingScoreUpdates.length || !navigator.onLine) return;
+
+    while (pendingScoreUpdates.length) {
+      const update = pendingScoreUpdates[0];
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            sheetName: update.sheetName,
+            scores: [{ rowIndex: Number(update.rowIndex), score: update.score }]
+          })
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 750));
+        const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(update.sheetName)}`);
+        if (!resp || !resp.success) throw new Error(resp?.error || 'Unable to verify saved score');
+
+        const savedHole = (resp.holes || []).find(h => Number(h.rowIndex) === Number(update.rowIndex));
+        const savedScore = savedHole ? savedHole.currentScore : null;
+        if (String(savedScore ?? '') !== String(update.score ?? '')) {
+          throw new Error('Saved score has not synced yet');
+        }
+
+        pendingScoreUpdates.shift();
+        savePendingQueue();
+      } catch (err) {
+        console.warn('Pending score sync paused:', err);
+        break;
+      }
+    }
+  }
 
   async function loadSheetNames() {
     try {
@@ -133,6 +416,7 @@
       $('login-error').textContent = '';
     }
     renderSelectedList();
+    persistScoringSession();
   }
 
   function selectSheet(name) {
@@ -152,6 +436,8 @@
     roundHoles = [];
     currentHoleIndex = 0;
     startHoleNumber = null;
+    sessionStage = 'active';
+    persistScoringSession();
     hide('screen-login');
     show('screen-loading');
     loadHoles();
@@ -184,24 +470,25 @@
   };
 
   window.handleSignOut = async function() {
-    selectedSheetNames = [];
-    holeData = [];
-    roundHoles = [];
-    currentHoleIndex = 0;
-    startHoleNumber = null;
-    players = [];
-    scores = {};
-    $('sheet-label').textContent = '';
-    $('login-helper').textContent = 'Search for a sheet tab in the workbook.';
-    $('input-sheet-search').value = '';
-    $('sheet-results').innerHTML = '';
-    $('selected-list').innerHTML = '';
-    $('hole-view').innerHTML = '';
-    hide('start-hole-overlay');
-    hide('screen-scoring');
-    hide('screen-loading');
-    show('screen-login');
-    $('login-helper').textContent = 'Select up to 4 players, then tap Start Round.';
+    persistScoringSession();
+    resetCurrentSession(true);
+    await refreshResumeCandidate();
+    await loadSheetNames();
+  };
+
+  window.startNewScoringSession = async function() {
+    clearLocalSession();
+    pendingScoreUpdates = [];
+    savePendingQueue();
+    setResumeSessionCandidate(null);
+    if (firebaseUid) {
+      try {
+        await remove(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`));
+      } catch (err) {
+        console.warn('Unable to clear remote scoring session:', err);
+      }
+    }
+    resetCurrentSession(false);
     await loadSheetNames();
   };
 
@@ -243,10 +530,18 @@
       }));
 
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
-      renderStartHolePicker();
       hide('scorecard-loading');
       hide('screen-loading');
       show('screen-scoring');
+
+      if (sessionStage === 'active' && startHoleNumber !== null) {
+        startRoundAtHole(startHoleNumber);
+      } else {
+        renderStartHolePicker();
+      }
+
+      persistScoringSession();
+      await flushPendingScoreUpdates();
     } catch (err) {
       $('scorecard-loading').textContent = '⚠ ' + err.message;
       hide('screen-loading');
@@ -281,6 +576,7 @@
     $('hole-view').classList.remove('hidden');
     $('round-nav').classList.remove('hidden');
     renderCurrentHole();
+    persistScoringSession();
   }
 
   function getCurrentHole() {
@@ -374,6 +670,7 @@
     if (!roundHoles.length) return;
     currentHoleIndex = (currentHoleIndex + delta + roundHoles.length) % roundHoles.length;
     renderCurrentHole();
+    persistScoringSession();
   };
 
   function setSaveStatus(message, kind) {
@@ -465,17 +762,7 @@
     setSaveStatus('Saving...', 'saving');
 
     try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          sheetName: player.sheetName,
-          scores: [{ rowIndex: Number(rowIndex), score }]
-        })
-      });
-
-      await new Promise(resolve => setTimeout(resolve, 750));
+      await queueScoreUpdate(player, rowIndex, score);
 
       // refresh that player's holes so sheet-calculated points (col M) are visible
       const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`);
@@ -487,6 +774,8 @@
         }
       }
 
+      persistScoringSession();
+
       renderCurrentHole();
 
       setSaveStatus('Saved', 'saved');
@@ -494,6 +783,7 @@
       saveTimer = setTimeout(() => setSaveStatus(''), 1000);
     } catch (err) {
       console.error('Autosave failed:', err);
+      persistScoringSession();
       setSaveStatus('Save failed', 'error');
     }
   }
@@ -552,7 +842,37 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     renderSheetSearch('');
-    loadSheetNames();
+
+    onAuthStateChanged(firebaseAuth, async (user) => {
+      firebaseUid = user ? user.uid : null;
+      if (firebaseUid) {
+        pendingRemoteSession = loadLocalSession();
+        const bestSession = await refreshResumeCandidate();
+        if (bestSession && bestSession.stage === 'active' && !players.length) {
+          $('login-helper').textContent = 'Resume your saved scoring session or start a new one.';
+        }
+        await flushRemoteSession(pendingRemoteSession);
+        await flushPendingScoreUpdates();
+      }
+    });
+
+    window.addEventListener('online', () => {
+      flushRemoteSession();
+      flushPendingScoreUpdates();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      persistScoringSession();
+      savePendingQueue();
+    });
+
+    loadSheetNames().then(() => refreshResumeCandidate());
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/scoring-sw.js').catch(err => {
+        console.warn('Scoring service worker registration failed:', err);
+      });
+    }
   });
 </script>
 
@@ -631,6 +951,43 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .resume-card {
+    width: 100%;
+    max-width: 360px;
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(56, 189, 248, 0.24);
+    background: rgba(15, 23, 42, 0.82);
+    box-shadow: 0 18px 50px rgba(2, 8, 23, 0.35);
+    backdrop-filter: blur(18px);
+  }
+
+  .resume-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .resume-meta {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .resume-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .resume-actions .btn-ghost {
+    width: 100%;
   }
 
   .action-row {
@@ -1287,6 +1644,15 @@
     <div class="action-row">
       <button id="btn-login" class="btn-primary" onclick="openSelectedSheet()">ADD PLAYER</button>
       <button id="btn-start" class="btn-primary" onclick="startScoring()">START ROUND</button>
+    </div>
+  </div>
+
+  <div id="session-resume-card" class="resume-card hidden">
+    <div class="resume-title">Resume saved session</div>
+    <div id="session-resume-meta" class="resume-meta"></div>
+    <div class="resume-actions">
+      <button type="button" class="btn-primary" onclick="continueSavedScoringSession()">Continue session</button>
+      <button type="button" class="btn-ghost" onclick="startNewScoringSession()">Start new session</button>
     </div>
   </div>
 
