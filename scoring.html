@@ -15,7 +15,8 @@
   import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
   // ── CONFIG ──────────────────────────────────────────────────
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8reFuNFbRmKGdpLkdFc9b88WMJwc4hguNCVi1hQyCeQEezZYRVWiMc46idCcYpMAc/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6ZFOh1QiIa2QhbFwSD4GRN4hy9TvDGAUSlVnE6AJQEoxkZFLtj5aMzE42EWh3uTO6/exec';
+  const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
     authDomain: 'hackers-cup.firebaseapp.com',
@@ -89,6 +90,133 @@
     } catch (err) {
       return null;
     }
+  }
+
+  async function fetchSheetRowsViaProxy(sheetName) {
+    const gvizUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+    const response = await fetch(proxiedAppScriptUrl(gvizUrl));
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(text || `Request failed with status ${response.status}`);
+    }
+
+    const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
+    if (!match) {
+      throw new Error(`Unexpected sheet response: ${text.slice(0, 120)}`);
+    }
+
+    const json = safeParseJson(match[1]);
+    if (!json || !json.table) {
+      throw new Error('Unable to parse Google Sheet rows');
+    }
+
+    return json.table.rows || [];
+  }
+
+  function buildSheetPointLookup(rawRows) {
+    const lookup = new Map();
+
+    rawRows.forEach(row => {
+      const cells = row?.c || [];
+      const holeNumber = Number(cells[4]?.v ?? cells[4]?.value ?? 0);
+      if (!holeNumber) return;
+
+      const section = String(cells[3]?.v ?? cells[3]?.value ?? '').trim().toUpperCase();
+      const rawPoints = cells[12]?.v ?? cells[12]?.value ?? cells[12]?.f ?? '';
+      const parsedPoints = rawPoints === '' || rawPoints === null || rawPoints === undefined ? null : Number(rawPoints);
+
+      lookup.set(`${holeNumber}|${section}`, Number.isNaN(parsedPoints) ? null : parsedPoints);
+    });
+
+    return lookup;
+  }
+
+  function mergeSheetPointsIntoHoles(holes, rawRows) {
+    const lookup = buildSheetPointLookup(rawRows);
+
+    return (holes || []).map(hole => {
+      const section = hole.front ? 'FRONT' : 'BACK';
+      const sheetPoints = lookup.get(`${Number(hole.hole)}|${section}`);
+      if (sheetPoints !== null && sheetPoints !== undefined) {
+        hole.points = sheetPoints;
+        hole.sheetPoints = sheetPoints;
+      }
+      return hole;
+    });
+  }
+
+  function extractSheetPoints(hole) {
+    if (!hole) return null;
+
+    if (Array.isArray(hole) && hole.length > 12) {
+      const rawCandidate = hole[12];
+      const rawValue = rawCandidate && typeof rawCandidate === 'object'
+        ? (rawCandidate.v ?? rawCandidate.value ?? rawCandidate.text ?? rawCandidate.displayValue)
+        : rawCandidate;
+      if (rawValue !== null && rawValue !== '' && rawValue !== undefined) {
+        const parsed = Number(rawValue);
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+    }
+
+    const directValue = hole.points
+      ?? hole.sheetPoints
+      ?? hole.currentPoints
+      ?? hole.pointsFromSheet
+      ?? hole.totalPoints
+      ?? hole.pointValue
+      ?? hole.pointsValue
+      ?? hole.holePoints
+      ?? hole.stablefordPoints
+      ?? hole.point
+      ?? hole.pts
+      ?? hole.m
+      ?? hole.M
+      ?? hole.col12
+      ?? null;
+
+    if (directValue !== null && directValue !== '' && directValue !== undefined) {
+      const parsed = Number(directValue);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+
+    const rowLikeSources = [hole.rowData, hole.values, hole.cells, hole.row, hole.raw, hole.data];
+    for (const source of rowLikeSources) {
+      if (Array.isArray(source) && source.length > 12) {
+        const candidate = source[12];
+        const candidateValue = candidate && typeof candidate === 'object'
+          ? (candidate.v ?? candidate.value ?? candidate.text ?? candidate.displayValue)
+          : candidate;
+        if (candidateValue !== null && candidateValue !== '' && candidateValue !== undefined) {
+          const parsed = Number(candidateValue);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+      }
+
+      if (source && typeof source === 'object' && !Array.isArray(source)) {
+        const nested = source[12] ?? source.M ?? source.m ?? source.points ?? source.value;
+        if (nested !== null && nested !== '' && nested !== undefined) {
+          const nestedValue = typeof nested === 'object'
+            ? (nested.v ?? nested.value ?? nested.text ?? nested.displayValue)
+            : nested;
+          const parsed = Number(nestedValue);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function normalizeHoleRecord(hole) {
+    if (!hole || typeof hole !== 'object') return hole;
+    if (Array.isArray(hole)) return hole;
+    const normalizedPoints = extractSheetPoints(hole);
+    if (normalizedPoints !== null && hole.sheetPoints === undefined) {
+      hole.sheetPoints = normalizedPoints;
+    }
+    return hole;
   }
 
   function getSessionSnapshot() {
@@ -514,13 +642,25 @@
       // Use the first selected sheet to get canonical hole order and pars
       const templateResp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(players[0].sheetName)}`);
       if (!templateResp.success) throw new Error(templateResp.error);
-      holeData = templateResp.holes;
+      let templateRows = [];
+      try {
+        templateRows = await fetchSheetRowsViaProxy(players[0].sheetName);
+      } catch (err) {
+        console.warn('Raw sheet row fetch unavailable for template sheet:', err);
+      }
+      holeData = mergeSheetPointsIntoHoles((templateResp.holes || []).map(normalizeHoleRecord), templateRows);
 
       // For each player, fetch their sheet holes to get currentScore and sheet points
       await Promise.all(players.map(async (p, pidx) => {
         const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
         if (!resp.success) throw new Error(resp.error || `Failed to load ${p.sheetName}`);
-        p.holes = resp.holes || [];
+        let rawRows = [];
+        try {
+          rawRows = await fetchSheetRowsViaProxy(p.sheetName);
+        } catch (err) {
+          console.warn(`Raw sheet row fetch unavailable for ${p.sheetName}:`, err);
+        }
+        p.holes = mergeSheetPointsIntoHoles((resp.holes || []).map(normalizeHoleRecord), rawRows);
         p.scores = {};
         p.holes.forEach(h => {
           if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) {
@@ -767,7 +907,13 @@
       // refresh that player's holes so sheet-calculated points (col M) are visible
       const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`);
       if (resp && resp.success) {
-        player.holes = resp.holes || [];
+        let rawRows = [];
+        try {
+          rawRows = await fetchSheetRowsViaProxy(player.sheetName);
+        } catch (err) {
+          console.warn(`Raw sheet row fetch unavailable for ${player.sheetName}:`, err);
+        }
+        player.holes = mergeSheetPointsIntoHoles((resp.holes || []).map(normalizeHoleRecord), rawRows);
         const refreshedHole = (player.holes || []).find(ph => ph.rowIndex === rowIndex);
         if (refreshedHole && String(refreshedHole.currentScore ?? '') !== String(score ?? '')) {
           throw new Error('Save did not complete');
@@ -809,10 +955,9 @@
   // use that. Otherwise fall back to local Stableford calculation.
   function getPointsFromData(hole, strokes) {
     // Normalise possible fields returned by Apps Script
-    const sheetVal = hole.points ?? hole.sheetPoints ?? hole.currentPoints ?? hole.pointsFromSheet ?? null;
+    const sheetVal = extractSheetPoints(hole);
     if (sheetVal !== null && sheetVal !== '' && sheetVal !== undefined) {
-      const n = Number(sheetVal);
-      return isNaN(n) ? null : n;
+      return sheetVal;
     }
 
     return getStablefordPoints(hole.par, strokes);
