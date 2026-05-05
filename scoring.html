@@ -730,8 +730,8 @@
 
     holeData.forEach(h => {
       const score = player.scores[h.rowIndex];
-      const pts = getPointsFromData((player.holes || []).find(ph => ph.rowIndex === h.rowIndex) || h, score);
-      if (score !== undefined) {
+      const pts = getPointsFromData(h, score);
+      if (score !== undefined && score !== null && score !== '') {
         if (h.front) frontPoints += Number(pts ?? 0);
         else backPoints += Number(pts ?? 0);
       }
@@ -876,6 +876,7 @@
     const pointsCell = $(`points-${playerIndex}-${rowIndex}`);
     if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(playerHole, player.scores[rowIndex]));
     updateTotals();
+    renderCurrentHole();
     await autosaveScoreForPlayer(playerIndex, rowIndex);
   };
 
@@ -892,6 +893,7 @@
     const pointsCell = $(`points-${playerIndex}-${rowIndex}`);
     if (pointsCell && hole) pointsCell.innerHTML = getPointsLabel(getPointsFromData(playerHole, next));
     updateTotals();
+    renderCurrentHole();
     await autosaveScoreForPlayer(playerIndex, rowIndex);
   };
 
@@ -954,12 +956,7 @@
   // points value for the hole (e.g. `hole.sheetPoints` / `hole.points` / `hole.currentPoints`),
   // use that. Otherwise fall back to local Stableford calculation.
   function getPointsFromData(hole, strokes) {
-    // Normalise possible fields returned by Apps Script
-    const sheetVal = extractSheetPoints(hole);
-    if (sheetVal !== null && sheetVal !== '' && sheetVal !== undefined) {
-      return sheetVal;
-    }
-
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
     return getStablefordPoints(hole.par, strokes);
   }
 
