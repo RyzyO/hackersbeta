@@ -1540,6 +1540,7 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    overflow-y: auto;
     animation: fadeIn 0.3s ease-out;
   }
 
@@ -1551,6 +1552,8 @@
   .start-hole-card {
     width: 100%;
     max-width: 420px;
+    max-height: min(92dvh, 760px);
+    overflow-y: auto;
     background: linear-gradient(135deg, rgba(20, 30, 48, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
     border: 1px solid rgba(139, 92, 246, 0.15);
     border-radius: 24px;
@@ -1634,10 +1637,12 @@
 
   @media (max-width: 480px) {
     .start-hole-overlay {
-      padding: 12px;
+      align-items: flex-start;
+      padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
     }
 
     .start-hole-card {
+      max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
       padding: 16px 14px;
       border-radius: 18px;
     }
@@ -1653,7 +1658,7 @@
     }
 
     .start-hole-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 6px;
       margin-top: 14px;
     }
@@ -1661,6 +1666,8 @@
     .start-hole-btn {
       font-size: 15px;
       border-radius: 12px;
+      min-height: 52px;
+      aspect-ratio: auto;
     }
 
     .hole-title {
