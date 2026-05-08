@@ -163,7 +163,7 @@
       version: 1, stage: sessionStage,
       selectedSheetNames: [...selectedSheetNames],
       players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) } })),
-      scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now()
+      scores: { ...scores }, currentHoleIndex, startHoleNumber, playerHandicaps: { ...playerHandicaps }, savedAt: Date.now()
     };
   }
 
@@ -241,6 +241,7 @@
     scores = snapshot.scores || {};
     currentHoleIndex = Number(snapshot.currentHoleIndex || 0);
     startHoleNumber = snapshot.startHoleNumber ?? null;
+    playerHandicaps = snapshot.playerHandicaps ? { ...snapshot.playerHandicaps } : {};
     $('input-sheet-search').value = '';
     $('login-error').textContent = '';
     renderSelectedList();
@@ -457,13 +458,52 @@
 
   function selectSheet(name) { toggleSelectSheet(name); }
 
+  function renderHandicapInputs() {
+    const container = $('handicap-inputs');
+    if (!container) return;
+    container.innerHTML = '';
+    players.forEach((player, idx) => {
+      const hcap = playerHandicaps[player.sheetName] || '';
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;gap:8px;align-items:center';
+      div.innerHTML = `
+        <label style="flex:1;font-size:13px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${player.name}</label>
+        <input type="number" id="hc-${idx}" min="0" max="36" value="${hcap}" placeholder="0" style="width:60px;padding:8px;border:1px solid var(--border);border-radius:6px;background:rgba(20,31,53,0.8);color:var(--text);font-size:14px">
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  window.submitHandicaps = function() {
+    const error = $('handicap-error');
+    error.textContent = '';
+    let valid = true;
+    
+    players.forEach((player, idx) => {
+      const input = $(`hc-${idx}`);
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) { valid = false; error.textContent = 'Enter handicaps for all players'; return; }
+      const hc = Number(val);
+      if (isNaN(hc) || hc < 0 || hc > 36) { valid = false; error.textContent = 'Handicaps must be 0-36'; return; }
+      playerHandicaps[player.sheetName] = hc;
+    });
+    
+    if (!valid) return;
+    
+    persistScoringSession();
+    hide('screen-handicap');
+    show('screen-loading');
+    loadHoles();
+  };
+
   window.startScoring = function() {
     if (!selectedSheetNames.length) { $('login-error').textContent = 'Select at least one player to score.'; return; }
     players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
     scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = null; sessionStage = 'active';
     persistScoringSession();
-    hide('screen-login'); show('screen-loading');
-    loadHoles();
+    hide('screen-login'); show('screen-handicap');
+    renderHandicapInputs();
   };
 
   window.searchSheets = function() { renderSheetSearch($('input-sheet-search').value.trim()); };
@@ -808,23 +848,28 @@
   function getStablefordPoints(par, strokes, sheetPoints = null, playerKey = null) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
 
-    const handicap = playerKey ? Number(playerHandicaps[playerKey]) : null;
-    if (Number.isFinite(handicap) && handicap > 0) {
-      const strokesGiven = Math.round(handicap / 18);
-      const netScore = Number(strokes) - strokesGiven;
-      const diff = Number(par) - netScore;
-      if (diff >= 2) return 4;
-      if (diff === 1) return 3;
-      if (diff === 0) return 2;
-      if (diff === -1) return 1;
-      return 0;
+    // If player has a manually entered handicap, use it (don't fallback)
+    if (playerKey && playerHandicaps.hasOwnProperty(playerKey)) {
+      const handicap = Number(playerHandicaps[playerKey]);
+      if (Number.isFinite(handicap) && handicap >= 0) {
+        const strokesGiven = Math.round(handicap / 18);
+        const netScore = Number(strokes) - strokesGiven;
+        const diff = Number(par) - netScore;
+        if (diff >= 2) return 4;
+        if (diff === 1) return 3;
+        if (diff === 0) return 2;
+        if (diff === -1) return 1;
+        return 0;
+      }
     }
 
+    // Fallback to sheet points if available
     if (sheetPoints !== null && sheetPoints !== undefined) {
       const pointsValue = Number(sheetPoints);
       if (!Number.isNaN(pointsValue)) return pointsValue;
     }
 
+    // Final fallback: scratch golfer scoring
     const diff = Number(par) - Number(strokes);
     if (diff >= 2) return 4;
     if (diff === 1) return 3;
@@ -1384,6 +1429,17 @@ body{
 <div id="screen-loading" class="screen hidden">
   <div class="spinner"></div>
   <div style="font-size:11px;letter-spacing:3px;color:var(--light)">LOADING</div>
+</div>
+
+<!-- ── HANDICAP INPUT ────────────────────────────────────────── -->
+<div id="screen-handicap" class="screen hidden">
+  <div class="login-box" style="max-width:400px">
+    <div class="login-logo" style="font-size:32px;margin-bottom:8px">Handicaps</div>
+    <div class="login-sub" style="margin-bottom:24px">Enter player handicaps (0-36)</div>
+    <div id="handicap-inputs" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px"></div>
+    <div id="handicap-error" style="font-size:12px;color:var(--red);min-height:16px;text-align:center;margin-bottom:10px"></div>
+    <button class="btn-primary" onclick="submitHandicaps()">Start Round</button>
+  </div>
 </div>
 
 <!-- ── SCORING ────────────────────────────────────────────────── -->
