@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Hackers Cup Live Scoring</title>
+<title>Hackers Cup Social Golf</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -17,8 +17,8 @@
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw73W4rDPFKEWFl5bkRypsURI-29-fJWBvaqulcfGDMVXeLofai1OPd__a_Y-DXZy4w/exec';
-  const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZYkjPZSfLJxgA3XIDnHf_p9obMfW4kIwb4NmFfVZlwCrNCxjEFNIw8QL2n1aDYeWd/exec';
+  const SPREADSHEET_ID = '1phVNXgqfDrcCf2niizUeg5SHPX83O1YaqEnDA8NouMU';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
     authDomain: 'hackers-cup.firebaseapp.com',
@@ -29,8 +29,8 @@
     appId: '1:765736070872:web:86a51c41916e7af75631ad',
     measurementId: 'G-6E1M14F510'
   };
-  const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v2';
-  const SESSION_QUEUE_KEY = 'hackerscup.scoring.queue.v2';
+  const SESSION_STORAGE_KEY = 'hackerscup.social.session.v1';
+  const SESSION_QUEUE_KEY = 'hackerscup.social.queue.v1';
 
   // ── COURSE DATA ─────────────────────────────────────────────
   const COURSE_BASE_URL = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
@@ -85,6 +85,7 @@
   let currentHoleIndex = 0;
   let startHoleNumber = null;
   let sessionStage = 'draft';
+    let playerHandicaps = {}; // Map player name/sheetName to handicap
   let saveTimer = null;
   let sessionSyncTimer = null;
   let firebaseUid = null;
@@ -213,12 +214,12 @@
 
   async function flushRemoteSession(snapshot = pendingRemoteSession) {
     if (!firebaseUid || !snapshot || !navigator.onLine) return;
-    try { await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`), snapshot); pendingRemoteSession = null; } catch (err) {}
+    try { await set(ref(firebaseDb, `users/${firebaseUid}/socialScoringSession/current`), snapshot); pendingRemoteSession = null; } catch (err) {}
   }
 
   async function loadRemoteSession() {
     if (!firebaseUid) return null;
-    try { const snap = await get(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); return snap.exists() ? snap.val() : null; } catch (err) { return null; }
+    try { const snap = await get(ref(firebaseDb, `users/${firebaseUid}/socialScoringSession/current`)); return snap.exists() ? snap.val() : null; } catch (err) { return null; }
   }
 
   async function refreshResumeCandidate() {
@@ -484,7 +485,7 @@
 
   window.startNewScoringSession = async function() {
     clearLocalSession(); pendingScoreUpdates = []; savePendingQueue(); setResumeSessionCandidate(null);
-    if (firebaseUid) { try { await remove(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); } catch (err) {} }
+    if (firebaseUid) { try { await remove(ref(firebaseDb, `users/${firebaseUid}/socialScoringSession/current`)); } catch (err) {} }
     resetCurrentSession(false); await loadSheetNames();
   };
 
@@ -508,6 +509,7 @@
         p.holes = mergeSheetPointsIntoHoles((resp.holes || []).map(normalizeHoleRecord), rawRows);
         p.scores = {};
         p.holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) p.scores[h.rowIndex] = h.currentScore; });
+        if (resp.playerHandicap !== undefined) playerHandicaps[p.sheetName] = resp.playerHandicap;
       }));
 
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
@@ -562,7 +564,7 @@
     let frontPoints = 0, backPoints = 0;
     holeData.forEach(h => {
       const score = player.scores[h.rowIndex];
-      const pts = getStablefordPoints(h.par, score, h.points ?? h.sheetPoints);
+      const pts = getStablefordPoints(h.par, score, null, player.sheetName);
       if (score !== undefined && score !== null && score !== '') {
         if (h.front) frontPoints += Number(pts ?? 0);
         else backPoints += Number(pts ?? 0);
@@ -598,7 +600,7 @@
 
     const playerCards = players.map((player, pidx) => {
       const existing = player.scores[hole.rowIndex] ?? '';
-      const pts = getStablefordPoints(hole.par, existing, hole.points ?? hole.sheetPoints);
+      const pts = getStablefordPoints(hole.par, existing, null, player.sheetName);
       const summary = getPlayerScoreSummary(player);
       const rel = getRelLabel(hole.par, existing);
 
@@ -803,18 +805,33 @@
     }
   }
 
-  function getStablefordPoints(par, strokes, sheetPoints = null) {
+  function getStablefordPoints(par, strokes, sheetPoints = null, playerKey = null) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
-    // If sheet points are provided (from column M), use them instead of calculating
+
+    const handicap = playerKey ? Number(playerHandicaps[playerKey]) : null;
+    if (Number.isFinite(handicap) && handicap > 0) {
+      const strokesGiven = Math.round(handicap / 18);
+      const netScore = Number(strokes) - strokesGiven;
+      const diff = Number(par) - netScore;
+      if (diff >= 2) return 4;
+      if (diff === 1) return 3;
+      if (diff === 0) return 2;
+      if (diff === -1) return 1;
+      return 0;
+    }
+
     if (sheetPoints !== null && sheetPoints !== undefined) {
       const pointsValue = Number(sheetPoints);
       if (!Number.isNaN(pointsValue)) return pointsValue;
     }
-    // Fall back to scratch golfer stableford calculation
-    const diff = Number(par) - Number(strokes);
-    if (diff >= 2) return 4; if (diff === 1) return 3; if (diff === 0) return 2; if (diff === -1) return 1; return 0;
-  }
 
+    const diff = Number(par) - Number(strokes);
+    if (diff >= 2) return 4;
+    if (diff === 1) return 3;
+    if (diff === 0) return 2;
+    if (diff === -1) return 1;
+    return 0;
+  }
   function updateTotals() {
     const bar = $('player-summary-bar');
     if (!bar) return;
@@ -1087,7 +1104,6 @@ body{
 }
 
 .hole-card-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
-.hole-left{}
 .hole-eyebrow{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
 .hole-number{
   font-family:'Kanit',sans-serif;font-style:italic;
@@ -1413,18 +1429,6 @@ body{
     <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
       <i data-lucide="home" class="w-6 h-6 mb-1"></i>
       <span class="text-[10px] font-medium">Home</span>
-    </a>
-    <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
-      <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
-      <span class="text-[10px] font-medium">Payment</span>
-    </a>
-    <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
-      <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
-      <span class="text-[10px] font-medium">Podcast</span>
-    </a>
-    <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-sky-400">
-      <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
-      <span class="text-[10px] font-medium">Score</span>
     </a>
   </div>
 </div>
