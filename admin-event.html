@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1.0" />
+  <title>Admin Event Portal - Hackers Cup</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="site.webmanifest">
+  <style>
+    :root {
+      --bg-main: #050713;
+      --bg-card: #10121e;
+      --bg-card-soft: #151827;
+      --accent-aqua: #1eeaf0;
+      --accent-secondary: #7dd3fc;
+      --text-main: #ecf8ff;
+      --text-muted: #8a90a4;
+      --border-subtle: #2a2e45;
+      --success: #bbf7d0;
+      --error: #fecaca;
+      --warning: #fde68a;
+      --amber: #f59e0b;
+      --teal-dim: rgba(30, 234, 240, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #15192f 0, transparent 50%),
+        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
+        var(--bg-main);
+      color: var(--text-main);
+    }
+
+    .page {
+      width: min(1600px, 100%);
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+
+    .header,
+    .card,
+    .signin-card,
+    .summary-card {
+      background: radial-gradient(circle at top left, #1c2036 0, #10121e 55%);
+      border: 1px solid rgba(42, 46, 69, 0.9);
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      background: linear-gradient(120deg, #050713, #10121f 40%, #050713 100%);
+      border-color: rgba(30, 234, 240, 0.2);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .header p {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .header-actions,
+    .toolbar,
+    .bulk-grid,
+    .summary-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .summary-grid { align-items: stretch; margin-bottom: 14px; }
+
+    .summary-card {
+      flex: 1;
+      min-width: 180px;
+      padding: 14px;
+    }
+
+    .summary-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .signin-card,
+    .card {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .signin-row,
+    .field-row,
+    .toolbar-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .signin-row input,
+    .toolbar input,
+    .toolbar select,
+    .field-input,
+    .notes-input,
+    .event-select {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card-soft);
+      color: var(--text-main);
+      font-size: 14px;
+      min-height: 40px;
+    }
+
+    .signin-row input,
+    .toolbar input { min-width: 230px; flex: 1; }
+    .event-select { min-width: 220px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: none;
+      padding: 10px 16px;
+      background: var(--accent-aqua);
+      color: #050713;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .btn.secondary {
+      background: #232536;
+      color: var(--text-main);
+      border: 1px solid #323552;
+      text-transform: none;
+    }
+
+    .btn.small {
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--text-muted);
+      min-height: 16px;
+    }
+
+    .status.success { color: var(--success); }
+    .status.error { color: var(--error); }
+    .status.warn { color: var(--warning); }
+
+    .hidden { display: none !important; }
+
+    .toolbar {
+      margin-bottom: 12px;
+      align-items: stretch;
+    }
+
+    .toolbar .meta {
+      margin-left: auto;
+      color: var(--text-muted);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(42, 46, 69, 0.9);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 1850px;
+      background: rgba(6, 8, 15, 0.55);
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid #232844;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #12162a;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    td.uid-cell,
+    td.name-cell {
+      white-space: nowrap;
+    }
+
+    td.uid-cell {
+      color: var(--text-muted);
+      font-size: 12px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .field-input,
+    .notes-input,
+    .event-select,
+    .roommates-select {
+      width: 100%;
+      min-width: 88px;
+    }
+
+    .field-input.short { max-width: 100px; }
+    .field-input.mid { max-width: 130px; }
+    .field-input.long { min-width: 180px; }
+    .notes-input {
+      min-width: 220px;
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .roommates-select {
+      min-width: 220px;
+      min-height: 84px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card-soft);
+      color: var(--text-main);
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .badge.paid { background: rgba(34, 197, 94, 0.15); color: #bbf7d0; border-color: rgba(34, 197, 94, 0.35); }
+    .badge.partial { background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.35); }
+    .badge.pending { background: rgba(248, 113, 113, 0.12); color: #fecaca; border-color: rgba(248, 113, 113, 0.35); }
+    .badge.unknown { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); }
+
+    .dirty-row {
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin: 10px 0 12px;
+    }
+
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .legend .clean::before { background: #334155; }
+    .legend .dirty::before { background: var(--amber); }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 16px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .cell-actions {
+      width: 110px;
+      white-space: nowrap;
+    }
+
+    .paid-cell {
+      width: 110px;
+    }
+
+    .help-text {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 920px) {
+      .summary-card { min-width: calc(50% - 5px); }
+      .toolbar .meta { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <h1>Hackers Cup Event Admin</h1>
+        <p>Manage one event year at a time: rooming, partners, event fields, and sponsor notes.</p>
+      </div>
+      <div class="header-actions">
+        <div class="status" id="authStatus">Checking access...</div>
+        <a class="btn secondary hidden" id="backToPortalLink" href="admin-portal.html">Main admin</a>
+        <a class="btn secondary hidden" id="loginLink" href="login.html">Sign in</a>
+      </div>
+    </div>
+
+    <div class="signin-card hidden" id="signinCard">
+      <div class="signin-row">
+        <input id="signinEmail" type="email" placeholder="Email" autocomplete="email" />
+        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password" />
+        <button class="btn" id="signinBtn" type="button">Sign in</button>
+      </div>
+      <div class="status" id="signinStatus"></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <select class="event-select" id="eventSelect"></select>
+        <button class="btn secondary" id="loadEventBtn" type="button">Load event</button>
+        <button class="btn" id="saveAllBtn" type="button">Save all</button>
+        <button class="btn secondary" id="refreshBtn" type="button">Refresh</button>
+        <div class="meta" id="selectionMeta">0 dirty</div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-label">Coming</div>
+          <div class="summary-value" id="comingCount">0</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Skins</div>
+          <div class="summary-value" id="skinsCount">0</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Players loaded</div>
+          <div class="summary-value" id="playersCount">0</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Event</div>
+          <div class="summary-value" id="currentEventLabel">-</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="searchInput" type="text" placeholder="Search by name, UID, size, partner, room, note, or status" />
+        <div class="status" id="pageStatus"></div>
+      </div>
+
+      <div class="legend">
+        <span class="clean">Clean row</span>
+        <span class="dirty">Unsaved edits</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Shirt Size</th>
+              <th>Pant Size</th>
+              <th>Roommates</th>
+              <th>Paid Status</th>
+              <th>Ambrose Partner</th>
+              <th>Skins</th>
+              <th>Coming</th>
+              <th>Sponsor Notes</th>
+              <th>Handicap</th>
+              <th>UID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="help-text">
+        Roommates use a multi-select list. Pick up to 2 other players so the room stays at 2-3 people total. Saving a room or ambrose partner updates both sides automatically.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      setDoc,
+      getDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const EVENT_OPTIONS = [
+      { id: "HC25", year: 2025 },
+      { id: "HC24", year: 2024 },
+      { id: "HC23", year: 2023 },
+      { id: "HC22", year: 2022 },
+      { id: "HC21", year: 2021 },
+      { id: "HC20", year: 2019 },
+      { id: "HC19", year: 2018 },
+      { id: "HC18", year: 2017 },
+      { id: "HC17", year: 2016 },
+      { id: "HC16", year: 2015 },
+      { id: "HC15", year: 2014 },
+      { id: "HC14", year: 2013 },
+      { id: "HC13", year: 2012 },
+      { id: "HC12", year: 2011 },
+      { id: "HC11", year: 2010 },
+      { id: "HC10", year: 2009 },
+      { id: "HC9", year: 2008 },
+      { id: "HC8", year: 2007 },
+      { id: "HC7", year: 2006 }
+    ];
+
+    const SHIRT_SIZES = ["", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "Custom"];
+    const PANT_SIZES = ["", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48", "50", "Custom"];
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const firestore = getFirestore(app);
+
+    const authStatus = document.getElementById("authStatus");
+    const signinCard = document.getElementById("signinCard");
+    const signinEmail = document.getElementById("signinEmail");
+    const signinPassword = document.getElementById("signinPassword");
+    const signinBtn = document.getElementById("signinBtn");
+    const signinStatus = document.getElementById("signinStatus");
+    const loginLink = document.getElementById("loginLink");
+    const backToPortalLink = document.getElementById("backToPortalLink");
+
+    const eventSelect = document.getElementById("eventSelect");
+    const loadEventBtn = document.getElementById("loadEventBtn");
+    const saveAllBtn = document.getElementById("saveAllBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const searchInput = document.getElementById("searchInput");
+    const tableBody = document.getElementById("tableBody");
+    const pageStatus = document.getElementById("pageStatus");
+    const selectionMeta = document.getElementById("selectionMeta");
+    const currentEventLabel = document.getElementById("currentEventLabel");
+    const comingCount = document.getElementById("comingCount");
+    const skinsCount = document.getElementById("skinsCount");
+    const playersCount = document.getElementById("playersCount");
+
+    let currentEventId = eventSelect.value || EVENT_OPTIONS[0].id;
+    let users = [];
+    let filteredUsers = [];
+    let paymentUsers = new Map();
+    let eventPlayers = new Map();
+    let dirty = new Set();
+    let adminLoaded = false;
+
+    function setStatus(el, message, type = "") {
+      el.textContent = message || "";
+      el.classList.remove("success", "error", "warn");
+      if (type) {
+        el.classList.add(type);
+      }
+    }
+
+    function normalize(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function asString(value) {
+      return value === null || value === undefined ? "" : String(value);
+    }
+
+    function uniqueSorted(values) {
+      return Array.from(new Set((values || []).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    }
+
+    function userLabel(user) {
+      const name = user.displayName || "(no name)";
+      const hacker = user.hackerNumber ? ` #${user.hackerNumber}` : "";
+      return `${name}${hacker}`;
+    }
+
+    function currentEventConfig() {
+      return EVENT_OPTIONS.find((event) => event.id === currentEventId) || EVENT_OPTIONS[0];
+    }
+
+    function paidStatusFor(user) {
+      const status = normalize(user.financialStatus);
+      const outstanding = Number(user.amtOutstanding);
+      if (status.includes("partial")) return { label: "Partial", cls: "partial" };
+      if (status.includes("paid") || outstanding === 0) return { label: "Paid", cls: "paid" };
+      if (status.includes("pending")) return { label: "Pending", cls: "pending" };
+      if (user.financialStatus || user.amtOutstanding !== "") return { label: asString(user.financialStatus || user.amtOutstanding), cls: "unknown" };
+      return { label: "No data", cls: "unknown" };
+    }
+
+    function getEventRecord(uid) {
+      return eventPlayers.get(uid) || {
+        shirtSize: "",
+        pantSize: "",
+        roommates: [],
+        ambrosePartnerUid: "",
+        skins: false,
+        coming: false,
+        sponsorNotes: "",
+        handicap: ""
+      };
+    }
+
+    function markDirty(uid) {
+      dirty.add(uid);
+      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
+      if (row) {
+        row.classList.add("dirty-row");
+      }
+      updateDirtyMeta();
+    }
+
+    function clearDirty(uid) {
+      dirty.delete(uid);
+      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
+      if (row) {
+        row.classList.remove("dirty-row");
+      }
+      updateDirtyMeta();
+    }
+
+    function updateDirtyMeta() {
+      selectionMeta.textContent = `${dirty.size} dirty`;
+    }
+
+    function roomGroupMembers(uid, record) {
+      return uniqueSorted([uid, ...(record.roommates || [])]);
+    }
+
+    function collectRoomAffected(currentUid, previousRecord, nextRoommates) {
+      const previousGroup = roomGroupMembers(currentUid, previousRecord || {});
+      const nextGroup = uniqueSorted([currentUid, ...(nextRoommates || [])]);
+      return uniqueSorted([...previousGroup, ...nextGroup]);
+    }
+
+    function renderEventSelect() {
+      eventSelect.innerHTML = EVENT_OPTIONS.map((event) => {
+        const selected = event.id === currentEventId ? "selected" : "";
+        return `<option value="${event.id}" ${selected}>${event.year} · ${event.id}</option>`;
+      }).join("");
+    }
+
+    function renderPartnerOptions(currentUid, selectedValue = "") {
+      const sorted = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
+      return [`<option value="">-</option>`].concat(sorted.map((user) => {
+        if (user.uid === currentUid) return "";
+        const selected = user.uid === selectedValue ? "selected" : "";
+        return `<option value="${escapeHtml(user.uid)}" ${selected}>${escapeHtml(userLabel(user))}</option>`;
+      }).filter(Boolean)).join("");
+    }
+
+    function renderRoommatesOptions(currentUid, selectedUids = []) {
+      const sorted = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
+      return sorted.map((user) => {
+        if (user.uid === currentUid) return "";
+        const selected = selectedUids.includes(user.uid) ? "selected" : "";
+        return `<option value="${escapeHtml(user.uid)}" ${selected}>${escapeHtml(userLabel(user))}</option>`;
+      }).join("");
+    }
+
+    function renderRows(list) {
+      tableBody.innerHTML = "";
+      list.forEach((user) => {
+        const record = getEventRecord(user.uid);
+        const paid = paidStatusFor(user);
+        const row = document.createElement("tr");
+        row.dataset.uid = user.uid;
+        if (dirty.has(user.uid)) {
+          row.classList.add("dirty-row");
+        }
+
+        row.innerHTML = `
+          <td class="name-cell">${escapeHtml(user.displayName || "(no name)")}</td>
+          <td><input class="field-input short" type="text" data-field="shirtSize" data-uid="${user.uid}" value="${escapeHtml(asString(record.shirtSize))}" placeholder="L" /></td>
+          <td><input class="field-input short" type="text" data-field="pantSize" data-uid="${user.uid}" value="${escapeHtml(asString(record.pantSize))}" placeholder="36" /></td>
+          <td>
+            <select class="roommates-select" multiple size="4" data-field="roommates" data-uid="${user.uid}">
+              ${renderRoommatesOptions(user.uid, record.roommates || [])}
+            </select>
+            <div class="help-text">Pick up to 2 roommates.</div>
+          </td>
+          <td class="paid-cell"><span class="badge ${paid.cls}">${escapeHtml(paid.label)}</span></td>
+          <td>
+            <select class="field-input long" data-field="ambrosePartnerUid" data-uid="${user.uid}">
+              ${renderPartnerOptions(user.uid, record.ambrosePartnerUid || "")}
+            </select>
+          </td>
+          <td>
+            <select class="field-input short" data-field="skins" data-uid="${user.uid}">
+              <option value="No" ${record.skins ? "" : "selected"}>No</option>
+              <option value="Yes" ${record.skins ? "selected" : ""}>Yes</option>
+            </select>
+          </td>
+          <td>
+            <select class="field-input short" data-field="coming" data-uid="${user.uid}">
+              <option value="No" ${record.coming ? "" : "selected"}>No</option>
+              <option value="Yes" ${record.coming ? "selected" : ""}>Yes</option>
+            </select>
+          </td>
+          <td><textarea class="notes-input" data-field="sponsorNotes" data-uid="${user.uid}" placeholder="Sponsor notes">${escapeHtml(asString(record.sponsorNotes))}</textarea></td>
+          <td><input class="field-input short" type="number" min="0" max="54" step="1" data-field="handicap" data-uid="${user.uid}" value="${escapeHtml(asString(record.handicap || user.handicap))}" /></td>
+          <td class="uid-cell" title="${escapeHtml(user.uid)}">${escapeHtml(user.uid)}</td>
+          <td class="cell-actions"><button class="btn secondary small" type="button" data-save-uid="${user.uid}">Save row</button></td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    function filterAndRender() {
+      const q = normalize(searchInput.value);
+      filteredUsers = users.filter((user) => {
+        const record = getEventRecord(user.uid);
+        const roommateNames = (record.roommates || []).map((uid) => users.find((candidate) => candidate.uid === uid)?.displayName || "").join(" ");
+        const partnerName = users.find((candidate) => candidate.uid === record.ambrosePartnerUid)?.displayName || "";
+        const paid = paidStatusFor(user).label;
+        return [
+          user.displayName,
+          user.hackerNumber,
+          user.uid,
+          record.shirtSize,
+          record.pantSize,
+          roommateNames,
+          partnerName,
+          record.sponsorNotes,
+          record.handicap,
+          paid,
+          record.skins ? "yes" : "no",
+          record.coming ? "yes" : "no"
+        ].some((value) => normalize(value).includes(q));
+      });
+
+      renderRows(filteredUsers);
+      updateCounters();
+    }
+
+    function updateCounters() {
+      const records = Array.from(eventPlayers.values());
+      comingCount.textContent = String(records.filter((record) => !!record.coming).length);
+      skinsCount.textContent = String(records.filter((record) => !!record.skins).length);
+      playersCount.textContent = String(users.length);
+      const eventConfig = currentEventConfig();
+      currentEventLabel.textContent = `${eventConfig.year} · ${eventConfig.id}`;
+    }
+
+    async function loadUsers() {
+      setStatus(pageStatus, "Loading players...");
+      const [rtdbSnap, firestoreSnap] = await Promise.all([
+        get(ref(db, "users")),
+        getDocs(collection(firestore, "users"))
+      ]);
+
+      const rtdbData = rtdbSnap.exists() ? rtdbSnap.val() : {};
+      const firestoreUsers = {};
+      firestoreSnap.forEach((docSnap) => {
+        firestoreUsers[docSnap.id] = docSnap.data() || {};
+      });
+
+      users = Object.keys(rtdbData).map((uid) => {
+        const r = rtdbData[uid] || {};
+        const f = firestoreUsers[uid] || {};
+        return {
+          uid,
+          displayName: r.displayName || "",
+          hackerNumber: r.hackerNumber || "",
+          email: f.email || r.email || f.authEmail || r.authEmail || "",
+          mobile: r.mobile || r.mobileNumber || f.mobile || f.mobileNumber || "",
+          handicap: r.handicap !== undefined && r.handicap !== null ? Number(r.handicap) : "",
+          financialStatus: f.financialStatus || "",
+          amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : ""
+        };
+      });
+
+      users.sort((a, b) => normalize(a.displayName).localeCompare(normalize(b.displayName)));
+      setStatus(pageStatus, `Loaded ${users.length} players.`, "success");
+    }
+
+    async function loadEventPlayers() {
+      const eventId = currentEventId;
+      setStatus(pageStatus, `Loading ${eventId} event data...`);
+      eventPlayers = new Map();
+
+      const eventDocSnap = await getDoc(doc(firestore, "eventYears", eventId));
+      const eventCollectionSnap = await getDocs(collection(firestore, "eventYears", eventId, "players"));
+      const dataByUid = {};
+
+      eventCollectionSnap.forEach((docSnap) => {
+        dataByUid[docSnap.id] = docSnap.data() || {};
+      });
+
+      users.forEach((user) => {
+        const data = dataByUid[user.uid] || {};
+        eventPlayers.set(user.uid, {
+          shirtSize: asString(data.shirtSize),
+          pantSize: asString(data.pantSize),
+          roommates: Array.isArray(data.roommates) ? uniqueSorted(data.roommates.filter((uid) => uid && uid !== user.uid)) : [],
+          ambrosePartnerUid: asString(data.ambrosePartnerUid),
+          skins: !!data.skins,
+          coming: !!data.coming,
+          sponsorNotes: asString(data.sponsorNotes),
+          handicap: data.handicap !== undefined && data.handicap !== null ? Number(data.handicap) : (user.handicap !== undefined && user.handicap !== null ? Number(user.handicap) : "")
+        });
+      });
+
+      if (eventDocSnap.exists()) {
+        const eventDocData = eventDocSnap.data() || {};
+        currentEventLabel.textContent = asString(eventDocData.eventId || eventId);
+      }
+
+      dirty.clear();
+      updateDirtyMeta();
+      renderEventSelect();
+      filterAndRender();
+      setStatus(pageStatus, `Loaded ${eventId} event data.`, "success");
+    }
+
+    function getRowValue(uid, field) {
+      const input = tableBody.querySelector(`[data-uid="${uid}"][data-field="${field}"]`);
+      if (!input) return "";
+      if (field === "roommates") {
+        return Array.from(input.selectedOptions).map((option) => option.value);
+      }
+      return input.value;
+    }
+
+    function validateHandicap(value) {
+      const trimmed = asString(value).trim();
+      if (trimmed === "") return { ok: true, value: "" };
+      const number = Number(trimmed);
+      if (!Number.isFinite(number) || number < 0 || number > 54) {
+        return { ok: false, message: "Handicap must be a number from 0 to 54." };
+      }
+      return { ok: true, value: number };
+    }
+
+    function parseBoolSelect(value) {
+      return normalize(value) === "yes";
+    }
+
+    async function saveEventPlayer(uid) {
+      const currentUser = users.find((user) => user.uid === uid);
+      if (!currentUser) {
+        throw new Error("Player not found.");
+      }
+
+      const previous = getEventRecord(uid);
+      const shirtSize = asString(getRowValue(uid, "shirtSize")).trim();
+      const pantSize = asString(getRowValue(uid, "pantSize")).trim();
+      const roommates = uniqueSorted((getRowValue(uid, "roommates") || []).filter((value) => value && value !== uid));
+      if (roommates.length > 2) {
+        throw new Error("Roommates can include at most 2 other players.");
+      }
+      const ambrosePartnerUid = asString(getRowValue(uid, "ambrosePartnerUid")).trim();
+      const skins = parseBoolSelect(getRowValue(uid, "skins"));
+      const coming = parseBoolSelect(getRowValue(uid, "coming"));
+      const sponsorNotes = asString(getRowValue(uid, "sponsorNotes")).trim();
+      const handicapCheck = validateHandicap(getRowValue(uid, "handicap"));
+      if (!handicapCheck.ok) {
+        throw new Error(handicapCheck.message);
+      }
+
+      const nextRecord = {
+        shirtSize,
+        pantSize,
+        roommates,
+        ambrosePartnerUid,
+        skins,
+        coming,
+        sponsorNotes,
+        handicap: handicapCheck.value
+      };
+
+      const previousRoomGroup = roomGroupMembers(uid, previous);
+      const nextRoomGroup = uniqueSorted([uid, ...roommates]);
+      const roomAffected = uniqueSorted([...previousRoomGroup, ...nextRoomGroup]);
+      const previousPartner = asString(previous.ambrosePartnerUid).trim();
+      const partnerAffected = uniqueSorted([uid, previousPartner, ambrosePartnerUid]);
+
+      const writes = [];
+
+      roomAffected.forEach((playerUid) => {
+        const targetRecord = getEventRecord(playerUid);
+        let updatedRoommates = asString(targetRecord.roommates || []);
+        if (nextRoomGroup.includes(playerUid)) {
+          updatedRoommates = nextRoomGroup.filter((memberUid) => memberUid !== playerUid);
+        } else if (previousRoomGroup.includes(playerUid)) {
+          updatedRoommates = previousRoomGroup.filter((memberUid) => memberUid !== playerUid && memberUid !== uid);
+        } else {
+          return;
+        }
+
+        const payload = {
+          ...targetRecord,
+          roommates: uniqueSorted(updatedRoommates),
+          updatedAt: serverTimestamp()
+        };
+        if (playerUid === uid) {
+          Object.assign(payload, nextRecord);
+        }
+        writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), payload, { merge: true }));
+      });
+
+      partnerAffected.forEach((playerUid) => {
+        if (!playerUid) return;
+        const targetRecord = getEventRecord(playerUid);
+        let nextPartner = asString(targetRecord.ambrosePartnerUid).trim();
+        if (playerUid === uid) {
+          nextPartner = ambrosePartnerUid;
+        } else if (playerUid === ambrosePartnerUid) {
+          nextPartner = uid;
+        } else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) {
+          nextPartner = "";
+        } else {
+          return;
+        }
+
+        writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), {
+          ...targetRecord,
+          ambrosePartnerUid: nextPartner,
+          updatedAt: serverTimestamp()
+        }, { merge: true }));
+      });
+
+      if (writes.length === 0) {
+        writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", uid), {
+          ...nextRecord,
+          updatedAt: serverTimestamp()
+        }, { merge: true }));
+      }
+
+      await Promise.all(writes);
+
+      eventPlayers.set(uid, nextRecord);
+      roomAffected.forEach((playerUid) => {
+        if (playerUid === uid) return;
+        const currentRecord = getEventRecord(playerUid);
+        if (nextRoomGroup.includes(playerUid)) {
+          currentRecord.roommates = nextRoomGroup.filter((memberUid) => memberUid !== playerUid);
+        } else if (previousRoomGroup.includes(playerUid)) {
+          currentRecord.roommates = previousRoomGroup.filter((memberUid) => memberUid !== playerUid && memberUid !== uid);
+        }
+        eventPlayers.set(playerUid, currentRecord);
+      });
+
+      partnerAffected.forEach((playerUid) => {
+        if (!playerUid) return;
+        const currentRecord = getEventRecord(playerUid);
+        if (playerUid === uid) {
+          currentRecord.ambrosePartnerUid = ambrosePartnerUid;
+        } else if (playerUid === ambrosePartnerUid) {
+          currentRecord.ambrosePartnerUid = uid;
+        } else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) {
+          currentRecord.ambrosePartnerUid = "";
+        }
+        eventPlayers.set(playerUid, currentRecord);
+      });
+
+      const comingTotal = Array.from(eventPlayers.values()).filter((record) => !!record.coming).length;
+      const skinsTotal = Array.from(eventPlayers.values()).filter((record) => !!record.skins).length;
+
+      await setDoc(doc(firestore, "eventYears", currentEventId), {
+        eventId: currentEventId,
+        updatedAt: serverTimestamp(),
+        playersLoaded: users.length,
+        comingCount: comingTotal,
+        skinsCount: skinsTotal
+      }, { merge: true });
+
+      clearDirty(uid);
+      filterAndRender();
+      return nextRecord;
+    }
+
+    tableBody.addEventListener("input", (event) => {
+      const target = event.target.closest("[data-field]");
+      if (!target) return;
+      markDirty(target.dataset.uid);
+      setStatus(pageStatus, "You have unsaved changes.", "warn");
+    });
+
+    tableBody.addEventListener("change", (event) => {
+      const target = event.target.closest("[data-field]");
+      if (!target) return;
+      if (target.dataset.field === "roommates" && target.selectedOptions.length > 2) {
+        Array.from(target.selectedOptions).slice(2).forEach((option) => {
+          option.selected = false;
+        });
+        setStatus(pageStatus, "Roommates can only include up to 2 other players.", "error");
+        return;
+      }
+      markDirty(target.dataset.uid);
+      setStatus(pageStatus, "You have unsaved changes.", "warn");
+    });
+
+    tableBody.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-save-uid]");
+      if (!button) return;
+      const uid = button.dataset.saveUid;
+      try {
+        button.disabled = true;
+        await saveEventPlayer(uid);
+        setStatus(pageStatus, `Saved event row for ${uid}.`, "success");
+      } catch (error) {
+        console.error(error);
+        setStatus(pageStatus, error.message || "Save failed.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    searchInput.addEventListener("input", filterAndRender);
+
+    eventSelect.addEventListener("change", async () => {
+      currentEventId = eventSelect.value;
+      dirty.clear();
+      updateDirtyMeta();
+      await loadEventPlayers();
+    });
+
+    loadEventBtn.addEventListener("click", loadEventPlayers);
+    refreshBtn.addEventListener("click", async () => {
+      await loadUsers();
+      await loadEventPlayers();
+    });
+
+    saveAllBtn.addEventListener("click", async () => {
+      if (dirty.size === 0) {
+        setStatus(pageStatus, "No changes to save.", "success");
+        return;
+      }
+
+      const pending = Array.from(dirty);
+      saveAllBtn.disabled = true;
+      setStatus(pageStatus, "Saving all changes...");
+      try {
+        for (const uid of pending) {
+          await saveEventPlayer(uid);
+        }
+        setStatus(pageStatus, "All changes saved.", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus(pageStatus, error.message || "Some changes failed to save.", "error");
+      } finally {
+        saveAllBtn.disabled = false;
+      }
+    });
+
+    signinBtn.addEventListener("click", async () => {
+      const email = signinEmail.value.trim();
+      const password = signinPassword.value;
+      if (!email || !password) {
+        setStatus(signinStatus, "Enter email and password.", "error");
+        return;
+      }
+
+      setStatus(signinStatus, "Signing in...");
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        signinPassword.value = "";
+        setStatus(signinStatus, "Signed in.", "success");
+      } catch (error) {
+        console.error(error);
+        setStatus(signinStatus, "Sign-in failed.", "error");
+      }
+    });
+
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.warn("Auth persistence error:", error);
+    });
+
+    async function verifyAdmin(user) {
+      const adminSnap = await get(ref(db, `admins/${user.uid}`));
+      return !!adminSnap.val();
+    }
+
+    async function boot() {
+      renderEventSelect();
+      setStatus(pageStatus, "Loading...");
+      await loadUsers();
+      await loadEventPlayers();
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setStatus(authStatus, "Please sign in with an admin account.", "error");
+        loginLink.classList.remove("hidden");
+        signinCard.classList.remove("hidden");
+        backToPortalLink.classList.add("hidden");
+        return;
+      }
+
+      loginLink.classList.add("hidden");
+      signinCard.classList.add("hidden");
+      backToPortalLink.classList.remove("hidden");
+
+      try {
+        const allowed = await verifyAdmin(user);
+        if (!allowed) {
+          setStatus(authStatus, "Access denied. Admin privileges required.", "error");
+          setStatus(pageStatus, "This account is not listed under admins in Realtime Database.", "error");
+          tableBody.innerHTML = "";
+          return;
+        }
+
+        setStatus(authStatus, `Signed in as ${user.email || user.uid}`, "success");
+        if (!adminLoaded) {
+          adminLoaded = true;
+          await boot();
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus(authStatus, "Failed to verify admin access.", "error");
+      }
+    });
+
+    eventSelect.value = currentEventId;
+  </script>
+</body>
+</html>

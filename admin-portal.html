@@ -3,492 +3,675 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1.0" />
-  <title>Admin Portal - Hackers Cup</title>
+  <title>Admin Portal — Hackers Cup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="site.webmanifest">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-main: #050713;
-      --bg-card: #10121e;
-      --bg-card-soft: #151827;
-      --accent-aqua: #1eeaf0;
-      --accent-secondary: #7dd3fc;
-      --text-main: #ecf8ff;
-      --text-muted: #8a90a4;
-      --border-subtle: #2a2e45;
-      --success: #bbf7d0;
-      --error: #fecaca;
-      --warning: #fde68a;
+      --bg: #060810;
+      --surface-1: #0d1020;
+      --surface-2: #121628;
+      --surface-3: #181c30;
+      --border: rgba(255,255,255,0.06);
+      --border-active: rgba(0,229,255,0.35);
+      --aqua: #00e5ff;
+      --aqua-dim: rgba(0,229,255,0.12);
+      --aqua-glow: rgba(0,229,255,0.25);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.1);
+      --text: #e8eef8;
+      --text-2: #8892a8;
+      --text-3: #4e5878;
+      --radius: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      margin: 0;
-      padding: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, #15192f 0, transparent 50%),
-        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
-        var(--bg-main);
-      color: var(--text-main);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,229,255,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(99,102,241,0.05) 0%, transparent 55%);
     }
 
+    /* ─── Layout ─── */
     .page {
-      width: min(1400px, 100%);
+      max-width: 1520px;
       margin: 0 auto;
-      padding: 20px 16px 32px;
+      padding: 24px 20px 48px;
     }
 
+    /* ─── Header ─── */
     .header {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      border-radius: 16px;
-      background: linear-gradient(120deg, #050713, #10121f 40%, #050713 100%);
-      border: 1px solid rgba(30, 234, 240, 0.2);
-      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
-      margin-bottom: 16px;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
 
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .header p {
-      margin: 4px 0 0;
-      color: var(--text-muted);
-      font-size: 13px;
-      letter-spacing: 0.02em;
-    }
-
-    .header-actions {
+    .header-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 14px;
     }
 
-    .signin-card,
-    .card {
-      background: radial-gradient(circle at top left, #1c2036 0, #10121e 55%);
-      border-radius: 16px;
-      padding: 16px;
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
-      margin-bottom: 16px;
-    }
-
-    .signin-row,
-    .toolbar,
-    .bulk-grid {
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--aqua), #6366f1);
+      border-radius: 10px;
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
     }
 
-    .bulk-grid {
-      align-items: stretch;
+    .header-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
     }
 
-    .signin-row input,
-    .toolbar input,
-    .toolbar select,
-    .bulk-panel input,
-    .bulk-panel select,
-    .field-input {
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card-soft);
-      color: var(--text-main);
-      font-size: 14px;
-      min-height: 40px;
-    }
-
-    .signin-row input {
-      flex: 1;
-      min-width: 220px;
-    }
-
-    .toolbar input {
-      flex: 1;
-      min-width: 230px;
-    }
-
-    .toolbar .meta {
-      color: var(--text-muted);
+    .header-sub {
       font-size: 12px;
-      margin-left: auto;
+      color: var(--text-2);
+      margin-top: 2px;
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ─── Status badge ─── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      flex-shrink: 0;
+    }
+
+    .status-badge.success { color: var(--green); border-color: rgba(52,211,153,0.2); background: var(--green-dim); }
+    .status-badge.success::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-badge.error { color: var(--red); border-color: rgba(248,113,113,0.2); background: var(--red-dim); }
+    .status-badge.error::before { background: var(--red); }
+    .status-badge.warn { color: var(--amber); border-color: rgba(245,158,11,0.2); background: var(--amber-dim); }
+    .status-badge.warn::before { background: var(--amber); }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      margin-bottom: 16px;
+    }
+
+    /* ─── Sign-in card ─── */
+    .signin-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 20px;
+      max-width: 480px;
+    }
+
+    .signin-card .card-title {
+      margin-bottom: 14px;
+    }
+
+    .signin-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ─── Buttons ─── */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 999px;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
       border: none;
-      padding: 10px 16px;
-      background: var(--accent-aqua);
-      color: #050713;
-      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--aqua);
+      color: #060810;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+    .btn-ghost {
+      background: var(--surface-3);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border-active); color: var(--aqua); }
+
+    .btn-danger {
+      background: rgba(248,113,113,0.15);
+      color: var(--red);
+      border: 1px solid rgba(248,113,113,0.2);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
       font-size: 12px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
+      border-radius: 6px;
     }
 
-    .btn.secondary {
-      background: #232536;
-      color: var(--text-main);
-      border: 1px solid #323552;
-      text-transform: none;
+    /* ─── Inputs ─── */
+    input, select, textarea {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
     }
 
-    .btn.warning {
-      background: #f59e0b;
-      color: #1c1c1c;
+    input:focus, select:focus { border-color: var(--border-active); box-shadow: 0 0 0 3px var(--aqua-dim); }
+    input::placeholder { color: var(--text-3); }
+    select option { background: var(--surface-2); }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      accent-color: var(--aqua);
+      flex-shrink: 0;
     }
 
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    /* ─── Toolbar ─── */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
     }
 
-    .status {
+    .toolbar .search-wrap {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .toolbar .search-wrap svg {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      pointer-events: none;
+    }
+
+    .toolbar .search-wrap input {
+      padding-left: 36px;
+    }
+
+    .toolbar-meta {
       font-size: 12px;
-      color: var(--text-muted);
-      min-height: 16px;
-      margin-top: 6px;
+      color: var(--text-2);
+      font-family: 'DM Mono', monospace;
+      padding: 9px 14px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
     }
 
-    .status.success { color: var(--success); }
-    .status.error { color: var(--error); }
-    .status.warn { color: var(--warning); }
+    /* ─── Bulk panels ─── */
+    .bulk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
 
-    .hidden { display: none !important; }
+    @media (max-width: 960px) {
+      .bulk-grid { grid-template-columns: 1fr; }
+    }
 
     .bulk-panel {
-      flex: 1;
-      min-width: 280px;
-      background: rgba(13, 17, 30, 0.6);
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      border-radius: 14px;
-      padding: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
     }
 
-    .bulk-panel h3 {
-      margin: 0 0 10px;
-      font-size: 15px;
-      letter-spacing: 0.04em;
+    .bulk-panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
+      color: var(--text-2);
+      margin-bottom: 12px;
     }
 
-    .bulk-row {
+    .bulk-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 8px;
     }
 
-    .bulk-row.single {
-      grid-template-columns: 1fr;
+    /* ─── Status line ─── */
+    .status-line {
+      font-size: 12px;
+      color: var(--text-3);
+      min-height: 18px;
+      margin-top: 8px;
+      font-family: 'DM Mono', monospace;
     }
 
+    .status-line.success { color: var(--green); }
+    .status-line.error { color: var(--red); }
+    .status-line.warn { color: var(--amber); }
+
+    /* ─── Legend ─── */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ─── Table ─── */
     .table-wrap {
       overflow-x: auto;
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      min-width: 1200px;
-      background: rgba(6, 8, 15, 0.55);
+      min-width: 1500px;
     }
 
-    th,
-    td {
-      text-align: left;
-      padding: 10px 8px;
-      border-bottom: 1px solid #232844;
-      vertical-align: middle;
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
 
     th {
+      background: var(--surface-2);
+      padding: 10px 10px;
+      text-align: left;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 11px;
-      position: sticky;
-      top: 0;
-      background: #12162a;
-      z-index: 1;
+      color: var(--text-3);
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
     }
 
-    td.uid-cell {
-      max-width: 180px;
+    th:first-child { border-radius: var(--radius-lg) 0 0 0; }
+    th:last-child { border-radius: 0 var(--radius-lg) 0 0; }
+
+    td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr:hover td { background: rgba(255,255,255,0.015); }
+
+    tr.is-dirty td { background: rgba(245,158,11,0.04); }
+    tr.is-dirty td:first-child { border-left: 2px solid var(--amber); }
+
+    td.cell-muted {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-3);
+      max-width: 170px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: var(--text-muted);
-      font-size: 12px;
     }
 
-    .checkbox-cell {
-      width: 28px;
+    td.cell-name {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .cell-check {
+      width: 36px;
       text-align: center;
+      padding: 6px 8px 6px 12px;
+    }
+
+    .cell-actions {
+      width: 100px;
     }
 
     .field-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+      color: var(--text);
       width: 100%;
-      min-width: 88px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      min-height: 36px;
+      min-width: 80px;
+      transition: background 0.12s, border-color 0.12s;
     }
 
-    .field-input.short {
-      max-width: 92px;
-    }
+    .field-input:hover { background: var(--surface-2); border-color: var(--border); }
+    .field-input:focus { background: var(--surface-2); border-color: var(--border-active); box-shadow: 0 0 0 2px var(--aqua-dim); outline: none; }
+    .field-input.short { max-width: 80px; }
+    .field-input.mid { max-width: 110px; }
 
-    .actions-cell {
-      width: 130px;
-    }
-
-    .legend {
+    /* ─── Group builder ─── */
+    .section-header {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      color: var(--text-muted);
-      font-size: 12px;
-      margin: 10px 0 2px;
       flex-wrap: wrap;
-    }
-
-    .legend span::before {
-      content: "";
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      display: inline-block;
-      margin-right: 6px;
-    }
-
-    .legend .clean::before { background: #334155; }
-    .legend .dirty::before { background: #f59e0b; }
-
-    tr.is-dirty {
-      background: rgba(245, 158, 11, 0.08);
+      margin-bottom: 16px;
     }
 
     .section-title {
-      margin: 0 0 12px;
+      font-family: 'Syne', sans-serif;
       font-size: 16px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      font-weight: 800;
     }
 
-    .group-builder-grid {
+    .gb-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .gb-grid {
       display: grid;
       grid-template-columns: 1.1fr 1fr;
-      gap: 14px;
+      gap: 16px;
     }
 
-    .group-builder-panel {
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      border-radius: 14px;
-      padding: 12px;
-      background: rgba(13, 17, 30, 0.6);
+    @media (max-width: 900px) {
+      .gb-grid { grid-template-columns: 1fr; }
     }
 
-    .group-toolbar {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .group-toolbar .btn,
-    .group-toolbar select,
-    .group-builder-panel input {
-      min-height: 38px;
+    .gb-panel {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .player-list {
-      max-height: 290px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       overflow-y: auto;
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 8px;
-      background: #0c1020;
+      max-height: 280px;
+      background: var(--surface-1);
     }
 
     .player-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid transparent;
+      padding: 10px 14px;
       cursor: pointer;
+      border-bottom: 1px solid var(--border);
       font-size: 13px;
-      margin-bottom: 5px;
-      background: rgba(255, 255, 255, 0.02);
+      transition: background 0.1s;
     }
 
-    .player-item:hover {
-      border-color: rgba(30, 234, 240, 0.35);
-      background: rgba(30, 234, 240, 0.08);
-    }
+    .player-item:last-child { border-bottom: none; }
+    .player-item:hover:not(.is-assigned) { background: var(--aqua-dim); }
+    .player-item.is-selected { background: var(--aqua-dim); }
+    .player-item.is-selected .player-badge { background: var(--aqua); color: #060810; }
+    .player-item.is-assigned { opacity: 0.4; cursor: not-allowed; }
 
-    .player-item.is-selected {
-      border-color: rgba(125, 211, 252, 0.75);
-      background: rgba(125, 211, 252, 0.12);
-    }
-
-    .player-item.is-assigned {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .player-badge {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--surface-3);
+      color: var(--text-2);
     }
 
     .chips {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 8px 0 10px;
-      min-height: 30px;
+      min-height: 32px;
+      align-items: center;
     }
 
     .chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 5px 9px;
+      padding: 5px 10px 5px 12px;
       border-radius: 999px;
-      background: rgba(30, 234, 240, 0.15);
-      border: 1px solid rgba(30, 234, 240, 0.4);
+      background: var(--aqua-dim);
+      border: 1px solid var(--border-active);
       font-size: 12px;
+      font-weight: 500;
     }
 
-    .chip button {
+    .chip-remove {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
       border: none;
-      background: transparent;
-      color: var(--text-main);
+      color: var(--text);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
-      padding: 0;
     }
 
-    .group-form-row {
+    .chip-remove:hover { background: rgba(255,255,255,0.2); }
+
+    .gb-form-row {
       display: grid;
-      grid-template-columns: 120px 1fr auto auto;
+      grid-template-columns: 100px 1fr auto auto;
       gap: 8px;
       align-items: center;
-      margin-top: 8px;
     }
 
-    .group-mini-table {
-      width: 100%;
-      min-width: 740px;
+    @media (max-width: 600px) {
+      .gb-form-row { grid-template-columns: 1fr 1fr; }
     }
 
-    .group-mini-table th,
-    .group-mini-table td {
-      padding: 8px 7px;
-    }
+    .group-mini-table { min-width: 640px; }
+
+    .group-mini-table th { font-size: 10px; }
+
+    .group-mini-table td { padding: 8px 10px; font-size: 13px; }
 
     .group-actions {
       display: flex;
       gap: 4px;
-      flex-wrap: wrap;
     }
 
     .tiny-btn {
-      border: 1px solid #38405d;
-      background: #1b2034;
-      color: var(--text-main);
-      border-radius: 8px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 6px;
       padding: 4px 8px;
       font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
       cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
     }
 
-    @media (max-width: 900px) {
-      .header h1 {
-        font-size: 18px;
-      }
+    .tiny-btn:hover { border-color: var(--border-active); color: var(--aqua); }
+    .tiny-btn.danger:hover { border-color: rgba(248,113,113,0.4); color: var(--red); }
 
-      .toolbar .meta {
-        width: 100%;
-        margin-left: 0;
-      }
-
-      .group-builder-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .group-toolbar {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .group-form-row {
-        grid-template-columns: 1fr;
-      }
+    /* ─── Divider ─── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
     }
+
+    .hidden { display: none !important; }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="header">
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-icon">⛳</div>
       <div>
-        <h1>Hackers Cup Admin Portal</h1>
-        <p>Manage users, tee assignments, and hotel room allocations in one place.</p>
-      </div>
-      <div class="header-actions">
-        <div class="status" id="authStatus">Checking access...</div>
-        <a class="btn secondary hidden" id="loginLink" href="login.html">Sign in</a>
+        <div class="header-title">Hackers Cup — Admin</div>
+        <div class="header-sub">Users · Tee assignments · Hotel rooms · Groups</div>
       </div>
     </div>
+    <div class="header-right">
+      <div class="status-badge" id="authStatus">Checking access…</div>
+      <a class="btn btn-ghost btn-sm hidden" id="eventAdminLink" href="admin-event.html">Event admin</a>
+      <a class="btn btn-ghost btn-sm hidden" id="loginLink" href="login.html">Sign in</a>
+    </div>
+  </div>
 
-    <div class="signin-card hidden" id="signinCard">
-      <div class="signin-row">
-        <input id="signinEmail" type="email" placeholder="Email" autocomplete="email" />
-        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password" />
-        <button class="btn" id="signinBtn" type="button">Sign in</button>
+  <!-- Sign-in card -->
+  <div class="signin-card hidden" id="signinCard">
+    <div class="card-title">Sign in to Admin Portal</div>
+    <div class="signin-fields">
+      <input id="signinEmail" type="email" placeholder="Email" autocomplete="email" />
+      <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password" />
+      <button class="btn btn-primary" id="signinBtn" type="button">Sign in</button>
+      <div class="status-line" id="signinStatus"></div>
+    </div>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" type="text" placeholder="Search by name, hacker #, email, mobile, room, or UID…" />
       </div>
-      <div class="status" id="signinStatus"></div>
+      <button class="btn btn-ghost btn-sm" id="selectFilteredBtn">Select filtered</button>
+      <button class="btn btn-ghost btn-sm" id="clearSelectionBtn">Clear</button>
+      <button class="btn btn-primary btn-sm" id="saveAllBtn">Save all</button>
+      <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ Refresh</button>
+      <div class="toolbar-meta" id="selectionMeta">0 selected</div>
     </div>
 
-    <div class="card">
-      <div class="toolbar">
-        <input id="searchInput" type="text" placeholder="Search by name, hacker number, room, or UID" />
-        <button class="btn secondary" id="selectFilteredBtn" type="button">Select filtered</button>
-        <button class="btn secondary" id="clearSelectionBtn" type="button">Clear selection</button>
-        <button class="btn" id="saveAllBtn" type="button">Save all changes</button>
-        <button class="btn secondary" id="refreshBtn" type="button">Refresh</button>
-        <div class="meta" id="selectionMeta">Selected: 0</div>
-      </div>
-
-      <div class="bulk-grid">
-        <div class="bulk-panel">
-          <h3>Bulk Tee Assignment</h3>
-          <div class="bulk-row">
+    <!-- Bulk panels -->
+    <div class="bulk-grid">
+      <div class="bulk-panel">
+        <div class="bulk-panel-title">⛳ Tee Assignment</div>
+        <div class="bulk-fields">
+          <div class="field-row">
             <select id="bulkTeeDay">
               <option value="fri">Friday</option>
               <option value="sat" selected>Saturday</option>
@@ -496,27 +679,27 @@
             </select>
             <input id="bulkTeeValue" type="text" placeholder="e.g. Hole 1, 8:30AM" />
           </div>
-          <div class="bulk-row single">
-            <button class="btn" id="applyTeeBtn" type="button">Apply tee to selected</button>
-          </div>
-          <div class="status" id="teeBulkStatus"></div>
+          <button class="btn btn-primary btn-sm" id="applyTeeBtn">Apply to selected</button>
+          <div class="status-line" id="teeBulkStatus"></div>
         </div>
+      </div>
 
-        <div class="bulk-panel">
-          <h3>Bulk Hotel Assignment</h3>
-          <div class="bulk-row">
+      <div class="bulk-panel">
+        <div class="bulk-panel-title">🏨 Hotel Room</div>
+        <div class="bulk-fields">
+          <div class="field-row">
             <input id="bulkRoomNumber" type="text" placeholder="Room number" />
             <input id="bulkRoomLevel" type="text" placeholder="Level" />
           </div>
-          <div class="bulk-row single">
-            <button class="btn" id="applyRoomBtn" type="button">Apply room to selected</button>
-          </div>
-          <div class="status" id="roomBulkStatus"></div>
+          <button class="btn btn-primary btn-sm" id="applyRoomBtn">Apply to selected</button>
+          <div class="status-line" id="roomBulkStatus"></div>
         </div>
+      </div>
 
-        <div class="bulk-panel">
-          <h3>Bulk Payment Update</h3>
-          <div class="bulk-row">
+      <div class="bulk-panel">
+        <div class="bulk-panel-title">💳 Payment Update</div>
+        <div class="bulk-fields">
+          <div class="field-row">
             <input id="bulkAmtOutstanding" type="number" min="0" step="0.01" placeholder="Amt outstanding" />
             <select id="bulkFinancialStatus">
               <option value="">Status (no change)</option>
@@ -525,980 +708,748 @@
               <option value="Paid">Paid</option>
             </select>
           </div>
-          <div class="bulk-row single">
-            <button class="btn" id="applyPaymentBtn" type="button">Apply payment to selected</button>
-          </div>
-          <div class="status" id="paymentBulkStatus"></div>
+          <button class="btn btn-primary btn-sm" id="applyPaymentBtn">Apply to selected</button>
+          <div class="status-line" id="paymentBulkStatus"></div>
         </div>
-      </div>
-
-      <div class="legend">
-        <span class="clean">Clean row</span>
-        <span class="dirty">Unsaved edits</span>
-      </div>
-      <div class="status" id="pageStatus"></div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th class="checkbox-cell"><input type="checkbox" id="selectAllCheckbox" /></th>
-              <th>Name</th>
-              <th>Hacker #</th>
-              <th>Handicap</th>
-              <th>Fri Tee</th>
-              <th>Sat Tee</th>
-              <th>Sun Tee</th>
-              <th>Room</th>
-              <th>Level</th>
-              <th>Amt Outstanding</th>
-              <th>Financial Status</th>
-              <th>UID</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
       </div>
     </div>
 
-    <div class="card">
-      <h2 class="section-title">Group Builder</h2>
-      <div class="group-toolbar">
-        <select id="gbDaySelect">
+    <!-- Legend + page status -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--border)"></div> Clean</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Unsaved edits</div>
+      </div>
+      <div class="status-line" id="pageStatus"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="cell-check"><input type="checkbox" id="selectAllCheckbox" /></th>
+            <th>Name</th>
+            <th>Hacker #</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Hcp</th>
+            <th>Fri Tee</th>
+            <th>Sat Tee</th>
+            <th>Sun Tee</th>
+            <th>Room</th>
+            <th>Level</th>
+            <th>Amt Outstanding</th>
+            <th>Fin. Status</th>
+            <th>UID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Group builder -->
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">Group Builder</div>
+      <div class="gb-toolbar">
+        <select id="gbDaySelect" style="width:auto;">
           <option value="fri">Friday</option>
           <option value="sat" selected>Saturday</option>
           <option value="sun">Sunday</option>
         </select>
-        <button class="btn secondary" id="gbLoadBtn" type="button">Load latest</button>
-        <button class="btn" id="gbSaveSnapshotBtn" type="button">Save new snapshot</button>
-        <button class="btn secondary" id="gbUpdateBtn" type="button">Update loaded snapshot</button>
+        <button class="btn btn-ghost btn-sm" id="gbLoadBtn">Load latest</button>
+        <button class="btn btn-primary btn-sm" id="gbSaveSnapshotBtn">Save snapshot</button>
+        <button class="btn btn-ghost btn-sm" id="gbUpdateBtn">Update loaded</button>
       </div>
-
-      <div class="group-builder-grid">
-        <div class="group-builder-panel">
-          <input id="gbPlayerSearch" type="text" placeholder="Search players to add" />
-          <div class="chips" id="gbSelectedPlayers"></div>
-
-          <div class="group-form-row">
-            <input id="gbHoleInput" type="number" min="1" max="18" placeholder="Hole" />
-            <input id="gbTeeTimeInput" type="text" placeholder="Tee time (optional, e.g. 8:10AM)" />
-            <button class="btn" id="gbAddGroupBtn" type="button">Add group</button>
-            <button class="btn secondary" id="gbResetBuilderBtn" type="button">Reset</button>
-          </div>
-
-          <div class="player-list" id="gbPlayerList"></div>
-        </div>
-
-        <div class="group-builder-panel">
-          <div class="table-wrap">
-            <table class="group-mini-table">
-              <thead>
-                <tr>
-                  <th>Hole</th>
-                  <th>Tee</th>
-                  <th>Players</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="gbGroupTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="status" id="gbStatus"></div>
     </div>
+
+    <div class="gb-grid">
+      <!-- Left: builder -->
+      <div class="gb-panel">
+        <input id="gbPlayerSearch" type="text" placeholder="Search players…" />
+
+        <div class="chips" id="gbSelectedPlayers">
+          <span class="legend-item" style="font-size:12px;color:var(--text-3);">Select up to 4 players below</span>
+        </div>
+
+        <div class="gb-form-row">
+          <input id="gbHoleInput" type="number" min="1" max="18" placeholder="Hole" />
+          <input id="gbTeeTimeInput" type="text" placeholder="Tee time (e.g. 8:10AM)" />
+          <button class="btn btn-primary btn-sm" id="gbAddGroupBtn">Add group</button>
+          <button class="btn btn-ghost btn-sm" id="gbResetBuilderBtn">Reset</button>
+        </div>
+
+        <div class="player-list" id="gbPlayerList"></div>
+      </div>
+
+      <!-- Right: groups table -->
+      <div class="gb-panel">
+        <div class="table-wrap" style="flex:1;">
+          <table class="group-mini-table">
+            <thead>
+              <tr>
+                <th>Hole</th>
+                <th>Tee Time</th>
+                <th>Players</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="gbGroupTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-line" id="gbStatus" style="margin-top:12px;"></div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      setPersistence,
-      browserLocalPersistence,
-      signInWithEmailAndPassword,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      orderBy,
-      limit,
-      getDocs,
-      addDoc,
-      doc,
-      updateDoc,
-      setDoc
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
-      authDomain: "hackers-cup.firebaseapp.com",
-      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
-      projectId: "hackers-cup",
-      storageBucket: "hackers-cup.appspot.com",
-      messagingSenderId: "765736070872",
-      appId: "1:765736070872:web:86a51c41916e7af75631ad",
-      measurementId: "G-6E1M14F510"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+    signInWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import {
+    getFirestore, collection, query, orderBy, limit, getDocs,
+    addDoc, doc, updateDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-    const firestore = getFirestore(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
 
-    const authStatus = document.getElementById("authStatus");
-    const pageStatus = document.getElementById("pageStatus");
-    const signinCard = document.getElementById("signinCard");
-    const signinEmail = document.getElementById("signinEmail");
-    const signinPassword = document.getElementById("signinPassword");
-    const signinBtn = document.getElementById("signinBtn");
-    const signinStatus = document.getElementById("signinStatus");
-    const loginLink = document.getElementById("loginLink");
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const firestore = getFirestore(app);
 
-    const searchInput = document.getElementById("searchInput");
-    const tableBody = document.getElementById("tableBody");
-    const saveAllBtn = document.getElementById("saveAllBtn");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const selectFilteredBtn = document.getElementById("selectFilteredBtn");
-    const clearSelectionBtn = document.getElementById("clearSelectionBtn");
-    const selectAllCheckbox = document.getElementById("selectAllCheckbox");
-    const selectionMeta = document.getElementById("selectionMeta");
+  const $ = id => document.getElementById(id);
 
-    const bulkTeeDay = document.getElementById("bulkTeeDay");
-    const bulkTeeValue = document.getElementById("bulkTeeValue");
-    const applyTeeBtn = document.getElementById("applyTeeBtn");
-    const teeBulkStatus = document.getElementById("teeBulkStatus");
+  const authStatus = $("authStatus");
+  const pageStatus = $("pageStatus");
+  const signinCard = $("signinCard");
+  const signinEmail = $("signinEmail");
+  const signinPassword = $("signinPassword");
+  const signinBtn = $("signinBtn");
+  const signinStatus = $("signinStatus");
+  const loginLink = $("loginLink");
+  const eventAdminLink = $("eventAdminLink");
+  const searchInput = $("searchInput");
+  const tableBody = $("tableBody");
+  const saveAllBtn = $("saveAllBtn");
+  const refreshBtn = $("refreshBtn");
+  const selectFilteredBtn = $("selectFilteredBtn");
+  const clearSelectionBtn = $("clearSelectionBtn");
+  const selectAllCheckbox = $("selectAllCheckbox");
+  const selectionMeta = $("selectionMeta");
+  const bulkTeeDay = $("bulkTeeDay");
+  const bulkTeeValue = $("bulkTeeValue");
+  const applyTeeBtn = $("applyTeeBtn");
+  const teeBulkStatus = $("teeBulkStatus");
+  const bulkRoomNumber = $("bulkRoomNumber");
+  const bulkRoomLevel = $("bulkRoomLevel");
+  const applyRoomBtn = $("applyRoomBtn");
+  const roomBulkStatus = $("roomBulkStatus");
+  const bulkAmtOutstanding = $("bulkAmtOutstanding");
+  const bulkFinancialStatus = $("bulkFinancialStatus");
+  const applyPaymentBtn = $("applyPaymentBtn");
+  const paymentBulkStatus = $("paymentBulkStatus");
+  const gbDaySelect = $("gbDaySelect");
+  const gbLoadBtn = $("gbLoadBtn");
+  const gbSaveSnapshotBtn = $("gbSaveSnapshotBtn");
+  const gbUpdateBtn = $("gbUpdateBtn");
+  const gbPlayerSearch = $("gbPlayerSearch");
+  const gbSelectedPlayers = $("gbSelectedPlayers");
+  const gbHoleInput = $("gbHoleInput");
+  const gbTeeTimeInput = $("gbTeeTimeInput");
+  const gbAddGroupBtn = $("gbAddGroupBtn");
+  const gbResetBuilderBtn = $("gbResetBuilderBtn");
+  const gbPlayerList = $("gbPlayerList");
+  const gbGroupTableBody = $("gbGroupTableBody");
+  const gbStatus = $("gbStatus");
 
-    const bulkRoomNumber = document.getElementById("bulkRoomNumber");
-    const bulkRoomLevel = document.getElementById("bulkRoomLevel");
-    const applyRoomBtn = document.getElementById("applyRoomBtn");
-    const roomBulkStatus = document.getElementById("roomBulkStatus");
+  let users = [];
+  let filteredUsers = [];
+  let groupBuilderGroups = [];
+  let groupBuilderSelectedPlayers = [];
+  let groupBuilderLoadedDocId = null;
 
-    const bulkAmtOutstanding = document.getElementById("bulkAmtOutstanding");
-    const bulkFinancialStatus = document.getElementById("bulkFinancialStatus");
-    const applyPaymentBtn = document.getElementById("applyPaymentBtn");
-    const paymentBulkStatus = document.getElementById("paymentBulkStatus");
+  const dirty = new Map();
+  const selected = new Set();
 
-    const gbDaySelect = document.getElementById("gbDaySelect");
-    const gbLoadBtn = document.getElementById("gbLoadBtn");
-    const gbSaveSnapshotBtn = document.getElementById("gbSaveSnapshotBtn");
-    const gbUpdateBtn = document.getElementById("gbUpdateBtn");
-    const gbPlayerSearch = document.getElementById("gbPlayerSearch");
-    const gbSelectedPlayers = document.getElementById("gbSelectedPlayers");
-    const gbHoleInput = document.getElementById("gbHoleInput");
-    const gbTeeTimeInput = document.getElementById("gbTeeTimeInput");
-    const gbAddGroupBtn = document.getElementById("gbAddGroupBtn");
-    const gbResetBuilderBtn = document.getElementById("gbResetBuilderBtn");
-    const gbPlayerList = document.getElementById("gbPlayerList");
-    const gbGroupTableBody = document.getElementById("gbGroupTableBody");
-    const gbStatus = document.getElementById("gbStatus");
+  const dayConfig = {
+    fri: { label: "Friday", collection: "teeSheetsFri" },
+    sat: { label: "Saturday", collection: "teeSheets" },
+    sun: { label: "Sunday", collection: "teeSheetsSun" }
+  };
 
-    let users = [];
-    let filteredUsers = [];
-    let groupBuilderGroups = [];
-    let groupBuilderSelectedPlayers = [];
-    let groupBuilderLoadedDocId = null;
+  function setStatus(el, message, type = "") {
+    el.textContent = message || "";
+    el.className = "status-line" + (type ? " " + type : "");
+  }
 
-    const dirty = new Map();
-    const selected = new Set();
+  function setAuthStatus(el, message, type = "") {
+    el.textContent = message || "";
+    el.className = "status-badge" + (type ? " " + type : "");
+  }
 
-    const dayConfig = {
-      fri: { label: "Friday", collection: "teeSheetsFri" },
-      sat: { label: "Saturday", collection: "teeSheets" },
-      sun: { label: "Sunday", collection: "teeSheetsSun" }
-    };
+  function normalize(v) { return String(v || "").toLowerCase(); }
 
-    function setStatus(el, message, type = "") {
-      el.textContent = message || "";
-      el.classList.remove("success", "error", "warn");
-      if (type) {
-        el.classList.add(type);
-      }
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+  }
+
+  function asString(v) { return v === null || v === undefined ? "" : String(v); }
+
+  function updateSelectionMeta() {
+    selectionMeta.textContent = `${selected.size} selected`;
+  }
+
+  function isAdmin(user) {
+    return get(ref(db, `admins/${user.uid}`)).then(snap => !!snap.val());
+  }
+
+  function markDirty(uid, field, value) {
+    if (!dirty.has(uid)) dirty.set(uid, {});
+    dirty.get(uid)[field] = value;
+    const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
+    if (row) row.classList.add("is-dirty");
+  }
+
+  function clearRowDirty(uid) {
+    dirty.delete(uid);
+    const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
+    if (row) row.classList.remove("is-dirty");
+  }
+
+  function getBaseUser(uid) { return users.find(u => u.uid === uid) || null; }
+
+  function isFirestorePaymentField(field) { return field === "amtOutstanding" || field === "financialStatus"; }
+  function isFirestoreMirrorField(field) { return field === "mobile"; }
+
+  function getUniquePlayerNames() {
+    return Array.from(new Set(users.map(u => asString(u.displayName).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }
+
+  function getAssignedBuilderPlayers() {
+    return new Set(groupBuilderGroups.flatMap(g => g.players || []));
+  }
+
+  function clearBuilderSelection() {
+    groupBuilderSelectedPlayers = [];
+    gbHoleInput.value = "";
+    gbTeeTimeInput.value = "";
+    renderBuilderSelectedPlayers();
+    renderBuilderPlayerList();
+  }
+
+  function renderBuilderSelectedPlayers() {
+    if (groupBuilderSelectedPlayers.length === 0) {
+      gbSelectedPlayers.innerHTML = '<span style="font-size:12px;color:var(--text-3);">Select up to 4 players below</span>';
+      return;
+    }
+    gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((name, i) =>
+      `<span class="chip">${escapeHtml(name)}<button class="chip-remove" type="button" data-remove-selected="${i}">✕</button></span>`
+    ).join("");
+  }
+
+  function renderBuilderPlayerList() {
+    const q = normalize(gbPlayerSearch.value);
+    const assigned = getAssignedBuilderPlayers();
+    const players = getUniquePlayerNames().filter(name => normalize(name).includes(q));
+
+    if (players.length === 0) {
+      gbPlayerList.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text-3);">No players match.</div>';
+      return;
     }
 
-    function normalize(v) {
-      return String(v || "").toLowerCase();
+    gbPlayerList.innerHTML = players.map(name => {
+      const isSelected = groupBuilderSelectedPlayers.includes(name);
+      const isAssigned = assigned.has(name) && !isSelected;
+      const label = isAssigned ? "Assigned" : isSelected ? "Selected" : "Add";
+      return `<div class="player-item ${isSelected ? "is-selected" : ""} ${isAssigned ? "is-assigned" : ""}"
+        data-player-name="${escapeHtml(name)}" data-assigned="${isAssigned ? "1" : "0"}">
+        <span>${escapeHtml(name)}</span>
+        <span class="player-badge">${label}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function renderBuilderGroups() {
+    if (groupBuilderGroups.length === 0) {
+      gbGroupTableBody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);font-size:13px;text-align:center;padding:24px;">No groups yet.</td></tr>';
+      return;
     }
-
-    function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function asString(v) {
-      return v === null || v === undefined ? "" : String(v);
-    }
-
-    function updateSelectionMeta() {
-      selectionMeta.textContent = `Selected: ${selected.size}`;
-    }
-
-    function isAdmin(user) {
-      return get(ref(db, `admins/${user.uid}`)).then((snap) => !!snap.val());
-    }
-
-    function markDirty(uid, field, value) {
-      if (!dirty.has(uid)) {
-        dirty.set(uid, {});
-      }
-      dirty.get(uid)[field] = value;
-      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
-      if (row) {
-        row.classList.add("is-dirty");
-      }
-    }
-
-    function clearRowDirty(uid) {
-      dirty.delete(uid);
-      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
-      if (row) {
-        row.classList.remove("is-dirty");
-      }
-    }
-
-    function getBaseUser(uid) {
-      return users.find((u) => u.uid === uid) || null;
-    }
-
-    function isFirestorePaymentField(field) {
-      return field === "amtOutstanding" || field === "financialStatus";
-    }
-
-    function normalizeFinancialStatus(value) {
-      const normalized = normalize(value);
-      if (!normalized) return "";
-      if (normalized === "paid") return "Paid";
-      if (normalized === "partial") return "Partial";
-      return "Pending";
-    }
-
-    function getFinancialStatusOptions(selectedValue) {
-      const selected = normalizeFinancialStatus(selectedValue);
-      const options = ["", "Pending", "Partial", "Paid"];
-      return options.map((value) => {
-        const label = value || "-";
-        const isSelected = value === selected ? "selected" : "";
-        return `<option value="${value}" ${isSelected}>${label}</option>`;
-      }).join("");
-    }
-
-    function getUniquePlayerNames() {
-      const names = users
-        .map((u) => asString(u.displayName).trim())
-        .filter(Boolean);
-      return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
-    }
-
-    function getAssignedBuilderPlayers() {
-      return new Set(groupBuilderGroups.flatMap((group) => group.players || []));
-    }
-
-    function clearBuilderSelection() {
-      groupBuilderSelectedPlayers = [];
-      gbHoleInput.value = "";
-      gbTeeTimeInput.value = "";
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
-    }
-
-    function renderBuilderSelectedPlayers() {
-      if (groupBuilderSelectedPlayers.length === 0) {
-        gbSelectedPlayers.innerHTML = '<span class="status">Select up to 4 players</span>';
-        return;
-      }
-
-      gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((name, index) => {
-        return `<span class="chip">${escapeHtml(name)} <button type="button" data-remove-selected="${index}">x</button></span>`;
-      }).join("");
-    }
-
-    function renderBuilderPlayerList() {
-      const q = normalize(gbPlayerSearch.value);
-      const assigned = getAssignedBuilderPlayers();
-      const players = getUniquePlayerNames();
-
-      const visible = players.filter((name) => normalize(name).includes(q));
-      if (visible.length === 0) {
-        gbPlayerList.innerHTML = '<div class="status">No players match this search.</div>';
-        return;
-      }
-
-      gbPlayerList.innerHTML = visible.map((name) => {
-        const isSelected = groupBuilderSelectedPlayers.includes(name);
-        const isAssigned = assigned.has(name) && !isSelected;
-        return `
-          <div class="player-item ${isSelected ? "is-selected" : ""} ${isAssigned ? "is-assigned" : ""}" data-player-name="${escapeHtml(name)}" data-assigned="${isAssigned ? "1" : "0"}">
-            <span>${escapeHtml(name)}</span>
-            <span>${isAssigned ? "Assigned" : (isSelected ? "Selected" : "Add")}</span>
+    gbGroupTableBody.innerHTML = groupBuilderGroups.map((group, i) => `
+      <tr>
+        <td><strong>${escapeHtml(group.hole)}</strong></td>
+        <td style="color:var(--text-2)">${escapeHtml(group.teeTime || "—")}</td>
+        <td>${escapeHtml((group.players || []).join(", "))}</td>
+        <td>
+          <div class="group-actions">
+            <button class="tiny-btn" type="button" data-gb-edit="${i}">Edit</button>
+            <button class="tiny-btn" type="button" data-gb-up="${i}">↑</button>
+            <button class="tiny-btn" type="button" data-gb-down="${i}">↓</button>
+            <button class="tiny-btn danger" type="button" data-gb-delete="${i}">Del</button>
           </div>
-        `;
-      }).join("");
-    }
+        </td>
+      </tr>
+    `).join("");
+  }
 
-    function renderBuilderGroups() {
-      if (groupBuilderGroups.length === 0) {
-        gbGroupTableBody.innerHTML = '<tr><td colspan="4" class="status">No groups yet.</td></tr>';
-        return;
-      }
+  function builderSortGroups() {
+    groupBuilderGroups.sort((a, b) => Number(a.hole) - Number(b.hole));
+  }
 
-      gbGroupTableBody.innerHTML = groupBuilderGroups.map((group, index) => {
-        return `
-          <tr>
-            <td>${escapeHtml(group.hole)}</td>
-            <td>${escapeHtml(group.teeTime || "-")}</td>
-            <td>${escapeHtml((group.players || []).join(", "))}</td>
-            <td>
-              <div class="group-actions">
-                <button class="tiny-btn" type="button" data-gb-edit="${index}">Edit</button>
-                <button class="tiny-btn" type="button" data-gb-up="${index}">Up</button>
-                <button class="tiny-btn" type="button" data-gb-down="${index}">Down</button>
-                <button class="tiny-btn" type="button" data-gb-delete="${index}">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
+  function moveGroup(index, delta) {
+    const target = index + delta;
+    if (target < 0 || target >= groupBuilderGroups.length) return;
+    [groupBuilderGroups[index], groupBuilderGroups[target]] = [groupBuilderGroups[target], groupBuilderGroups[index]];
+    renderBuilderGroups();
+  }
 
-    function builderSortGroups() {
-      groupBuilderGroups.sort((a, b) => Number(a.hole) - Number(b.hole));
-    }
-
-    function moveGroup(index, delta) {
-      const target = index + delta;
-      if (target < 0 || target >= groupBuilderGroups.length) {
-        return;
-      }
-      const tmp = groupBuilderGroups[index];
-      groupBuilderGroups[index] = groupBuilderGroups[target];
-      groupBuilderGroups[target] = tmp;
-      renderBuilderGroups();
-    }
-
-    async function loadGroupSnapshot() {
-      const config = dayConfig[gbDaySelect.value];
-      setStatus(gbStatus, `Loading latest ${config.label} groups...`);
-
-      try {
-        const q = query(collection(firestore, config.collection), orderBy("createdAt", "desc"), limit(1));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-          groupBuilderLoadedDocId = null;
-          groupBuilderGroups = [];
-          clearBuilderSelection();
-          renderBuilderGroups();
-          setStatus(gbStatus, `No saved ${config.label} snapshot found.`, "warn");
-          return;
-        }
-
-        const latest = snapshot.docs[0];
-        groupBuilderLoadedDocId = latest.id;
-        const data = latest.data() || {};
-        groupBuilderGroups = Array.isArray(data.groups) ? data.groups : [];
-        builderSortGroups();
+  async function loadGroupSnapshot() {
+    const config = dayConfig[gbDaySelect.value];
+    setStatus(gbStatus, `Loading ${config.label} groups…`);
+    try {
+      const q = query(collection(firestore, config.collection), orderBy("createdAt", "desc"), limit(1));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        groupBuilderLoadedDocId = null;
+        groupBuilderGroups = [];
         clearBuilderSelection();
         renderBuilderGroups();
-        setStatus(gbStatus, `Loaded ${groupBuilderGroups.length} groups from latest ${config.label} snapshot.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(gbStatus, "Failed to load group snapshot.", "error");
-      }
-    }
-
-    async function saveNewGroupSnapshot() {
-      const config = dayConfig[gbDaySelect.value];
-      if (groupBuilderGroups.length === 0) {
-        setStatus(gbStatus, "No groups to save.", "error");
+        setStatus(gbStatus, `No saved ${config.label} snapshot found.`, "warn");
         return;
       }
-
-      setStatus(gbStatus, `Saving new ${config.label} snapshot...`);
-      try {
-        const docRef = await addDoc(collection(firestore, config.collection), {
-          createdAt: new Date(),
-          groups: groupBuilderGroups
-        });
-        groupBuilderLoadedDocId = docRef.id;
-        setStatus(gbStatus, `Saved new ${config.label} snapshot with ${groupBuilderGroups.length} groups.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(gbStatus, "Failed to save new snapshot.", "error");
-      }
-    }
-
-    async function updateLoadedGroupSnapshot() {
-      const config = dayConfig[gbDaySelect.value];
-      if (!groupBuilderLoadedDocId) {
-        setStatus(gbStatus, "Load a snapshot first, or use Save new snapshot.", "error");
-        return;
-      }
-
-      setStatus(gbStatus, `Updating ${config.label} snapshot...`);
-      try {
-        await updateDoc(doc(firestore, config.collection, groupBuilderLoadedDocId), {
-          groups: groupBuilderGroups,
-          updatedAt: new Date()
-        });
-        setStatus(gbStatus, `Updated loaded ${config.label} snapshot.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(gbStatus, "Failed to update snapshot.", "error");
-      }
-    }
-
-    function addBuilderGroup() {
-      const hole = Number(gbHoleInput.value);
-      const teeTime = gbTeeTimeInput.value.trim();
-      const players = [...groupBuilderSelectedPlayers];
-
-      if (!Number.isFinite(hole) || hole < 1 || hole > 18) {
-        setStatus(gbStatus, "Hole must be between 1 and 18.", "error");
-        return;
-      }
-
-      if (players.length === 0) {
-        setStatus(gbStatus, "Select at least one player.", "error");
-        return;
-      }
-
-      if (players.length > 4) {
-        setStatus(gbStatus, "A group can contain at most 4 players.", "error");
-        return;
-      }
-
-      groupBuilderGroups.push({
-        hole,
-        teeTime,
-        players
-      });
-
+      const latest = snapshot.docs[0];
+      groupBuilderLoadedDocId = latest.id;
+      const data = latest.data() || {};
+      groupBuilderGroups = Array.isArray(data.groups) ? data.groups : [];
       builderSortGroups();
-      renderBuilderGroups();
       clearBuilderSelection();
-      setStatus(gbStatus, "Group added to builder.", "success");
+      renderBuilderGroups();
+      setStatus(gbStatus, `Loaded ${groupBuilderGroups.length} groups from ${config.label} snapshot.`, "success");
+    } catch (error) {
+      console.error(error);
+      setStatus(gbStatus, "Failed to load group snapshot.", "error");
     }
+  }
 
-    function renderRows(list) {
-      tableBody.innerHTML = "";
-      list.forEach((user) => {
-        const tr = document.createElement("tr");
-        tr.dataset.uid = user.uid;
-
-        const isChecked = selected.has(user.uid) ? "checked" : "";
-
-        tr.innerHTML = `
-          <td class="checkbox-cell"><input type="checkbox" data-select-uid="${user.uid}" ${isChecked}></td>
-          <td><input class="field-input" type="text" data-field="displayName" data-uid="${user.uid}" value="${escapeHtml(asString(user.displayName))}" /></td>
-          <td><input class="field-input short" type="text" data-field="hackerNumber" data-uid="${user.uid}" value="${escapeHtml(asString(user.hackerNumber))}" /></td>
-          <td><input class="field-input short" type="number" min="0" max="54" step="1" data-field="handicap" data-uid="${user.uid}" value="${escapeHtml(asString(user.handicap))}" /></td>
-          <td><input class="field-input" type="text" data-field="fri" data-uid="${user.uid}" value="${escapeHtml(asString(user.fri))}" /></td>
-          <td><input class="field-input" type="text" data-field="sat" data-uid="${user.uid}" value="${escapeHtml(asString(user.sat))}" /></td>
-          <td><input class="field-input" type="text" data-field="sun" data-uid="${user.uid}" value="${escapeHtml(asString(user.sun))}" /></td>
-          <td><input class="field-input short" type="text" data-field="roomNumber" data-uid="${user.uid}" value="${escapeHtml(asString(user.roomNumber))}" /></td>
-          <td><input class="field-input short" type="text" data-field="level" data-uid="${user.uid}" value="${escapeHtml(asString(user.level))}" /></td>
-          <td><input class="field-input short" type="number" min="0" step="0.01" data-field="amtOutstanding" data-uid="${user.uid}" value="${escapeHtml(asString(user.amtOutstanding))}" /></td>
-          <td><input class="field-input" type="text" data-field="financialStatus" data-uid="${user.uid}" value="${escapeHtml(asString(user.financialStatus))}" /></td>
-          <td class="uid-cell" title="${escapeHtml(user.uid)}">${escapeHtml(user.uid)}</td>
-          <td class="actions-cell">
-            <button class="btn secondary" type="button" data-save-uid="${user.uid}">Save row</button>
-          </td>
-        `;
-
-        tableBody.appendChild(tr);
-      });
+  async function saveNewGroupSnapshot() {
+    const config = dayConfig[gbDaySelect.value];
+    if (groupBuilderGroups.length === 0) { setStatus(gbStatus, "No groups to save.", "error"); return; }
+    setStatus(gbStatus, `Saving…`);
+    try {
+      const docRef = await addDoc(collection(firestore, config.collection), { createdAt: new Date(), groups: groupBuilderGroups });
+      groupBuilderLoadedDocId = docRef.id;
+      setStatus(gbStatus, `Saved new ${config.label} snapshot (${groupBuilderGroups.length} groups).`, "success");
+    } catch (error) {
+      console.error(error);
+      setStatus(gbStatus, "Failed to save snapshot.", "error");
     }
+  }
 
-    function filterAndRender() {
-      const q = normalize(searchInput.value);
-      filteredUsers = users.filter((u) => {
-        return (
-          normalize(u.displayName).includes(q) ||
-          normalize(u.hackerNumber).includes(q) ||
-          normalize(u.roomNumber).includes(q) ||
-          normalize(u.financialStatus).includes(q) ||
-          normalize(u.amtOutstanding).includes(q) ||
-          normalize(u.uid).includes(q)
-        );
-      });
-      renderRows(filteredUsers);
-      updateSelectionMeta();
+  async function updateLoadedGroupSnapshot() {
+    const config = dayConfig[gbDaySelect.value];
+    if (!groupBuilderLoadedDocId) { setStatus(gbStatus, "Load a snapshot first.", "error"); return; }
+    setStatus(gbStatus, "Updating…");
+    try {
+      await updateDoc(doc(firestore, config.collection, groupBuilderLoadedDocId), { groups: groupBuilderGroups, updatedAt: new Date() });
+      setStatus(gbStatus, `Updated ${config.label} snapshot.`, "success");
+    } catch (error) {
+      console.error(error);
+      setStatus(gbStatus, "Failed to update snapshot.", "error");
     }
+  }
 
-    async function loadUsers() {
-      setStatus(pageStatus, "Loading users...");
-      const [snap, fsSnap] = await Promise.all([
-        get(ref(db, "users")),
-        getDocs(collection(firestore, "users"))
-      ]);
+  function addBuilderGroup() {
+    const hole = Number(gbHoleInput.value);
+    const teeTime = gbTeeTimeInput.value.trim();
+    const players = [...groupBuilderSelectedPlayers];
+    if (!Number.isFinite(hole) || hole < 1 || hole > 18) { setStatus(gbStatus, "Hole must be 1–18.", "error"); return; }
+    if (players.length === 0) { setStatus(gbStatus, "Select at least one player.", "error"); return; }
+    if (players.length > 4) { setStatus(gbStatus, "Max 4 players per group.", "error"); return; }
+    groupBuilderGroups.push({ hole, teeTime, players });
+    builderSortGroups();
+    renderBuilderGroups();
+    clearBuilderSelection();
+    setStatus(gbStatus, "Group added.", "success");
+  }
 
-      const data = snap.exists() ? snap.val() : {};
-      const firestoreUsers = {};
-      fsSnap.forEach((docSnap) => {
-        firestoreUsers[docSnap.id] = docSnap.data() || {};
-      });
+  function renderRows(list) {
+    tableBody.innerHTML = "";
+    list.forEach(user => {
+      const tr = document.createElement("tr");
+      tr.dataset.uid = user.uid;
+      const isChecked = selected.has(user.uid) ? "checked" : "";
+      tr.innerHTML = `
+        <td class="cell-check"><input type="checkbox" data-select-uid="${user.uid}" ${isChecked}></td>
+        <td class="cell-name"><input class="field-input" type="text" data-field="displayName" data-uid="${user.uid}" value="${escapeHtml(asString(user.displayName))}" /></td>
+        <td><input class="field-input short" type="text" data-field="hackerNumber" data-uid="${user.uid}" value="${escapeHtml(asString(user.hackerNumber))}" /></td>
+        <td class="cell-muted" title="${escapeHtml(user.email)}">${escapeHtml(user.email || "—")}</td>
+        <td><input class="field-input mid" type="text" data-field="mobile" data-uid="${user.uid}" value="${escapeHtml(asString(user.mobile))}" placeholder="—" /></td>
+        <td><input class="field-input short" type="number" min="0" max="54" step="1" data-field="handicap" data-uid="${user.uid}" value="${escapeHtml(asString(user.handicap))}" /></td>
+        <td><input class="field-input" type="text" data-field="fri" data-uid="${user.uid}" value="${escapeHtml(asString(user.fri))}" /></td>
+        <td><input class="field-input" type="text" data-field="sat" data-uid="${user.uid}" value="${escapeHtml(asString(user.sat))}" /></td>
+        <td><input class="field-input" type="text" data-field="sun" data-uid="${user.uid}" value="${escapeHtml(asString(user.sun))}" /></td>
+        <td><input class="field-input short" type="text" data-field="roomNumber" data-uid="${user.uid}" value="${escapeHtml(asString(user.roomNumber))}" /></td>
+        <td><input class="field-input short" type="text" data-field="level" data-uid="${user.uid}" value="${escapeHtml(asString(user.level))}" /></td>
+        <td><input class="field-input short" type="number" min="0" step="0.01" data-field="amtOutstanding" data-uid="${user.uid}" value="${escapeHtml(asString(user.amtOutstanding))}" /></td>
+        <td><input class="field-input" type="text" data-field="financialStatus" data-uid="${user.uid}" value="${escapeHtml(asString(user.financialStatus))}" /></td>
+        <td class="cell-muted" title="${escapeHtml(user.uid)}">${escapeHtml(user.uid)}</td>
+        <td class="cell-actions"><button class="btn btn-ghost btn-sm" type="button" data-save-uid="${user.uid}">Save row</button></td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
 
-      users = Object.keys(data).map((uid) => {
-        const u = data[uid] || {};
-        const f = firestoreUsers[uid] || {};
-        return {
-          uid,
-          displayName: u.displayName || "",
-          hackerNumber: u.hackerNumber || "",
-          handicap: u.handicap !== undefined && u.handicap !== null ? Number(u.handicap) : "",
-          fri: u.fri || "",
-          sat: u.sat || "",
-          sun: u.sun || "",
-          roomNumber: u.roomNumber || "",
-          level: u.level || "",
-          amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : "",
-          financialStatus: f.financialStatus || ""
-        };
-      });
+  function filterAndRender() {
+    const q = normalize(searchInput.value);
+    filteredUsers = users.filter(u =>
+      normalize(u.displayName).includes(q) || normalize(u.hackerNumber).includes(q) ||
+      normalize(u.email).includes(q) || normalize(u.mobile).includes(q) ||
+      normalize(u.roomNumber).includes(q) || normalize(u.financialStatus).includes(q) ||
+      normalize(u.amtOutstanding).includes(q) || normalize(u.uid).includes(q)
+    );
+    renderRows(filteredUsers);
+    updateSelectionMeta();
+  }
 
-      users.sort((a, b) => normalize(a.displayName).localeCompare(normalize(b.displayName)));
-      dirty.clear();
-      selected.clear();
-      selectAllCheckbox.checked = false;
-      filterAndRender();
-      renderBuilderPlayerList();
-      renderBuilderSelectedPlayers();
-      setStatus(pageStatus, `Loaded ${users.length} users.`, "success");
+  async function loadUsers() {
+    setStatus(pageStatus, "Loading users…");
+    const [snap, fsSnap] = await Promise.all([
+      get(ref(db, "users")),
+      getDocs(collection(firestore, "users"))
+    ]);
+    const data = snap.exists() ? snap.val() : {};
+    const firestoreUsers = {};
+    fsSnap.forEach(d => { firestoreUsers[d.id] = d.data() || {}; });
+    users = Object.keys(data).map(uid => {
+      const u = data[uid] || {};
+      const f = firestoreUsers[uid] || {};
+      return {
+        uid,
+        displayName: u.displayName || "",
+        hackerNumber: u.hackerNumber || "",
+        email: f.email || u.email || f.authEmail || u.authEmail || "",
+        mobile: u.mobile || u.mobileNumber || f.mobile || f.mobileNumber || "",
+        handicap: u.handicap !== undefined && u.handicap !== null ? Number(u.handicap) : "",
+        fri: u.fri || "", sat: u.sat || "", sun: u.sun || "",
+        roomNumber: u.roomNumber || "", level: u.level || "",
+        amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : "",
+        financialStatus: f.financialStatus || ""
+      };
+    });
+    users.sort((a, b) => normalize(a.displayName).localeCompare(normalize(b.displayName)));
+    dirty.clear(); selected.clear(); selectAllCheckbox.checked = false;
+    filterAndRender();
+    renderBuilderPlayerList();
+    renderBuilderSelectedPlayers();
+    setStatus(pageStatus, `Loaded ${users.length} users.`, "success");
+  }
+
+  function getFieldValueForSave(field, rawValue) {
+    const value = asString(rawValue).trim();
+    if (field === "handicap") {
+      if (value === "") return { ok: false, message: "Handicap cannot be blank." };
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0 || n > 54) return { ok: false, message: "Handicap must be 0–54." };
+      return { ok: true, value: n };
     }
+    if (field === "amtOutstanding") {
+      if (value === "") return { ok: true, value: 0 };
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) return { ok: false, message: "Amount must be ≥ 0." };
+      return { ok: true, value: Number(n.toFixed(2)) };
+    }
+    return { ok: true, value };
+  }
 
-    function getFieldValueForSave(field, rawValue) {
-      const value = asString(rawValue).trim();
-      if (field === "handicap") {
-        if (value === "") {
-          return { ok: false, message: "Handicap cannot be blank. Use a number from 0 to 54." };
-        }
-        const number = Number(value);
-        if (!Number.isFinite(number) || number < 0 || number > 54) {
-          return { ok: false, message: "Handicap must be a number from 0 to 54." };
-        }
-        return { ok: true, value: number };
+  async function saveUserChanges(uid, changes) {
+    const updates = Object.entries(changes || {});
+    if (updates.length === 0) return;
+    const firestorePatch = {};
+    for (const [field, rawValue] of updates) {
+      const checked = getFieldValueForSave(field, rawValue);
+      if (!checked.ok) throw new Error(checked.message);
+      if (isFirestorePaymentField(field)) {
+        firestorePatch[field] = checked.value;
+      } else if (isFirestoreMirrorField(field)) {
+        await set(ref(db, `users/${uid}/${field}`), checked.value);
+        firestorePatch[field] = checked.value;
+      } else {
+        await set(ref(db, `users/${uid}/${field}`), checked.value);
       }
-      if (field === "amtOutstanding") {
-        if (value === "") {
-          return { ok: true, value: 0 };
-        }
-        const number = Number(value);
-        if (!Number.isFinite(number) || number < 0) {
-          return { ok: false, message: "Amount outstanding must be a valid number >= 0." };
-        }
-        return { ok: true, value: Number(number.toFixed(2)) };
-      }
-      return { ok: true, value };
     }
-
-    async function saveUserChanges(uid, changes) {
-      const updates = Object.entries(changes || {});
-      if (updates.length === 0) {
-        return;
-      }
-
-      const firestorePatch = {};
-
-      for (const [field, rawValue] of updates) {
+    if (Object.keys(firestorePatch).length > 0) {
+      await setDoc(doc(firestore, "users", uid), firestorePatch, { merge: true });
+    }
+    const baseUser = getBaseUser(uid);
+    if (baseUser) {
+      updates.forEach(([field, rawValue]) => {
         const checked = getFieldValueForSave(field, rawValue);
-        if (!checked.ok) {
-          throw new Error(checked.message);
-        }
-        if (isFirestorePaymentField(field)) {
-          firestorePatch[field] = checked.value;
-        } else {
-          await set(ref(db, `users/${uid}/${field}`), checked.value);
-        }
-      }
-
-      if (Object.keys(firestorePatch).length > 0) {
-        await setDoc(doc(firestore, "users", uid), firestorePatch, { merge: true });
-      }
-
-      const baseUser = getBaseUser(uid);
-      if (baseUser) {
-        updates.forEach(([field, rawValue]) => {
-          const checked = getFieldValueForSave(field, rawValue);
-          if (checked.ok) {
-            baseUser[field] = checked.value;
-          }
-        });
-      }
-
-      clearRowDirty(uid);
+        if (checked.ok) baseUser[field] = checked.value;
+      });
     }
+    clearRowDirty(uid);
+  }
 
-    async function handleSignIn() {
-      const email = signinEmail.value.trim();
-      const password = signinPassword.value;
-      if (!email || !password) {
-        setStatus(signinStatus, "Enter email and password.", "error");
-        return;
-      }
-      setStatus(signinStatus, "Signing in...");
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        signinPassword.value = "";
-        setStatus(signinStatus, "Signed in.", "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(signinStatus, "Sign-in failed.", "error");
-      }
+  // Event listeners
+  tableBody.addEventListener("input", e => {
+    const input = e.target.closest("[data-field]");
+    if (!input) return;
+    markDirty(input.getAttribute("data-uid"), input.getAttribute("data-field"), input.value);
+    setStatus(pageStatus, "Unsaved changes.", "warn");
+  });
+
+  tableBody.addEventListener("change", e => {
+    const checkbox = e.target.closest("[data-select-uid]");
+    if (!checkbox) return;
+    const uid = checkbox.getAttribute("data-select-uid");
+    checkbox.checked ? selected.add(uid) : selected.delete(uid);
+    updateSelectionMeta();
+  });
+
+  tableBody.addEventListener("click", async e => {
+    const saveBtn = e.target.closest("[data-save-uid]");
+    if (!saveBtn) return;
+    const uid = saveBtn.getAttribute("data-save-uid");
+    const changes = dirty.get(uid);
+    if (!changes || Object.keys(changes).length === 0) { setStatus(pageStatus, "No changes in this row.", "success"); return; }
+    try {
+      saveBtn.disabled = true;
+      await saveUserChanges(uid, changes);
+      setStatus(pageStatus, `Saved.`, "success");
+    } catch (error) {
+      setStatus(pageStatus, error.message || "Save failed.", "error");
+    } finally {
+      saveBtn.disabled = false;
     }
+  });
 
-    async function applyBulkTee() {
-      const day = bulkTeeDay.value;
-      const teeValue = bulkTeeValue.value.trim();
-
-      if (!selected.size) {
-        setStatus(teeBulkStatus, "Select at least one user.", "error");
-        return;
-      }
-
-      if (!teeValue) {
-        setStatus(teeBulkStatus, "Enter a tee assignment value.", "error");
-        return;
-      }
-
-      setStatus(teeBulkStatus, "Applying tee assignments...");
-      try {
-        for (const uid of selected) {
-          await set(ref(db, `users/${uid}/${day}`), teeValue);
-          const baseUser = getBaseUser(uid);
-          if (baseUser) {
-            baseUser[day] = teeValue;
-          }
-          clearRowDirty(uid);
-        }
-        filterAndRender();
-        setStatus(teeBulkStatus, `Updated ${selected.size} users.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(teeBulkStatus, "Bulk tee assignment failed.", "error");
-      }
-    }
-
-    async function applyBulkRoom() {
-      const roomNumber = bulkRoomNumber.value.trim();
-      const level = bulkRoomLevel.value.trim();
-
-      if (!selected.size) {
-        setStatus(roomBulkStatus, "Select at least one user.", "error");
-        return;
-      }
-
-      if (!roomNumber && !level) {
-        setStatus(roomBulkStatus, "Enter a room number or level.", "error");
-        return;
-      }
-
-      setStatus(roomBulkStatus, "Applying room assignments...");
-      try {
-        for (const uid of selected) {
-          if (roomNumber) {
-            await set(ref(db, `users/${uid}/roomNumber`), roomNumber);
-          }
-          if (level) {
-            await set(ref(db, `users/${uid}/level`), level);
-          }
-
-          const baseUser = getBaseUser(uid);
-          if (baseUser) {
-            if (roomNumber) baseUser.roomNumber = roomNumber;
-            if (level) baseUser.level = level;
-          }
-          clearRowDirty(uid);
-        }
-        filterAndRender();
-        setStatus(roomBulkStatus, `Updated ${selected.size} users.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(roomBulkStatus, "Bulk room assignment failed.", "error");
-      }
-    }
-
-    async function applyBulkPayment() {
-      const outstandingRaw = bulkAmtOutstanding.value.trim();
-      const statusRaw = bulkFinancialStatus.value.trim();
-
-      if (!selected.size) {
-        setStatus(paymentBulkStatus, "Select at least one user.", "error");
-        return;
-      }
-
-      if (!outstandingRaw && !statusRaw) {
-        setStatus(paymentBulkStatus, "Enter amount and/or status.", "error");
-        return;
-      }
-
-      const patch = {};
-
-      if (outstandingRaw) {
-        const checked = getFieldValueForSave("amtOutstanding", outstandingRaw);
-        if (!checked.ok) {
-          setStatus(paymentBulkStatus, checked.message, "error");
-          return;
-        }
-        patch.amtOutstanding = checked.value;
-      }
-
-      if (statusRaw) {
-        patch.financialStatus = statusRaw;
-      }
-
-      setStatus(paymentBulkStatus, "Applying payment updates...");
-      try {
-        for (const uid of selected) {
-          await setDoc(doc(firestore, "users", uid), patch, { merge: true });
-          const baseUser = getBaseUser(uid);
-          if (baseUser) {
-            if (patch.amtOutstanding !== undefined) baseUser.amtOutstanding = patch.amtOutstanding;
-            if (patch.financialStatus !== undefined) baseUser.financialStatus = patch.financialStatus;
-          }
-          clearRowDirty(uid);
-        }
-        filterAndRender();
-        setStatus(paymentBulkStatus, `Updated payment fields for ${selected.size} users.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(paymentBulkStatus, "Bulk payment update failed.", "error");
-      }
-    }
-
-    tableBody.addEventListener("input", (event) => {
-      const input = event.target.closest("[data-field]");
-      if (!input) return;
-      const uid = input.getAttribute("data-uid");
-      const field = input.getAttribute("data-field");
-      markDirty(uid, field, input.value);
-      setStatus(pageStatus, "You have unsaved changes.", "warn");
-    });
-
-    tableBody.addEventListener("change", (event) => {
-      const checkbox = event.target.closest("[data-select-uid]");
-      if (!checkbox) return;
-      const uid = checkbox.getAttribute("data-select-uid");
-      if (checkbox.checked) {
-        selected.add(uid);
-      } else {
-        selected.delete(uid);
-      }
-      updateSelectionMeta();
-    });
-
-    tableBody.addEventListener("click", async (event) => {
-      const saveBtn = event.target.closest("[data-save-uid]");
-      if (!saveBtn) return;
-      const uid = saveBtn.getAttribute("data-save-uid");
-
-      const changes = dirty.get(uid);
-      if (!changes || Object.keys(changes).length === 0) {
-        setStatus(pageStatus, "No changes in this row.", "success");
-        return;
-      }
-
-      try {
-        saveBtn.disabled = true;
-        await saveUserChanges(uid, changes);
-        setStatus(pageStatus, `Saved row for ${uid}.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(pageStatus, error.message || "Save failed.", "error");
-      } finally {
-        saveBtn.disabled = false;
-      }
-    });
-
-    saveAllBtn.addEventListener("click", async () => {
-      if (dirty.size === 0) {
-        setStatus(pageStatus, "No changes to save.", "success");
-        return;
-      }
-
-      setStatus(pageStatus, "Saving all changes...");
-      saveAllBtn.disabled = true;
-      try {
-        for (const [uid, changes] of dirty.entries()) {
-          await saveUserChanges(uid, changes);
-        }
-        filterAndRender();
-        setStatus(pageStatus, "All changes saved.", "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(pageStatus, error.message || "Some changes failed to save.", "error");
-      } finally {
-        saveAllBtn.disabled = false;
-      }
-    });
-
-    refreshBtn.addEventListener("click", loadUsers);
-    searchInput.addEventListener("input", filterAndRender);
-
-    selectFilteredBtn.addEventListener("click", () => {
-      filteredUsers.forEach((u) => selected.add(u.uid));
+  saveAllBtn.addEventListener("click", async () => {
+    if (dirty.size === 0) { setStatus(pageStatus, "Nothing to save.", "success"); return; }
+    setStatus(pageStatus, "Saving…");
+    saveAllBtn.disabled = true;
+    try {
+      for (const [uid, changes] of dirty.entries()) await saveUserChanges(uid, changes);
       filterAndRender();
-      updateSelectionMeta();
-    });
+      setStatus(pageStatus, "All changes saved.", "success");
+    } catch (error) {
+      setStatus(pageStatus, error.message || "Some saves failed.", "error");
+    } finally {
+      saveAllBtn.disabled = false;
+    }
+  });
 
-    clearSelectionBtn.addEventListener("click", () => {
-      selected.clear();
-      selectAllCheckbox.checked = false;
-      filterAndRender();
-      updateSelectionMeta();
-    });
+  refreshBtn.addEventListener("click", loadUsers);
+  searchInput.addEventListener("input", filterAndRender);
 
-    selectAllCheckbox.addEventListener("change", () => {
-      if (selectAllCheckbox.checked) {
-        filteredUsers.forEach((u) => selected.add(u.uid));
-      } else {
-        filteredUsers.forEach((u) => selected.delete(u.uid));
+  selectFilteredBtn.addEventListener("click", () => {
+    filteredUsers.forEach(u => selected.add(u.uid));
+    filterAndRender(); updateSelectionMeta();
+  });
+
+  clearSelectionBtn.addEventListener("click", () => {
+    selected.clear(); selectAllCheckbox.checked = false;
+    filterAndRender(); updateSelectionMeta();
+  });
+
+  selectAllCheckbox.addEventListener("change", () => {
+    filteredUsers.forEach(u => selectAllCheckbox.checked ? selected.add(u.uid) : selected.delete(u.uid));
+    filterAndRender(); updateSelectionMeta();
+  });
+
+  applyTeeBtn.addEventListener("click", async () => {
+    const day = bulkTeeDay.value, teeValue = bulkTeeValue.value.trim();
+    if (!selected.size) { setStatus(teeBulkStatus, "Select users first.", "error"); return; }
+    if (!teeValue) { setStatus(teeBulkStatus, "Enter a tee value.", "error"); return; }
+    setStatus(teeBulkStatus, "Applying…");
+    try {
+      for (const uid of selected) {
+        await set(ref(db, `users/${uid}/${day}`), teeValue);
+        const u = getBaseUser(uid); if (u) u[day] = teeValue;
+        clearRowDirty(uid);
       }
       filterAndRender();
-      updateSelectionMeta();
-    });
+      setStatus(teeBulkStatus, `Updated ${selected.size} users.`, "success");
+    } catch (error) { setStatus(teeBulkStatus, "Failed.", "error"); }
+  });
 
-    gbPlayerSearch.addEventListener("input", renderBuilderPlayerList);
-
-    gbPlayerList.addEventListener("click", (event) => {
-      const item = event.target.closest("[data-player-name]");
-      if (!item) return;
-      if (item.getAttribute("data-assigned") === "1") return;
-
-      const name = item.getAttribute("data-player-name");
-      const idx = groupBuilderSelectedPlayers.indexOf(name);
-      if (idx >= 0) {
-        groupBuilderSelectedPlayers.splice(idx, 1);
-      } else {
-        if (groupBuilderSelectedPlayers.length >= 4) {
-          setStatus(gbStatus, "Max 4 players per group.", "error");
-          return;
-        }
-        groupBuilderSelectedPlayers.push(name);
+  applyRoomBtn.addEventListener("click", async () => {
+    const roomNumber = bulkRoomNumber.value.trim(), level = bulkRoomLevel.value.trim();
+    if (!selected.size) { setStatus(roomBulkStatus, "Select users first.", "error"); return; }
+    if (!roomNumber && !level) { setStatus(roomBulkStatus, "Enter room or level.", "error"); return; }
+    setStatus(roomBulkStatus, "Applying…");
+    try {
+      for (const uid of selected) {
+        if (roomNumber) await set(ref(db, `users/${uid}/roomNumber`), roomNumber);
+        if (level) await set(ref(db, `users/${uid}/level`), level);
+        const u = getBaseUser(uid);
+        if (u) { if (roomNumber) u.roomNumber = roomNumber; if (level) u.level = level; }
+        clearRowDirty(uid);
       }
+      filterAndRender();
+      setStatus(roomBulkStatus, `Updated ${selected.size} users.`, "success");
+    } catch (error) { setStatus(roomBulkStatus, "Failed.", "error"); }
+  });
 
+  applyPaymentBtn.addEventListener("click", async () => {
+    const outstandingRaw = bulkAmtOutstanding.value.trim(), statusRaw = bulkFinancialStatus.value.trim();
+    if (!selected.size) { setStatus(paymentBulkStatus, "Select users first.", "error"); return; }
+    if (!outstandingRaw && !statusRaw) { setStatus(paymentBulkStatus, "Enter amount and/or status.", "error"); return; }
+    const patch = {};
+    if (outstandingRaw) {
+      const checked = getFieldValueForSave("amtOutstanding", outstandingRaw);
+      if (!checked.ok) { setStatus(paymentBulkStatus, checked.message, "error"); return; }
+      patch.amtOutstanding = checked.value;
+    }
+    if (statusRaw) patch.financialStatus = statusRaw;
+    setStatus(paymentBulkStatus, "Applying…");
+    try {
+      for (const uid of selected) {
+        await setDoc(doc(firestore, "users", uid), patch, { merge: true });
+        const u = getBaseUser(uid);
+        if (u) {
+          if (patch.amtOutstanding !== undefined) u.amtOutstanding = patch.amtOutstanding;
+          if (patch.financialStatus !== undefined) u.financialStatus = patch.financialStatus;
+        }
+        clearRowDirty(uid);
+      }
+      filterAndRender();
+      setStatus(paymentBulkStatus, `Updated ${selected.size} users.`, "success");
+    } catch (error) { setStatus(paymentBulkStatus, "Failed.", "error"); }
+  });
+
+  gbPlayerSearch.addEventListener("input", renderBuilderPlayerList);
+
+  gbPlayerList.addEventListener("click", e => {
+    const item = e.target.closest("[data-player-name]");
+    if (!item || item.getAttribute("data-assigned") === "1") return;
+    const name = item.getAttribute("data-player-name");
+    const idx = groupBuilderSelectedPlayers.indexOf(name);
+    if (idx >= 0) { groupBuilderSelectedPlayers.splice(idx, 1); }
+    else {
+      if (groupBuilderSelectedPlayers.length >= 4) { setStatus(gbStatus, "Max 4 players per group.", "error"); return; }
+      groupBuilderSelectedPlayers.push(name);
+    }
+    renderBuilderSelectedPlayers();
+    renderBuilderPlayerList();
+  });
+
+  gbSelectedPlayers.addEventListener("click", e => {
+    const btn = e.target.closest("[data-remove-selected]");
+    if (!btn) return;
+    const index = Number(btn.getAttribute("data-remove-selected"));
+    if (Number.isInteger(index) && index >= 0) {
+      groupBuilderSelectedPlayers.splice(index, 1);
       renderBuilderSelectedPlayers();
       renderBuilderPlayerList();
-    });
+    }
+  });
 
-    gbSelectedPlayers.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-remove-selected]");
-      if (!btn) return;
-      const index = Number(btn.getAttribute("data-remove-selected"));
-      if (Number.isInteger(index) && index >= 0) {
-        groupBuilderSelectedPlayers.splice(index, 1);
-        renderBuilderSelectedPlayers();
-        renderBuilderPlayerList();
+  gbGroupTableBody.addEventListener("click", e => {
+    const del = e.target.closest("[data-gb-delete]");
+    if (del) {
+      const i = Number(del.getAttribute("data-gb-delete"));
+      if (i >= 0 && i < groupBuilderGroups.length) {
+        groupBuilderGroups.splice(i, 1);
+        renderBuilderGroups(); renderBuilderPlayerList();
+        setStatus(gbStatus, "Group deleted.", "success");
       }
-    });
-
-    gbGroupTableBody.addEventListener("click", (event) => {
-      const delBtn = event.target.closest("[data-gb-delete]");
-      if (delBtn) {
-        const index = Number(delBtn.getAttribute("data-gb-delete"));
-        if (Number.isInteger(index) && index >= 0 && index < groupBuilderGroups.length) {
-          groupBuilderGroups.splice(index, 1);
-          renderBuilderGroups();
-          renderBuilderPlayerList();
-          setStatus(gbStatus, "Group deleted.", "success");
-        }
-        return;
+      return;
+    }
+    const edit = e.target.closest("[data-gb-edit]");
+    if (edit) {
+      const i = Number(edit.getAttribute("data-gb-edit"));
+      if (i >= 0 && i < groupBuilderGroups.length) {
+        const group = groupBuilderGroups[i];
+        groupBuilderSelectedPlayers = [...(group.players || [])];
+        gbHoleInput.value = asString(group.hole);
+        gbTeeTimeInput.value = asString(group.teeTime);
+        groupBuilderGroups.splice(i, 1);
+        renderBuilderSelectedPlayers(); renderBuilderGroups(); renderBuilderPlayerList();
+        setStatus(gbStatus, "Editing group — adjust and click Add group.", "warn");
       }
+      return;
+    }
+    const up = e.target.closest("[data-gb-up]");
+    if (up) { moveGroup(Number(up.getAttribute("data-gb-up")), -1); return; }
+    const down = e.target.closest("[data-gb-down]");
+    if (down) { moveGroup(Number(down.getAttribute("data-gb-down")), 1); }
+  });
 
-      const editBtn = event.target.closest("[data-gb-edit]");
-      if (editBtn) {
-        const index = Number(editBtn.getAttribute("data-gb-edit"));
-        if (Number.isInteger(index) && index >= 0 && index < groupBuilderGroups.length) {
-          const group = groupBuilderGroups[index];
-          groupBuilderSelectedPlayers = [...(group.players || [])];
-          gbHoleInput.value = asString(group.hole);
-          gbTeeTimeInput.value = asString(group.teeTime);
-          groupBuilderGroups.splice(index, 1);
-          renderBuilderSelectedPlayers();
-          renderBuilderGroups();
-          renderBuilderPlayerList();
-          setStatus(gbStatus, "Editing group. Adjust and click Add group.", "warn");
-        }
-        return;
-      }
+  gbAddGroupBtn.addEventListener("click", addBuilderGroup);
+  gbResetBuilderBtn.addEventListener("click", clearBuilderSelection);
+  gbLoadBtn.addEventListener("click", loadGroupSnapshot);
+  gbSaveSnapshotBtn.addEventListener("click", saveNewGroupSnapshot);
+  gbUpdateBtn.addEventListener("click", updateLoadedGroupSnapshot);
 
-      const upBtn = event.target.closest("[data-gb-up]");
-      if (upBtn) {
-        const index = Number(upBtn.getAttribute("data-gb-up"));
-        moveGroup(index, -1);
-        return;
-      }
+  gbDaySelect.addEventListener("change", () => {
+    groupBuilderLoadedDocId = null;
+    groupBuilderGroups = [];
+    clearBuilderSelection();
+    renderBuilderGroups();
+    setStatus(gbStatus, `Switched to ${dayConfig[gbDaySelect.value].label}. Load a snapshot to begin.`, "warn");
+  });
 
-      const downBtn = event.target.closest("[data-gb-down]");
-      if (downBtn) {
-        const index = Number(downBtn.getAttribute("data-gb-down"));
-        moveGroup(index, 1);
-      }
-    });
+  signinBtn.addEventListener("click", async () => {
+    const email = signinEmail.value.trim(), password = signinPassword.value;
+    if (!email || !password) { setStatus(signinStatus, "Enter email and password.", "error"); return; }
+    setStatus(signinStatus, "Signing in…");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      signinPassword.value = "";
+      setStatus(signinStatus, "Signed in.", "success");
+    } catch (error) { setStatus(signinStatus, "Sign-in failed.", "error"); }
+  });
 
-    signinBtn.addEventListener("click", handleSignIn);
-    applyTeeBtn.addEventListener("click", applyBulkTee);
-    applyRoomBtn.addEventListener("click", applyBulkRoom);
-    applyPaymentBtn.addEventListener("click", applyBulkPayment);
-    gbAddGroupBtn.addEventListener("click", addBuilderGroup);
-    gbResetBuilderBtn.addEventListener("click", clearBuilderSelection);
-    gbLoadBtn.addEventListener("click", loadGroupSnapshot);
-    gbSaveSnapshotBtn.addEventListener("click", saveNewGroupSnapshot);
-    gbUpdateBtn.addEventListener("click", updateLoadedGroupSnapshot);
-    gbDaySelect.addEventListener("change", () => {
-      groupBuilderLoadedDocId = null;
-      groupBuilderGroups = [];
-      clearBuilderSelection();
-      renderBuilderGroups();
-      setStatus(gbStatus, `Day switched to ${dayConfig[gbDaySelect.value].label}. Load a snapshot to begin.`, "warn");
-    });
+  document.addEventListener("keydown", async e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveAllBtn.click(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l" && e.shiftKey) { e.preventDefault(); await signOut(auth); }
+  });
 
-    document.addEventListener("keydown", async (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        await saveAllBtn.click();
-      }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "l" && event.shiftKey) {
-        event.preventDefault();
-        await signOut(auth);
-      }
-    });
+  setPersistence(auth, browserLocalPersistence).catch(console.warn);
 
-    setPersistence(auth, browserLocalPersistence).catch((error) => {
-      console.warn("Auth persistence error:", error);
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setStatus(authStatus, "Please sign in with an admin account.", "error");
-        loginLink.classList.remove("hidden");
-        signinCard.classList.remove("hidden");
-        return;
-      }
-
-      loginLink.classList.add("hidden");
-      signinCard.classList.add("hidden");
-
-      const admin = await isAdmin(user);
-      if (!admin) {
-        setStatus(authStatus, "Access denied. Admin privileges required.", "error");
-        setStatus(pageStatus, "This account is not listed under admins in Realtime Database.", "error");
-        tableBody.innerHTML = "";
-        return;
-      }
-
-      setStatus(authStatus, `Signed in as ${user.email || user.uid}`, "success");
-      await loadUsers();
-      await loadGroupSnapshot();
-    });
-  </script>
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      setAuthStatus(authStatus, "Not signed in", "error");
+      loginLink.classList.remove("hidden");
+      eventAdminLink.classList.add("hidden");
+      signinCard.classList.remove("hidden");
+      return;
+    }
+    loginLink.classList.add("hidden");
+    signinCard.classList.add("hidden");
+    const admin = await isAdmin(user);
+    if (!admin) {
+      setAuthStatus(authStatus, "Access denied", "error");
+      setStatus(pageStatus, "This account lacks admin privileges in Realtime Database.", "error");
+      eventAdminLink.classList.add("hidden");
+      tableBody.innerHTML = "";
+      return;
+    }
+    eventAdminLink.classList.remove("hidden");
+    setAuthStatus(authStatus, `${user.email || user.uid}`, "success");
+    await loadUsers();
+    await loadGroupSnapshot();
+  });
+</script>
 </body>
 </html>
