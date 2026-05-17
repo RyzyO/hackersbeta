@@ -2,462 +2,543 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1.0" />
-  <title>Admin Event Portal - Hackers Cup</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="site.webmanifest">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Hackers Cup — Event Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911',
+            s1: '#0c1019',
+            s2: '#111725',
+            s3: '#182030',
+            s4: '#1f2a3e',
+            accent: '#06d6a4',
+            'accent-dim': 'rgba(6,214,164,0.12)',
+            'accent-glow': 'rgba(6,214,164,0.25)',
+            brd: '#1c2640',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --bg-main: #050713;
-      --bg-card: #10121e;
-      --bg-card-soft: #151827;
-      --accent-aqua: #1eeaf0;
-      --accent-secondary: #7dd3fc;
-      --text-main: #ecf8ff;
-      --text-muted: #8a90a4;
-      --border-subtle: #2a2e45;
-      --success: #bbf7d0;
-      --error: #fecaca;
-      --warning: #fde68a;
-      --amber: #f59e0b;
-      --teal-dim: rgba(30, 234, 240, 0.12);
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a4a70; }
+
+    /* Custom toggle switch */
+    .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute; inset: 0; background: #2a3550; border-radius: 22px;
+      transition: background 0.2s; cursor: pointer;
+    }
+    .toggle .slider::before {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      left: 3px; bottom: 3px; background: #6b7a94; border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .slider { background: rgba(6,214,164,0.3); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); background: #06d6a4; }
+
+    /* Edit panel animation */
+    #editPanel.open { transform: translateX(0); }
+    #editOverlay.open { opacity: 1; pointer-events: auto; }
+
+    /* Pulse animation for save button */
+    @keyframes pulse-accent {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(6,214,164,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(6,214,164,0); }
+    }
+    .pulse-save { animation: pulse-accent 2s infinite; }
+
+    /* Skeleton loading */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #182030 25%, #1f2a3e 50%, #182030 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
     }
 
-    * { box-sizing: border-box; }
+    /* Toast animation */
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    .toast-in { animation: slideInRight 0.3s ease-out; }
+    .toast-out { animation: slideOutRight 0.3s ease-in forwards; }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, #15192f 0, transparent 50%),
-        radial-gradient(circle at bottom right, #141a2c 0, transparent 55%),
-        var(--bg-main);
-      color: var(--text-main);
+    /* Mobile card view */
+    @media (max-width: 767px) {
+      .desktop-table { display: none !important; }
+      .mobile-cards { display: flex !important; }
+    }
+    @media (min-width: 768px) {
+      .desktop-table { display: block !important; }
+      .mobile-cards { display: none !important; }
     }
 
-    .page {
-      width: min(1600px, 100%);
-      margin: 0 auto;
-      padding: 20px 16px 32px;
-    }
-
-    .header,
-    .card,
-    .signin-card,
-    .summary-card {
-      background: radial-gradient(circle at top left, #1c2036 0, #10121e 55%);
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      border-radius: 16px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      background: linear-gradient(120deg, #050713, #10121f 40%, #050713 100%);
-      border-color: rgba(30, 234, 240, 0.2);
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .header p {
-      margin: 4px 0 0;
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-
-    .header-actions,
-    .toolbar,
-    .bulk-grid,
-    .summary-grid {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .summary-grid { align-items: stretch; margin-bottom: 14px; }
-
-    .summary-card {
-      flex: 1;
-      min-width: 180px;
-      padding: 14px;
-    }
-
-    .summary-label {
-      color: var(--text-muted);
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .summary-value {
-      font-size: 24px;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-
-    .signin-card,
-    .card {
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-
-    .signin-row,
-    .field-row,
-    .toolbar-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .signin-row input,
-    .toolbar input,
-    .toolbar select,
-    .field-input,
-    .notes-input,
-    .event-select {
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card-soft);
-      color: var(--text-main);
-      font-size: 14px;
-      min-height: 40px;
-    }
-
-    .signin-row input,
-    .toolbar input { min-width: 230px; flex: 1; }
-    .event-select { min-width: 220px; }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      border: none;
-      padding: 10px 16px;
-      background: var(--accent-aqua);
-      color: #050713;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 12px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-    }
-
-    .btn.secondary {
-      background: #232536;
-      color: var(--text-main);
-      border: 1px solid #323552;
-      text-transform: none;
-    }
-
-    .btn.small {
-      padding: 8px 12px;
-      font-size: 11px;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .status {
-      font-size: 12px;
-      color: var(--text-muted);
-      min-height: 16px;
-    }
-
-    .status.success { color: var(--success); }
-    .status.error { color: var(--error); }
-    .status.warn { color: var(--warning); }
-
-    .hidden { display: none !important; }
-
-    .toolbar {
-      margin-bottom: 12px;
-      align-items: stretch;
-    }
-
-    .toolbar .meta {
-      margin-left: auto;
-      color: var(--text-muted);
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid rgba(42, 46, 69, 0.9);
-      border-radius: 12px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      min-width: 1850px;
-      background: rgba(6, 8, 15, 0.55);
-    }
-
-    th,
-    td {
-      text-align: left;
-      padding: 10px 8px;
-      border-bottom: 1px solid #232844;
-      vertical-align: top;
-    }
-
-    th {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: #12162a;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    td.uid-cell,
-    td.name-cell {
-      white-space: nowrap;
-    }
-
-    td.uid-cell {
-      color: var(--text-muted);
-      font-size: 12px;
-      max-width: 180px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .field-input,
-    .notes-input,
-    .event-select,
-    .roommates-select {
-      width: 100%;
-      min-width: 88px;
-    }
-
-    .field-input.short { max-width: 100px; }
-    .field-input.mid { max-width: 130px; }
-    .field-input.long { min-width: 180px; }
-    .notes-input {
-      min-width: 220px;
-      min-height: 72px;
-      resize: vertical;
-    }
-
-    .roommates-select {
-      min-width: 220px;
-      min-height: 84px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card-soft);
-      color: var(--text-main);
-      font-size: 14px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .badge.paid { background: rgba(34, 197, 94, 0.15); color: #bbf7d0; border-color: rgba(34, 197, 94, 0.35); }
-    .badge.partial { background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.35); }
-    .badge.pending { background: rgba(248, 113, 113, 0.12); color: #fecaca; border-color: rgba(248, 113, 113, 0.35); }
-    .badge.unknown { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); }
-
-    .dirty-row {
-      background: rgba(245, 158, 11, 0.08);
-    }
-
-    .legend {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-      color: var(--text-muted);
-      font-size: 12px;
-      margin: 10px 0 12px;
-    }
-
-    .legend span::before {
-      content: "";
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      margin-right: 6px;
-    }
-
-    .legend .clean::before { background: #334155; }
-    .legend .dirty::before { background: var(--amber); }
-
-    .section-title {
-      margin: 0 0 12px;
-      font-size: 16px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .cell-actions {
-      width: 110px;
-      white-space: nowrap;
-    }
-
-    .paid-cell {
-      width: 110px;
-    }
-
-    .help-text {
-      color: var(--text-muted);
-      font-size: 11px;
-      margin-top: 6px;
-      line-height: 1.35;
-    }
-
-    @media (max-width: 920px) {
-      .summary-card { min-width: calc(50% - 5px); }
-      .toolbar .meta { width: 100%; margin-left: 0; }
-    }
+    body { background: #060911; }
   </style>
 </head>
-<body>
-  <div class="page">
-    <div class="header">
-      <div>
-        <h1>Hackers Cup Event Admin</h1>
-        <p>Manage one event year at a time: rooming, partners, event fields, and sponsor notes.</p>
-      </div>
-      <div class="header-actions">
-        <div class="status" id="authStatus">Checking access...</div>
-        <a class="btn secondary hidden" id="backToPortalLink" href="admin-portal.html">Main admin</a>
-        <a class="btn secondary hidden" id="loginLink" href="login.html">Sign in</a>
-      </div>
-    </div>
+<body class="text-slate-200 font-sans min-h-screen antialiased">
 
-    <div class="signin-card hidden" id="signinCard">
-      <div class="signin-row">
-        <input id="signinEmail" type="email" placeholder="Email" autocomplete="email" />
-        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password" />
-        <button class="btn" id="signinBtn" type="button">Sign in</button>
-      </div>
-      <div class="status" id="signinStatus"></div>
-    </div>
+  <!-- ===================== TOAST CONTAINER ===================== -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-    <div class="card">
-      <div class="toolbar">
-        <select class="event-select" id="eventSelect"></select>
-        <button class="btn secondary" id="loadEventBtn" type="button">Load event</button>
-        <button class="btn" id="saveAllBtn" type="button">Save all</button>
-        <button class="btn secondary" id="refreshBtn" type="button">Refresh</button>
-        <div class="meta" id="selectionMeta">0 dirty</div>
-      </div>
-
-      <div class="summary-grid">
-        <div class="summary-card">
-          <div class="summary-label">Coming</div>
-          <div class="summary-value" id="comingCount">0</div>
+  <!-- ===================== SIGN IN OVERLAY ===================== -->
+  <div id="signInOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-s0/90 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-s1 border border-brd rounded-2xl p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-dim mb-4">
+          <i data-lucide="shield-check" class="w-7 h-7 text-accent"></i>
         </div>
-        <div class="summary-card">
-          <div class="summary-label">Skins</div>
-          <div class="summary-value" id="skinsCount">0</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Players loaded</div>
-          <div class="summary-value" id="playersCount">0</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Event</div>
-          <div class="summary-value" id="currentEventLabel">-</div>
-        </div>
+        <h1 class="text-2xl font-bold text-white">Hackers Cup Admin</h1>
+        <p class="text-slate-400 mt-1 text-sm">Sign in with your admin account to continue</p>
       </div>
-
-      <div class="toolbar">
-        <input id="searchInput" type="text" placeholder="Search by name, UID, size, partner, room, note, or status" />
-        <div class="status" id="pageStatus"></div>
+      <div class="space-y-3">
+        <input id="signinEmail" type="email" placeholder="Email address" autocomplete="email"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <button id="signinBtn" class="w-full py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+          Sign in
+        </button>
       </div>
-
-      <div class="legend">
-        <span class="clean">Clean row</span>
-        <span class="dirty">Unsaved edits</span>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Shirt Size</th>
-              <th>Pant Size</th>
-              <th>Roommates</th>
-              <th>Paid Status</th>
-              <th>Ambrose Partner</th>
-              <th>Skins</th>
-              <th>Coming</th>
-              <th>Sponsor Notes</th>
-              <th>Handicap</th>
-              <th>UID</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-      <div class="help-text">
-        Roommates use a multi-select list. Pick up to 2 other players so the room stays at 2-3 people total. Saving a room or ambrose partner updates both sides automatically.
-      </div>
+      <div id="signInStatus" class="mt-3 text-center text-sm min-h-[20px]"></div>
     </div>
   </div>
 
+  <!-- ===================== AUTH STATUS BAR (hidden until signed in) ===================== -->
+  <div id="authBar" class="hidden fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
+    <i data-lucide="user-check" class="w-3.5 h-3.5 text-accent"></i>
+    <span id="authEmail" class="text-slate-300"></span>
+    <button id="signOutBtn" class="ml-1 text-slate-500 hover:text-red-400 transition">
+      <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <!-- ===================== EDIT PANEL OVERLAY ===================== -->
+  <div id="editOverlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <!-- ===================== EDIT PANEL ===================== -->
+  <div id="editPanel" class="fixed top-0 right-0 h-full w-full max-w-lg bg-s1 border-l border-brd z-40 transform translate-x-full transition-transform duration-300 ease-out overflow-y-auto shadow-2xl">
+    <div class="sticky top-0 z-10 bg-s1/95 backdrop-blur-md border-b border-brd px-6 py-4 flex items-center justify-between">
+      <div>
+        <h2 id="editPlayerName" class="text-lg font-bold text-white truncate max-w-[260px]"></h2>
+        <p id="editPlayerUid" class="text-xs text-slate-500 font-mono mt-0.5 truncate max-w-[260px]"></p>
+      </div>
+      <button id="editCloseBtn" class="w-9 h-9 rounded-xl bg-s3 hover:bg-s4 flex items-center justify-center transition">
+        <i data-lucide="x" class="w-4 h-4 text-slate-400"></i>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-6">
+      <!-- Event Participation -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Event Participation</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex items-center justify-between bg-s2 rounded-xl px-4 py-3 border border-brd">
+            <span class="text-sm text-slate-300">Coming</span>
+            <label class="toggle"><input type="checkbox" id="editComing" /><span class="slider"></span></label>
+          </div>
+          <div class="flex items-center justify-between bg-s2 rounded-xl px-4 py-3 border border-brd">
+            <span class="text-sm text-slate-300">Skins</span>
+            <label class="toggle"><input type="checkbox" id="editSkins" /><span class="slider"></span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hacker Number -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Hacker Number</h3>
+        <input id="editHackerNumber" type="text" placeholder="e.g., HC25-001"
+          class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+      </section>
+
+      <!-- Golf Australia Number -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Golf Australia Number</h3>
+        <input id="editGolfAustraliaNumber" type="text" placeholder="e.g., GA123456"
+          class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+      </section>
+
+      <!-- Sizes & Handicap -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Sizes & Handicap</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Shirt Size</label>
+            <select id="editShirtSize" class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+              <option value="">—</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Pant Size</label>
+            <select id="editPantSize" class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+              <option value="">—</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Handicap</label>
+            <input id="editHandicap" type="number" min="0" max="54" step="1" placeholder="—"
+              class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Ambrose Partner -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Ambrose Partner</h3>
+        <select id="editPartner" class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+          <option value="">No partner</option>
+        </select>
+        <div class="mt-2 rounded-xl border border-brd bg-s2/70 px-3 py-2">
+          <div id="editTeamHandicap" class="text-sm font-medium text-slate-200">Team handicap: —</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">Uses only the current player and selected partner.</div>
+        </div>
+      </section>
+
+      <!-- Roommates -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Roommates <span class="text-slate-600 font-normal normal-case">(max 2)</span></h3>
+        <div id="roommateChips" class="flex flex-wrap gap-2 mb-2 min-h-[8px]"></div>
+        <div class="relative">
+          <input id="roommateSearch" type="text" placeholder="Search players to add..."
+            class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" autocomplete="off" />
+          <div id="roommateDropdown" class="absolute top-full left-0 right-0 mt-1 bg-s2 border border-brd rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-10">
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-600 mt-1">Saving a room also updates the other players in the room.</p>
+      </section>
+
+      <!-- Sponsor Notes -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Sponsor Notes</h3>
+        <textarea id="editNotes" rows="3" placeholder="Any sponsor notes..."
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition resize-y"></textarea>
+      </section>
+
+      <!-- Paid Status (read-only) -->
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Payment Status</h3>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Payment Status</label>
+            <input id="editFinancialStatus" type="text" placeholder="Paid, Partial, Pending"
+              class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Amt Outstanding</label>
+            <input id="editAmtOutstanding" type="number" min="0" step="0.01" placeholder="0"
+              class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+          </div>
+        </div>
+        <div id="editPaidBadge" class="inline-flex items-center"></div>
+      </section>
+    </div>
+
+    <!-- Panel Footer -->
+    <div class="sticky bottom-0 bg-s1/95 backdrop-blur-md border-t border-brd px-6 py-4 flex items-center gap-3">
+      <button id="editSaveBtn" class="flex-1 py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+        Save Changes
+      </button>
+      <button id="editCancelBtn" class="px-5 py-3 rounded-xl bg-s3 border border-brd text-slate-300 text-sm hover:bg-s4 transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN LAYOUT ===================== -->
+  <div id="mainLayout" class="min-h-screen flex flex-col opacity-0 transition-opacity duration-500">
+
+    <!-- HEADER -->
+    <header class="border-b border-brd bg-s1/80 backdrop-blur-md sticky top-0 z-30">
+      <div class="max-w-[1680px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
+        <div class="flex items-center gap-2.5 mr-2">
+          <div class="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+            <i data-lucide="trophy" class="w-4 h-4 text-accent"></i>
+          </div>
+          <span class="font-bold text-white text-[15px] tracking-tight hidden sm:inline">Hackers Cup</span>
+        </div>
+
+        <div class="h-6 w-px bg-brd"></div>
+
+        <select id="eventSelect" class="px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer pr-8"></select>
+
+        <div class="flex-1"></div>
+
+        <div id="dirtyIndicator" class="hidden items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-2.5 py-1.5">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+          <span id="dirtyCount">0</span> unsaved
+        </div>
+
+        <button id="saveAllBtn" class="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 active:scale-[0.97] transition">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i> Save All
+        </button>
+
+        <button id="refreshBtn" class="w-9 h-9 rounded-lg bg-s2 border border-brd flex items-center justify-center hover:bg-s3 transition" title="Refresh data">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+      <!-- STATS ROW -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="statsGrid">
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="users" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Players</span>
+          </div>
+          <div class="text-2xl font-bold text-white" id="statPlayers">—</div>
+        </div>
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Coming</span>
+          </div>
+          <div class="text-2xl font-bold text-white" id="statComing">—</div>
+        </div>
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="trophy" class="w-3.5 h-3.5 text-accent"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Skins</span>
+          </div>
+          <div class="text-2xl font-bold text-white" id="statSkins">—</div>
+        </div>
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Paid</span>
+          </div>
+          <div class="text-2xl font-bold text-white" id="statPaid">—</div>
+        </div>
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Pending</span>
+          </div>
+          <div class="text-2xl font-bold text-white" id="statPending">—</div>
+        </div>
+        <div class="bg-s1 border border-brd rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span class="text-[11px] uppercase tracking-widest text-slate-500 font-medium">Event</span>
+          </div>
+          <div class="text-lg font-bold text-white truncate" id="statEvent">—</div>
+        </div>
+      </div>
+
+      <!-- SEARCH + FILTERS -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[200px] max-w-md">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
+          <input id="searchInput" type="text" placeholder="Search name, UID, partner, room..."
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+        </div>
+
+        <div class="flex flex-wrap gap-1.5" id="filterBar">
+          <button class="filter-pill active" data-filter="all">All</button>
+          <button class="filter-pill" data-filter="coming">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Coming
+          </button>
+          <button class="filter-pill" data-filter="notcoming">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block"></span> Not Coming
+          </button>
+          <button class="filter-pill" data-filter="paid">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Paid
+          </button>
+          <button class="filter-pill" data-filter="partial">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> Partial
+          </button>
+          <button class="filter-pill" data-filter="pending">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span> Pending
+          </button>
+          <button class="filter-pill" data-filter="dirty">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> Unsaved
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLE (Desktop) -->
+      <div class="desktop-table bg-s1 border border-brd rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-brd bg-s2/50">
+                <th class="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Name</th>
+                <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Coming</th>
+                <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Paid</th>
+                <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Skins</th>
+                <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">HC</th>
+                <th class="text-left px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Room</th>
+                <th class="text-left px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Partner</th>
+                <th class="text-right px-4 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div id="tableEmpty" class="hidden py-16 text-center text-slate-500 text-sm">
+          <i data-lucide="search-x" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+          <p>No players match your filter.</p>
+        </div>
+        <div id="tableLoading" class="py-8 text-center text-slate-500 text-sm">
+          <div class="inline-flex items-center gap-2">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Loading players...
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGINATION -->
+      <div id="paginationContainer" class="bg-s1 border border-brd rounded-xl p-4 mt-4 flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <label for="recordsPerPage" class="text-xs font-medium text-slate-400">Show:</label>
+          <select id="recordsPerPage" class="bg-s2 border border-brd rounded px-3 py-1.5 text-xs text-slate-300 hover:bg-s3 transition">
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span class="text-xs text-slate-500">per page</span>
+        </div>
+        <div id="paginationInfo" class="text-xs text-slate-400"></div>
+        <div class="flex items-center gap-2">
+          <button id="prevPage" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition disabled:opacity-50 disabled:cursor-not-allowed">← Previous</button>
+          <button id="nextPage" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition disabled:opacity-50 disabled:cursor-not-allowed">Next →</button>
+        </div>
+      </div>
+
+      <!-- CARDS (Mobile) -->
+      <div id="mobileCards" class="mobile-cards flex-col gap-3 hidden"></div>
+
+      <!-- HELPER TEXT -->
+      <p class="text-[11px] text-slate-600 leading-relaxed">
+        Click any row to edit player details. Roommate and partner changes update both sides automatically. <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">Esc</kbd> to close panel, <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">/</kbd> to search.
+      </p>
+
+      <!-- GROUP MAKER -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Group Maker</h3>
+            <p class="text-xs text-slate-600 mt-1">Build tee groups for the active event and save them to the event document.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="gbLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load groups</button>
+            <button id="gbSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save groups</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4">
+          <div class="bg-s2 border border-brd rounded-xl p-4 space-y-4">
+            <div>
+              <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Selected Players</div>
+              <div id="gbSelectedPlayers" class="flex flex-wrap gap-2 min-h-[32px]"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-500 mb-1 block">Hole</label>
+                <input id="gbHoleInput" type="number" min="1" max="18" step="1" placeholder="1" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+              </div>
+              <div>
+                <label class="text-xs text-slate-500 mb-1 block">Tee Time</label>
+                <input id="gbTeeTimeInput" type="text" placeholder="8:30 AM" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+              </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button id="gbAddGroupBtn" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Add group</button>
+              <button id="gbResetBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Reset</button>
+            </div>
+            <div class="border-t border-brd pt-4">
+              <div class="relative">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
+                <input id="gbPlayerSearch" type="text" placeholder="Search players to add..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+              </div>
+              <div id="gbPlayerList" class="mt-3 border border-brd rounded-xl max-h-72 overflow-y-auto bg-s1"></div>
+            </div>
+          </div>
+
+          <div class="bg-s2 border border-brd rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Current Groups</div>
+                <div class="text-xs text-slate-600 mt-1">Edit, delete, and reorder the groups for this event.</div>
+              </div>
+              <div id="gbStatus" class="text-xs text-slate-500 min-h-[18px]"></div>
+            </div>
+            <div class="overflow-x-auto border border-brd rounded-xl">
+              <table class="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr class="bg-s1/80 border-b border-brd">
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Hole</th>
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Tee Time</th>
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Players</th>
+                    <th class="px-3 py-2 text-right text-[10px] uppercase tracking-widest text-slate-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="gbGroupTableBody" class="divide-y divide-brd bg-s1"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AMBROSE PAIRINGS PDF -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Ambrose Pairings</h3>
+            <p class="text-xs text-slate-600 mt-1">Download all ambrose pairings with team handicaps as PDF.</p>
+          </div>
+          <button id="downloadAmbroseBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+            <i data-lucide="download" style="width: 16px; height: 16px; display: inline; margin-right: 6px;"></i>
+            Download PDF
+          </button>
+        </div>
+        <div id="ambrosePreview" class="text-sm text-slate-400 p-4 bg-s2 rounded-lg border border-brd">
+          No ambrose pairings created yet. Edit players and set their Ambrose Partner to create pairings.
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================== JAVASCRIPT ===================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getAuth,
-      onAuthStateChanged,
-      setPersistence,
-      browserLocalPersistence,
-      signInWithEmailAndPassword
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+      signInWithEmailAndPassword, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      doc,
-      setDoc,
-      getDoc,
-      serverTimestamp
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // === FIREBASE CONFIG ===
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
       authDomain: "hackers-cup.firebaseapp.com",
@@ -469,103 +550,210 @@
       measurementId: "G-6E1M14F510"
     };
 
+    // === CONSTANTS ===
     const EVENT_OPTIONS = [
-      { id: "HC25", year: 2025 },
-      { id: "HC24", year: 2024 },
-      { id: "HC23", year: 2023 },
-      { id: "HC22", year: 2022 },
-      { id: "HC21", year: 2021 },
-      { id: "HC20", year: 2019 },
-      { id: "HC19", year: 2018 },
-      { id: "HC18", year: 2017 },
-      { id: "HC17", year: 2016 },
-      { id: "HC16", year: 2015 },
-      { id: "HC15", year: 2014 },
-      { id: "HC14", year: 2013 },
-      { id: "HC13", year: 2012 },
-      { id: "HC12", year: 2011 },
-      { id: "HC11", year: 2010 },
-      { id: "HC10", year: 2009 },
-      { id: "HC9", year: 2008 },
-      { id: "HC8", year: 2007 },
+      { id: "HC26", year: 2026 }, { id: "HC25", year: 2025 }, { id: "HC24", year: 2024 }, { id: "HC23", year: 2023 },
+      { id: "HC22", year: 2022 }, { id: "HC21", year: 2021 }, { id: "HC20", year: 2019 },
+      { id: "HC19", year: 2018 }, { id: "HC18", year: 2017 }, { id: "HC17", year: 2016 },
+      { id: "HC16", year: 2015 }, { id: "HC15", year: 2014 }, { id: "HC14", year: 2013 },
+      { id: "HC13", year: 2012 }, { id: "HC12", year: 2011 }, { id: "HC11", year: 2010 },
+      { id: "HC10", year: 2009 }, { id: "HC9", year: 2008 }, { id: "HC8", year: 2007 },
       { id: "HC7", year: 2006 }
     ];
 
     const SHIRT_SIZES = ["", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "Custom"];
     const PANT_SIZES = ["", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48", "50", "Custom"];
 
+    // === FIREBASE INIT ===
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
     const firestore = getFirestore(app);
 
-    const authStatus = document.getElementById("authStatus");
-    const signinCard = document.getElementById("signinCard");
-    const signinEmail = document.getElementById("signinEmail");
-    const signinPassword = document.getElementById("signinPassword");
-    const signinBtn = document.getElementById("signinBtn");
-    const signinStatus = document.getElementById("signinStatus");
-    const loginLink = document.getElementById("loginLink");
-    const backToPortalLink = document.getElementById("backToPortalLink");
-
-    const eventSelect = document.getElementById("eventSelect");
-    const loadEventBtn = document.getElementById("loadEventBtn");
-    const saveAllBtn = document.getElementById("saveAllBtn");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const searchInput = document.getElementById("searchInput");
-    const tableBody = document.getElementById("tableBody");
-    const pageStatus = document.getElementById("pageStatus");
-    const selectionMeta = document.getElementById("selectionMeta");
-    const currentEventLabel = document.getElementById("currentEventLabel");
-    const comingCount = document.getElementById("comingCount");
-    const skinsCount = document.getElementById("skinsCount");
-    const playersCount = document.getElementById("playersCount");
-
-    let currentEventId = eventSelect.value || EVENT_OPTIONS[0].id;
+    // === APP STATE ===
+    let currentEventId = EVENT_OPTIONS[0].id;
     let users = [];
     let filteredUsers = [];
-    let paymentUsers = new Map();
     let eventPlayers = new Map();
     let dirty = new Set();
     let adminLoaded = false;
+    let currentEditUid = null;
+    let editPanelExistingRoommates = [];
+    let activeFilter = "all";
+    let groupBuilderGroups = [];
+    let groupBuilderSelectedPlayers = [];
+    let currentPage = 1;
+    let recordsPerPage = 15;
 
-    function setStatus(el, message, type = "") {
-      el.textContent = message || "";
-      el.classList.remove("success", "error", "warn");
-      if (type) {
-        el.classList.add(type);
-      }
+    // === DOM REFS ===
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    const signInOverlay = $("#signInOverlay");
+    const signinEmailInput = $("#signinEmail");
+    const signinPasswordInput = $("#signinPassword");
+    const signinBtn = $("#signinBtn");
+    const signInStatus = $("#signInStatus");
+    const authBar = $("#authBar");
+    const authEmailSpan = $("#authEmail");
+    const signOutBtn = $("#signOutBtn");
+    const mainLayout = $("#mainLayout");
+
+    const eventSelect = $("#eventSelect");
+    const saveAllBtn = $("#saveAllBtn");
+    const refreshBtn = $("#refreshBtn");
+    const searchInput = $("#searchInput");
+    const tableBody = $("#tableBody");
+    const mobileCards = $("#mobileCards");
+    const tableEmpty = $("#tableEmpty");
+    const tableLoading = $("#tableLoading");
+    const filterBar = $("#filterBar");
+
+    const editPanel = $("#editPanel");
+    const editOverlay = $("#editOverlay");
+    const editCloseBtn = $("#editCloseBtn");
+    const editCancelBtn = $("#editCancelBtn");
+    const editSaveBtn = $("#editSaveBtn");
+    const editPlayerName = $("#editPlayerName");
+    const editPlayerUid = $("#editPlayerUid");
+    const editComing = $("#editComing");
+    const editSkins = $("#editSkins");
+    const editShirtSize = $("#editShirtSize");
+    const editPantSize = $("#editPantSize");
+    const editHandicap = $("#editHandicap");
+    const editHackerNumber = $("#editHackerNumber");
+    const editGolfAustraliaNumber = $("#editGolfAustraliaNumber");
+    const editPartner = $("#editPartner");
+    const editTeamHandicap = $("#editTeamHandicap");
+    const editFinancialStatus = $("#editFinancialStatus");
+    const editAmtOutstanding = $("#editAmtOutstanding");
+    const editNotes = $("#editNotes");
+    const editPaidBadge = $("#editPaidBadge");
+    const roommateChips = $("#roommateChips");
+    const roommateSearch = $("#roommateSearch");
+    const roommateDropdown = $("#roommateDropdown");
+    const gbLoadBtn = $("#gbLoadBtn");
+    const gbSaveBtn = $("#gbSaveBtn");
+    const gbSelectedPlayers = $("#gbSelectedPlayers");
+    const gbHoleInput = $("#gbHoleInput");
+    const gbTeeTimeInput = $("#gbTeeTimeInput");
+    const gbAddGroupBtn = $("#gbAddGroupBtn");
+    const gbResetBtn = $("#gbResetBtn");
+    const gbPlayerSearch = $("#gbPlayerSearch");
+    const gbPlayerList = $("#gbPlayerList");
+    const gbGroupTableBody = $("#gbGroupTableBody");
+    const gbStatus = $("#gbStatus");
+
+    const dirtyIndicator = $("#dirtyIndicator");
+    const dirtyCountSpan = $("#dirtyCount");
+
+    const paginationContainer = $("#paginationContainer");
+    const recordsPerPageSelect = $("#recordsPerPage");
+    const paginationInfo = $("#paginationInfo");
+    const prevPageBtn = $("#prevPage");
+    const nextPageBtn = $("#nextPage");
+
+    const downloadAmbroseBtn = $("#downloadAmbroseBtn");
+    const ambrosePreview = $("#ambrosePreview");
+
+    // === TOAST SYSTEM ===
+    function showToast(message, type = "info") {
+      const container = $("#toastContainer");
+      const colors = {
+        success: "bg-emerald-500/15 border-emerald-500/30 text-emerald-300",
+        error: "bg-red-500/15 border-red-500/30 text-red-300",
+        warn: "bg-amber-500/15 border-amber-500/30 text-amber-300",
+        info: "bg-s2 border-brd text-slate-300"
+      };
+      const icons = {
+        success: "check-circle-2",
+        error: "alert-circle",
+        warn: "alert-triangle",
+        info: "info"
+      };
+      const toast = document.createElement("div");
+      toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border text-sm shadow-xl backdrop-blur-md toast-in ${colors[type] || colors.info}`;
+      toast.innerHTML = `<i data-lucide="${icons[type] || icons.info}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons({ nodes: [toast] });
+      setTimeout(() => {
+        toast.classList.remove("toast-in");
+        toast.classList.add("toast-out");
+        toast.addEventListener("animationend", () => toast.remove());
+      }, 3500);
     }
 
-    function normalize(value) {
-      return String(value || "").toLowerCase();
-    }
-
+    // === UTILITIES ===
+    function normalize(value) { return String(value || "").toLowerCase(); }
     function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+      return String(value || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
     }
-
-    function asString(value) {
-      return value === null || value === undefined ? "" : String(value);
-    }
-
-    function uniqueSorted(values) {
-      return Array.from(new Set((values || []).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-    }
-
+    function asString(value) { return value === null || value === undefined ? "" : String(value); }
+    function uniqueSorted(values) { return Array.from(new Set((values || []).filter(Boolean))).sort((a, b) => a.localeCompare(b)); }
     function userLabel(user) {
       const name = user.displayName || "(no name)";
       const hacker = user.hackerNumber ? ` #${user.hackerNumber}` : "";
       return `${name}${hacker}`;
     }
+    function currentEventConfig() { return EVENT_OPTIONS.find(e => e.id === currentEventId) || EVENT_OPTIONS[0]; }
 
-    function currentEventConfig() {
-      return EVENT_OPTIONS.find((event) => event.id === currentEventId) || EVENT_OPTIONS[0];
+    const EVENT_PLAYERS_CACHE_PREFIX = "hackerscup.admin-event.eventPlayers.v1";
+
+    function eventPlayersCacheKey(eventId) {
+      return `${EVENT_PLAYERS_CACHE_PREFIX}.${eventId}`;
+    }
+
+    function safeParseJson(value) {
+      try { return JSON.parse(value); } catch (err) { return null; }
+    }
+
+    function normalizeEventRecord(uid, data = {}, fallbackUser = null) {
+      return {
+        shirtSize: asString(data.shirtSize),
+        pantSize: asString(data.pantSize),
+        roommates: Array.isArray(data.roommates) ? uniqueSorted(data.roommates.filter(roommateUid => roommateUid && roommateUid !== uid)) : [],
+        ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        skins: !!data.skins,
+        coming: !!data.coming,
+        sponsorNotes: asString(data.sponsorNotes),
+        handicap: data.handicap !== undefined && data.handicap !== null
+          ? Number(data.handicap)
+          : (fallbackUser && fallbackUser.handicap !== undefined && fallbackUser.handicap !== null ? Number(fallbackUser.handicap) : "")
+      };
+    }
+
+    function readEventPlayersCache(eventId) {
+      try {
+        const raw = localStorage.getItem(eventPlayersCacheKey(eventId));
+        const parsed = raw ? safeParseJson(raw) : null;
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function persistEventPlayersCache(eventId) {
+      try {
+        const snapshot = {};
+        eventPlayers.forEach((record, uid) => {
+          snapshot[uid] = normalizeEventRecord(uid, record, users.find(u => u.uid === uid));
+        });
+        localStorage.setItem(eventPlayersCacheKey(eventId), JSON.stringify(snapshot));
+      } catch (err) {
+        console.warn("Event cache write failed:", err);
+      }
+    }
+
+    function mergeEventPlayersCache(eventId) {
+      const cached = readEventPlayersCache(eventId);
+      Object.entries(cached).forEach(([uid, cachedRecord]) => {
+        if (!eventPlayers.has(uid)) return;
+        const current = getEventRecord(uid);
+        eventPlayers.set(uid, {
+          ...current,
+          ...normalizeEventRecord(uid, cachedRecord, users.find(u => u.uid === uid))
+        });
+      });
     }
 
     function paidStatusFor(user) {
@@ -578,175 +766,451 @@
       return { label: "No data", cls: "unknown" };
     }
 
-    function getEventRecord(uid) {
-      return eventPlayers.get(uid) || {
-        shirtSize: "",
-        pantSize: "",
-        roommates: [],
-        ambrosePartnerUid: "",
-        skins: false,
-        coming: false,
-        sponsorNotes: "",
-        handicap: ""
+    function renderPaidBadgeHtml(paid) {
+      const paidStyles = {
+        paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+        partial: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+        pending: "bg-red-500/15 text-red-300 border-red-500/25",
+        unknown: "bg-slate-500/15 text-slate-400 border-slate-500/25"
       };
+      return `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${paidStyles[paid.cls] || paidStyles.unknown}">${escapeHtml(paid.label)}</span>`;
     }
 
+    function updatePaidBadgePreview() {
+      if (!editPaidBadge || !currentEditUid) return;
+      const user = users.find(u => u.uid === currentEditUid);
+      if (!user) return;
+      const previewUser = {
+        ...user,
+        financialStatus: asString(editFinancialStatus.value).trim(),
+        amtOutstanding: asString(editAmtOutstanding.value).trim() === "" ? "" : Number(editAmtOutstanding.value)
+      };
+      editPaidBadge.innerHTML = renderPaidBadgeHtml(paidStatusFor(previewUser));
+    }
+
+    function getEventRecord(uid) {
+      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, sponsorNotes: "", handicap: "" };
+    }
+
+    function roomGroupMembers(uid, record) { return uniqueSorted([uid, ...(record.roommates || [])]); }
+
+    function numericHandicapFor(uid, record) {
+      const currentUser = users.find(u => u.uid === uid);
+      const rawValue = record.handicap !== "" && record.handicap !== null && record.handicap !== undefined
+        ? Number(record.handicap)
+        : Number(currentUser && currentUser.handicap !== undefined && currentUser.handicap !== null ? currentUser.handicap : "");
+      return Number.isFinite(rawValue) ? rawValue : null;
+    }
+
+    function formatTeamHandicap(value) {
+      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+    }
+
+    function updateAmbroseTeamHandicap() {
+      if (!editTeamHandicap || !currentEditUid) return;
+
+      const record = getEventRecord(currentEditUid);
+      const partnerUid = asString(editPartner.value || record.ambrosePartnerUid).trim();
+
+      if (!partnerUid) {
+        editTeamHandicap.textContent = "Team handicap: —";
+        return;
+      }
+
+      const currentHandicap = numericHandicapFor(currentEditUid, record);
+      const partnerHandicap = numericHandicapFor(partnerUid, getEventRecord(partnerUid));
+
+      if (currentHandicap === null || partnerHandicap === null) {
+        editTeamHandicap.textContent = "Team handicap: —";
+        return;
+      }
+
+      editTeamHandicap.textContent = `Team handicap: ${formatTeamHandicap((currentHandicap + partnerHandicap) / 4)}`;
+    }
+
+    function getBuilderPlayerLabel(uid) {
+      const user = users.find(player => player.uid === uid);
+      return user ? userLabel(user) : uid.slice(0, 8);
+    }
+
+    function builderGroupKey(group) {
+      return Number(group.hole) || 0;
+    }
+
+    function builderAssignedPlayers() {
+      return new Set(groupBuilderGroups.flatMap(group => group.players || []));
+    }
+
+    function setBuilderStatus(message = "", type = "") {
+      if (!gbStatus) return;
+      gbStatus.textContent = message;
+      gbStatus.className = "text-xs min-h-[18px] " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-500");
+    }
+
+    function clearBuilderSelection() {
+      groupBuilderSelectedPlayers = [];
+      gbHoleInput.value = "";
+      gbTeeTimeInput.value = "";
+      renderBuilderSelectedPlayers();
+      renderBuilderPlayerList();
+    }
+
+    function renderBuilderSelectedPlayers() {
+      if (!gbSelectedPlayers) return;
+      if (groupBuilderSelectedPlayers.length === 0) {
+        gbSelectedPlayers.innerHTML = '<span class="text-xs text-slate-600">Select up to 4 players below.</span>';
+        return;
+      }
+      gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((uid, index) => `
+        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-accent/15 border border-accent/20 text-accent text-xs font-medium">
+          ${escapeHtml(getBuilderPlayerLabel(uid))}
+          <button type="button" class="w-4 h-4 rounded-full bg-slate-700/60 hover:bg-slate-600/80 flex items-center justify-center text-[10px] text-white" data-remove-selected="${index}">×</button>
+        </span>
+      `).join("");
+    }
+
+    function renderBuilderPlayerList() {
+      if (!gbPlayerList) return;
+      const q = normalize(gbPlayerSearch.value);
+      const assigned = builderAssignedPlayers();
+      const available = users.filter(user => normalize(userLabel(user)).includes(q) || normalize(user.uid).includes(q));
+
+      if (available.length === 0) {
+        gbPlayerList.innerHTML = '<div class="p-4 text-sm text-slate-600">No players match.</div>';
+        return;
+      }
+
+      gbPlayerList.innerHTML = available.map(user => {
+        const isSelected = groupBuilderSelectedPlayers.includes(user.uid);
+        const isAssigned = assigned.has(user.uid) && !isSelected;
+        const label = isAssigned ? "Assigned" : isSelected ? "Selected" : "Add";
+        return `
+          <button type="button" class="w-full flex items-center justify-between px-4 py-3 text-left border-b border-brd last:border-b-0 transition ${isSelected ? "bg-accent/10" : isAssigned ? "opacity-50 cursor-not-allowed" : "hover:bg-s2"}" data-builder-player="${escapeHtml(user.uid)}" data-assigned="${isAssigned ? "1" : "0"}">
+            <span>
+              <span class="block text-sm text-white font-medium">${escapeHtml(userLabel(user))}</span>
+              <span class="block text-[11px] text-slate-600 font-mono">${escapeHtml(user.uid.slice(0, 12))}</span>
+            </span>
+            <span class="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border ${isAssigned ? "border-slate-600 text-slate-500" : isSelected ? "border-accent/30 text-accent" : "border-brd text-slate-400"}">${label}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderBuilderGroups() {
+      if (!gbGroupTableBody) return;
+      if (groupBuilderGroups.length === 0) {
+        gbGroupTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-sm text-slate-600">No groups yet.</td></tr>';
+        return;
+      }
+
+      gbGroupTableBody.innerHTML = groupBuilderGroups.map((group, index) => {
+        const players = Array.isArray(group.players) ? group.players : [];
+        const playerNames = players.map(getBuilderPlayerLabel).join(", ");
+        return `
+          <tr>
+            <td class="px-3 py-3 text-sm font-semibold text-white">${escapeHtml(asString(group.hole))}</td>
+            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(asString(group.teeTime) || "—")}</td>
+            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(playerNames || "—")}</td>
+            <td class="px-3 py-3 text-right">
+              <div class="inline-flex items-center gap-1">
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-edit="${index}">Edit</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-up="${index}">↑</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-down="${index}">↓</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-300 hover:bg-red-500/20 transition" data-gb-delete="${index}">Del</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function sortBuilderGroups() {
+      groupBuilderGroups.sort((a, b) => Number(a.hole) - Number(b.hole));
+    }
+
+    function addBuilderGroup() {
+      const hole = Number(gbHoleInput.value);
+      const teeTime = gbTeeTimeInput.value.trim();
+      const players = [...groupBuilderSelectedPlayers];
+      if (!Number.isFinite(hole) || hole < 1 || hole > 18) { setBuilderStatus("Hole must be 1–18.", "error"); return; }
+      if (players.length === 0) { setBuilderStatus("Select at least one player.", "error"); return; }
+      if (players.length > 4) { setBuilderStatus("Max 4 players per group.", "error"); return; }
+      groupBuilderGroups.push({ hole, teeTime, players });
+      sortBuilderGroups();
+      renderBuilderGroups();
+      clearBuilderSelection();
+      setBuilderStatus("Group added.", "success");
+    }
+
+    async function loadEventGroups() {
+      const eventDocSnap = await getDoc(doc(firestore, "eventYears", currentEventId));
+      const data = eventDocSnap.exists() ? eventDocSnap.data() || {} : {};
+      groupBuilderGroups = Array.isArray(data.groups) ? data.groups : [];
+      sortBuilderGroups();
+      renderBuilderGroups();
+      setBuilderStatus(groupBuilderGroups.length ? `Loaded ${groupBuilderGroups.length} groups.` : "No groups saved yet.", groupBuilderGroups.length ? "success" : "warn");
+    }
+
+    async function saveEventGroups() {
+      if (groupBuilderGroups.length === 0) { setBuilderStatus("No groups to save.", "error"); return; }
+      setBuilderStatus("Saving groups…");
+      await setDoc(doc(firestore, "eventYears", currentEventId), {
+        eventId: currentEventId,
+        groups: groupBuilderGroups,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setBuilderStatus("Groups saved.", "success");
+    }
+
+    // === DIRTY TRACKING ===
     function markDirty(uid) {
       dirty.add(uid);
-      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
-      if (row) {
-        row.classList.add("dirty-row");
-      }
-      updateDirtyMeta();
+      updateDirtyUI();
     }
 
     function clearDirty(uid) {
       dirty.delete(uid);
-      const row = tableBody.querySelector(`tr[data-uid="${uid}"]`);
-      if (row) {
-        row.classList.remove("dirty-row");
+      updateDirtyUI();
+    }
+
+    function updateDirtyUI() {
+      const count = dirty.size;
+      dirtyCountSpan.textContent = count;
+      if (count > 0) {
+        dirtyIndicator.classList.remove("hidden");
+        dirtyIndicator.classList.add("flex");
+        saveAllBtn.classList.add("pulse-save");
+      } else {
+        dirtyIndicator.classList.add("hidden");
+        dirtyIndicator.classList.remove("flex");
+        saveAllBtn.classList.remove("pulse-save");
       }
-      updateDirtyMeta();
     }
 
-    function updateDirtyMeta() {
-      selectionMeta.textContent = `${dirty.size} dirty`;
-    }
-
-    function roomGroupMembers(uid, record) {
-      return uniqueSorted([uid, ...(record.roommates || [])]);
-    }
-
-    function collectRoomAffected(currentUid, previousRecord, nextRoommates) {
-      const previousGroup = roomGroupMembers(currentUid, previousRecord || {});
-      const nextGroup = uniqueSorted([currentUid, ...(nextRoommates || [])]);
-      return uniqueSorted([...previousGroup, ...nextGroup]);
-    }
-
+    // === EVENT SELECT ===
     function renderEventSelect() {
-      eventSelect.innerHTML = EVENT_OPTIONS.map((event) => {
-        const selected = event.id === currentEventId ? "selected" : "";
-        return `<option value="${event.id}" ${selected}>${event.year} · ${event.id}</option>`;
-      }).join("");
+      eventSelect.innerHTML = EVENT_OPTIONS.map(e =>
+        `<option value="${e.id}" ${e.id === currentEventId ? "selected" : ""}>${e.year} — ${e.id}</option>`
+      ).join("");
     }
 
-    function renderPartnerOptions(currentUid, selectedValue = "") {
-      const sorted = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
-      return [`<option value="">-</option>`].concat(sorted.map((user) => {
-        if (user.uid === currentUid) return "";
-        const selected = user.uid === selectedValue ? "selected" : "";
-        return `<option value="${escapeHtml(user.uid)}" ${selected}>${escapeHtml(userLabel(user))}</option>`;
-      }).filter(Boolean)).join("");
+    // === SIZE SELECT OPTIONS ===
+    function populateEditSelects() {
+      editShirtSize.innerHTML = SHIRT_SIZES.map(s => `<option value="${s}">${s || "—"}</option>`).join("");
+      editPantSize.innerHTML = PANT_SIZES.map(s => `<option value="${s}">${s || "—"}</option>`).join("");
     }
 
-    function renderRoommatesOptions(currentUid, selectedUids = []) {
-      const sorted = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
-      return sorted.map((user) => {
-        if (user.uid === currentUid) return "";
-        const selected = selectedUids.includes(user.uid) ? "selected" : "";
-        return `<option value="${escapeHtml(user.uid)}" ${selected}>${escapeHtml(userLabel(user))}</option>`;
-      }).join("");
+    // === RENDER TABLE ===
+    function badgeHtml(paid) {
+      const styles = {
+        paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+        partial: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+        pending: "bg-red-500/15 text-red-300 border-red-500/25",
+        unknown: "bg-slate-500/15 text-slate-400 border-slate-500/25"
+      };
+      return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${styles[paid.cls] || styles.unknown}">${escapeHtml(paid.label)}</span>`;
     }
 
-    function renderRows(list) {
+    function boolDotHtml(val) {
+      if (val) return '<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-400"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>';
+      return '<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-s3 text-slate-600"><i data-lucide="minus" class="w-3.5 h-3.5"></i></span>';
+    }
+
+    function renderTable(list) {
+      if (!list) list = filteredUsers;
       tableBody.innerHTML = "";
-      list.forEach((user) => {
+      tableLoading.classList.add("hidden");
+
+      if (list.length === 0) {
+        tableEmpty.classList.remove("hidden");
+        mobileCards.innerHTML = "";
+        paginationContainer.classList.add("hidden");
+        return;
+      }
+      tableEmpty.classList.add("hidden");
+      paginationContainer.classList.remove("hidden");
+
+      // Calculate pagination
+      const totalPages = Math.ceil(list.length / recordsPerPage);
+      if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+      const startIdx = (currentPage - 1) * recordsPerPage;
+      const endIdx = startIdx + recordsPerPage;
+      const pageUsers = list.slice(startIdx, endIdx);
+
+      // Render paginated users
+      pageUsers.forEach(user => {
         const record = getEventRecord(user.uid);
         const paid = paidStatusFor(user);
-        const row = document.createElement("tr");
-        row.dataset.uid = user.uid;
-        if (dirty.has(user.uid)) {
-          row.classList.add("dirty-row");
-        }
+        const isDirty = dirty.has(user.uid);
+        const roomNames = (record.roommates || []).map(uid => {
+          const r = users.find(u => u.uid === uid);
+          return r ? (r.displayName || "Unknown") : uid.slice(0, 6);
+        }).join(", ");
+        const partner = users.find(u => u.uid === record.ambrosePartnerUid);
+        const partnerName = partner ? (partner.displayName || "Unknown") : null;
 
-        row.innerHTML = `
-          <td class="name-cell">${escapeHtml(user.displayName || "(no name)")}</td>
-          <td><input class="field-input short" type="text" data-field="shirtSize" data-uid="${user.uid}" value="${escapeHtml(asString(record.shirtSize))}" placeholder="L" /></td>
-          <td><input class="field-input short" type="text" data-field="pantSize" data-uid="${user.uid}" value="${escapeHtml(asString(record.pantSize))}" placeholder="36" /></td>
-          <td>
-            <select class="roommates-select" multiple size="4" data-field="roommates" data-uid="${user.uid}">
-              ${renderRoommatesOptions(user.uid, record.roommates || [])}
-            </select>
-            <div class="help-text">Pick up to 2 roommates.</div>
+        // Desktop row
+        const tr = document.createElement("tr");
+        tr.dataset.uid = user.uid;
+        tr.className = `border-b border-brd/50 hover:bg-s2/60 cursor-pointer transition-colors${isDirty ? " bg-amber-500/[0.06]" : ""}`;
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-medium text-white text-sm leading-tight">${escapeHtml(user.displayName || "(no name)")}</div>
+            <div class="text-[11px] text-slate-600 font-mono mt-0.5">${escapeHtml(user.uid.slice(0, 12))}${user.hackerNumber ? ` · #${escapeHtml(user.hackerNumber)}` : ""}</div>
           </td>
-          <td class="paid-cell"><span class="badge ${paid.cls}">${escapeHtml(paid.label)}</span></td>
-          <td>
-            <select class="field-input long" data-field="ambrosePartnerUid" data-uid="${user.uid}">
-              ${renderPartnerOptions(user.uid, record.ambrosePartnerUid || "")}
-            </select>
+          <td class="text-center px-3 py-3">${boolDotHtml(record.coming)}</td>
+          <td class="text-center px-3 py-3">${badgeHtml(paid)}</td>
+          <td class="text-center px-3 py-3">${boolDotHtml(record.skins)}</td>
+          <td class="text-center px-3 py-3">
+            <span class="font-mono text-slate-300 text-sm">${record.handicap !== "" ? escapeHtml(asString(record.handicap)) : "—"}</span>
           </td>
-          <td>
-            <select class="field-input short" data-field="skins" data-uid="${user.uid}">
-              <option value="No" ${record.skins ? "" : "selected"}>No</option>
-              <option value="Yes" ${record.skins ? "selected" : ""}>Yes</option>
-            </select>
+          <td class="px-3 py-3">
+            <span class="text-sm text-slate-300">${roomNames ? escapeHtml(roomNames) : '<span class="text-slate-600">—</span>'}</span>
           </td>
-          <td>
-            <select class="field-input short" data-field="coming" data-uid="${user.uid}">
-              <option value="No" ${record.coming ? "" : "selected"}>No</option>
-              <option value="Yes" ${record.coming ? "selected" : ""}>Yes</option>
-            </select>
+          <td class="px-3 py-3">
+            <span class="text-sm text-slate-300">${partnerName ? escapeHtml(partnerName) : '<span class="text-slate-600">—</span>'}</span>
           </td>
-          <td><textarea class="notes-input" data-field="sponsorNotes" data-uid="${user.uid}" placeholder="Sponsor notes">${escapeHtml(asString(record.sponsorNotes))}</textarea></td>
-          <td><input class="field-input short" type="number" min="0" max="54" step="1" data-field="handicap" data-uid="${user.uid}" value="${escapeHtml(asString(record.handicap || user.handicap))}" /></td>
-          <td class="uid-cell" title="${escapeHtml(user.uid)}">${escapeHtml(user.uid)}</td>
-          <td class="cell-actions"><button class="btn secondary small" type="button" data-save-uid="${user.uid}">Save row</button></td>
+          <td class="text-right px-4 py-3">
+            <button class="edit-row-btn inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-white bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-lg px-3 py-1.5 transition" data-edit-uid="${user.uid}">
+              <i data-lucide="pencil" class="w-3 h-3"></i>
+              Edit
+            </button>
+          </td>
         `;
-
-        tableBody.appendChild(row);
+        // Click row (not on button) to open panel
+        tr.addEventListener("click", (e) => {
+          if (e.target.closest(".edit-row-btn")) return;
+          openEditPanel(user.uid);
+        });
+        tableBody.appendChild(tr);
       });
+
+      // Mobile cards (paginated)
+      mobileCards.innerHTML = pageUsers.map(user => {
+        const record = getEventRecord(user.uid);
+        const paid = paidStatusFor(user);
+        const isDirty = dirty.has(user.uid);
+        const roomNames = (record.roommates || []).map(uid => {
+          const r = users.find(u => u.uid === uid);
+          return r ? (r.displayName || "Unknown") : uid.slice(0, 6);
+        }).join(", ");
+        const partner = users.find(u => u.uid === record.ambrosePartnerUid);
+        const partnerName = partner ? (partner.displayName || "Unknown") : null;
+        return `
+          <div class="bg-s1 border border-brd rounded-xl p-4 cursor-pointer hover:border-accent/30 transition${isDirty ? " !border-amber-500/40 !bg-amber-500/[0.04]" : ""}" data-edit-uid="${user.uid}" onclick="document.dispatchEvent(new CustomEvent('editPlayer',{detail:'${user.uid}'}))">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <div class="font-semibold text-white text-sm">${escapeHtml(user.displayName || "(no name)")}</div>
+                <div class="text-[11px] text-slate-600 font-mono">${escapeHtml(user.uid.slice(0, 12))}</div>
+              </div>
+              <div class="flex items-center gap-2">${badgeHtml(paid)}</div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              ${record.coming ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-medium">Coming</span>' : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-s3 text-slate-500 border border-slate-600/30 font-medium">Not coming</span>'}
+              ${record.skins ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25 font-medium">Skins</span>' : ""}
+              ${record.handicap !== "" ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-s3 text-slate-400 border border-brd font-mono font-medium">HC ${escapeHtml(asString(record.handicap))}</span>` : ""}
+            </div>
+            <div class="mt-2 text-xs text-slate-500 flex flex-col gap-0.5">
+              ${roomNames ? `<span>🏠 ${escapeHtml(roomNames)}</span>` : ""}
+              ${partnerName ? `<span>👥 ${escapeHtml(partnerName)}</span>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Update pagination info
+      updatePaginationControls(list.length);
+
+      lucide.createIcons();
     }
 
+    function updatePaginationControls(totalRecords) {
+      const totalPages = Math.ceil(totalRecords / recordsPerPage);
+      const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * recordsPerPage + 1;
+      const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
+      
+      paginationInfo.textContent = `${startRecord}–${endRecord} of ${totalRecords}`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+    }
+
+    // === FILTER + SEARCH ===
     function filterAndRender() {
       const q = normalize(searchInput.value);
-      filteredUsers = users.filter((user) => {
+
+      filteredUsers = users.filter(user => {
+        // Exclude users with no name
+        if (!user.displayName || !asString(user.displayName).trim()) {
+          return false;
+        }
+
         const record = getEventRecord(user.uid);
-        const roommateNames = (record.roommates || []).map((uid) => users.find((candidate) => candidate.uid === uid)?.displayName || "").join(" ");
-        const partnerName = users.find((candidate) => candidate.uid === record.ambrosePartnerUid)?.displayName || "";
-        const paid = paidStatusFor(user).label;
-        return [
-          user.displayName,
-          user.hackerNumber,
-          user.uid,
-          record.shirtSize,
-          record.pantSize,
-          roommateNames,
-          partnerName,
-          record.sponsorNotes,
-          record.handicap,
-          paid,
-          record.skins ? "yes" : "no",
+        const paid = paidStatusFor(user);
+
+        // Text search
+        const roomNames = (record.roommates || []).map(uid => {
+          const r = users.find(u => u.uid === uid);
+          return r ? (r.displayName || "") : "";
+        }).join(" ");
+        const partner = users.find(u => u.uid === record.ambrosePartnerUid);
+        const partnerName = partner ? (partner.displayName || "") : "";
+        const textMatch = !q || [
+          user.displayName, user.hackerNumber, user.uid,
+          record.shirtSize, record.pantSize, roomNames,
+          partnerName, record.sponsorNotes, record.handicap,
+          paid.label, record.skins ? "yes" : "no",
           record.coming ? "yes" : "no"
-        ].some((value) => normalize(value).includes(q));
+        ].some(v => normalize(v).includes(q));
+
+        // Filter pill
+        let filterMatch = true;
+        switch (activeFilter) {
+          case "coming": filterMatch = !!record.coming; break;
+          case "notcoming": filterMatch = !record.coming; break;
+          case "paid": filterMatch = paid.cls === "paid"; break;
+          case "partial": filterMatch = paid.cls === "partial"; break;
+          case "pending": filterMatch = paid.cls === "pending"; break;
+          case "dirty": filterMatch = dirty.has(user.uid); break;
+        }
+
+        return textMatch && filterMatch;
       });
 
-      renderRows(filteredUsers);
-      updateCounters();
+      currentPage = 1; // Reset to first page on filter change
+      renderTable(filteredUsers);
+      updateStats();
     }
 
-    function updateCounters() {
+    // === STATS ===
+    function updateStats() {
       const records = Array.from(eventPlayers.values());
-      comingCount.textContent = String(records.filter((record) => !!record.coming).length);
-      skinsCount.textContent = String(records.filter((record) => !!record.skins).length);
-      playersCount.textContent = String(users.length);
-      const eventConfig = currentEventConfig();
-      currentEventLabel.textContent = `${eventConfig.year} · ${eventConfig.id}`;
+      const allPaid = users.map(paidStatusFor);
+      const comingNum = records.filter(r => !!r.coming).length;
+      const skinsNum = records.filter(r => !!r.skins).length;
+      const paidNum = allPaid.filter(p => p.cls === "paid").length;
+      const pendingNum = allPaid.filter(p => p.cls === "pending").length;
+
+      $("#statPlayers").textContent = users.length;
+      $("#statComing").textContent = comingNum;
+      $("#statSkins").textContent = skinsNum;
+      $("#statPaid").textContent = paidNum;
+      $("#statPending").textContent = pendingNum;
+      const cfg = currentEventConfig();
+      $("#statEvent").textContent = `${cfg.year} · ${cfg.id}`;
     }
 
+    // === DATA LOADING ===
     async function loadUsers() {
-      setStatus(pageStatus, "Loading players...");
+      showToast("Loading players...", "info");
       const [rtdbSnap, firestoreSnap] = await Promise.all([
         get(ref(db, "users")),
         getDocs(collection(firestore, "users"))
       ]);
-
       const rtdbData = rtdbSnap.exists() ? rtdbSnap.val() : {};
       const firestoreUsers = {};
-      firestoreSnap.forEach((docSnap) => {
-        firestoreUsers[docSnap.id] = docSnap.data() || {};
-      });
+      firestoreSnap.forEach(docSnap => { firestoreUsers[docSnap.id] = docSnap.data() || {}; });
 
-      users = Object.keys(rtdbData).map((uid) => {
+      users = Object.keys(rtdbData).map(uid => {
         const r = rtdbData[uid] || {};
         const f = firestoreUsers[uid] || {};
         return {
@@ -760,350 +1224,571 @@
           amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : ""
         };
       });
-
       users.sort((a, b) => normalize(a.displayName).localeCompare(normalize(b.displayName)));
-      setStatus(pageStatus, `Loaded ${users.length} players.`, "success");
+      showToast(`Loaded ${users.length} players`, "success");
     }
 
     async function loadEventPlayers() {
       const eventId = currentEventId;
-      setStatus(pageStatus, `Loading ${eventId} event data...`);
+      showToast(`Loading ${eventId} event data...`, "info");
       eventPlayers = new Map();
-
-      const eventDocSnap = await getDoc(doc(firestore, "eventYears", eventId));
       const eventCollectionSnap = await getDocs(collection(firestore, "eventYears", eventId, "players"));
       const dataByUid = {};
+      eventCollectionSnap.forEach(docSnap => { dataByUid[docSnap.id] = docSnap.data() || {}; });
 
-      eventCollectionSnap.forEach((docSnap) => {
-        dataByUid[docSnap.id] = docSnap.data() || {};
+      users.forEach(user => {
+        eventPlayers.set(user.uid, normalizeEventRecord(user.uid, dataByUid[user.uid] || {}, user));
       });
 
-      users.forEach((user) => {
-        const data = dataByUid[user.uid] || {};
-        eventPlayers.set(user.uid, {
-          shirtSize: asString(data.shirtSize),
-          pantSize: asString(data.pantSize),
-          roommates: Array.isArray(data.roommates) ? uniqueSorted(data.roommates.filter((uid) => uid && uid !== user.uid)) : [],
-          ambrosePartnerUid: asString(data.ambrosePartnerUid),
-          skins: !!data.skins,
-          coming: !!data.coming,
-          sponsorNotes: asString(data.sponsorNotes),
-          handicap: data.handicap !== undefined && data.handicap !== null ? Number(data.handicap) : (user.handicap !== undefined && user.handicap !== null ? Number(user.handicap) : "")
-        });
-      });
-
-      if (eventDocSnap.exists()) {
-        const eventDocData = eventDocSnap.data() || {};
-        currentEventLabel.textContent = asString(eventDocData.eventId || eventId);
-      }
+      mergeEventPlayersCache(eventId);
+      persistEventPlayersCache(eventId);
 
       dirty.clear();
-      updateDirtyMeta();
+      updateDirtyUI();
       renderEventSelect();
       filterAndRender();
-      setStatus(pageStatus, `Loaded ${eventId} event data.`, "success");
+      showToast(`${eventId} event data loaded`, "success");
     }
 
-    function getRowValue(uid, field) {
-      const input = tableBody.querySelector(`[data-uid="${uid}"][data-field="${field}"]`);
-      if (!input) return "";
-      if (field === "roommates") {
-        return Array.from(input.selectedOptions).map((option) => option.value);
-      }
-      return input.value;
-    }
-
+    // === SAVE PLAYER ===
     function validateHandicap(value) {
       const trimmed = asString(value).trim();
       if (trimmed === "") return { ok: true, value: "" };
       const number = Number(trimmed);
-      if (!Number.isFinite(number) || number < 0 || number > 54) {
-        return { ok: false, message: "Handicap must be a number from 0 to 54." };
-      }
+      if (!Number.isFinite(number) || number < 0 || number > 54) return { ok: false, message: "Handicap must be 0–54." };
       return { ok: true, value: number };
     }
 
-    function parseBoolSelect(value) {
-      return normalize(value) === "yes";
+    function validateOutstanding(value) {
+      const trimmed = asString(value).trim();
+      if (trimmed === "") return { ok: true, value: "" };
+      const number = Number(trimmed);
+      if (!Number.isFinite(number) || number < 0) return { ok: false, message: "Amt outstanding must be 0 or greater." };
+      return { ok: true, value: number };
     }
 
-    async function saveEventPlayer(uid) {
-      const currentUser = users.find((user) => user.uid === uid);
-      if (!currentUser) {
-        throw new Error("Player not found.");
-      }
+    async function saveEventPlayer(uid, fieldValues) {
+      const currentUser = users.find(u => u.uid === uid);
+      if (!currentUser) throw new Error("Player not found.");
 
       const previous = getEventRecord(uid);
-      const shirtSize = asString(getRowValue(uid, "shirtSize")).trim();
-      const pantSize = asString(getRowValue(uid, "pantSize")).trim();
-      const roommates = uniqueSorted((getRowValue(uid, "roommates") || []).filter((value) => value && value !== uid));
-      if (roommates.length > 2) {
-        throw new Error("Roommates can include at most 2 other players.");
-      }
-      const ambrosePartnerUid = asString(getRowValue(uid, "ambrosePartnerUid")).trim();
-      const skins = parseBoolSelect(getRowValue(uid, "skins"));
-      const coming = parseBoolSelect(getRowValue(uid, "coming"));
-      const sponsorNotes = asString(getRowValue(uid, "sponsorNotes")).trim();
-      const handicapCheck = validateHandicap(getRowValue(uid, "handicap"));
-      if (!handicapCheck.ok) {
-        throw new Error(handicapCheck.message);
-      }
-
-      const nextRecord = {
-        shirtSize,
-        pantSize,
-        roommates,
-        ambrosePartnerUid,
-        skins,
-        coming,
-        sponsorNotes,
-        handicap: handicapCheck.value
+      const nextRecord = { ...fieldValues };
+      const nextPayment = {
+        financialStatus: asString(fieldValues.financialStatus).trim(),
+        amtOutstanding: fieldValues.amtOutstanding
       };
+
+      // Validate
+      if ((nextRecord.roommates || []).length > 2) throw new Error("Max 2 roommates.");
+      const hc = validateHandicap(nextRecord.handicap);
+      if (!hc.ok) throw new Error(hc.message);
+      nextRecord.handicap = hc.value;
+
+      const outstanding = validateOutstanding(nextPayment.amtOutstanding);
+      if (!outstanding.ok) throw new Error(outstanding.message);
+      nextPayment.amtOutstanding = outstanding.value;
+
+      const roommates = uniqueSorted((nextRecord.roommates || []).filter(v => v && v !== uid));
+      nextRecord.roommates = roommates;
 
       const previousRoomGroup = roomGroupMembers(uid, previous);
       const nextRoomGroup = uniqueSorted([uid, ...roommates]);
       const roomAffected = uniqueSorted([...previousRoomGroup, ...nextRoomGroup]);
+
       const previousPartner = asString(previous.ambrosePartnerUid).trim();
+      const ambrosePartnerUid = asString(nextRecord.ambrosePartnerUid).trim();
       const partnerAffected = uniqueSorted([uid, previousPartner, ambrosePartnerUid]);
 
       const writes = [];
+      const eventPayload = { ...nextRecord };
 
-      roomAffected.forEach((playerUid) => {
+      // Room cascading updates
+      roomAffected.forEach(playerUid => {
         const targetRecord = getEventRecord(playerUid);
-        let updatedRoommates = asString(targetRecord.roommates || []);
+        let updatedRoommates;
         if (nextRoomGroup.includes(playerUid)) {
-          updatedRoommates = nextRoomGroup.filter((memberUid) => memberUid !== playerUid);
+          updatedRoommates = nextRoomGroup.filter(m => m !== playerUid);
         } else if (previousRoomGroup.includes(playerUid)) {
-          updatedRoommates = previousRoomGroup.filter((memberUid) => memberUid !== playerUid && memberUid !== uid);
-        } else {
-          return;
-        }
+          updatedRoommates = (targetRecord.roommates || []).filter(m => m !== uid);
+        } else return;
 
-        const payload = {
-          ...targetRecord,
-          roommates: uniqueSorted(updatedRoommates),
-          updatedAt: serverTimestamp()
-        };
-        if (playerUid === uid) {
-          Object.assign(payload, nextRecord);
-        }
+        const payload = { ...targetRecord, roommates: uniqueSorted(updatedRoommates), updatedAt: serverTimestamp() };
+        if (playerUid === uid) Object.assign(payload, eventPayload);
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), payload, { merge: true }));
       });
 
-      partnerAffected.forEach((playerUid) => {
+      // Partner cascading updates
+      partnerAffected.forEach(playerUid => {
         if (!playerUid) return;
         const targetRecord = getEventRecord(playerUid);
-        let nextPartner = asString(targetRecord.ambrosePartnerUid).trim();
-        if (playerUid === uid) {
-          nextPartner = ambrosePartnerUid;
-        } else if (playerUid === ambrosePartnerUid) {
-          nextPartner = uid;
-        } else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) {
-          nextPartner = "";
-        } else {
-          return;
-        }
+        let nextPartner;
+        if (playerUid === uid) { nextPartner = ambrosePartnerUid; }
+        else if (playerUid === ambrosePartnerUid) { nextPartner = uid; }
+        else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) { nextPartner = ""; }
+        else return;
 
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), {
-          ...targetRecord,
-          ambrosePartnerUid: nextPartner,
-          updatedAt: serverTimestamp()
+          ...targetRecord, ambrosePartnerUid: nextPartner, updatedAt: serverTimestamp()
         }, { merge: true }));
       });
 
       if (writes.length === 0) {
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", uid), {
-          ...nextRecord,
-          updatedAt: serverTimestamp()
+          ...eventPayload, updatedAt: serverTimestamp()
         }, { merge: true }));
       }
 
+      writes.push(setDoc(doc(firestore, "users", uid), {
+        financialStatus: nextPayment.financialStatus,
+        amtOutstanding: nextPayment.amtOutstanding,
+        hackerNumber: fieldValues.hackerNumber || "",
+        golfAustraliaNumber: fieldValues.golfAustraliaNumber || "",
+        updatedAt: serverTimestamp()
+      }, { merge: true }));
+
       await Promise.all(writes);
 
-      eventPlayers.set(uid, nextRecord);
-      roomAffected.forEach((playerUid) => {
+      // Update local state
+      eventPlayers.set(uid, eventPayload);
+      currentUser.financialStatus = nextPayment.financialStatus;
+      currentUser.amtOutstanding = nextPayment.amtOutstanding;
+      currentUser.hackerNumber = fieldValues.hackerNumber || "";
+      currentUser.golfAustraliaNumber = fieldValues.golfAustraliaNumber || "";
+      roomAffected.forEach(playerUid => {
         if (playerUid === uid) return;
-        const currentRecord = getEventRecord(playerUid);
+        const rec = getEventRecord(playerUid);
         if (nextRoomGroup.includes(playerUid)) {
-          currentRecord.roommates = nextRoomGroup.filter((memberUid) => memberUid !== playerUid);
+          rec.roommates = nextRoomGroup.filter(m => m !== playerUid);
         } else if (previousRoomGroup.includes(playerUid)) {
-          currentRecord.roommates = previousRoomGroup.filter((memberUid) => memberUid !== playerUid && memberUid !== uid);
+          rec.roommates = previousRoomGroup.filter(m => m !== playerUid && m !== uid);
         }
-        eventPlayers.set(playerUid, currentRecord);
+        eventPlayers.set(playerUid, rec);
       });
 
-      partnerAffected.forEach((playerUid) => {
+      partnerAffected.forEach(playerUid => {
         if (!playerUid) return;
-        const currentRecord = getEventRecord(playerUid);
-        if (playerUid === uid) {
-          currentRecord.ambrosePartnerUid = ambrosePartnerUid;
-        } else if (playerUid === ambrosePartnerUid) {
-          currentRecord.ambrosePartnerUid = uid;
-        } else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) {
-          currentRecord.ambrosePartnerUid = "";
-        }
-        eventPlayers.set(playerUid, currentRecord);
+        const rec = getEventRecord(playerUid);
+        if (playerUid === uid) { rec.ambrosePartnerUid = ambrosePartnerUid; }
+        else if (playerUid === ambrosePartnerUid) { rec.ambrosePartnerUid = uid; }
+        else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) { rec.ambrosePartnerUid = ""; }
+        eventPlayers.set(playerUid, rec);
       });
 
-      const comingTotal = Array.from(eventPlayers.values()).filter((record) => !!record.coming).length;
-      const skinsTotal = Array.from(eventPlayers.values()).filter((record) => !!record.skins).length;
+      updatePaidBadgePreview();
 
+      // Update event year totals
+      const comingTotal = Array.from(eventPlayers.values()).filter(r => !!r.coming).length;
+      const skinsTotal = Array.from(eventPlayers.values()).filter(r => !!r.skins).length;
       await setDoc(doc(firestore, "eventYears", currentEventId), {
-        eventId: currentEventId,
-        updatedAt: serverTimestamp(),
-        playersLoaded: users.length,
-        comingCount: comingTotal,
-        skinsCount: skinsTotal
+        eventId: currentEventId, updatedAt: serverTimestamp(),
+        playersLoaded: users.length, comingCount: comingTotal, skinsCount: skinsTotal
       }, { merge: true });
 
+      persistEventPlayersCache(currentEventId);
+
       clearDirty(uid);
-      filterAndRender();
       return nextRecord;
     }
 
-    tableBody.addEventListener("input", (event) => {
-      const target = event.target.closest("[data-field]");
-      if (!target) return;
-      markDirty(target.dataset.uid);
-      setStatus(pageStatus, "You have unsaved changes.", "warn");
-    });
+    // === EDIT PANEL ===
+    function openEditPanel(uid) {
+      const user = users.find(u => u.uid === uid);
+      if (!user) return;
+      currentEditUid = uid;
+      editPanelExistingRoommates = [];
 
-    tableBody.addEventListener("change", (event) => {
-      const target = event.target.closest("[data-field]");
-      if (!target) return;
-      if (target.dataset.field === "roommates" && target.selectedOptions.length > 2) {
-        Array.from(target.selectedOptions).slice(2).forEach((option) => {
-          option.selected = false;
-        });
-        setStatus(pageStatus, "Roommates can only include up to 2 other players.", "error");
+      const record = getEventRecord(uid);
+      const paid = paidStatusFor(user);
+
+      // Populate header
+      editPlayerName.textContent = user.displayName || "(no name)";
+      editPlayerUid.textContent = uid;
+
+      // Populate fields
+      editComing.checked = !!record.coming;
+      editSkins.checked = !!record.skins;
+      editShirtSize.value = asString(record.shirtSize);
+      editPantSize.value = asString(record.pantSize);
+      editHandicap.value = record.handicap !== "" ? asString(record.handicap) : "";
+      editHackerNumber.value = asString(user.hackerNumber || "");
+      editGolfAustraliaNumber.value = asString(user.golfAustraliaNumber || "");
+      editNotes.value = asString(record.sponsorNotes);
+      editFinancialStatus.value = asString(user.financialStatus);
+      editAmtOutstanding.value = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined ? asString(user.amtOutstanding) : "";
+
+      // Partner dropdown
+      const sortedUsers = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
+      editPartner.innerHTML = '<option value="">No partner</option>' +
+        sortedUsers.filter(u => u.uid !== uid).map(u =>
+          `<option value="${escapeHtml(u.uid)}" ${u.uid === record.ambrosePartnerUid ? "selected" : ""}>${escapeHtml(userLabel(u))}</option>`
+        ).join("");
+
+      // Paid badge (read-only)
+      const paidStyles = {
+        paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+        partial: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+        pending: "bg-red-500/15 text-red-300 border-red-500/25",
+        unknown: "bg-slate-500/15 text-slate-400 border-slate-500/25"
+      };
+      editPaidBadge.innerHTML = renderPaidBadgeHtml(paid);
+
+      // Roommate chips
+      editPanelExistingRoommates = [...(record.roommates || [])];
+      renderRoommateChips();
+      updateAmbroseTeamHandicap();
+
+      // Reset roommate search
+      roommateSearch.value = "";
+      roommateDropdown.classList.add("hidden");
+
+      // Show panel
+      editPanel.classList.add("open");
+      editOverlay.classList.add("open");
+      document.body.style.overflow = "hidden";
+
+      lucide.createIcons();
+    }
+
+    function closeEditPanel() {
+      editPanel.classList.remove("open");
+      editOverlay.classList.remove("open");
+      document.body.style.overflow = "";
+      currentEditUid = null;
+      roommateDropdown.classList.add("hidden");
+    }
+
+    function renderRoommateChips() {
+      roommateChips.innerHTML = editPanelExistingRoommates.map(uid => {
+        const r = users.find(u => u.uid === uid);
+        const name = r ? (r.displayName || "Unknown") : uid.slice(0, 8);
+        return `<span class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-lg bg-accent/15 text-accent border border-accent/20 text-xs font-medium">
+          ${escapeHtml(name)}
+          <button class="rm-chip-btn w-5 h-5 rounded-md hover:bg-accent/20 flex items-center justify-center transition" data-rm-uid="${uid}">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
+        </span>`;
+      }).join("");
+      lucide.createIcons({ nodes: [roommateChips] });
+    }
+
+    // Roommate search / dropdown
+    roommateSearch.addEventListener("input", () => {
+      const q = normalize(roommateSearch.value);
+      if (!q) { roommateDropdown.classList.add("hidden"); return; }
+
+      const availableUsers = users.filter(u => {
+        if (u.uid === currentEditUid) return false;
+        if (editPanelExistingRoommates.includes(u.uid)) return false;
+        return normalize(userLabel(u)).includes(q) || normalize(u.uid).includes(q);
+      }).slice(0, 20);
+
+      if (availableUsers.length === 0) {
+        roommateDropdown.classList.add("hidden");
         return;
       }
-      markDirty(target.dataset.uid);
-      setStatus(pageStatus, "You have unsaved changes.", "warn");
+
+      roommateDropdown.innerHTML = availableUsers.map(u =>
+        `<button class="rm-option w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-s3 hover:text-white transition flex items-center gap-2" data-add-rm-uid="${u.uid}">
+          <i data-lucide="plus" class="w-3 h-3 text-accent shrink-0"></i>
+          <span>${escapeHtml(userLabel(u))}</span>
+          <span class="text-[10px] text-slate-600 font-mono ml-auto">${escapeHtml(u.uid.slice(0, 8))}</span>
+        </button>`
+      ).join("");
+      roommateDropdown.classList.remove("hidden");
+      lucide.createIcons({ nodes: [roommateDropdown] });
     });
 
-    tableBody.addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-save-uid]");
-      if (!button) return;
-      const uid = button.dataset.saveUid;
-      try {
-        button.disabled = true;
-        await saveEventPlayer(uid);
-        setStatus(pageStatus, `Saved event row for ${uid}.`, "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(pageStatus, error.message || "Save failed.", "error");
-      } finally {
-        button.disabled = false;
+    roommateSearch.addEventListener("focus", () => {
+      if (roommateSearch.value) roommateSearch.dispatchEvent(new Event("input"));
+    });
+
+    // Add roommate from dropdown
+    roommateDropdown.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-add-rm-uid]");
+      if (!btn) return;
+      e.stopPropagation();
+      const uid = btn.dataset.addRmUid;
+      if (editPanelExistingRoommates.length >= 2) {
+        showToast("Maximum 2 roommates allowed", "warn");
+        return;
+      }
+      if (!editPanelExistingRoommates.includes(uid)) {
+        editPanelExistingRoommates.push(uid);
+        renderRoommateChips();
+        markDirty(currentEditUid);
+      }
+      roommateSearch.value = "";
+      roommateDropdown.classList.add("hidden");
+    });
+
+    // Remove roommate chip
+    roommateChips.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-rm-uid]");
+      if (!btn) return;
+      e.stopPropagation();
+      const uid = btn.dataset.rmUid;
+      editPanelExistingRoommates = editPanelExistingRoommates.filter(u => u !== uid);
+      renderRoommateChips();
+      markDirty(currentEditUid);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#roommateSearch") && !e.target.closest("#roommateDropdown")) {
+        roommateDropdown.classList.add("hidden");
       }
     });
 
+    // Edit panel field changes mark dirty
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding].forEach(el => {
+      el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
+      el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
+    });
+
+    // Save edit panel
+    editSaveBtn.addEventListener("click", async () => {
+      if (!currentEditUid) return;
+      editSaveBtn.disabled = true;
+      editSaveBtn.textContent = "Saving...";
+
+      try {
+        const fieldValues = {
+          shirtSize: editShirtSize.value,
+          pantSize: editPantSize.value,
+          coming: editComing.checked,
+          skins: editSkins.checked,
+          handicap: editHandicap.value,
+          ambrosePartnerUid: editPartner.value,
+          roommates: [...editPanelExistingRoommates],
+          sponsorNotes: editNotes.value,
+          financialStatus: editFinancialStatus.value,
+          amtOutstanding: editAmtOutstanding.value,
+          hackerNumber: editHackerNumber.value.trim(),
+          golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+        };
+
+        await saveEventPlayer(currentEditUid, fieldValues);
+        showToast("Saved successfully", "success");
+        filterAndRender();
+        closeEditPanel();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Save failed", "error");
+      } finally {
+        editSaveBtn.disabled = false;
+        editSaveBtn.textContent = "Save Changes";
+      }
+    });
+
+    editCloseBtn.addEventListener("click", closeEditPanel);
+    editCancelBtn.addEventListener("click", closeEditPanel);
+    editOverlay.addEventListener("click", closeEditPanel);
+
+    // === FILTER PILLS ===
+    const filterPills = filterBar.querySelectorAll(".filter-pill");
+    // Style filter pills with Tailwind classes on init
+    filterPills.forEach(pill => {
+      pill.className = pill.classList.contains("active")
+        ? "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s4 border-accent/30 text-accent"
+        : "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s2 border-brd text-slate-400 hover:bg-s3 hover:text-slate-300";
+    });
+
+    filterBar.addEventListener("click", (e) => {
+      const pill = e.target.closest(".filter-pill");
+      if (!pill) return;
+      activeFilter = pill.dataset.filter;
+      filterPills.forEach(p => {
+        if (p === pill) {
+          p.className = "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s4 border-accent/30 text-accent";
+        } else {
+          p.className = "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s2 border-brd text-slate-400 hover:bg-s3 hover:text-slate-300";
+        }
+      });
+      filterAndRender();
+    });
+
+    // === EVENT LISTENERS ===
     searchInput.addEventListener("input", filterAndRender);
+
+    recordsPerPageSelect.addEventListener("change", (e) => {
+      recordsPerPage = Number(e.target.value);
+      currentPage = 1;
+      renderTable(filteredUsers);
+    });
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable(filteredUsers);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+
+    nextPageBtn.addEventListener("click", () => {
+      const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable(filteredUsers);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
 
     eventSelect.addEventListener("change", async () => {
       currentEventId = eventSelect.value;
       dirty.clear();
-      updateDirtyMeta();
+      updateDirtyUI();
       await loadEventPlayers();
     });
 
-    loadEventBtn.addEventListener("click", loadEventPlayers);
     refreshBtn.addEventListener("click", async () => {
-      await loadUsers();
-      await loadEventPlayers();
+      refreshBtn.disabled = true;
+      refreshBtn.querySelector("i")?.classList.add("animate-spin");
+      try {
+        await loadUsers();
+        await loadEventPlayers();
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.querySelector("i")?.classList.remove("animate-spin");
+      }
     });
 
     saveAllBtn.addEventListener("click", async () => {
-      if (dirty.size === 0) {
-        setStatus(pageStatus, "No changes to save.", "success");
-        return;
-      }
-
-      const pending = Array.from(dirty);
+      if (dirty.size === 0) { showToast("No changes to save", "info"); return; }
       saveAllBtn.disabled = true;
-      setStatus(pageStatus, "Saving all changes...");
       try {
-        for (const uid of pending) {
-          await saveEventPlayer(uid);
+        for (const uid of Array.from(dirty)) {
+          // Read current DOM values if they exist, otherwise use event record
+          const record = getEventRecord(uid);
+          const fieldValues = uid === currentEditUid ? {
+            ...record,
+            financialStatus: editFinancialStatus.value,
+            amtOutstanding: editAmtOutstanding.value,
+            hackerNumber: editHackerNumber.value.trim(),
+            golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+          } : record;
+          await saveEventPlayer(uid, fieldValues);
         }
-        setStatus(pageStatus, "All changes saved.", "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(pageStatus, error.message || "Some changes failed to save.", "error");
+        showToast("All changes saved", "success");
+        filterAndRender();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Some saves failed", "error");
       } finally {
         saveAllBtn.disabled = false;
       }
     });
 
+    // Edit button clicks (delegated)
+    tableBody.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-edit-uid]");
+      if (btn) { e.stopPropagation(); openEditPanel(btn.dataset.editUid); }
+    });
+
+    // Mobile card clicks
+    document.addEventListener("editPlayer", (e) => openEditPanel(e.detail));
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (editPanel.classList.contains("open")) closeEditPanel();
+      }
+      if (e.key === "/" && !e.target.closest("input, textarea, select")) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        saveAllBtn.click();
+      }
+    });
+
+    // === AUTH ===
     signinBtn.addEventListener("click", async () => {
-      const email = signinEmail.value.trim();
-      const password = signinPassword.value;
+      const email = signinEmailInput.value.trim();
+      const password = signinPasswordInput.value;
       if (!email || !password) {
-        setStatus(signinStatus, "Enter email and password.", "error");
+        signInStatus.textContent = "Enter email and password";
+        signInStatus.className = "mt-3 text-center text-sm text-red-400";
         return;
       }
-
-      setStatus(signinStatus, "Signing in...");
+      signinBtn.disabled = true;
+      signinBtn.textContent = "Signing in...";
       try {
         await signInWithEmailAndPassword(auth, email, password);
-        signinPassword.value = "";
-        setStatus(signinStatus, "Signed in.", "success");
-      } catch (error) {
-        console.error(error);
-        setStatus(signinStatus, "Sign-in failed.", "error");
+        signinPasswordInput.value = "";
+      } catch (err) {
+        console.error(err);
+        signInStatus.textContent = "Sign-in failed. Check your credentials.";
+        signInStatus.className = "mt-3 text-center text-sm text-red-400";
+      } finally {
+        signinBtn.disabled = false;
+        signinBtn.textContent = "Sign in";
       }
     });
 
-    setPersistence(auth, browserLocalPersistence).catch((error) => {
-      console.warn("Auth persistence error:", error);
+    signOutBtn.addEventListener("click", async () => {
+      try { await signOut(auth); } catch (err) { console.error(err); }
     });
+
+    setPersistence(auth, browserLocalPersistence).catch(err => console.warn("Auth persistence error:", err));
 
     async function verifyAdmin(user) {
       const adminSnap = await get(ref(db, `admins/${user.uid}`));
       return !!adminSnap.val();
     }
 
-    async function boot() {
-      renderEventSelect();
-      setStatus(pageStatus, "Loading...");
-      await loadUsers();
-      await loadEventPlayers();
-    }
+    // === BOOT ===
+    renderEventSelect();
+    populateEditSelects();
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setStatus(authStatus, "Please sign in with an admin account.", "error");
-        loginLink.classList.remove("hidden");
-        signinCard.classList.remove("hidden");
-        backToPortalLink.classList.add("hidden");
+        signInOverlay.classList.remove("hidden");
+        signInOverlay.style.display = "";
+        authBar.classList.add("hidden");
+        mainLayout.style.opacity = "0";
         return;
       }
 
-      loginLink.classList.add("hidden");
-      signinCard.classList.add("hidden");
-      backToPortalLink.classList.remove("hidden");
-
+      // Check admin status
       try {
         const allowed = await verifyAdmin(user);
         if (!allowed) {
-          setStatus(authStatus, "Access denied. Admin privileges required.", "error");
-          setStatus(pageStatus, "This account is not listed under admins in Realtime Database.", "error");
-          tableBody.innerHTML = "";
+          signInOverlay.classList.remove("hidden");
+          signInOverlay.style.display = "";
+          signInStatus.textContent = "Access denied — admin privileges required";
+          signInStatus.className = "mt-3 text-center text-sm text-red-400";
+          authBar.classList.add("hidden");
+          mainLayout.style.opacity = "0";
           return;
         }
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to verify admin access", "error");
+        return;
+      }
 
-        setStatus(authStatus, `Signed in as ${user.email || user.uid}`, "success");
-        if (!adminLoaded) {
-          adminLoaded = true;
-          await boot();
+      // Authenticated and authorized
+      signInOverlay.style.display = "none";
+      authBar.classList.remove("hidden");
+      authEmailSpan.textContent = user.email || user.uid;
+      mainLayout.style.opacity = "1";
+
+      if (!adminLoaded) {
+        adminLoaded = true;
+        try {
+          await loadUsers();
+          await loadEventPlayers();
+        } catch (err) {
+          console.error(err);
+          showToast("Failed to load data", "error");
         }
-      } catch (error) {
-        console.error(error);
-        setStatus(authStatus, "Failed to verify admin access.", "error");
       }
     });
 
-    eventSelect.value = currentEventId;
+    // Init Lucide
+    lucide.createIcons();
   </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </body>
 </html>
