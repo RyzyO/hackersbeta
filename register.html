@@ -1,134 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, maximum-scale=1.0">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>Register</title>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-     <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Register | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
-    ul {
-      color: black;
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
     }
-    iframe {
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.15);
-      background-color: white;
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .form-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: white;
     }
   </style>
-<link rel="manifest" href="site.webmanifest">
 </head>
-
-<body>
-
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- Logo -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <!-- Menu -->
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="profile.html" style="color:#f59e0b;font-weight:600;">Profile</a></li>
-              <li><a href="register.html" class="active">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-              <li><a href="notifications-center.html">Notifications</a></li>
-            </ul>
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
-
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>Register</h3>
-          <span class="breadcrumb" id="user-name">Loading...</span>
-        </div>
-      </div>
-    </div>
+<body class="bg-hackers-dark text-white font-sans antialiased min-h-screen overflow-x-hidden">
+  <div class="fixed inset-0 pointer-events-none opacity-70">
+    <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-hackers-sky/20 blur-3xl"></div>
+    <div class="absolute top-1/3 -left-24 w-80 h-80 rounded-full bg-hackers-gold/10 blur-3xl"></div>
   </div>
 
-  <div class="contact-page section">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-10" style="text-align: center; padding: 80px 20px;">
-          <h2 style="font-size: 48px; margin-bottom: 20px; color: #f59e0b;">Registration Opening Soon</h2>
-          <p style="font-size: 18px; color: #999; margin-bottom: 40px;">We're preparing something exciting! Registration will open shortly. Stay tuned for updates.</p>
-          <div style="margin-top: 60px;">
-            <div style="font-size: 14px; color: #666;">
-              <p>In the meantime, check out:</p>
-              <ul style="list-style: none; padding: 0;">
-                
-                <li style="margin: 10px 0;"><a href="honour-roll.html" style="color: #f59e0b; text-decoration: none; font-weight: 500;">🏆 Honour Roll</a></li>
-              </ul>
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight" style="font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: 0.015em;">HACKERS CUP 26</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="profile.html" class="px-4 py-2 rounded-lg text-sm font-medium text-hackers-gold hover:text-white hover:bg-white/10 transition-colors">Profile</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="score.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Score</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="profile.html" class="block px-3 py-2 rounded-md text-base font-medium text-hackers-gold hover:text-white hover:bg-white/10">Profile</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="score.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Score</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+        <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="relative pt-16 min-h-screen flex flex-col">
+    <section class="hero-gradient border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div class="glass-card rounded-3xl p-6 sm:p-8 animate-fade-in">
+          <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div>
+              <p class="text-sm font-semibold tracking-[0.24em] uppercase text-hackers-sky mb-3">Registration</p>
+              <h1 class="text-3xl sm:text-4xl font-black tracking-tight">Join the field for Hackers Cup 26.</h1>
+              <p class="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl">Complete the official form below to register.</p>
+              <p id="user-name" class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">Loading your profile...</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLScDl3f3-Rp-cR-9bsnt37qx6ZUh1SyMycHFd2dAWKQNvxcEVw/viewform?usp=publish-editor" target="_blank" rel="noreferrer" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-sky/40 bg-hackers-sky/15 px-4 py-2 text-sm font-semibold text-sky-200 hover:bg-hackers-sky/25 transition-colors">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                Open in new tab
+              </a>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  
-  <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
+    <section class="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div class="max-w-7xl mx-auto h-full">
+        <div class="glass-card rounded-3xl overflow-hidden h-[calc(100vh-15.5rem)] min-h-[34rem] shadow-2xl">
+          <iframe
+            class="form-frame"
+            src="https://docs.google.com/forms/d/e/1FAIpQLScDl3f3-Rp-cR-9bsnt37qx6ZUh1SyMycHFd2dAWKQNvxcEVw/viewform?embedded=true"
+            title="Hackers Cup Registration Form"
+            loading="lazy"
+          >
+            Loading registration form...
+          </iframe>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  <!-- Scripts -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      if (menu) {
+        menu.classList.toggle('hidden');
+      }
+    }
 
-  <!-- Firebase login/displayName logic -->
+    window.toggleMobileMenu = toggleMobileMenu;
+
+    document.addEventListener('click', (event) => {
+      const menu = document.getElementById('mobile-menu');
+      const button = event.target.closest('button[onclick="toggleMobileMenu()"]');
+      if (menu && button && !menu.classList.contains('hidden')) {
+        return;
+      }
+    });
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -142,37 +234,25 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const database = getDatabase();
+    getAnalytics(app);
+    const database = getDatabase(app);
     const auth = getAuth(app);
 
-    function getDisplayName(user) {
-      const userRef = ref(database, `users/${user.uid}/displayName`);
-      onValue(userRef, (snapshot) => {
-        const displayName = snapshot.val();
-        if (displayName) {
-          document.getElementById('user-name').textContent = displayName;
-        } else {
-          const name = prompt('Please enter your display name:');
-          if (name && name.trim() !== '') {
-            set(userRef, name.trim()).then(() => {
-              document.getElementById('user-name').textContent = name.trim();
-            }).catch((error) => {
-              console.error('Error updating display name:', error);
-            });
-          }
-        }
-      });
-    }
-
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
-      } else {
-        getDisplayName(user);
+        return;
+      }
+
+      const userName = document.querySelector('#user-name');
+      if (userName) {
+        const userRef = ref(database, `users/${user.uid}/displayName`);
+        onValue(userRef, (snapshot) => {
+          const displayName = snapshot.val();
+          userName.textContent = displayName ? displayName : 'Welcome, Hacker';
+        });
       }
     });
   </script>
-
 </body>
 </html>

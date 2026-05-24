@@ -333,7 +333,7 @@
             </div>
             <div class="rounded-2xl bg-white/5 border border-white/10 p-4" id="due-card">
               <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Due Date</p>
-              <p class="text-lg font-semibold mt-2" id="due-date-value">Jul 21</p>
+              <p class="text-lg font-semibold mt-2" id="due-date-value"></p>
               <p class="text-xs text-gray-400" id="due-date-year">2026</p>
               <div class="status-badge warning mt-3" id="due-badge">
                 <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -569,7 +569,7 @@
     </div>
     <div class="print-summary-row">
       <span>Payment Due Date:</span>
-      <span>July 21, 2026</span>
+      <span>2026</span>
     </div>
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
       <p><strong>Bank Transfer Details:</strong></p>
@@ -797,7 +797,7 @@
       }
 
       dueCard.classList.add('warning');
-      dueValue.textContent = 'Jul 21';
+      dueValue.textContent = '.';
       dueValue.style.color = '';
       dueYear.textContent = '2026';
       dueBadge.className = 'status-badge warning';

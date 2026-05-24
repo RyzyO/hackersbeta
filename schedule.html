@@ -1,190 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, maximum-scale=1.0">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>Schedule</title>
-<style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Schedule | Hackers Cup</title>
 
-#cal {
- text-align: center;
- }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
 
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
 
-</style>
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
 
-  <!-- Additional CSS Files -->
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-     <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
-<link rel="manifest" href="site.webmanifest">
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .schedule-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .schedule-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.16), transparent 40%);
+      pointer-events: none;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  </style>
 </head>
+<body class="bg-hackers-dark text-white font-sans antialiased min-h-screen overflow-x-hidden pb-24">
+  <div class="fixed inset-0 pointer-events-none opacity-70">
+    <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-hackers-sky/20 blur-3xl"></div>
+    <div class="absolute top-1/3 -left-24 w-80 h-80 rounded-full bg-hackers-gold/10 blur-3xl"></div>
+  </div>
 
-<body>
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight" style="font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: 0.015em;">HACKERS CUP 26</span>
+        </div>
 
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="profile.html" class="px-4 py-2 rounded-lg text-sm font-medium text-hackers-gold hover:text-white hover:bg-white/10 transition-colors">Profile</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Schedule</a>
+          <a href="score.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Score</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+        </div>
 
-          <nav class="main-nav">
-
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>              
-              <li><a href="course.html">Venue</a></li>
- <li><a href="payment.html">Payment</a></li>
-
-          
-              <li><a href="schedule.html" class="active">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-              <li><a href="notifications-center.html">Notifications</a></li>
-            </ul>
-
-
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-          </nav>
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
         </div>
       </div>
     </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
 
-  <!-- ***** Page Heading Start ***** -->
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>Schedule</h3>
-          <span class="breadcrumb" id="user-name">Loading...</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="profile.html" class="block px-3 py-2 rounded-md text-base font-medium text-hackers-gold hover:text-white hover:bg-white/10">Profile</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Schedule</a>
+        <a href="score.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Score</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+        <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
+
+      </div>
+    </div>
+  </nav>
+
+  <main class="relative pt-16 min-h-screen">
+    <section class="hero-gradient border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div class="glass-card rounded-3xl p-6 sm:p-8 animate-fade-in">
+          <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div>
+              <p class="text-sm font-semibold tracking-[0.24em] uppercase text-hackers-sky mb-3">Event Schedule</p>
+              <h1 class="text-3xl sm:text-4xl font-black tracking-tight">Hackers Cup 26</h1>
+              <p class="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl">Your tee assignments, session times, and daily format updates live here.</p>
+              <p id="user-name" class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">Loading your profile...</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <!-- <a href="hackers.ics" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-gold/40 bg-hackers-gold/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-hackers-gold/25 transition-colors">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                Save to Calendar
+              </a> -->
+              <a href="score.html" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-sky/40 bg-hackers-sky/15 px-4 py-2 text-sm font-semibold text-sky-200 hover:bg-hackers-sky/25 transition-colors">
+                <i data-lucide="chart-column" class="w-4 h-4"></i>
+                View Scores
+              </a>
+            </div>
+          </div>
         </div>
       </div>
+    </section>
+
+    <section class="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid gap-6 lg:grid-cols-3">
+          <article class="glass-card schedule-card rounded-3xl p-6 animate-slide-up">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-hackers-sky">Friday 21st August</p>
+                <h2 class="mt-2 text-2xl font-bold text-white">Troll Plate Skins</h2>
+              </div>
+              <div class="rounded-2xl bg-hackers-sky/15 border border-hackers-sky/30 p-3 text-hackers-sky">
+                <i data-lucide="sunrise" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+              <p><span class="font-semibold text-white">Registration:</span> 9:00am (Collect Memorabilia Packs and Scorecards)</p>
+              <p><span class="font-semibold text-white">Shotgun Start:</span> 10:00am</p>
+              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="fri-data">Loading...</span></p> -->
+            </div>
+          </article>
+
+          <article class="glass-card schedule-card rounded-3xl p-6 animate-slide-up" style="animation-delay: 0.08s;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-hackers-gold">Saturday 22nd August</p>
+                <h2 class="mt-2 text-2xl font-bold text-white">Stableford & Team Pink Ball</h2>
+              </div>
+              <div class="rounded-2xl bg-hackers-gold/15 border border-hackers-gold/30 p-3 text-amber-300">
+                <i data-lucide="cloud-sun" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+              <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
+              <p><span class="font-semibold text-white">Tee Window:</span> 6:30am - 10:30am</p>
+              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="sat-data">Loading...</span></p> -->
+            </div>
+          </article>
+
+          <article class="glass-card schedule-card rounded-3xl p-6 animate-slide-up" style="animation-delay: 0.16s;">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-emerald-300">Sunday 23rd August</p>
+                <h2 class="mt-2 text-2xl font-bold text-white">Ambrose</h2>
+              </div>
+              <div class="rounded-2xl bg-emerald-400/10 border border-emerald-400/25 p-3 text-emerald-300">
+                <i data-lucide="flag-triangle-right" class="w-5 h-5"></i>
+              </div>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+              <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
+              <p><span class="font-semibold text-white">Shotgun Start:</span> 8:30am</p>
+              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="sun-data">Loading...</span></p> -->
+            </div>
+          </article>
+        </div>
+
+        <div class="mt-6 glass-card rounded-3xl p-6 sm:p-8">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm font-semibold tracking-[0.24em] uppercase text-slate-400">Attendance</p>
+              <h3 class="mt-1 text-xl font-bold text-white">Keep your profile synced</h3>
+            </div>
+            <p class="text-sm text-slate-300 max-w-2xl">If your name or tee assignment is still loading, refresh after signing in so we can pull the latest entry for your account.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-hackers-sky">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
     </div>
   </div>
-  <!-- ***** Page Heading End ***** -->
 
-  <!-- ***** Schedule Section Start ***** -->
-  <section class="section trending">
-    <div class="container">
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      if (menu) {
+        menu.classList.toggle('hidden');
+      }
+    }
 
-      <div class="section-heading text-center">
-        <h6>Hackers Cup 2025</h6>
-        <h2>Event Schedule</h2>
-        
-      </div>
-      <a id="cal" href="hackers.ics" class="main-button">Save to Calendar</a>
-      <div class="row">
+    window.toggleMobileMenu = toggleMobileMenu;
 
-        <!-- Friday Card -->
-        <div class="col-lg-4 col-md-6">
-          <div class="item wow fadeInUp" data-wow-delay="0.2s">
-            <div class="thumb">
-             
-            </div>
-            <div class="down-content">
-              <span class="category">Friday 8th August</span>
-              <h4>Troll Plate Skins</h4>
-              <p><strong>Registration:</strong> 10:30am (Collect Memorabilia Packs and Scorecards)</p>
-              <p><strong>Shotgun Start:</strong> 12:00pm</p>
-              <p><strong>Tee:</strong> <span id="fri-data">Loading...</span></p>
-            </div>
-          </div>
-        </div>
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
 
-        <!-- Saturday Card -->
-        <div class="col-lg-4 col-md-6">
-          <div class="item wow fadeInUp" data-wow-delay="0.4s">
-            <div class="thumb">
-             
-            </div>
-            <div class="down-content">
-              <span class="category">Saturday 9th August</span>
-              <h4>Stableford & Team Pink Ball</h4>
-              <p><strong>Breakfast:</strong> 6:00am - 7:00am (Captains collect envelopes)</p>
-              <p><strong>Shotgun Start:</strong> 7:15am</p>
-              <p><strong>Tee:</strong> <span id="sat-data">Loading...</span></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sunday Card -->
-        <div class="col-lg-4 col-md-6">
-          <div class="item wow fadeInUp" data-wow-delay="0.6s">
-            <div class="thumb">
-           
-            </div>
-            <div class="down-content">
-              <span class="category">Sunday 10th August</span>
-              <h4>Ambrose</h4>
-              <p><strong>Breakfast:</strong> 6:00am - 7:00am (Captains collect envelopes)</p>
-              <p><strong>Shotgun Start:</strong> 7:15am</p>
-              <p><strong>Tee:</strong> <span id="sun-data">Loading...</span></p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-<br>
-      <br>
-      <br>
-      <br>
-      <br>
-      
-    
-
-    </div>
-  </section>
-  <!-- ***** Schedule Section End ***** -->
-
-  
-  <div class="bottom-nav">
-  <a href="index.html">
-    <i class="fas fa-home"></i>
-    Home
-  </a>
-  <a href="payment.html">
-    <i class="fas fa-dollar-sign"></i>
-    Payment
-  </a>
-  <a href="podcast.html">
-    <i class="fas fa-podcast"></i>
-    Podcast
-  </a>
-  <a href="score.html">
-    <i class="fas fa-chart-line"></i>
-    Score
-  </a>
-</div>
-
-  <!-- Scripts -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
-
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -198,62 +322,38 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const database = getDatabase();
+    getAnalytics(app);
+    const database = getDatabase(app);
     const auth = getAuth(app);
 
-    function getDisplayName(user) {
-      const userRef = ref(database, `users/${user.uid}/displayName`);
-      onValue(userRef, (snapshot) => {
-        const displayName = snapshot.val();
-        if (displayName) {
-          document.getElementById('user-name').textContent = displayName;
-        }
+    function bindText(path, elementId, fallback) {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        return;
+      }
+
+      onValue(ref(database, path), (snapshot) => {
+        element.textContent = snapshot.val() || fallback;
       });
     }
 
-    function getFridaySchedule(user) {
-      const friRef = ref(database, `users/${user.uid}/fri`);
-      onValue(friRef, (snapshot) => {
-        document.getElementById('fri-data').textContent = snapshot.val() || 'Not Assigned';
-      });
-    }
-
-    function getSaturdaySchedule(user) {
-      const satRef = ref(database, `users/${user.uid}/sat`);
-      onValue(satRef, (snapshot) => {
-        document.getElementById('sat-data').textContent = snapshot.val() || 'Not Assigned';
-      });
-    }
-
-    function getSundaySchedule(user) {
-      const sunRef = ref(database, `users/${user.uid}/sun`);
-      onValue(sunRef, (snapshot) => {
-        document.getElementById('sun-data').textContent = snapshot.val() || 'Not Assigned';
-      });
-    }
-
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
-      } else {
-        getDisplayName(user);
-        getFridaySchedule(user);
-        getSaturdaySchedule(user);
-        getSundaySchedule(user);
+        return;
       }
-    });
 
-    document.getElementById('sign-out-btn').addEventListener('click', () => {
-      auth.signOut()
-        .then(() => {
-          window.location.href = 'login.html';
-        })
-        .catch((error) => {
-          console.error('Sign Out Error', error);
+      const userName = document.getElementById('user-name');
+      if (userName) {
+        onValue(ref(database, `users/${user.uid}/displayName`), (snapshot) => {
+          userName.textContent = snapshot.val() || 'Welcome, Hacker';
         });
+      }
+
+      bindText(`users/${user.uid}/fri`, 'fri-data', 'Not Assigned');
+      bindText(`users/${user.uid}/sat`, 'sat-data', 'Not Assigned');
+      bindText(`users/${user.uid}/sun`, 'sun-data', 'Not Assigned');
     });
   </script>
-
 </body>
 </html>
