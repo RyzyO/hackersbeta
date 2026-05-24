@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Duplicate Merger — Hackers Cup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911', s1: '#0c1019', s2: '#111725', s3: '#182030', s4: '#1f2a3e',
+            accent: '#06d6a4', brd: '#1c2640',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { background: #060911; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 99px; }
+    .log-line { border-bottom: 1px solid #1c2640; padding: 6px 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: flex-start; gap: 8px; }
+    .log-line:last-child { border-bottom: none; }
+    .badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    .badge-ok   { background: rgba(6,214,164,0.15); color: #06d6a4; }
+    .badge-skip { background: rgba(100,116,139,0.15); color: #94a3b8; }
+    .badge-warn { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-err  { background: rgba(248,113,113,0.15); color: #f87171; }
+    .badge-info { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-dry  { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .doc-card { background: #111725; border: 1px solid #1c2640; border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color 0.15s; }
+    .doc-card:hover { border-color: rgba(6,214,164,0.4); }
+    .doc-card.selected { border-color: #06d6a4; background: rgba(6,214,164,0.06); }
+    .doc-card.delete-target { border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.04); }
+    .field-row { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px solid #1c2640; font-size: 12px; }
+    .field-row:last-child { border-bottom: none; }
+    .field-key { color: #64748b; min-width: 140px; font-family: 'JetBrains Mono', monospace; }
+    .field-val { color: #cbd5e1; word-break: break-all; }
+    .field-val.has-data { color: #e2e8f0; font-weight: 500; }
+    .pair-block { background: #0c1019; border: 1px solid #1c2640; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  </style>
+</head>
+<body class="text-slate-200 font-sans min-h-screen antialiased p-6">
+
+  <div class="max-w-5xl mx-auto space-y-5">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-white">Duplicate User Merger</h1>
+        <p class="text-xs text-slate-500">Find users with the same email, pick which doc to keep, merge data, delete the duplicate</p>
+      </div>
+    </div>
+
+    <!-- Sign in -->
+    <div id="signInCard" class="bg-s1 border border-brd rounded-2xl p-6 space-y-3">
+      <h2 class="text-sm font-semibold text-slate-300">Sign in</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <input id="emailInput" type="email" placeholder="Admin email" autocomplete="email"
+          class="px-4 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+        <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password"
+          class="px-4 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+      </div>
+      <button id="signInBtn" class="px-5 py-2.5 rounded-xl bg-accent text-s0 font-bold text-sm hover:brightness-110 active:scale-[0.98] transition">
+        Sign in &amp; load tool
+      </button>
+      <p id="signInErr" class="text-xs text-red-400 min-h-[16px]"></p>
+    </div>
+
+    <!-- Tool -->
+    <div id="toolCard" class="hidden space-y-5">
+
+      <div class="bg-s1 border border-brd rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-300">Step 1 — Scan for duplicates</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Loads all Firestore <code class="text-accent bg-s2 px-1 rounded">users</code> docs and groups any that share the same email address.</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span id="authUser" class="text-slate-400"></span>
+            <button id="signOutBtn" class="text-red-400 hover:text-red-300 transition">Sign out</button>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap items-center">
+          <button id="scanBtn" class="px-5 py-2.5 rounded-xl bg-accent text-s0 font-bold text-sm hover:brightness-110 active:scale-[0.98] transition">
+            Scan Firestore users
+          </button>
+          <div id="scanProgress" class="hidden items-center gap-2 text-xs text-slate-400">
+            <svg class="animate-spin w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+            <span id="scanProgressText">Loading…</span>
+          </div>
+          <span id="scanSummary" class="text-xs text-slate-500"></span>
+        </div>
+      </div>
+
+      <!-- Duplicate pairs -->
+      <div id="pairsContainer" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-300">Step 2 — Review &amp; merge each pair</h2>
+          <div class="flex gap-2">
+            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+              <input type="checkbox" id="dryRunMerge" checked class="accent-accent" />
+              Dry run
+            </label>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">For each pair: click the doc you want to <span class="text-accent font-medium">KEEP</span> (green border), the other will be <span class="text-red-400 font-medium">DELETED</span>. Data from the deleted doc that's missing in the kept doc will be merged across. Then click Merge.</p>
+        <div id="pairsList"></div>
+      </div>
+
+      <!-- Log -->
+      <div id="logContainer" class="hidden bg-s1 border border-brd rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-3 py-2 border-b border-brd">
+          <span class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Log</span>
+          <button id="copyLogBtn" class="text-xs text-slate-500 hover:text-slate-300 transition">Copy log</button>
+        </div>
+        <div id="logBody" class="max-h-80 overflow-y-auto"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
+    const $ = id => document.getElementById(id);
+
+    // ---- Auth ----
+    $('signInBtn').onclick = async () => {
+      $('signInErr').textContent = '';
+      try { await signInWithEmailAndPassword(auth, $('emailInput').value.trim(), $('passwordInput').value); }
+      catch (e) { $('signInErr').textContent = e.message; }
+    };
+    $('signOutBtn').onclick = () => signOut(auth);
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        $('signInCard').classList.add('hidden');
+        $('toolCard').classList.remove('hidden');
+        $('authUser').textContent = user.email;
+      } else {
+        $('signInCard').classList.remove('hidden');
+        $('toolCard').classList.add('hidden');
+      }
+    });
+
+    // ---- Logging ----
+    const logLines = [];
+    function addLog(label, badge, badgeClass, message) {
+      $('logContainer').classList.remove('hidden');
+      const logBody = $('logBody');
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="badge ${badgeClass} shrink-0">${badge}</span><span class="text-slate-400 min-w-[180px] shrink-0">${esc(label)}</span><span class="text-slate-300">${esc(message)}</span>`;
+      logBody.appendChild(line);
+      logBody.scrollTop = logBody.scrollHeight;
+      logLines.push(`[${badge}] ${label} — ${message}`);
+    }
+    $('copyLogBtn').onclick = () => navigator.clipboard.writeText(logLines.join('\n'));
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ---- Field rendering ----
+    const IMPORTANT_FIELDS = ['displayName','email','hackerNumber','mobile','mobileNumber','financialStatus','amtOutstanding','golfAustraliaNumber','handicap','sponsorNotes'];
+    const RTDB_DAY_FIELDS = ['fri','sat','sun'];
+
+    function renderFields(data, rtdbData) {
+      const allKeys = Array.from(new Set([...IMPORTANT_FIELDS, ...Object.keys(data || {})])).filter(k => k !== 'updatedAt' && k !== 'createdAt');
+      const firestoreRows = allKeys.map(k => {
+        const val = data?.[k];
+        const hasData = val !== undefined && val !== null && val !== '';
+        return `<div class="field-row">
+          <span class="field-key">${esc(k)}</span>
+          <span class="field-val ${hasData ? 'has-data' : 'text-slate-600'}">${hasData ? esc(String(val)) : '—'}</span>
+        </div>`;
+      }).join('');
+
+      const dayRows = RTDB_DAY_FIELDS.map(day => {
+        const val = rtdbData?.[day];
+        const hasData = val !== undefined && val !== null && val !== '';
+        const displayVal = hasData ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '—';
+        return `<div class="field-row">
+          <span class="field-key" style="color:#06d6a4">${esc(day)} <span style="font-size:9px;color:#475569">(rtdb)</span></span>
+          <span class="field-val ${hasData ? 'has-data' : 'text-slate-600'}">${esc(displayVal)}</span>
+        </div>`;
+      }).join('');
+
+      return firestoreRows + `<div style="border-top:1px solid #1e3a5f;margin:6px 0 2px;padding-top:4px">${dayRows}</div>`;
+    }
+
+    // ---- Scan ----
+    let allDocs = [];
+    let duplicateGroups = [];
+
+    $('scanBtn').onclick = async () => {
+      $('scanBtn').disabled = true;
+      $('scanProgress').classList.remove('hidden');
+      $('scanProgress').classList.add('flex');
+      $('scanProgressText').textContent = 'Loading Firestore users…';
+      allDocs = [];
+      duplicateGroups = [];
+
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        snap.forEach(d => allDocs.push({ id: d.id, data: d.data() || {}, rtdb: {} }));
+        $('scanProgressText').textContent = `Loaded ${allDocs.length} docs. Fetching RTDB day data…`;
+
+        // Fetch fri/sat/sun from RTDB for each uid
+        await Promise.all(allDocs.map(async d => {
+          try {
+            const [friSnap, satSnap, sunSnap] = await Promise.all([
+              get(ref(rtdb, `users/${d.id}/fri`)),
+              get(ref(rtdb, `users/${d.id}/sat`)),
+              get(ref(rtdb, `users/${d.id}/sun`)),
+            ]);
+            d.rtdb = {
+              fri: friSnap.exists() ? friSnap.val() : null,
+              sat: satSnap.exists() ? satSnap.val() : null,
+              sun: sunSnap.exists() ? sunSnap.val() : null,
+            };
+          } catch(e) { /* skip */ }
+        }));
+        $('scanProgressText').textContent = `Loaded ${allDocs.length} docs. Finding duplicates…`;
+
+        // Group by normalised email
+        const byEmail = new Map();
+        for (const d of allDocs) {
+          const email = (d.data.email || '').toLowerCase().trim();
+          if (!email) continue;
+          if (!byEmail.has(email)) byEmail.set(email, []);
+          byEmail.get(email).push(d);
+        }
+        const emailGroups = Array.from(byEmail.values())
+          .filter(g => g.length > 1)
+          .map(g => ({ type: 'email', key: (g[0].data.email || '').toLowerCase().trim(), docs: g }));
+
+        // Group by normalised displayName
+        const byName = new Map();
+        for (const d of allDocs) {
+          const name = (d.data.displayName || '').toLowerCase().trim();
+          if (!name) continue;
+          if (!byName.has(name)) byName.set(name, []);
+          byName.get(name).push(d);
+        }
+        const nameGroups = Array.from(byName.values())
+          .filter(g => g.length > 1)
+          .map(g => ({ type: 'name', key: (g[0].data.displayName || '').trim(), docs: g }));
+
+        duplicateGroups = [...emailGroups, ...nameGroups];
+
+        const emailCount = emailGroups.length;
+        const nameCount = nameGroups.length;
+        const parts = [];
+        if (emailCount) parts.push(`${emailCount} duplicate email group${emailCount > 1 ? 's' : ''}`);
+        if (nameCount) parts.push(`${nameCount} duplicate name group${nameCount > 1 ? 's' : ''}`);
+        $('scanSummary').textContent = parts.length
+          ? `Found ${parts.join(' + ')}.`
+          : 'No duplicates found — all emails and names are unique.';
+
+        if (duplicateGroups.length) renderPairs();
+        else $('pairsContainer').classList.add('hidden');
+
+      } catch(e) {
+        $('scanSummary').textContent = `Error: ${e.message}`;
+      } finally {
+        $('scanBtn').disabled = false;
+        $('scanProgress').classList.add('hidden');
+        $('scanProgress').classList.remove('flex');
+      }
+    };
+
+    // ---- Render pairs ----
+    // selectedKeep[groupIdx] = docId to keep
+    const selectedKeep = {};
+
+    function renderPairs() {
+      $('pairsContainer').classList.remove('hidden');
+      const list = $('pairsList');
+      list.innerHTML = '';
+
+      duplicateGroups.forEach((group, gi) => {
+        const { type, key, docs } = group;
+        const block = document.createElement('div');
+        block.className = 'pair-block';
+        block.innerHTML = `
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${type === 'email' ? 'bg-blue-500/15 text-blue-400' : 'bg-amber-500/15 text-amber-400'}">${type === 'email' ? 'Duplicate Email' : 'Duplicate Name'}</span>
+                <span class="text-xs text-white font-medium">${esc(key)}</span>
+              </div>
+              <div class="text-xs text-slate-500">${docs.length} docs share this ${type}. Click the one to <span class="text-accent">KEEP</span>.</div>
+            </div>
+            <button class="merge-btn px-4 py-2 rounded-xl bg-accent text-s0 font-bold text-xs uppercase tracking-wide hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition" data-gi="${gi}" disabled>
+              Merge &amp; delete duplicate
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 doc-grid" data-gi="${gi}">
+            ${docs.map((d, di) => `
+              <div class="doc-card" data-gi="${gi}" data-di="${di}" data-docid="${esc(d.id)}">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-mono text-slate-400">${esc(d.id.slice(0,16))}…</span>
+                  <span class="keep-label text-[10px] font-bold uppercase tracking-widest text-slate-600"></span>
+                </div>
+                <div class="mt-2">${renderFields(d.data, d.rtdb)}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        list.appendChild(block);
+      });
+
+      // Card click — select keeper
+      list.querySelectorAll('.doc-card').forEach(card => {
+        card.onclick = () => {
+          const gi = Number(card.dataset.gi);
+          const keepId = card.dataset.docid;
+          selectedKeep[gi] = keepId;
+
+          // Update visuals
+          document.querySelectorAll(`.doc-card[data-gi="${gi}"]`).forEach(c => {
+            c.classList.remove('selected', 'delete-target');
+            c.querySelector('.keep-label').textContent = '';
+            if (c.dataset.docid === keepId) {
+              c.classList.add('selected');
+              c.querySelector('.keep-label').textContent = '✓ Keep';
+              c.querySelector('.keep-label').style.color = '#06d6a4';
+            } else {
+              c.classList.add('delete-target');
+              c.querySelector('.keep-label').textContent = '✕ Delete';
+              c.querySelector('.keep-label').style.color = '#f87171';
+            }
+          });
+
+          // Enable merge button
+          const btn = list.querySelector(`.merge-btn[data-gi="${gi}"]`);
+          if (btn) btn.disabled = false;
+        };
+      });
+
+      // Merge button
+      list.querySelectorAll('.merge-btn').forEach(btn => {
+        btn.onclick = () => mergeGroup(Number(btn.dataset.gi));
+      });
+    }
+
+    // ---- Merge ----
+    async function mergeGroup(gi) {
+      const group = duplicateGroups[gi];
+      const keepId = selectedKeep[gi];
+      if (!keepId) return;
+
+      const dryRun = $('dryRunMerge').checked;
+      const { docs } = group;
+      const keepDoc = docs.find(d => d.id === keepId);
+      const deleteDocs = docs.filter(d => d.id !== keepId);
+
+      addLog(keepId, 'INFO', 'badge-info', `Merging group ${gi+1} (${group.type}) — keeping this doc${dryRun ? ' [DRY RUN]' : ''}`);
+
+      // Build merged data: start with keep doc, fill in any missing fields from delete docs
+      const mergedData = { ...keepDoc.data };
+      for (const del of deleteDocs) {
+        for (const [k, v] of Object.entries(del.data || {})) {
+          if (k === 'updatedAt' || k === 'createdAt') continue;
+          if (mergedData[k] === undefined || mergedData[k] === null || mergedData[k] === '') {
+            mergedData[k] = v;
+            addLog(keepId, 'FILL', 'badge-warn', `Filled missing field "${k}" = "${v}" from doc ${del.id}`);
+          }
+        }
+      }
+
+      if (!dryRun) {
+        try {
+          // Write merged data to kept doc
+          await setDoc(doc(db, 'users', keepId), { ...mergedData, updatedAt: serverTimestamp() }, { merge: true });
+          addLog(keepId, 'OK', 'badge-ok', `Updated kept doc with merged data`);
+
+          // Also merge RTDB data: copy any RTDB fields from delete UIDs to keep UID
+          for (const del of deleteDocs) {
+            try {
+              const rtdbSnap = await get(ref(rtdb, `users/${del.id}`));
+              if (rtdbSnap.exists()) {
+                const rtdbData = rtdbSnap.val() || {};
+                const keepRtdbSnap = await get(ref(rtdb, `users/${keepId}`));
+                const keepRtdbData = keepRtdbSnap.exists() ? keepRtdbSnap.val() || {} : {};
+                const mergedRtdb = { ...rtdbData };
+                // Keep doc's RTDB data wins for existing fields
+                Object.assign(mergedRtdb, keepRtdbData);
+                await set(ref(rtdb, `users/${keepId}`), mergedRtdb);
+                addLog(del.id, 'OK', 'badge-ok', `Merged RTDB data from ${del.id} into ${keepId}`);
+              }
+            } catch(e) {
+              addLog(del.id, 'WARN', 'badge-warn', `RTDB merge skipped: ${e.message}`);
+            }
+          }
+
+          // Delete the duplicate Firestore docs
+          for (const del of deleteDocs) {
+            await deleteDoc(doc(db, 'users', del.id));
+            addLog(del.id, 'DEL', 'badge-err', `Deleted duplicate Firestore doc`);
+
+            // Also remove from RTDB
+            try {
+              await remove(ref(rtdb, `users/${del.id}`));
+              addLog(del.id, 'DEL', 'badge-err', `Removed from RTDB`);
+            } catch(e) {
+              addLog(del.id, 'WARN', 'badge-warn', `RTDB remove skipped: ${e.message}`);
+            }
+          }
+
+          addLog(`Group ${gi+1}`, 'DONE', 'badge-ok', `Merge complete`);
+
+          // Remove from UI
+          const block = $('pairsList').children[gi];
+          if (block) {
+            block.style.opacity = '0.4';
+            block.style.pointerEvents = 'none';
+            block.querySelector('.merge-btn').textContent = '✓ Done';
+          }
+
+        } catch(e) {
+          addLog(keepId, 'ERR', 'badge-err', `Merge failed: ${e.message}`);
+        }
+      } else {
+        // Dry run — just log what would happen
+        for (const del of deleteDocs) {
+          addLog(del.id, 'DRY', 'badge-dry', `Would delete this doc and merge its data into ${keepId}`);
+        }
+        addLog(`Group ${gi+1}`, 'DRY', 'badge-dry', `Dry run complete — no changes made`);
+      }
+    }
+  </script>
+</body>
+</html>

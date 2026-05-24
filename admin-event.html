@@ -174,7 +174,13 @@
         <input id="editHackerNumber" type="text" placeholder="e.g., HC25-001"
           class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
       </section>
-
+<!-- Email -->
+<section>
+  <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Email</h3>
+  <input id="editEmail" type="email" placeholder="player@example.com"
+    class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+  <p class="text-[11px] text-slate-600 mt-1">Updates the email used for comms only — does not change their login.</p>
+</section>
       <!-- Golf Australia Number -->
       <section>
         <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Golf Australia Number</h3>
@@ -350,6 +356,39 @@
           <div class="text-lg font-bold text-white truncate" id="statEvent">—</div>
         </div>
       </div>
+<!-- EMAIL COPY TOOL -->
+<section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div>
+      <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Copy Emails</h3>
+      <p class="text-xs text-slate-600 mt-1">Copy player emails to paste into your BCC field.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <select id="emailFormat" class="px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+        <option value="comma">Comma separated</option>
+        <option value="semicolon">Semicolon separated</option>
+        <option value="newline">One per line</option>
+      </select>
+      <button onclick="copyPlayerEmails('all')" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+        Copy all
+      </button>
+      <button onclick="copyPlayerEmails('coming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Coming only
+      </button>
+      <button onclick="copyPlayerEmails('notcoming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Not coming
+      </button>
+    </div>
+  </div>
+  <div>
+    <div class="flex items-center justify-between mb-2">
+      <span id="emailCopyMeta" class="text-xs text-slate-500"></span>
+      <span id="emailCopiedFlash" class="text-xs text-accent opacity-0 transition-opacity duration-300">✓ Copied!</span>
+    </div>
+    <textarea id="emailCopyOutput" readonly rows="3" placeholder="Click a button above to load emails…"
+      class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white text-xs font-mono placeholder-slate-500 resize-y focus:outline-none focus:border-accent transition"></textarea>
+  </div>
+</section>
 
       <!-- SEARCH + FILTERS -->
       <div class="flex flex-wrap items-center gap-3">
@@ -641,6 +680,7 @@
     const gbResetBtn = $("#gbResetBtn");
     const gbPlayerSearch = $("#gbPlayerSearch");
     const gbPlayerList = $("#gbPlayerList");
+    const editEmail = $("#editEmail");
     const gbGroupTableBody = $("#gbGroupTableBody");
     const gbStatus = $("#gbStatus");
 
@@ -655,6 +695,39 @@
 
     const downloadAmbroseBtn = $("#downloadAmbroseBtn");
     const ambrosePreview = $("#ambrosePreview");
+
+window.copyPlayerEmails = function(mode) {
+  // Pull emails from the users array and their event participation data
+  let pool = users.filter(u => u.email);
+
+  if (mode === 'coming') {
+    pool = pool.filter(u => {
+      const ep = eventPlayers.get(u.uid);
+      return ep && ep.coming;
+    });
+  } else if (mode === 'notcoming') {
+    pool = pool.filter(u => {
+      const ep = eventPlayers.get(u.uid);
+      return !ep || !ep.coming;
+    });
+  }
+
+  const seen = new Set();
+  const emails = pool.map(u => u.email.toLowerCase().trim()).filter(e => e && !seen.has(e) && seen.add(e));
+  const fmt = document.getElementById('emailFormat').value;
+  const sep = fmt === 'comma' ? ', ' : fmt === 'semicolon' ? '; ' : '\n';
+  const text = emails.join(sep);
+
+  document.getElementById('emailCopyOutput').value = text;
+  document.getElementById('emailCopyMeta').textContent =
+    `${emails.length} email${emails.length !== 1 ? 's' : ''} · ${mode === 'all' ? 'All players' : mode === 'coming' ? 'Coming' : 'Not coming'}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const flash = document.getElementById('emailCopiedFlash');
+    flash.style.opacity = '1';
+    setTimeout(() => flash.style.opacity = '0', 2500);
+  });
+};
 
     // === TOAST SYSTEM ===
     function showToast(message, type = "info") {
@@ -758,11 +831,14 @@
 
     function paidStatusFor(user) {
       const status = normalize(user.financialStatus);
-      const outstanding = Number(user.amtOutstanding);
+      const hasOutstanding = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined;
+      const outstanding = hasOutstanding ? Number(user.amtOutstanding) : null;
       if (status.includes("partial")) return { label: "Partial", cls: "partial" };
-      if (status.includes("paid") || outstanding === 0) return { label: "Paid", cls: "paid" };
+      if (status.includes("paid")) return { label: "Paid", cls: "paid" };
       if (status.includes("pending")) return { label: "Pending", cls: "pending" };
-      if (user.financialStatus || user.amtOutstanding !== "") return { label: asString(user.financialStatus || user.amtOutstanding), cls: "unknown" };
+      if (hasOutstanding && outstanding === 0) return { label: "Paid", cls: "paid" };
+      if (hasOutstanding && outstanding > 0) return { label: `$${outstanding} outstanding`, cls: "pending" };
+      if (user.financialStatus) return { label: asString(user.financialStatus), cls: "unknown" };
       return { label: "No data", cls: "unknown" };
     }
 
@@ -1343,6 +1419,7 @@
         amtOutstanding: nextPayment.amtOutstanding,
         hackerNumber: fieldValues.hackerNumber || "",
         golfAustraliaNumber: fieldValues.golfAustraliaNumber || "",
+        email: fieldValues.email || "",
         updatedAt: serverTimestamp()
       }, { merge: true }));
 
@@ -1354,6 +1431,7 @@
       currentUser.amtOutstanding = nextPayment.amtOutstanding;
       currentUser.hackerNumber = fieldValues.hackerNumber || "";
       currentUser.golfAustraliaNumber = fieldValues.golfAustraliaNumber || "";
+      currentUser.email = fieldValues.email || "";
       roomAffected.forEach(playerUid => {
         if (playerUid === uid) return;
         const rec = getEventRecord(playerUid);
@@ -1395,6 +1473,7 @@
       const user = users.find(u => u.uid === uid);
       if (!user) return;
       currentEditUid = uid;
+      editEmail.value = user.email || "";
       editPanelExistingRoommates = [];
 
       const record = getEventRecord(uid);
@@ -1540,7 +1619,7 @@
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding].forEach(el => {
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -1565,6 +1644,7 @@
           amtOutstanding: editAmtOutstanding.value,
           hackerNumber: editHackerNumber.value.trim(),
           golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+          email: editEmail.value.trim(),
         };
 
         await saveEventPlayer(currentEditUid, fieldValues);
@@ -1665,6 +1745,7 @@
             amtOutstanding: editAmtOutstanding.value,
             hackerNumber: editHackerNumber.value.trim(),
             golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+            email: editEmail.value.trim(),
           } : record;
           await saveEventPlayer(uid, fieldValues);
         }
