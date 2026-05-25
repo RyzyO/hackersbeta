@@ -775,7 +775,7 @@
         </tr>` : '';
 
       return `
-        <tr data-idx="${r._idx}" class="${expanded ? 'expanded' : ''}" onclick="toggleExpand(${r._idx})" style="cursor:pointer;">
+        <tr data-idx="${r._idx}" class="expand-trigger ${expanded ? 'expanded' : ''}" style="cursor:pointer;">
           <td class="reg-num" style="padding-left:16px;">${r._idx}</td>
           <td class="name-cell">${esc(r.name)}</td>
           <td class="ts">${ts}</td>
@@ -812,6 +812,15 @@
     render();
   }
 
+  // Delegated click handlers for expand (works inside module scope)
+  document.addEventListener('click', e => {
+    const target = e.target.closest('.expand-trigger[data-idx]');
+    if (target) toggleExpand(Number(target.dataset.idx));
+  });
+
+  // Expose loadData for the refresh button onclick attribute
+  window.loadData = loadData;
+
   // ── MOBILE CARDS ─────────────────────────────────────────────
   function renderMobile(rows) {
     const container = document.getElementById('mob-cards');
@@ -821,7 +830,7 @@
     container.innerHTML = rows.map(r => {
       const expanded = expandedRows.has(r._idx);
       return `
-        <div class="mob-card ${expanded ? 'expanded' : ''}" onclick="toggleExpand(${r._idx})">
+        <div class="mob-card expand-trigger ${expanded ? 'expanded' : ''}" data-idx="${r._idx}">
           <div class="mob-card-header">
             <div>
               <div style="font-size:13px;font-weight:600;color:#fff;">${esc(r.name)}</div>
