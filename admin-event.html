@@ -98,27 +98,6 @@
     }
 
     body { background: #060911; }
-
-    /* Group maker day tabs */
-    .gb-day-tab {
-      padding: 6px 16px; border-radius: 10px; cursor: pointer; transition: background 0.15s, color 0.15s;
-      color: #6b7a94; background: transparent; border: none; text-align: center;
-    }
-    .gb-day-tab.active {
-      background: #1f2a3e; color: #06d6a4;
-    }
-    .gb-day-tab:not(.active):hover { color: #cbd5e1; background: #182030; }
-    .gb-day-tab.active span:last-child { color: #06d6a4; opacity: 0.7; }
-
-    /* Inline editable cell */
-    .gb-cell-edit {
-      background: transparent; border: none; color: inherit; font: inherit;
-      width: 100%; padding: 0; outline: none;
-    }
-    .gb-cell-edit:focus {
-      background: #1f2a3e; border-radius: 6px; padding: 2px 6px;
-      outline: 1px solid rgba(6,214,164,0.4);
-    }
   </style>
 </head>
 <body class="text-slate-200 font-sans min-h-screen antialiased">
@@ -126,6 +105,37 @@
   <!-- ===================== TOAST CONTAINER ===================== -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- ===================== SIGN IN OVERLAY ===================== -->
+  <div id="signInOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-s0/90 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-s1 border border-brd rounded-2xl p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-dim mb-4">
+          <i data-lucide="shield-check" class="w-7 h-7 text-accent"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white">Hackers Cup Admin</h1>
+        <p class="text-slate-400 mt-1 text-sm">Sign in with your admin account to continue</p>
+      </div>
+      <div class="space-y-3">
+        <input id="signinEmail" type="email" placeholder="Email address" autocomplete="email"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <button id="signinBtn" class="w-full py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+          Sign in
+        </button>
+      </div>
+      <div id="signInStatus" class="mt-3 text-center text-sm min-h-[20px]"></div>
+    </div>
+  </div>
+
+  <!-- ===================== AUTH STATUS BAR (hidden until signed in) ===================== -->
+  <div id="authBar" class="hidden fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
+    <i data-lucide="user-check" class="w-3.5 h-3.5 text-accent"></i>
+    <span id="authEmail" class="text-slate-300"></span>
+    <button id="signOutBtn" class="ml-1 text-slate-500 hover:text-red-400 transition">
+      <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
 
   <!-- ===================== EDIT PANEL OVERLAY ===================== -->
   <div id="editOverlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
@@ -471,89 +481,37 @@
 
       <!-- GROUP MAKER -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
-
-        <!-- Header -->
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Group Maker</h3>
-            <p class="text-xs text-slate-600 mt-1">Build tee groups per day. Fri &amp; Sun are shotgun starts; Sat is traditional tee times.</p>
+            <p class="text-xs text-slate-600 mt-1">Build tee groups for the active event and save them to the event document.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button id="gbLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load day</button>
-            <button id="gbSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save day</button>
+            <button id="gbLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load groups</button>
+            <button id="gbSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save groups</button>
           </div>
         </div>
 
-        <!-- Day Tabs -->
-        <div class="flex gap-1 bg-s2 rounded-xl p-1 w-fit border border-brd">
-          <button class="gb-day-tab active" data-day="fri">
-            <span class="block text-[10px] uppercase tracking-widest font-semibold">Friday</span>
-            <span class="block text-[10px] text-slate-500 mt-0.5">Shotgun</span>
-          </button>
-          <button class="gb-day-tab" data-day="sat">
-            <span class="block text-[10px] uppercase tracking-widest font-semibold">Saturday</span>
-            <span class="block text-[10px] text-slate-500 mt-0.5">Tee Times</span>
-          </button>
-          <button class="gb-day-tab" data-day="sun">
-            <span class="block text-[10px] uppercase tracking-widest font-semibold">Sunday</span>
-            <span class="block text-[10px] text-slate-500 mt-0.5">Shotgun</span>
-          </button>
-        </div>
-
-        <!-- Auto-assign bar -->
-        <div id="gbAutoBar" class="flex flex-wrap items-end gap-3 bg-s2 border border-brd rounded-xl px-4 py-3">
-          <!-- Shotgun auto-assign (Fri/Sun) -->
-          <div id="gbShotgunAuto" class="flex flex-wrap items-end gap-3">
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-slate-500 mb-1 block">Start Hole</label>
-              <input id="gbAutoStartHole" type="number" min="1" max="18" value="1" class="w-20 px-2 py-1.5 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
-            </div>
-            <button id="gbAutoAssignHoles" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Auto-assign holes</button>
-          </div>
-          <!-- Saturday tee time auto-assign -->
-          <div id="gbTeeTimeAuto" class="hidden flex-wrap items-end gap-3">
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-slate-500 mb-1 block">First Tee Time</label>
-              <input id="gbAutoStartTime" type="time" value="07:00" class="px-2 py-1.5 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
-            </div>
-            <div>
-              <label class="text-[10px] uppercase tracking-widest text-slate-500 mb-1 block">Interval (min)</label>
-              <input id="gbAutoInterval" type="number" min="5" max="30" value="10" class="w-20 px-2 py-1.5 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
-            </div>
-            <button id="gbAutoAssignTimes" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Auto-assign tee times</button>
-          </div>
-          <div id="gbStatus" class="text-xs text-slate-500 min-h-[18px] ml-auto self-center"></div>
-        </div>
-
-        <!-- Builder body -->
-        <div class="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-4">
-
-          <!-- Left: player picker -->
+        <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4">
           <div class="bg-s2 border border-brd rounded-xl p-4 space-y-4">
             <div>
               <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Selected Players</div>
               <div id="gbSelectedPlayers" class="flex flex-wrap gap-2 min-h-[32px]"></div>
             </div>
-
-            <!-- Hole OR tee time input depending on day -->
-            <div id="gbGroupInputShotgun" class="grid grid-cols-1 gap-3">
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs text-slate-500 mb-1 block">Starting Hole</label>
+                <label class="text-xs text-slate-500 mb-1 block">Hole</label>
                 <input id="gbHoleInput" type="number" min="1" max="18" step="1" placeholder="1" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
               </div>
-            </div>
-            <div id="gbGroupInputTeeTime" class="hidden grid-cols-1 gap-3">
               <div>
                 <label class="text-xs text-slate-500 mb-1 block">Tee Time</label>
                 <input id="gbTeeTimeInput" type="text" placeholder="8:30 AM" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
               </div>
             </div>
-
             <div class="flex gap-2 flex-wrap">
               <button id="gbAddGroupBtn" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Add group</button>
-              <button id="gbClearSelBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Clear</button>
+              <button id="gbResetBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Reset</button>
             </div>
-
             <div class="border-t border-brd pt-4">
               <div class="relative">
                 <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
@@ -563,30 +521,68 @@
             </div>
           </div>
 
-          <!-- Right: groups table -->
           <div class="bg-s2 border border-brd rounded-xl p-4 space-y-3">
             <div class="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold" id="gbTableHeading">Current Groups — Friday</div>
-                <div class="text-xs text-slate-600 mt-1">Click a cell to edit inline. Drag rows to reorder (↑↓ buttons).</div>
+                <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Current Groups</div>
+                <div class="text-xs text-slate-600 mt-1">Edit, delete, and reorder the groups for this event.</div>
               </div>
-              <button id="gbResetBtn" class="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs hover:bg-red-500/20 transition">Clear day</button>
+              <div id="gbStatus" class="text-xs text-slate-500 min-h-[18px]"></div>
             </div>
             <div class="overflow-x-auto border border-brd rounded-xl">
-              <table class="w-full text-sm" id="gbGroupTable">
+              <table class="w-full min-w-[720px] text-sm">
                 <thead>
-                  <tr class="bg-s1/80 border-b border-brd" id="gbGroupTableHead">
-                    <!-- rendered by JS -->
+                  <tr class="bg-s1/80 border-b border-brd">
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Hole</th>
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Tee Time</th>
+                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Players</th>
+                    <th class="px-3 py-2 text-right text-[10px] uppercase tracking-widest text-slate-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="gbGroupTableBody" class="divide-y divide-brd bg-s1"></tbody>
               </table>
             </div>
-            <div id="gbUnassigned" class="hidden">
-              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Unassigned players</div>
-              <div id="gbUnassignedList" class="flex flex-wrap gap-2"></div>
-            </div>
           </div>
+        </div>
+      </section>
+
+      <!-- REGO SHEET SYNC -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Sync from Rego Sheet</h3>
+            <p class="text-xs text-slate-600 mt-1">Fetch HC26 registration data and match names to players. Saves GA number, shirt size, and skins status.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="regoSyncBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+              <i data-lucide="download-cloud" style="width:13px;height:13px;display:inline;margin-right:5px;"></i>
+              Fetch &amp; Preview
+            </button>
+            <button id="regoApplyBtn" class="hidden px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+              Apply Matches
+            </button>
+          </div>
+        </div>
+        <div id="regoSyncStatus" class="text-xs text-slate-500 hidden"></div>
+        <!-- Preview table -->
+        <div id="regoSyncPreview" class="hidden overflow-x-auto border border-brd rounded-xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-s2/60 border-b border-brd">
+                <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Rego Name</th>
+                <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Matched Player</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">GA Number</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Shirt</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Skins</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody id="regoSyncTableBody" class="divide-y divide-brd/50"></tbody>
+          </table>
+        </div>
+        <div id="regoNoMatch" class="hidden">
+          <p class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">No match found</p>
+          <div id="regoNoMatchList" class="flex flex-wrap gap-2"></div>
         </div>
       </section>
 
@@ -616,7 +612,7 @@
       getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
       signInWithEmailAndPassword, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import {
       getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -663,10 +659,7 @@
     let currentEditUid = null;
     let editPanelExistingRoommates = [];
     let activeFilter = "all";
-    // Group builder state — keyed per day
-    const GB_DAYS = { fri: { label: "Friday", mode: "shotgun" }, sat: { label: "Saturday", mode: "teetime" }, sun: { label: "Sunday", mode: "shotgun" } };
-    let gbActiveDay = "fri";
-    let gbGroups = { fri: [], sat: [], sun: [] }; // each entry: { hole?, teeTime?, players[] }
+    let groupBuilderGroups = [];
     let groupBuilderSelectedPlayers = [];
     let currentPage = 1;
     let recordsPerPage = 15;
@@ -675,6 +668,14 @@
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
 
+    const signInOverlay = $("#signInOverlay");
+    const signinEmailInput = $("#signinEmail");
+    const signinPasswordInput = $("#signinPassword");
+    const signinBtn = $("#signinBtn");
+    const signInStatus = $("#signInStatus");
+    const authBar = $("#authBar");
+    const authEmailSpan = $("#authEmail");
+    const signOutBtn = $("#signOutBtn");
     const mainLayout = $("#mainLayout");
 
     const eventSelect = $("#eventSelect");
@@ -716,26 +717,12 @@
     const gbHoleInput = $("#gbHoleInput");
     const gbTeeTimeInput = $("#gbTeeTimeInput");
     const gbAddGroupBtn = $("#gbAddGroupBtn");
-    const gbClearSelBtn = $("#gbClearSelBtn");
     const gbResetBtn = $("#gbResetBtn");
     const gbPlayerSearch = $("#gbPlayerSearch");
     const gbPlayerList = $("#gbPlayerList");
     const editEmail = $("#editEmail");
     const gbGroupTableBody = $("#gbGroupTableBody");
-    const gbGroupTableHead = $("#gbGroupTableHead");
-    const gbTableHeading = $("#gbTableHeading");
     const gbStatus = $("#gbStatus");
-    const gbShotgunAuto = $("#gbShotgunAuto");
-    const gbTeeTimeAuto = $("#gbTeeTimeAuto");
-    const gbAutoStartHole = $("#gbAutoStartHole");
-    const gbAutoStartTime = $("#gbAutoStartTime");
-    const gbAutoInterval = $("#gbAutoInterval");
-    const gbAutoAssignHoles = $("#gbAutoAssignHoles");
-    const gbAutoAssignTimes = $("#gbAutoAssignTimes");
-    const gbGroupInputShotgun = $("#gbGroupInputShotgun");
-    const gbGroupInputTeeTime = $("#gbGroupInputTeeTime");
-    const gbUnassigned = $("#gbUnassigned");
-    const gbUnassignedList = $("#gbUnassignedList");
 
     const dirtyIndicator = $("#dirtyIndicator");
     const dirtyCountSpan = $("#dirtyCount");
@@ -957,10 +944,18 @@ window.copyPlayerEmails = function(mode) {
       editTeamHandicap.textContent = `Team handicap: ${formatTeamHandicap((currentHandicap + partnerHandicap) / 4)}`;
     }
 
-    // ===================== GROUP BUILDER =====================
+    function getBuilderPlayerLabel(uid) {
+      const user = users.find(player => player.uid === uid);
+      return user ? userLabel(user) : uid.slice(0, 8);
+    }
 
-    function gbDayMode() { return GB_DAYS[gbActiveDay].mode; }
-    function gbCurrentGroups() { return gbGroups[gbActiveDay]; }
+    function builderGroupKey(group) {
+      return Number(group.hole) || 0;
+    }
+
+    function builderAssignedPlayers() {
+      return new Set(groupBuilderGroups.flatMap(group => group.players || []));
+    }
 
     function setBuilderStatus(message = "", type = "") {
       if (!gbStatus) return;
@@ -968,30 +963,12 @@ window.copyPlayerEmails = function(mode) {
       gbStatus.className = "text-xs min-h-[18px] " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-500");
     }
 
-    function gbSwitchDay(day) {
-      gbActiveDay = day;
+    function clearBuilderSelection() {
       groupBuilderSelectedPlayers = [];
-      $$(".gb-day-tab").forEach(t => t.classList.toggle("active", t.dataset.day === day));
-      const isTeeTime = gbDayMode() === "teetime";
-      gbShotgunAuto.classList.toggle("hidden", isTeeTime);
-      gbTeeTimeAuto.classList.toggle("hidden", !isTeeTime);
-      gbTeeTimeAuto.classList.toggle("flex", !isTeeTime);
-      gbGroupInputShotgun.classList.toggle("hidden", isTeeTime);
-      gbGroupInputTeeTime.classList.toggle("hidden", !isTeeTime);
-      gbGroupInputTeeTime.classList.toggle("grid", !isTeeTime);
-      gbTableHeading.textContent = `Current Groups — ${GB_DAYS[day].label}`;
+      gbHoleInput.value = "";
+      gbTeeTimeInput.value = "";
       renderBuilderSelectedPlayers();
       renderBuilderPlayerList();
-      renderBuilderGroups();
-    }
-
-    function getBuilderPlayerLabel(uid) {
-      const user = users.find(p => p.uid === uid);
-      return user ? userLabel(user) : uid.slice(0, 8);
-    }
-
-    function builderAssignedPlayers() {
-      return new Set(gbCurrentGroups().flatMap(g => g.players || []));
     }
 
     function renderBuilderSelectedPlayers() {
@@ -1000,10 +977,10 @@ window.copyPlayerEmails = function(mode) {
         gbSelectedPlayers.innerHTML = '<span class="text-xs text-slate-600">Select up to 4 players below.</span>';
         return;
       }
-      gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((uid, idx) => `
+      gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((uid, index) => `
         <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-accent/15 border border-accent/20 text-accent text-xs font-medium">
           ${escapeHtml(getBuilderPlayerLabel(uid))}
-          <button type="button" class="w-4 h-4 rounded-full bg-slate-700/60 hover:bg-slate-600/80 flex items-center justify-center text-[10px] text-white" data-remove-selected="${idx}">×</button>
+          <button type="button" class="w-4 h-4 rounded-full bg-slate-700/60 hover:bg-slate-600/80 flex items-center justify-center text-[10px] text-white" data-remove-selected="${index}">×</button>
         </span>
       `).join("");
     }
@@ -1012,21 +989,19 @@ window.copyPlayerEmails = function(mode) {
       if (!gbPlayerList) return;
       const q = normalize(gbPlayerSearch.value);
       const assigned = builderAssignedPlayers();
-      const coming = users.filter(u => {
-        const rec = eventPlayers.get(u.uid);
-        return rec && rec.coming && u.displayName && u.displayName.trim();
-      });
-      const available = coming.filter(u => normalize(userLabel(u)).includes(q) || normalize(u.uid).includes(q));
+      const available = users.filter(user => normalize(userLabel(user)).includes(q) || normalize(user.uid).includes(q));
+
       if (available.length === 0) {
         gbPlayerList.innerHTML = '<div class="p-4 text-sm text-slate-600">No players match.</div>';
         return;
       }
+
       gbPlayerList.innerHTML = available.map(user => {
         const isSelected = groupBuilderSelectedPlayers.includes(user.uid);
         const isAssigned = assigned.has(user.uid) && !isSelected;
-        const label = isAssigned ? "In group" : isSelected ? "Selected" : "Add";
+        const label = isAssigned ? "Assigned" : isSelected ? "Selected" : "Add";
         return `
-          <button type="button" class="w-full flex items-center justify-between px-4 py-3 text-left border-b border-brd last:border-b-0 transition ${isSelected ? "bg-accent/10" : isAssigned ? "opacity-40 cursor-not-allowed" : "hover:bg-s2"}" data-builder-player="${escapeHtml(user.uid)}" data-assigned="${isAssigned ? "1" : "0"}">
+          <button type="button" class="w-full flex items-center justify-between px-4 py-3 text-left border-b border-brd last:border-b-0 transition ${isSelected ? "bg-accent/10" : isAssigned ? "opacity-50 cursor-not-allowed" : "hover:bg-s2"}" data-builder-player="${escapeHtml(user.uid)}" data-assigned="${isAssigned ? "1" : "0"}">
             <span>
               <span class="block text-sm text-white font-medium">${escapeHtml(userLabel(user))}</span>
               <span class="block text-[11px] text-slate-600 font-mono">${escapeHtml(user.uid.slice(0, 12))}</span>
@@ -1039,273 +1014,312 @@ window.copyPlayerEmails = function(mode) {
 
     function renderBuilderGroups() {
       if (!gbGroupTableBody) return;
-      const groups = gbCurrentGroups();
-      const isShotgun = gbDayMode() === "shotgun";
-
-      // Table header
-      if (gbGroupTableHead) {
-        gbGroupTableHead.innerHTML = isShotgun
-          ? `<th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500 w-16">Hole</th>
-             <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Players</th>
-             <th class="px-3 py-2 text-right text-[10px] uppercase tracking-widest text-slate-500">Actions</th>`
-          : `<th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500 w-28">Tee Time</th>
-             <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Players</th>
-             <th class="px-3 py-2 text-right text-[10px] uppercase tracking-widest text-slate-500">Actions</th>`;
-      }
-
-      if (groups.length === 0) {
-        gbGroupTableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-sm text-slate-600">No groups yet for ${GB_DAYS[gbActiveDay].label}.</td></tr>`;
-        gbUnassigned && gbUnassigned.classList.add("hidden");
+      if (groupBuilderGroups.length === 0) {
+        gbGroupTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-sm text-slate-600">No groups yet.</td></tr>';
         return;
       }
 
-      gbGroupTableBody.innerHTML = groups.map((group, idx) => {
+      gbGroupTableBody.innerHTML = groupBuilderGroups.map((group, index) => {
         const players = Array.isArray(group.players) ? group.players : [];
-        const playerChips = players.map(uid => `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-s3 border border-brd text-xs text-slate-300">
-            ${escapeHtml(getBuilderPlayerLabel(uid))}
-            <button type="button" class="w-3 h-3 text-slate-500 hover:text-red-400" data-gb-remove-player="${idx}" data-gb-player-uid="${uid}">×</button>
-          </span>`).join("");
-
-        const slotCell = isShotgun
-          ? `<td class="px-3 py-2.5 w-16"><input type="number" min="1" max="18" class="gb-cell-edit w-14 text-sm font-semibold text-white" value="${escapeHtml(asString(group.hole || ""))}" data-gb-field="hole" data-gb-idx="${idx}" /></td>`
-          : `<td class="px-3 py-2.5 w-28"><input type="text" class="gb-cell-edit w-24 text-sm font-semibold text-white" value="${escapeHtml(asString(group.teeTime || ""))}" data-gb-field="teeTime" data-gb-idx="${idx}" /></td>`;
-
+        const playerNames = players.map(getBuilderPlayerLabel).join(", ");
         return `
-          <tr class="border-b border-brd/50 hover:bg-s2/40 transition">
-            ${slotCell}
-            <td class="px-3 py-2.5">
-              <div class="flex flex-wrap gap-1.5">${playerChips || '<span class="text-xs text-slate-600">—</span>'}</div>
-            </td>
-            <td class="px-3 py-2.5 text-right">
+          <tr>
+            <td class="px-3 py-3 text-sm font-semibold text-white">${escapeHtml(asString(group.hole))}</td>
+            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(asString(group.teeTime) || "—")}</td>
+            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(playerNames || "—")}</td>
+            <td class="px-3 py-3 text-right">
               <div class="inline-flex items-center gap-1">
-                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-up="${idx}">↑</button>
-                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-down="${idx}">↓</button>
-                <button type="button" class="px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-300 hover:bg-red-500/20 transition" data-gb-delete="${idx}">Del</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-edit="${index}">Edit</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-up="${index}">↑</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-down="${index}">↓</button>
+                <button type="button" class="px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-300 hover:bg-red-500/20 transition" data-gb-delete="${index}">Del</button>
               </div>
             </td>
           </tr>
         `;
       }).join("");
+    }
 
-      // Unassigned players
-      const coming = users.filter(u => { const r = eventPlayers.get(u.uid); return r && r.coming && u.displayName && u.displayName.trim(); });
-      const assigned = builderAssignedPlayers();
-      const unassigned = coming.filter(u => !assigned.has(u.uid));
-      if (gbUnassigned && gbUnassignedList) {
-        if (unassigned.length > 0) {
-          gbUnassigned.classList.remove("hidden");
-          gbUnassignedList.innerHTML = unassigned.map(u => `<span class="inline-flex px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">${escapeHtml(userLabel(u))}</span>`).join("");
-        } else {
-          gbUnassigned.classList.add("hidden");
-        }
-      }
+    function sortBuilderGroups() {
+      groupBuilderGroups.sort((a, b) => Number(a.hole) - Number(b.hole));
     }
 
     function addBuilderGroup() {
+      const hole = Number(gbHoleInput.value);
+      const teeTime = gbTeeTimeInput.value.trim();
       const players = [...groupBuilderSelectedPlayers];
+      if (!Number.isFinite(hole) || hole < 1 || hole > 18) { setBuilderStatus("Hole must be 1–18.", "error"); return; }
       if (players.length === 0) { setBuilderStatus("Select at least one player.", "error"); return; }
       if (players.length > 4) { setBuilderStatus("Max 4 players per group.", "error"); return; }
-      const isShotgun = gbDayMode() === "shotgun";
-      const group = { players };
-      if (isShotgun) {
-        const hole = Number(gbHoleInput.value);
-        if (!Number.isFinite(hole) || hole < 1 || hole > 18) { setBuilderStatus("Hole must be 1–18.", "error"); return; }
-        group.hole = hole;
-      } else {
-        const teeTime = gbTeeTimeInput.value.trim();
-        if (!teeTime) { setBuilderStatus("Enter a tee time.", "error"); return; }
-        group.teeTime = teeTime;
-      }
-      gbGroups[gbActiveDay].push(group);
-      groupBuilderSelectedPlayers = [];
-      gbHoleInput.value = "";
-      gbTeeTimeInput.value = "";
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
+      groupBuilderGroups.push({ hole, teeTime, players });
+      sortBuilderGroups();
       renderBuilderGroups();
+      clearBuilderSelection();
       setBuilderStatus("Group added.", "success");
     }
 
-    function gbAutoAssignHolesFn() {
-      const groups = gbGroups[gbActiveDay];
-      if (groups.length === 0) { setBuilderStatus("Add groups first.", "error"); return; }
-      let hole = Number(gbAutoStartHole.value) || 1;
-      groups.forEach(g => { g.hole = hole; hole = hole >= 18 ? 1 : hole + 1; });
-      renderBuilderGroups();
-      setBuilderStatus("Holes auto-assigned.", "success");
-    }
-
-    function gbAutoAssignTimesFn() {
-      const groups = gbGroups[gbActiveDay];
-      if (groups.length === 0) { setBuilderStatus("Add groups first.", "error"); return; }
-      const startRaw = gbAutoStartTime.value || "07:00";
-      const [startH, startM] = startRaw.split(":").map(Number);
-      const interval = Number(gbAutoInterval.value) || 10;
-      let totalMins = startH * 60 + startM;
-      groups.forEach(g => {
-        const h = Math.floor(totalMins / 60) % 24;
-        const m = totalMins % 60;
-        const ampm = h >= 12 ? "PM" : "AM";
-        const h12 = h % 12 || 12;
-        g.teeTime = `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
-        totalMins += interval;
-      });
-      renderBuilderGroups();
-      setBuilderStatus("Tee times auto-assigned.", "success");
-    }
-
     async function loadEventGroups() {
-      setBuilderStatus("Loading…");
-      try {
-        const docSnap = await getDoc(doc(firestore, "eventYears", currentEventId));
-        const data = docSnap.exists() ? docSnap.data() || {} : {};
-        ["fri", "sat", "sun"].forEach(day => {
-          gbGroups[day] = Array.isArray(data[`groups_${day}`]) ? data[`groups_${day}`] : [];
-        });
-        renderBuilderGroups();
-        setBuilderStatus(`Loaded groups for ${GB_DAYS[gbActiveDay].label}.`, "success");
-      } catch (err) {
-        console.error(err);
-        setBuilderStatus("Load failed.", "error");
-      }
+      const eventDocSnap = await getDoc(doc(firestore, "eventYears", currentEventId));
+      const data = eventDocSnap.exists() ? eventDocSnap.data() || {} : {};
+      groupBuilderGroups = Array.isArray(data.groups) ? data.groups : [];
+      sortBuilderGroups();
+      renderBuilderGroups();
+      setBuilderStatus(groupBuilderGroups.length ? `Loaded ${groupBuilderGroups.length} groups.` : "No groups saved yet.", groupBuilderGroups.length ? "success" : "warn");
     }
 
     async function saveEventGroups() {
-      const groups = gbGroups[gbActiveDay];
-      if (groups.length === 0) { setBuilderStatus("No groups to save.", "error"); return; }
-      setBuilderStatus("Saving…");
+      if (groupBuilderGroups.length === 0) { setBuilderStatus("No groups to save.", "error"); return; }
+      setBuilderStatus("Saving groups…");
+      await setDoc(doc(firestore, "eventYears", currentEventId), {
+        eventId: currentEventId,
+        groups: groupBuilderGroups,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setBuilderStatus("Groups saved.", "success");
+    }
+
+    // === REGO SHEET SYNC ===
+    const REGO_SHEET_ID = '1cVA4d2aqw6vean9nNv2DZfgxaF4SBNwSwCNzrcxon3Q';
+    const REGO_GID = '846766573';
+    const REGO_COL = { name: 1, gaNumber: 16, skins: 19, shirt: 22 };
+
+    // Pending matches staged for apply
+    let regoSyncMatches = [];
+
+    function regoNormName(s) {
+      return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    // Score how well two names match (0 = no match, higher = better)
+    function regoMatchScore(a, b) {
+      const na = regoNormName(a), nb = regoNormName(b);
+      if (!na || !nb) return 0;
+      if (na === nb) return 100;
+      // Both contain each other
+      if (na.includes(nb) || nb.includes(na)) return 80;
+      // All words from rego name appear in player name
+      const aWords = na.split(/\s+/).filter(Boolean);
+      const bWords = nb.split(/\s+/).filter(Boolean);
+      const sharedAB = aWords.filter(w => nb.includes(w)).length;
+      const sharedBA = bWords.filter(w => na.includes(w)).length;
+      const score = Math.max(sharedAB / Math.max(aWords.length, 1), sharedBA / Math.max(bWords.length, 1));
+      return Math.round(score * 70);
+    }
+
+    function findBestUserMatch(regoName) {
+      let best = null, bestScore = 0;
+      for (const u of users) {
+        const score = regoMatchScore(regoName, u.displayName);
+        if (score > bestScore) { bestScore = score; best = u; }
+      }
+      return bestScore >= 60 ? { user: best, score: bestScore } : null;
+    }
+
+    function regoSyncSetStatus(msg, type = "") {
+      const el = $("#regoSyncStatus");
+      el.textContent = msg;
+      el.className = "text-xs " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-500");
+      el.classList.remove("hidden");
+    }
+
+    async function fetchRegoSheet() {
+      const url = `https://docs.google.com/spreadsheets/d/${REGO_SHEET_ID}/gviz/tq?tqx=out:json&gid=${REGO_GID}`;
+      const res = await fetch(url);
+      const txt = await res.text();
+      const json = JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+      return (json.table.rows || []).filter(r => r.c && r.c[REGO_COL.name] && r.c[REGO_COL.name].v);
+    }
+
+    function regoCell(row, idx) {
+      return (row.c && row.c[idx] && row.c[idx].v != null) ? String(row.c[idx].v).trim() : "";
+    }
+
+    async function runRegoSync() {
+      const btn = $("#regoSyncBtn");
+      const applyBtn = $("#regoApplyBtn");
+      btn.disabled = true;
+      btn.textContent = "Fetching…";
+      regoSyncSetStatus("Fetching registration sheet…");
+
       try {
-        const day = gbActiveDay;
+        const rows = await fetchRegoSheet();
+        regoSyncMatches = [];
+        const noMatch = [];
 
-        // Firestore: save groups under eventYears/{id}.groups_fri / sat / sun
-        await setDoc(doc(firestore, "eventYears", currentEventId), {
-          eventId: currentEventId,
-          [`groups_${day}`]: groups,
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        rows.forEach(row => {
+          const regoName  = regoCell(row, REGO_COL.name);
+          const gaNumber  = regoCell(row, REGO_COL.gaNumber);
+          const skins     = regoCell(row, REGO_COL.skins);
+          const shirt     = regoCell(row, REGO_COL.shirt);
 
-        // RTDB: write fri/sat/sun assignment per player
-        // Each player gets their slot value (hole number for shotgun, tee time string for sat)
-        const rtdbUpdates = {};
-        const isShotgun = gbDayMode() === "shotgun";
-        // First clear existing day assignments for coming players
-        users.forEach(u => { rtdbUpdates[`users/${u.uid}/${day}`] = null; });
-        groups.forEach(group => {
-          const slot = isShotgun ? (group.hole || null) : (group.teeTime || null);
-          (group.players || []).forEach(uid => {
-            rtdbUpdates[`users/${uid}/${day}`] = slot;
+          // Skip rows with nothing useful to save
+          if (!gaNumber && !shirt && !skins) return;
+
+          const match = findBestUserMatch(regoName);
+          if (!match) { noMatch.push(regoName); return; }
+
+          const user = match.user;
+          const existingGA   = asString(user.golfAustraliaNumber || "");
+          const existingShirt = asString(getEventRecord(user.uid).shirtSize || "");
+          const existingSkins = !!getEventRecord(user.uid).skins;
+          const skinsYes = /^yes/i.test(skins);
+
+          // Only include if there's something new/different
+          const gaNew    = gaNumber && gaNumber !== existingGA;
+          const shirtNew = shirt && shirt !== existingShirt;
+          const skinsNew = skins && skinsYes !== existingSkins;
+
+          if (!gaNew && !shirtNew && !skinsNew) return; // nothing to update
+
+          regoSyncMatches.push({
+            regoName, uid: user.uid, displayName: user.displayName,
+            gaNumber: gaNew ? gaNumber : null,
+            shirt:    shirtNew ? shirt : null,
+            skins:    skinsNew ? skinsYes : null,
+            score:    match.score,
+            skip:     false,
           });
         });
-        await update(ref(db), rtdbUpdates);
 
-        setBuilderStatus(`${GB_DAYS[day].label} saved (${groups.length} groups).`, "success");
-        showToast(`${GB_DAYS[day].label} groups saved`, "success");
+        renderRegoSyncPreview(noMatch);
+        regoSyncSetStatus(
+          `${regoSyncMatches.length} update${regoSyncMatches.length !== 1 ? "s" : ""} found · ${noMatch.length} unmatched`,
+          regoSyncMatches.length > 0 ? "success" : "warn"
+        );
+        if (regoSyncMatches.length > 0) {
+          applyBtn.classList.remove("hidden");
+        }
       } catch (err) {
         console.error(err);
-        setBuilderStatus("Save failed.", "error");
-        showToast("Save failed: " + err.message, "error");
+        regoSyncSetStatus("Fetch failed: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="download-cloud" style="width:13px;height:13px;display:inline;margin-right:5px;"></i>Fetch &amp; Preview';
+        lucide.createIcons({ nodes: [btn] });
       }
     }
 
-    // Group builder event delegation on table body
-    gbGroupTableBody && gbGroupTableBody.addEventListener("click", e => {
-      // Delete group
-      const delBtn = e.target.closest("[data-gb-delete]");
-      if (delBtn) {
-        const idx = Number(delBtn.dataset.gbDelete);
-        gbGroups[gbActiveDay].splice(idx, 1);
-        renderBuilderGroups();
-        renderBuilderPlayerList();
-        setBuilderStatus("Group removed.", "warn");
-        return;
-      }
-      // Move up
-      const upBtn = e.target.closest("[data-gb-up]");
-      if (upBtn) {
-        const idx = Number(upBtn.dataset.gbUp);
-        if (idx > 0) { [gbGroups[gbActiveDay][idx - 1], gbGroups[gbActiveDay][idx]] = [gbGroups[gbActiveDay][idx], gbGroups[gbActiveDay][idx - 1]]; renderBuilderGroups(); }
-        return;
-      }
-      // Move down
-      const downBtn = e.target.closest("[data-gb-down]");
-      if (downBtn) {
-        const idx = Number(downBtn.dataset.gbDown);
-        const arr = gbGroups[gbActiveDay];
-        if (idx < arr.length - 1) { [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]]; renderBuilderGroups(); }
-        return;
-      }
-      // Remove player from group
-      const rmPlayer = e.target.closest("[data-gb-remove-player]");
-      if (rmPlayer) {
-        const idx = Number(rmPlayer.dataset.gbRemovePlayer);
-        const uid = rmPlayer.dataset.gbPlayerUid;
-        gbGroups[gbActiveDay][idx].players = (gbGroups[gbActiveDay][idx].players || []).filter(p => p !== uid);
-        renderBuilderGroups();
-        renderBuilderPlayerList();
-        return;
-      }
-    });
+    function renderRegoSyncPreview(noMatch = []) {
+      const preview = $("#regoSyncPreview");
+      const tbody   = $("#regoSyncTableBody");
+      const noMatchDiv  = $("#regoNoMatch");
+      const noMatchList = $("#regoNoMatchList");
 
-    // Inline cell editing
-    gbGroupTableBody && gbGroupTableBody.addEventListener("change", e => {
-      const input = e.target.closest("[data-gb-field]");
-      if (!input) return;
-      const idx = Number(input.dataset.gbIdx);
-      const field = input.dataset.gbField;
-      const val = field === "hole" ? (Number(input.value) || "") : input.value.trim();
-      gbGroups[gbActiveDay][idx][field] = val;
-    });
+      if (regoSyncMatches.length === 0 && noMatch.length === 0) {
+        preview.classList.add("hidden");
+        noMatchDiv.classList.add("hidden");
+        return;
+      }
 
-    // Player list click
-    gbPlayerList && gbPlayerList.addEventListener("click", e => {
-      const btn = e.target.closest("[data-builder-player]");
-      if (!btn || btn.dataset.assigned === "1") return;
-      const uid = btn.dataset.builderPlayer;
-      if (groupBuilderSelectedPlayers.includes(uid)) {
-        groupBuilderSelectedPlayers = groupBuilderSelectedPlayers.filter(u => u !== uid);
+      if (regoSyncMatches.length > 0) {
+        preview.classList.remove("hidden");
+        tbody.innerHTML = regoSyncMatches.map((m, i) => {
+          const skinsLabel = m.skins === null ? '<span class="text-slate-600">—</span>'
+            : m.skins
+              ? '<span class="text-emerald-400 text-[11px] font-semibold">YES</span>'
+              : '<span class="text-slate-500 text-[11px]">No</span>';
+
+          const skipClass = m.skip ? "opacity-40 line-through" : "";
+
+          return `
+            <tr class="hover:bg-s2/40 transition ${m.skip ? 'opacity-40' : ''}">
+              <td class="px-3 py-2.5 text-sm text-slate-300 ${skipClass}">${escapeHtml(m.regoName)}</td>
+              <td class="px-3 py-2.5">
+                <span class="text-sm font-medium text-white ${skipClass}">${escapeHtml(m.displayName)}</span>
+                <span class="ml-1 text-[10px] text-slate-600">(${m.score}%)</span>
+              </td>
+              <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.gaNumber ? escapeHtml(m.gaNumber) : '<span class="text-slate-600">—</span>'}</td>
+              <td class="px-3 py-2.5 text-center text-xs ${skipClass}">${m.shirt ? escapeHtml(m.shirt) : '<span class="text-slate-600">—</span>'}</td>
+              <td class="px-3 py-2.5 text-center">${skinsLabel}</td>
+              <td class="px-3 py-2.5 text-center">
+                <button type="button" class="text-[10px] px-2 py-1 rounded-md border transition ${m.skip ? 'border-brd text-slate-500 hover:text-slate-300 hover:bg-s3' : 'border-red-500/20 text-red-400 hover:bg-red-500/10'}" data-rego-toggle="${i}">
+                  ${m.skip ? "Include" : "Skip"}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+        lucide.createIcons();
       } else {
-        if (groupBuilderSelectedPlayers.length >= 4) { setBuilderStatus("Max 4 players per group.", "warn"); return; }
-        groupBuilderSelectedPlayers.push(uid);
+        preview.classList.add("hidden");
       }
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
-    });
 
-    // Remove from selection
-    gbSelectedPlayers && gbSelectedPlayers.addEventListener("click", e => {
-      const btn = e.target.closest("[data-remove-selected]");
+      if (noMatch.length > 0) {
+        noMatchDiv.classList.remove("hidden");
+        noMatchList.innerHTML = noMatch.map(n =>
+          `<span class="inline-flex px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">${escapeHtml(n)}</span>`
+        ).join("");
+      } else {
+        noMatchDiv.classList.add("hidden");
+      }
+    }
+
+    async function applyRegoSync() {
+      const toApply = regoSyncMatches.filter(m => !m.skip);
+      if (toApply.length === 0) { regoSyncSetStatus("Nothing to apply.", "warn"); return; }
+
+      const applyBtn = $("#regoApplyBtn");
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Applying…";
+      regoSyncSetStatus("Saving…");
+
+      try {
+        const writes = [];
+
+        for (const m of toApply) {
+          const user = users.find(u => u.uid === m.uid);
+          if (!user) continue;
+
+          // Firestore users doc — GA number + shirt
+          const fsUpdate = { updatedAt: serverTimestamp() };
+          if (m.gaNumber !== null) fsUpdate.golfAustraliaNumber = m.gaNumber;
+
+          // Firestore eventYears player doc — shirt + skins
+          const record = getEventRecord(m.uid);
+          const eventUpdate = { ...record, updatedAt: serverTimestamp() };
+          if (m.shirt  !== null) { eventUpdate.shirtSize = m.shirt; record.shirtSize = m.shirt; }
+          if (m.skins  !== null) { eventUpdate.skins = m.skins;     record.skins = m.skins; }
+
+          // Update local state immediately
+          if (m.gaNumber !== null) user.golfAustraliaNumber = m.gaNumber;
+          eventPlayers.set(m.uid, record);
+
+          writes.push(setDoc(doc(firestore, "users", m.uid), fsUpdate, { merge: true }));
+          writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", m.uid), eventUpdate, { merge: true }));
+        }
+
+        await Promise.all(writes);
+        persistEventPlayersCache(currentEventId);
+        filterAndRender();
+
+        regoSyncSetStatus(`Applied ${toApply.length} update${toApply.length !== 1 ? "s" : ""} successfully.`, "success");
+        showToast(`Rego sync: ${toApply.length} players updated`, "success");
+        applyBtn.classList.add("hidden");
+        regoSyncMatches = [];
+        renderRegoSyncPreview([]);
+      } catch (err) {
+        console.error(err);
+        regoSyncSetStatus("Apply failed: " + err.message, "error");
+        showToast("Rego sync failed", "error");
+      } finally {
+        applyBtn.disabled = false;
+        applyBtn.textContent = "Apply Matches";
+      }
+    }
+
+    // Rego sync button listeners
+    $("#regoSyncBtn") && $("#regoSyncBtn").addEventListener("click", runRegoSync);
+    $("#regoApplyBtn") && $("#regoApplyBtn").addEventListener("click", applyRegoSync);
+
+    // Toggle skip on preview rows (delegated)
+    document.addEventListener("click", e => {
+      const btn = e.target.closest("[data-rego-toggle]");
       if (!btn) return;
-      const idx = Number(btn.dataset.removeSelected);
-      groupBuilderSelectedPlayers.splice(idx, 1);
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
-    });
-
-    gbPlayerSearch && gbPlayerSearch.addEventListener("input", renderBuilderPlayerList);
-    gbAddGroupBtn && gbAddGroupBtn.addEventListener("click", addBuilderGroup);
-    gbClearSelBtn && gbClearSelBtn.addEventListener("click", () => {
-      groupBuilderSelectedPlayers = [];
-      gbHoleInput.value = "";
-      gbTeeTimeInput.value = "";
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
-    });
-    gbResetBtn && gbResetBtn.addEventListener("click", () => {
-      if (!confirm(`Clear all groups for ${GB_DAYS[gbActiveDay].label}?`)) return;
-      gbGroups[gbActiveDay] = [];
-      renderBuilderGroups();
-      renderBuilderPlayerList();
-      setBuilderStatus("Day cleared.", "warn");
-    });
-    gbLoadBtn && gbLoadBtn.addEventListener("click", loadEventGroups);
-    gbSaveBtn && gbSaveBtn.addEventListener("click", saveEventGroups);
-    gbAutoAssignHoles && gbAutoAssignHoles.addEventListener("click", gbAutoAssignHolesFn);
-    gbAutoAssignTimes && gbAutoAssignTimes.addEventListener("click", gbAutoAssignTimesFn);
-
-    // Day tab switching
-    $$(".gb-day-tab").forEach(tab => {
-      tab.addEventListener("click", () => gbSwitchDay(tab.dataset.day));
+      const i = Number(btn.dataset.regoToggle);
+      if (regoSyncMatches[i]) {
+        regoSyncMatches[i].skip = !regoSyncMatches[i].skip;
+        renderRegoSyncPreview([]); // re-render without re-fetching no-match list
+      }
     });
 
     // === DIRTY TRACKING ===
@@ -2054,6 +2068,32 @@ window.copyPlayerEmails = function(mode) {
     });
 
     // === AUTH ===
+    signinBtn.addEventListener("click", async () => {
+      const email = signinEmailInput.value.trim();
+      const password = signinPasswordInput.value;
+      if (!email || !password) {
+        signInStatus.textContent = "Enter email and password";
+        signInStatus.className = "mt-3 text-center text-sm text-red-400";
+        return;
+      }
+      signinBtn.disabled = true;
+      signinBtn.textContent = "Signing in...";
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        signinPasswordInput.value = "";
+      } catch (err) {
+        console.error(err);
+        signInStatus.textContent = "Sign-in failed. Check your credentials.";
+        signInStatus.className = "mt-3 text-center text-sm text-red-400";
+      } finally {
+        signinBtn.disabled = false;
+        signinBtn.textContent = "Sign in";
+      }
+    });
+
+    signOutBtn.addEventListener("click", async () => {
+      try { await signOut(auth); } catch (err) { console.error(err); }
+    });
 
     setPersistence(auth, browserLocalPersistence).catch(err => console.warn("Auth persistence error:", err));
 
@@ -2065,17 +2105,13 @@ window.copyPlayerEmails = function(mode) {
     // === BOOT ===
     renderEventSelect();
     populateEditSelects();
-    gbSwitchDay("fri"); // initialise day tabs + UI mode
-
-    function redirectToSignIn(reason) {
-      const returnUrl = encodeURIComponent(window.location.href);
-      const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : "";
-      window.location.href = `/?redirect=${returnUrl}${reasonParam}`;
-    }
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        redirectToSignIn();
+        signInOverlay.classList.remove("hidden");
+        signInOverlay.style.display = "";
+        authBar.classList.add("hidden");
+        mainLayout.style.opacity = "0";
         return;
       }
 
@@ -2083,8 +2119,12 @@ window.copyPlayerEmails = function(mode) {
       try {
         const allowed = await verifyAdmin(user);
         if (!allowed) {
-          await signOut(auth);
-          redirectToSignIn("access_denied");
+          signInOverlay.classList.remove("hidden");
+          signInOverlay.style.display = "";
+          signInStatus.textContent = "Access denied — admin privileges required";
+          signInStatus.className = "mt-3 text-center text-sm text-red-400";
+          authBar.classList.add("hidden");
+          mainLayout.style.opacity = "0";
           return;
         }
       } catch (err) {
@@ -2094,6 +2134,9 @@ window.copyPlayerEmails = function(mode) {
       }
 
       // Authenticated and authorized
+      signInOverlay.style.display = "none";
+      authBar.classList.remove("hidden");
+      authEmailSpan.textContent = user.email || user.uid;
       mainLayout.style.opacity = "1";
 
       if (!adminLoaded) {
@@ -2113,4 +2156,4 @@ window.copyPlayerEmails = function(mode) {
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </body>
-</html>
+</html> 
