@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>HC26 Registrations | Hackers Cup</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['DM Mono', 'monospace'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --sky: #0ea5e9;
+      --gold: #f59e0b;
+      --dark: #0f172a;
+      --surface: #1e293b;
+    }
+
+    * { box-sizing: border-box; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    body {
+      background: #0f172a;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 10% -10%, rgba(14, 165, 233, 0.12), transparent),
+        radial-gradient(ellipse 60% 50% at 90% 110%, rgba(245, 158, 11, 0.1), transparent),
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0);
+      background-size: 100% 100%, 100% 100%, 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    .glass {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ── STATS STRIP ── */
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 12px 20px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      min-width: 90px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-pill::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent, var(--sky));
+    }
+    .stat-pill .val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-pill .lbl {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.9);
+      white-space: nowrap;
+    }
+
+    /* ── SEARCH / FILTER BAR ── */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(30,41,59,0.5);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: rgba(148,163,184,0.9);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .filter-chip:hover { border-color: rgba(14,165,233,0.4); color: #fff; }
+    .filter-chip.active {
+      background: rgba(14,165,233,0.15);
+      border-color: rgba(14,165,233,0.5);
+      color: var(--sky);
+    }
+    .filter-chip .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.7;
+    }
+
+    /* ── TABLE ── */
+    .reg-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .reg-table thead th {
+      position: sticky;
+      top: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.8);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s;
+    }
+    .reg-table thead th:hover { color: #fff; }
+    .reg-table thead th.sorted-asc::after { content: ' ↑'; color: var(--sky); }
+    .reg-table thead th.sorted-desc::after { content: ' ↓'; color: var(--sky); }
+
+    .reg-table tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.12s;
+    }
+    .reg-table tbody tr:hover { background: rgba(14,165,233,0.06); cursor: pointer; }
+    .reg-table tbody tr.expanded { background: rgba(14,165,233,0.04); }
+
+    .reg-table td {
+      padding: 11px 14px;
+      vertical-align: middle;
+      color: rgba(226,232,240,0.9);
+      white-space: nowrap;
+    }
+
+    .reg-table td.name-cell {
+      font-weight: 600;
+      color: #fff;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reg-table td.mono {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      color: rgba(148,163,184,0.8);
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .badge-sky { background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); }
+    .badge-gold { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .badge-emerald { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .badge-rose { background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+    .badge-slate { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+
+    /* ── EXPANDED ROW ── */
+    .expand-row td {
+      padding: 0;
+    }
+    .expand-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      padding: 14px 16px 18px;
+      background: rgba(14,165,233,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .expand-field { display: flex; flex-direction: column; gap: 2px; }
+    .expand-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.6);
+      font-weight: 600;
+    }
+    .expand-value {
+      font-size: 12px;
+      color: rgba(226,232,240,0.9);
+    }
+    .expand-value.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
+
+    /* ── NUMBER BADGE ── */
+    .reg-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: rgba(148,163,184,0.5);
+      min-width: 28px;
+      text-align: right;
+      padding-right: 4px;
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      .mobile-grid { display: grid !important; }
+    }
+    @media (min-width: 768px) {
+      .mobile-grid { display: none !important; }
+    }
+
+    .mob-card {
+      background: rgba(30,41,59,0.5);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .mob-card:hover, .mob-card.expanded {
+      border-color: rgba(14,165,233,0.35);
+      background: rgba(14,165,233,0.05);
+    }
+    .mob-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .mob-card-body {
+      display: none;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .mob-card.expanded .mob-card-body { display: grid; }
+
+    /* ── LOAD SHIMMER ── */
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .shimmer {
+      background: linear-gradient(90deg, rgba(30,41,59,0.4) 25%, rgba(51,65,85,0.5) 50%, rgba(30,41,59,0.4) 75%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+
+    /* ── TIMESTAMP ── */
+    .ts {
+      font-family: 'DM Mono', monospace;
+      font-size: 10.5px;
+      color: rgba(100,116,139,0.8);
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(15,23,42,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    @media (min-width: 768px) { .bottom-nav { display: none; } }
+
+    /* ── HERO ── */
+    @keyframes slideUp {
+      from { transform: translateY(18px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .slide-up { animation: slideUp 0.55s ease-out both; }
+    .slide-up-2 { animation: slideUp 0.55s 0.1s ease-out both; }
+    .slide-up-3 { animation: slideUp 0.55s 0.2s ease-out both; }
+
+    /* ── ERROR / EMPTY ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; padding: 60px 20px; color: rgba(100,116,139,0.8);
+      text-align: center;
+    }
+    .empty-state svg { opacity: 0.4; }
+
+    /* ── SCROLL CONTAINER ── */
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="pb-24 md:pb-8">
+
+  <div class="grid-bg"></div>
+
+  <div id="main-content" style="opacity:0; pointer-events:none; transition: opacity 0.4s ease;">
+
+  <!-- ══ NAV ══ -->
+  <nav class="fixed top-0 w-full z-40 glass">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup" class="w-8 h-8 object-contain" onerror="this.style.display='none'">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        </div>
+        <button onclick="document.getElementById('mob-menu').classList.toggle('hidden')" class="md:hidden p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+    </div>
+    <div id="mob-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══ HERO ══ -->
+  <section class="relative pt-24 pb-10 md:pt-32 md:pb-14 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);">
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="slide-up inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style="background: rgba(30,41,59,0.7); border: 1px solid rgba(14,165,233,0.3);">
+        <i data-lucide="users" class="w-4 h-4" style="color: #0ea5e9;"></i>
+        <span class="text-sm font-medium text-gray-300">HC26 · Live Data</span>
+      </div>
+      <h1 class="slide-up-2 text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight mb-2">Registrations</h1>
+      <p class="slide-up-3 text-lg text-gray-400">Live feed from the HC26 registration form.</p>
+    </div>
+  </section>
+
+  <!-- ══ MAIN ══ -->
+  <section class="relative z-10 py-8 md:py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+
+      <!-- STAT STRIP -->
+      <div id="stat-strip" class="flex flex-wrap gap-3">
+        <!-- shimmer placeholders -->
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
+      </div>
+
+      <!-- SEARCH + FILTER BAR -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-shrink-0" style="min-width:220px; max-width:320px; flex:1;">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input id="search" type="text" placeholder="Search name, email, mobile…"
+            class="w-full pl-9 pr-4 py-2 rounded-full text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2"
+            style="background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.1); focus-ring-color: rgba(14,165,233,0.5);">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5" id="filter-bar">
+          <button class="filter-chip active" data-filter="all">
+            <span class="dot"></span> All
+          </button>
+          <button class="filter-chip" data-filter="firsttimer">
+            <span class="dot" style="background:#f59e0b;"></span> First timers
+          </button>
+          <button class="filter-chip" data-filter="skins">
+            <span class="dot" style="background:#34d399;"></span> Friday Skins
+          </button>
+          <button class="filter-chip" data-filter="sponsor">
+            <span class="dot" style="background:#38bdf8;"></span> Sponsors
+          </button>
+          <button class="filter-chip" data-filter="noemail">
+            <span class="dot" style="background:#fb7185;"></span> No email
+          </button>
+        </div>
+
+        <button onclick="loadData()" class="ml-auto flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+          style="background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.1);" title="Refresh">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-300"></i>
+        </button>
+
+        <div id="last-updated" class="text-xs text-gray-600 hidden">Updated just now</div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div style="background: rgba(15,23,42,0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 0; overflow: hidden;">
+
+        <!-- TABLE (desktop) -->
+        <div class="desktop-only table-scroll">
+          <table class="reg-table">
+            <thead>
+              <tr>
+                <th class="w-8" style="padding-left:16px;">#</th>
+                <th data-col="name">Name</th>
+                <th data-col="timestamp">Registered</th>
+                <th data-col="mobile">Mobile</th>
+                <th data-col="email">Email</th>
+                <th data-col="firsttimer">First Timer</th>
+                <th data-col="shirt">Shirt</th>
+                <th data-col="skins">Fri Skins</th>
+                <th data-col="sponsor">Sponsor</th>
+                <th style="width:28px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbl-body">
+              <!-- shimmer rows -->
+              <tr><td colspan="10" style="padding:0;">
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  ${Array(8).fill(0).map(() => `<div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>`).join('')}
+                </div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CARDS (mobile) -->
+        <div id="mob-cards" class="mobile-grid" style="padding:12px; gap:8px; display:none;"></div>
+
+        <!-- EMPTY STATE -->
+        <div id="empty-state" class="empty-state hidden">
+          <i data-lucide="search-x" class="w-12 h-12"></i>
+          <p class="font-semibold text-white">No registrations match</p>
+          <p class="text-sm">Try adjusting your search or filter.</p>
+        </div>
+
+        <!-- COUNT BAR -->
+        <div id="count-bar" class="hidden flex items-center justify-between px-5 py-3" style="border-top: 1px solid rgba(255,255,255,0.06);">
+          <span id="count-text" class="text-xs text-gray-500 font-mono"></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ BOTTOM NAV (mobile) ══ -->
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-5 h-5 mb-1"></i>
+        <span style="font-size:10px;" class="font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-5 h-5 mb-1"></i>
+        <span style="font-size:10px;" class="font-medium">Payment</span>
+      </a>
+      <a href="register.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="clipboard-list" class="w-5 h-5 mb-1"></i>
+        <span style="font-size:10px;" class="font-medium">Register</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-5 h-5 mb-1"></i>
+        <span style="font-size:10px;" class="font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+  </div> <!-- /main-content -->
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  function redirectToSignIn(reason) {
+    const returnUrl = encodeURIComponent(window.location.href);
+    const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : "";
+    window.location.href = `/?redirect=${returnUrl}${reasonParam}`;
+  }
+
+  async function verifyAdmin(user) {
+    const snap = await get(ref(db, `admins/${user.uid}`));
+    return !!snap.val();
+  }
+
+  setPersistence(auth, browserLocalPersistence).catch(console.warn);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { redirectToSignIn(); return; }
+    try {
+      const allowed = await verifyAdmin(user);
+      if (!allowed) { await signOut(auth); redirectToSignIn("access_denied"); return; }
+    } catch (e) { console.error(e); redirectToSignIn(); return; }
+
+    // Authorised — reveal page and load data
+    document.getElementById("main-content").style.opacity = "1";
+    document.getElementById("main-content").style.pointerEvents = "auto";
+    loadData();
+  });
+
+  // ── CONFIG ──────────────────────────────────────────────────
+  const SHEET_ID = '1cVA4d2aqw6vean9nNv2DZfgxaF4SBNwSwCNzrcxon3Q';
+  const GID = '846766573';
+  const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+  // Column indices in the sheet (0-based)
+  // 0=Timestamp 1=Name 2=Mobile 3=Email 4=col4
+  // 5=first timer (old) 6=first timer (new)
+  // 17=GA number 18=preferred partner 19=preferred roommate
+  // 20=Friday skins 21=sponsor 22=sponsor options
+  // 23=shirt size 24=memorabilia 25=acknowledgement
+  const COL = {
+    timestamp:      0,   // 5/24/2026 16:33:04
+    name:           1,   // Brendo
+    mobile:         2,   // 0410558706
+    email:          3,   // hackerscup1@gmail.com
+    // col 4 = Club/Social type
+    firstTimer:     6,   // "Is this your first Hackers Cup?" (second col, active form)
+    // cols 7-15 = format/venue survey questions
+    gaNumber:      16,   // 2081806807
+    partner:       17,   // muzz
+    roommate:      18,   // muzz
+    skins:         19,   // Yes (Friday Troll Plate Skins)
+    sponsor:       20,   // Yes
+    sponsorOptions:21,   // Co-branded clothing or golf item
+    shirt:         22,   // 2XL
+    suggestions:   23,   // T Shirts
+    // col 24 = acknowledgement
+  };
+
+  // ── STATE ────────────────────────────────────────────────────
+  let allRows = [];
+  let activeFilter = 'all';
+  let sortCol = 'timestamp';
+  let sortDir = 1; // 1 = asc, -1 = desc
+  let expandedRows = new Set();
+
+  // ── BOOT ────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    wireFilters();
+    wireSearch();
+    wireSort();
+    // loadData() is called by onAuthStateChanged once admin is verified
+  });
+
+  // ── DATA LOAD ────────────────────────────────────────────────
+  async function loadData() {
+    try {
+      const res = await fetch(URL);
+      const txt = await res.text();
+      const json = JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+      const rows = json.table.rows || [];
+
+      allRows = rows
+        .filter(r => r.c && r.c[COL.name] && r.c[COL.name].v)
+        .map((r, i) => ({
+          _idx: i + 1,
+          timestamp: cellVal(r, COL.timestamp),
+          name:      cellVal(r, COL.name),
+          mobile:    cellVal(r, COL.mobile),
+          email:     cellVal(r, COL.email),
+          firstTimer:cellVal(r, COL.firstTimer),
+          gaNumber:  cellVal(r, COL.gaNumber),
+          partner:   cellVal(r, COL.partner),
+          roommate:  cellVal(r, COL.roommate),
+          skins:     cellVal(r, COL.skins),
+          sponsor:   cellVal(r, COL.sponsor),
+          sponsorOpt:cellVal(r, COL.sponsorOptions),
+          shirt:     cellVal(r, COL.shirt),
+          suggestions: cellVal(r, COL.suggestions),
+        }));
+
+      updateStats();
+      render();
+      updateLastUpdated();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('tbl-body').innerHTML =
+        `<tr><td colspan="10" style="text-align:center;padding:40px;color:#fb7185;">
+          Failed to load data. <button onclick="loadData()" style="text-decoration:underline;color:#38bdf8;">Retry</button>
+        </td></tr>`;
+    }
+  }
+
+  function cellVal(row, idx) {
+    return (row.c && row.c[idx] && row.c[idx].v != null) ? String(row.c[idx].v).trim() : '';
+  }
+
+  // ── STATS ────────────────────────────────────────────────────
+  function updateStats() {
+    const strip = document.getElementById('stat-strip');
+    const total = allRows.length;
+    const firstTimers = allRows.filter(r => isFirstTimer(r)).length;
+    const playingSkins = allRows.filter(r => yesish(r.skins)).length;
+    const sponsors = allRows.filter(r => yesish(r.sponsor)).length;
+    const noEmail = allRows.filter(r => !r.email).length;
+
+    const stats = [
+      { label: 'Registered', val: total, accent: 'var(--sky)' },
+      { label: 'First Timers', val: firstTimers, accent: '#f59e0b' },
+      { label: 'Fri Skins', val: playingSkins, accent: '#34d399' },
+      { label: 'Sponsors', val: sponsors, accent: '#38bdf8' },
+      { label: 'No Email', val: noEmail, accent: '#fb7185' },
+    ];
+
+    strip.innerHTML = stats.map(s => `
+      <div class="stat-pill" style="--accent:${s.accent}">
+        <span class="val">${s.val}</span>
+        <span class="lbl">${s.label}</span>
+      </div>
+    `).join('');
+  }
+
+  function isFirstTimer(r) {
+    const v = r.firstTimer.toLowerCase();
+    return v === 'yes' || v === 'true' || v === '1';
+  }
+
+  function yesish(v) {
+    const s = (v || '').toLowerCase();
+    return s === 'yes' || s.startsWith('yes') || s === 'true';
+  }
+
+  // ── FILTER + SEARCH ─────────────────────────────────────────
+  function filteredRows() {
+    const q = (document.getElementById('search')?.value || '').toLowerCase().trim();
+    return allRows.filter(r => {
+      // filter pill
+      if (activeFilter === 'firsttimer' && !isFirstTimer(r)) return false;
+      if (activeFilter === 'skins' && !yesish(r.skins)) return false;
+      if (activeFilter === 'sponsor' && !yesish(r.sponsor)) return false;
+      if (activeFilter === 'noemail' && r.email) return false;
+      // text search
+      if (q) {
+        const hay = [r.name, r.email, r.mobile, r.gaNumber, r.partner, r.roommate].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      let va = a[sortCol] || '';
+      let vb = b[sortCol] || '';
+      if (sortCol === 'timestamp') return sortDir * (a._idx - b._idx);
+      return sortDir * va.localeCompare(vb);
+    });
+  }
+
+  // ── RENDER ───────────────────────────────────────────────────
+  function render() {
+    const rows = filteredRows();
+    renderTable(rows);
+    renderMobile(rows);
+    const bar = document.getElementById('count-bar');
+    const ct = document.getElementById('count-text');
+    if (rows.length > 0) {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+      ct.textContent = `${rows.length} of ${allRows.length} registrations`;
+    } else {
+      bar.classList.add('hidden');
+    }
+    document.getElementById('empty-state').classList.toggle('hidden', rows.length > 0);
+    lucide.createIcons();
+  }
+
+  // ── TABLE ────────────────────────────────────────────────────
+  function renderTable(rows) {
+    const tbody = document.getElementById('tbl-body');
+    if (rows.length === 0) { tbody.innerHTML = ''; return; }
+
+    tbody.innerHTML = rows.map(r => {
+      const expanded = expandedRows.has(r._idx);
+      const ts = formatTimestamp(r.timestamp);
+      const firstTimerBadge = isFirstTimer(r)
+        ? `<span class="badge badge-gold">First Timer</span>`
+        : `<span class="badge badge-slate">Returning</span>`;
+      const skinsBadge = yesish(r.skins)
+        ? `<span class="badge badge-emerald">Yes</span>`
+        : `<span class="badge badge-slate">No</span>`;
+      const sponsorBadge = yesish(r.sponsor)
+        ? `<span class="badge badge-sky">Yes</span>`
+        : '';
+      const shirtBadge = r.shirt
+        ? `<span class="badge badge-slate">${esc(r.shirt)}</span>`
+        : '<span class="text-gray-600 text-xs">—</span>';
+
+      const expandHtml = expanded ? `
+        <tr class="expand-row" data-expand="${r._idx}">
+          <td colspan="10">
+            <div class="expand-content">
+              ${expandField('GA Number', r.gaNumber || '—')}
+              ${expandField('Preferred Partner', r.partner || '—')}
+              ${expandField('Preferred Roommate', r.roommate || '—')}
+              ${expandField('Sponsor Options', r.sponsorOpt || '—')}
+              ${expandField('Suggestions', r.suggestions || '—')}
+              ${expandField('Registered', r.timestamp || '—')}
+            </div>
+          </td>
+        </tr>` : '';
+
+      return `
+        <tr data-idx="${r._idx}" class="${expanded ? 'expanded' : ''}" onclick="toggleExpand(${r._idx})" style="cursor:pointer;">
+          <td class="reg-num" style="padding-left:16px;">${r._idx}</td>
+          <td class="name-cell">${esc(r.name)}</td>
+          <td class="ts">${ts}</td>
+          <td class="mono">${r.mobile ? esc(r.mobile) : '<span class="text-gray-600">—</span>'}</td>
+          <td class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${r.email ? esc(r.email) : '<span class="badge badge-rose">Missing</span>'}</td>
+          <td>${firstTimerBadge}</td>
+          <td>${shirtBadge}</td>
+          <td>${skinsBadge}</td>
+          <td>${sponsorBadge}</td>
+          <td style="padding-right:14px; color:rgba(100,116,139,0.6);">
+            <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" class="w-3.5 h-3.5"></i>
+          </td>
+        </tr>
+        ${expandHtml}
+      `;
+    }).join('');
+  }
+
+  function expandField(label, value) {
+    const isMono = label.toLowerCase().includes('number') || label.toLowerCase().includes('ga');
+    return `
+      <div class="expand-field">
+        <span class="expand-label">${label}</span>
+        <span class="expand-value${isMono ? ' mono' : ''}">${esc(value)}</span>
+      </div>`;
+  }
+
+  function toggleExpand(idx) {
+    if (expandedRows.has(idx)) {
+      expandedRows.delete(idx);
+    } else {
+      expandedRows.add(idx);
+    }
+    render();
+  }
+
+  // ── MOBILE CARDS ─────────────────────────────────────────────
+  function renderMobile(rows) {
+    const container = document.getElementById('mob-cards');
+    if (!container) return;
+    if (rows.length === 0) { container.innerHTML = ''; return; }
+
+    container.innerHTML = rows.map(r => {
+      const expanded = expandedRows.has(r._idx);
+      return `
+        <div class="mob-card ${expanded ? 'expanded' : ''}" onclick="toggleExpand(${r._idx})">
+          <div class="mob-card-header">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#fff;">${esc(r.name)}</div>
+              <div style="font-size:11px;color:rgba(100,116,139,0.8);font-family:'DM Mono',monospace;margin-top:1px;">${formatTimestamp(r.timestamp)}</div>
+            </div>
+            <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+              ${isFirstTimer(r) ? '<span class="badge badge-gold">New</span>' : ''}
+              ${yesish(r.skins) ? '<span class="badge badge-emerald">Skins</span>' : ''}
+              ${yesish(r.sponsor) ? '<span class="badge badge-sky">Sponsor</span>' : ''}
+              <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" class="w-3.5 h-3.5" style="color:rgba(100,116,139,0.6);margin-left:2px;"></i>
+            </div>
+          </div>
+          <div class="mob-card-body" style="${expanded ? '' : 'display:none;'}">
+            ${mobField('Mobile', r.mobile)}
+            ${mobField('Email', r.email)}
+            ${mobField('Shirt', r.shirt)}
+            ${mobField('Partner', r.partner)}
+            ${mobField('Roommate', r.roommate)}
+            ${mobField('GA Number', r.gaNumber)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function mobField(label, value) {
+    if (!value) return '';
+    return `
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(100,116,139,0.7);font-weight:600;">${label}</span>
+        <span style="font-size:11.5px;color:rgba(226,232,240,0.9);">${esc(value)}</span>
+      </div>`;
+  }
+
+  // ── SORT ─────────────────────────────────────────────────────
+  function wireSort() {
+    document.querySelectorAll('.reg-table th[data-col]').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (sortCol === col) {
+          sortDir *= -1;
+        } else {
+          sortCol = col;
+          sortDir = 1;
+        }
+        document.querySelectorAll('.reg-table th').forEach(t => {
+          t.classList.remove('sorted-asc', 'sorted-desc');
+        });
+        th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+        render();
+      });
+    });
+  }
+
+  // ── FILTERS ──────────────────────────────────────────────────
+  function wireFilters() {
+    document.getElementById('filter-bar').addEventListener('click', e => {
+      const chip = e.target.closest('.filter-chip');
+      if (!chip) return;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      render();
+    });
+  }
+
+  function wireSearch() {
+    document.getElementById('search')?.addEventListener('input', render);
+  }
+
+  // ── HELPERS ──────────────────────────────────────────────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return '—';
+    // Google Sheets timestamps come as "Date(year,month,day,h,m,s)"
+    const dateMatch = ts.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
+    if (dateMatch) {
+      const [,y,mo,d,h,m] = dateMatch.map(Number);
+      const date = new Date(y, mo, d, h||0, m||0);
+      return date.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'2-digit' });
+    }
+    // Try plain string
+    try {
+      const d = new Date(ts);
+      if (!isNaN(d)) return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'2-digit' });
+    } catch(e) {}
+    return ts.slice(0, 10);
+  }
+
+  function updateLastUpdated() {
+    const el = document.getElementById('last-updated');
+    if (!el) return;
+    el.textContent = `Updated ${new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' })}`;
+    el.classList.remove('hidden');
+  }
+  </script>
+</body>
+</html>
