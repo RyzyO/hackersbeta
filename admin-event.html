@@ -181,6 +181,12 @@
     class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
   <p class="text-[11px] text-slate-600 mt-1">Updates the email used for comms only — does not change their login.</p>
 </section>
+<!-- Mobile -->
+<section>
+  <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Mobile</h3>
+  <input id="editMobile" type="tel" placeholder="e.g. 0412 345 678"
+    class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+</section>
       <!-- Golf Australia Number -->
       <section>
         <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Golf Australia Number</h3>
@@ -572,6 +578,7 @@
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Rego Name</th>
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Matched Player</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">GA Number</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Mobile</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Shirt</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Skins</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Action</th>
@@ -721,6 +728,7 @@
     const gbPlayerSearch = $("#gbPlayerSearch");
     const gbPlayerList = $("#gbPlayerList");
     const editEmail = $("#editEmail");
+    const editMobile = $("#editMobile");
     const gbGroupTableBody = $("#gbGroupTableBody");
     const gbStatus = $("#gbStatus");
 
@@ -1081,7 +1089,7 @@ window.copyPlayerEmails = function(mode) {
     // === REGO SHEET SYNC ===
     const REGO_SHEET_ID = '1cVA4d2aqw6vean9nNv2DZfgxaF4SBNwSwCNzrcxon3Q';
     const REGO_GID = '846766573';
-    const REGO_COL = { name: 1, gaNumber: 16, skins: 19, shirt: 22 };
+    const REGO_COL = { name: 1, mobile: 2, gaNumber: 16, skins: 19, shirt: 22 };
 
     // Pending matches staged for apply
     let regoSyncMatches = [];
@@ -1148,34 +1156,42 @@ window.copyPlayerEmails = function(mode) {
 
         rows.forEach(row => {
           const regoName  = regoCell(row, REGO_COL.name);
+          const mobile    = regoCell(row, REGO_COL.mobile);
           const gaNumber  = regoCell(row, REGO_COL.gaNumber);
           const skins     = regoCell(row, REGO_COL.skins);
           const shirt     = regoCell(row, REGO_COL.shirt);
 
           // Skip rows with nothing useful to save
-          if (!gaNumber && !shirt && !skins) return;
+          if (!gaNumber && !shirt && !skins && !mobile) return;
 
           const match = findBestUserMatch(regoName);
           if (!match) { noMatch.push(regoName); return; }
 
           const user = match.user;
-          const existingGA   = asString(user.golfAustraliaNumber || "");
-          const existingShirt = asString(getEventRecord(user.uid).shirtSize || "");
-          const existingSkins = !!getEventRecord(user.uid).skins;
+          const existingGA     = asString(user.golfAustraliaNumber || "");
+          const existingMobile = asString(user.mobile || "");
+          const existingShirt  = asString(getEventRecord(user.uid).shirtSize || "");
+          const existingSkins  = !!getEventRecord(user.uid).skins;
           const skinsYes = /^yes/i.test(skins);
 
-          // Only include if there's something new/different
-          const gaNew    = gaNumber && gaNumber !== existingGA;
-          const shirtNew = shirt && shirt !== existingShirt;
-          const skinsNew = skins && skinsYes !== existingSkins;
+          // Normalise mobile for comparison (strip spaces/dashes)
+          const normMobile = mobile.replace(/[\s\-]/g, "");
+          const normExistingMobile = existingMobile.replace(/[\s\-]/g, "");
 
-          if (!gaNew && !shirtNew && !skinsNew) return; // nothing to update
+          // Only include if there's something new/different
+          const gaNew     = gaNumber && gaNumber !== existingGA;
+          const mobileNew = normMobile && normMobile !== normExistingMobile;
+          const shirtNew  = shirt && shirt !== existingShirt;
+          const skinsNew  = skins && skinsYes !== existingSkins;
+
+          if (!gaNew && !mobileNew && !shirtNew && !skinsNew) return; // nothing to update
 
           regoSyncMatches.push({
             regoName, uid: user.uid, displayName: user.displayName,
-            gaNumber: gaNew ? gaNumber : null,
-            shirt:    shirtNew ? shirt : null,
-            skins:    skinsNew ? skinsYes : null,
+            gaNumber: gaNew    ? gaNumber  : null,
+            mobile:   mobileNew ? mobile    : null,
+            shirt:    shirtNew  ? shirt     : null,
+            skins:    skinsNew  ? skinsYes  : null,
             score:    match.score,
             skip:     false,
           });
@@ -1229,6 +1245,7 @@ window.copyPlayerEmails = function(mode) {
                 <span class="ml-1 text-[10px] text-slate-600">(${m.score}%)</span>
               </td>
               <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.gaNumber ? escapeHtml(m.gaNumber) : '<span class="text-slate-600">—</span>'}</td>
+              <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.mobile ? escapeHtml(m.mobile) : '<span class="text-slate-600">—</span>'}</td>
               <td class="px-3 py-2.5 text-center text-xs ${skipClass}">${m.shirt ? escapeHtml(m.shirt) : '<span class="text-slate-600">—</span>'}</td>
               <td class="px-3 py-2.5 text-center">${skinsLabel}</td>
               <td class="px-3 py-2.5 text-center">
@@ -1270,9 +1287,10 @@ window.copyPlayerEmails = function(mode) {
           const user = users.find(u => u.uid === m.uid);
           if (!user) continue;
 
-          // Firestore users doc — GA number + shirt
+          // Firestore users doc — GA number + mobile
           const fsUpdate = { updatedAt: serverTimestamp() };
           if (m.gaNumber !== null) fsUpdate.golfAustraliaNumber = m.gaNumber;
+          if (m.mobile   !== null) fsUpdate.mobile = m.mobile;
 
           // Firestore eventYears player doc — shirt + skins
           const record = getEventRecord(m.uid);
@@ -1282,6 +1300,7 @@ window.copyPlayerEmails = function(mode) {
 
           // Update local state immediately
           if (m.gaNumber !== null) user.golfAustraliaNumber = m.gaNumber;
+          if (m.mobile   !== null) user.mobile = m.mobile;
           eventPlayers.set(m.uid, record);
 
           writes.push(setDoc(doc(firestore, "users", m.uid), fsUpdate, { merge: true }));
@@ -1576,9 +1595,10 @@ window.copyPlayerEmails = function(mode) {
         return {
           uid,
           displayName: r.displayName || "",
-          hackerNumber: r.hackerNumber || "",
+          hackerNumber: f.hackerNumber || r.hackerNumber || "",
+          golfAustraliaNumber: f.golfAustraliaNumber || r.golfAustraliaNumber || "",
           email: f.email || r.email || f.authEmail || r.authEmail || "",
-          mobile: r.mobile || r.mobileNumber || f.mobile || f.mobileNumber || "",
+          mobile: f.mobile || f.mobileNumber || r.mobile || r.mobileNumber || "",
           handicap: r.handicap !== undefined && r.handicap !== null ? Number(r.handicap) : "",
           financialStatus: f.financialStatus || "",
           amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : ""
@@ -1703,6 +1723,7 @@ window.copyPlayerEmails = function(mode) {
         amtOutstanding: nextPayment.amtOutstanding,
         hackerNumber: fieldValues.hackerNumber || "",
         golfAustraliaNumber: fieldValues.golfAustraliaNumber || "",
+        mobile: fieldValues.mobile || "",
         email: fieldValues.email || "",
         updatedAt: serverTimestamp()
       }, { merge: true }));
@@ -1715,6 +1736,7 @@ window.copyPlayerEmails = function(mode) {
       currentUser.amtOutstanding = nextPayment.amtOutstanding;
       currentUser.hackerNumber = fieldValues.hackerNumber || "";
       currentUser.golfAustraliaNumber = fieldValues.golfAustraliaNumber || "";
+      currentUser.mobile = fieldValues.mobile || "";
       currentUser.email = fieldValues.email || "";
       roomAffected.forEach(playerUid => {
         if (playerUid === uid) return;
@@ -1758,6 +1780,7 @@ window.copyPlayerEmails = function(mode) {
       if (!user) return;
       currentEditUid = uid;
       editEmail.value = user.email || "";
+      editMobile.value = user.mobile || "";
       editPanelExistingRoommates = [];
 
       const record = getEventRecord(uid);
@@ -1903,7 +1926,7 @@ window.copyPlayerEmails = function(mode) {
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail].forEach(el => {
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -1928,6 +1951,7 @@ window.copyPlayerEmails = function(mode) {
           amtOutstanding: editAmtOutstanding.value,
           hackerNumber: editHackerNumber.value.trim(),
           golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+          mobile: editMobile.value.trim(),
           email: editEmail.value.trim(),
         };
 
@@ -2029,6 +2053,7 @@ window.copyPlayerEmails = function(mode) {
             amtOutstanding: editAmtOutstanding.value,
             hackerNumber: editHackerNumber.value.trim(),
             golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
+            mobile: editMobile.value.trim(),
             email: editEmail.value.trim(),
           } : record;
           await saveEventPlayer(uid, fieldValues);
@@ -2156,4 +2181,4 @@ window.copyPlayerEmails = function(mode) {
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </body>
-</html> 
+</html>
