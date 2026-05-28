@@ -577,6 +577,7 @@
               <tr class="bg-s2/60 border-b border-brd">
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Rego Name</th>
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Matched Player</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Coming</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">GA Number</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Mobile</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Shirt</th>
@@ -1161,8 +1162,8 @@ window.copyPlayerEmails = function(mode) {
           const skins     = regoCell(row, REGO_COL.skins);
           const shirt     = regoCell(row, REGO_COL.shirt);
 
-          // Skip rows with nothing useful to save
-          if (!gaNumber && !shirt && !skins && !mobile) return;
+          // Skip rows with no name match possible (name is the only hard requirement)
+          if (!regoName) return;
 
           const match = findBestUserMatch(regoName);
           if (!match) { noMatch.push(regoName); return; }
@@ -1178,16 +1179,20 @@ window.copyPlayerEmails = function(mode) {
           const normMobile = mobile.replace(/[\s\-]/g, "");
           const normExistingMobile = existingMobile.replace(/[\s\-]/g, "");
 
+          const existingComing = !!getEventRecord(user.uid).coming;
+
           // Only include if there's something new/different
+          const comingNew = !existingComing; // always true if not already marked coming
           const gaNew     = gaNumber && gaNumber !== existingGA;
           const mobileNew = normMobile && normMobile !== normExistingMobile;
           const shirtNew  = shirt && shirt !== existingShirt;
           const skinsNew  = skins && skinsYes !== existingSkins;
 
-          if (!gaNew && !mobileNew && !shirtNew && !skinsNew) return; // nothing to update
+          if (!comingNew && !gaNew && !mobileNew && !shirtNew && !skinsNew) return; // nothing to update
 
           regoSyncMatches.push({
             regoName, uid: user.uid, displayName: user.displayName,
+            coming:   comingNew,
             gaNumber: gaNew    ? gaNumber  : null,
             mobile:   mobileNew ? mobile    : null,
             shirt:    shirtNew  ? shirt     : null,
@@ -1244,6 +1249,9 @@ window.copyPlayerEmails = function(mode) {
                 <span class="text-sm font-medium text-white ${skipClass}">${escapeHtml(m.displayName)}</span>
                 <span class="ml-1 text-[10px] text-slate-600">(${m.score}%)</span>
               </td>
+              <td class="px-3 py-2.5 text-center">
+                ${m.coming ? '<span class="text-emerald-400 text-[11px] font-semibold">✓ Yes</span>' : '<span class="text-slate-600 text-[11px]">Already set</span>'}
+              </td>
               <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.gaNumber ? escapeHtml(m.gaNumber) : '<span class="text-slate-600">—</span>'}</td>
               <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.mobile ? escapeHtml(m.mobile) : '<span class="text-slate-600">—</span>'}</td>
               <td class="px-3 py-2.5 text-center text-xs ${skipClass}">${m.shirt ? escapeHtml(m.shirt) : '<span class="text-slate-600">—</span>'}</td>
@@ -1292,9 +1300,10 @@ window.copyPlayerEmails = function(mode) {
           if (m.gaNumber !== null) fsUpdate.golfAustraliaNumber = m.gaNumber;
           if (m.mobile   !== null) fsUpdate.mobile = m.mobile;
 
-          // Firestore eventYears player doc — shirt + skins
+          // Firestore eventYears player doc — coming + shirt + skins
           const record = getEventRecord(m.uid);
           const eventUpdate = { ...record, updatedAt: serverTimestamp() };
+          eventUpdate.coming = true; record.coming = true; // registered = coming
           if (m.shirt  !== null) { eventUpdate.shirtSize = m.shirt; record.shirtSize = m.shirt; }
           if (m.skins  !== null) { eventUpdate.skins = m.skins;     record.skins = m.skins; }
 

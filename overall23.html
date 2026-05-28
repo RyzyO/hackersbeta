@@ -2,153 +2,226 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, maximum-scale=1.0">
-  <title>Overall Leaderboard</title>
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/fontawesome.css">
-  <link rel="stylesheet" href="assets/css/navbar.css">
-  <link rel="stylesheet" href="assets/css/templatemo-lugx-gaming.css">
-  <link rel="stylesheet" href="assets/css/owl.css">
-  <link rel="stylesheet" href="assets/css/animate.css">
-  <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Overall Leaderboard | Hackers Cup 23</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    #overall-table {
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); }
+
+    #data-table {
       width: 100%;
-      margin: 15px 0;
       border-collapse: collapse;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Inter', sans-serif;
       color: #ffffff;
+      min-width: 420px;
     }
-    #overall-table thead tr {
-      background-color: #2a2a2a;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    #overall-table th,
-    #overall-table td {
-      padding: 12px 15px;
-      border: 1px solid #444;
+
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+
+    #data-table thead tr { background-color: rgba(30, 41, 59, 0.9); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    #data-table th, #data-table td {
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
       text-align: center;
       font-size: 14px;
     }
-    #overall-table tbody tr:nth-child(even) {
-      background-color: #333333;
-    }
-    #overall-table tbody tr:nth-child(odd) {
-      background-color: #2e2e2e;
-    }
-    #overall-table tbody tr:hover {
-      background-color: #555555;
-      cursor: pointer;
-    }
-    .refresh-button {
-      background: transparent;
-      border: none;
-      margin-bottom: 10px;
-      outline: none;
-      cursor: pointer;
-    }
-    .refresh-button img {
-      width: 40px;
-      height: 40px;
-    }
+
+    #data-table tbody tr:nth-child(even) { background-color: rgba(30, 41, 59, 0.45); }
+    #data-table tbody tr:nth-child(odd) { background-color: rgba(15, 23, 42, 0.6); }
+    #data-table tbody tr:hover { background-color: rgba(56, 189, 248, 0.2); }
+
     @media screen and (max-width: 767px) {
-      #overall-table th,
-      #overall-table td {
-        font-size: 0.8em;
-      }
-      .column-e {
-        display: none;
-      }
+      body { overflow-x: hidden; }
+      #data-table th, #data-table td { font-size: 0.8em; }
     }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) { .bottom-nav { display: none; } }
   </style>
-<link rel="manifest" href="site.webmanifest">
+  <link rel="manifest" href="site.webmanifest">
 </head>
-<body>
-  <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- ***** Logo Start ***** -->
-            <a href="index.html" class="logo">
-              <img src="assets/images/logo.png" alt="" style="width: 158px;">
-            </a>
-            <!-- ***** Logo End ***** -->
-            <!-- ***** Menu Start ***** -->
-            <ul class="nav">
-              <li><a href="index.html">Home</a></li>
-              <li><a href="register.html">Register</a></li>
-              <li><a href="venue.html">Venue</a></li>
-              <li><a href="payment.html">Payment</a></li>
-              <li><a href="podcast.html">Podcast</a></li>
-              <li><a href="schedule.html">Schedule</a></li>
-              <li><a href="honour-roll.html">Honour Roll</a></li>
-              <li><a href="notifications-center.html">Notifications</a></li>
-            </ul>
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-            <!-- ***** Menu End ***** -->
-          </nav>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
         </div>
       </div>
     </div>
-  </header>
-  <!-- ***** Header Area End ***** -->
 
-  <div class="page-heading header-text">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12">
-          <h3>OVERALL LEADERBOARD</h3>
-          <span class="breadcrumb">Combined Saturday &amp; Sunday</span>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-4 animate-slide-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+          <i data-lucide="trophy" class="w-4 h-4 text-hackers-gold"></i>
+          <span class="text-sm font-medium text-gray-300">Combined Results &mdash; Hackers Cup 23</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">Overall Leaderboard <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">2023</span></h1>
+        <p class="text-lg text-gray-300">Combined Saturday &amp; Sunday standings for 2023.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+          <div>
+            <h2 class="text-xl font-semibold">Overall Leaderboard</h2>
+            <p class="text-sm text-gray-400">Saturday + Sunday combined ranking.</p>
+          </div>
+          <button class="inline-flex items-center justify-center rounded-full bg-white/5 border border-white/10 w-10 h-10 text-white" aria-label="Refresh" onclick="location.reload();">
+            <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Saturday Rank</th>
+                <th>Sunday Rank</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="overall-rows"></tbody>
+          </table>
         </div>
       </div>
     </div>
+  </section>
+
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
   </div>
 
-  <div class="container">
-    <button class="refresh-button" onclick="location.reload();">
-      <img src="/assets/images/refresh.png" alt="Refresh">
-    </button>
-    <table id="overall-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Name</th>
-          <th>Saturday Rank</th>
-          <th>Sunday Rank</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="overall-rows"></tbody>
-    </table>
-  </div>
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    }
 
-  <br><br><br><br><br><br>
-  <div class="bottom-nav">
-    <a href="index.html">
-      <i class="fas fa-home"></i>
-      Home
-    </a>
-    <a href="payment.html">
-      <i class="fas fa-dollar-sign"></i>
-      Payment
-    </a>
-    <a href="podcast.html">
-      <i class="fas fa-podcast"></i>
-      Podcast
-    </a>
-    <a href="score.html">
-      <i class="fas fa-chart-line"></i>
-      Score
-    </a>
-  </div>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
 
   <script type="text/javascript">
-    // Saturday and Sunday sheet info
     const saturdaySheetId = '1sFk_zHqZ7rAwA1GQpo4ZsGWPYm9xtfcBPLxPz91NpxE';
     const saturdayGid = '992817698';
     const sundaySheetId = '1U7KeTRMZfclehI8uD6LavbqbcNQENA9u2DgZnP4kWwk';
@@ -157,7 +230,6 @@
     const saturdayUrl = `https://docs.google.com/spreadsheets/d/${saturdaySheetId}/gviz/tq?tqx=out:json&gid=${saturdayGid}`;
     const sundayUrl = `https://docs.google.com/spreadsheets/d/${sundaySheetId}/gviz/tq?tqx=out:json&gid=${sundayGid}`;
 
-    // Helper to normalize player names (remove spaces, lowercase, replace hyphens with &)
     function normalizeName(name) {
       return name.replace(/\s+/g, '').replace(/-/g, '&').toLowerCase();
     }
@@ -166,10 +238,7 @@
       fetch(saturdayUrl).then(r => r.text()),
       fetch(sundayUrl).then(r => r.text())
     ]).then(([satData, sunData]) => {
-      // Parse Saturday
       const satJson = JSON.parse(satData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-      // Saturday: col 1 = Rank, col 2 = Name, col 5 = Back Nine Points
-      // First, collect all players with their info
       let satRows = satJson.table.rows
         .map(row => {
           const rank = row.c[1] ? parseInt(row.c[1].v, 10) : 99;
@@ -179,35 +248,23 @@
         })
         .filter(entry => entry.name && !isNaN(entry.rank) && entry.rank > 0);
 
-      // Sort by rank ASC, then by backNine DESC
       satRows.sort((a, b) => {
         if (a.rank !== b.rank) return a.rank - b.rank;
         return b.backNine - a.backNine;
       });
 
-      // Assign new ranks after tie-breaker
       let satPlayers = {};
       let currentRank = 1;
       for (let i = 0; i < satRows.length; i++) {
-        if (
-          i > 0 &&
-          satRows[i].rank === satRows[i - 1].rank &&
-          satRows[i].backNine === satRows[i - 1].backNine
-        ) {
-          // Same as previous, same rank
+        if (i > 0 && satRows[i].rank === satRows[i - 1].rank && satRows[i].backNine === satRows[i - 1].backNine) {
+          // same rank
         } else {
           currentRank = i + 1;
         }
-        satPlayers[normalizeName(satRows[i].name)] = {
-          name: satRows[i].name,
-          satRank: currentRank
-        };
+        satPlayers[normalizeName(satRows[i].name)] = { name: satRows[i].name, satRank: currentRank };
       }
 
-      // Parse Sunday (Ambrose: teams, split by '-')
       const sunJson = JSON.parse(sunData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-      // Sunday: col 1 = Rank, col 2 = Name (hyphens for teams), col 8 = Nett Score (lower is better)
-      // First, collect all teams with their info
       let sunRows = sunJson.table.rows
         .map(row => {
           const rank = row.c[1] ? parseInt(row.c[1].v, 10) : 99;
@@ -217,26 +274,19 @@
         })
         .filter(entry => entry.teamName && !isNaN(entry.rank) && entry.rank > 0);
 
-      // Sort by rank ASC, then by nett ASC (lower is better)
       sunRows.sort((a, b) => {
         if (a.rank !== b.rank) return a.rank - b.rank;
         return a.nett - b.nett;
       });
 
-      // Assign new ranks after tie-breaker, and assign to each player in the team
       const sunPlayers = {};
       let currentSunRank = 1;
       for (let i = 0; i < sunRows.length; i++) {
-        if (
-          i > 0 &&
-          sunRows[i].rank === sunRows[i - 1].rank &&
-          sunRows[i].nett === sunRows[i - 1].nett
-        ) {
-          // Same as previous, same rank
+        if (i > 0 && sunRows[i].rank === sunRows[i - 1].rank && sunRows[i].nett === sunRows[i - 1].nett) {
+          // same rank
         } else {
           currentSunRank = i + 1;
         }
-        // Split teamName by '-' and assign rank to each player
         sunRows[i].teamName.split('-').forEach(player => {
           const trimmed = player.trim();
           if (trimmed) {
@@ -245,18 +295,12 @@
         });
       }
 
-      // Merge all unique player names
-      const allNames = new Set([
-        ...Object.keys(satPlayers),
-        ...Object.keys(sunPlayers)
-      ]);
+      const allNames = new Set([...Object.keys(satPlayers), ...Object.keys(sunPlayers)]);
 
-      // Build combined results
       const combined = [];
       allNames.forEach(key => {
         const sat = satPlayers[key];
         const sun = sunPlayers[key];
-        // Prefer the name from Saturday, else Sunday, else the key
         const name = sat ? sat.name : (sun ? sun.name : key);
         const satRank = sat ? sat.satRank : 99;
         const sunRank = sun ? sun.sunRank : 99;
@@ -264,42 +308,34 @@
         combined.push({ name, satRank, sunRank, total });
       });
 
-      // Sort by total (lowest first), then by best single-day rank, then name
       combined.sort((a, b) => {
         if (a.total !== b.total) return a.total - b.total;
         const aBest = Math.min(a.satRank, a.sunRank);
         const bBest = Math.min(b.satRank, b.sunRank);
         if (aBest !== bBest) return aBest - bBest;
-        // If still tied, prefer lower Saturday rank
         if (a.satRank !== b.satRank) return a.satRank - b.satRank;
         return a.name.localeCompare(b.name);
       });
 
-      // Render table
       const tbody = document.getElementById('overall-rows');
       combined.forEach((entry, idx) => {
         const tr = document.createElement('tr');
-        // Overall rank (1-based)
         const rankTd = document.createElement('td');
         rankTd.textContent = idx + 1;
         tr.appendChild(rankTd);
 
-        // Name (display as is)
         const nameTd = document.createElement('td');
         nameTd.textContent = entry.name;
         tr.appendChild(nameTd);
 
-        // Saturday rank
         const satTd = document.createElement('td');
         satTd.textContent = entry.satRank !== 99 ? entry.satRank : '-';
         tr.appendChild(satTd);
 
-        // Sunday rank
         const sunTd = document.createElement('td');
         sunTd.textContent = entry.sunRank !== 99 ? entry.sunRank : '-';
         tr.appendChild(sunTd);
 
-        // Total
         const totalTd = document.createElement('td');
         totalTd.textContent = entry.total !== 198 ? entry.total : '-';
         tr.appendChild(totalTd);
@@ -311,12 +347,5 @@
       console.error(err);
     });
   </script>
-  <!-- ...existing scripts... -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="assets/js/isotope.min.js"></script>
-  <script src="assets/js/owl-carousel.js"></script>
-  <script src="assets/js/counter.js"></script>
-  <script src="assets/js/custom.js"></script>
 </body>
 </html>
