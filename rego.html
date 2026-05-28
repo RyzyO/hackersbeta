@@ -58,7 +58,6 @@
       overflow-x: hidden;
     }
 
-    /* ── GRID BACKGROUND ── */
     .grid-bg {
       position: fixed;
       inset: 0;
@@ -71,7 +70,6 @@
       z-index: 0;
     }
 
-    /* ── NAV ── */
     .glass {
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(16px);
@@ -79,7 +77,6 @@
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
-    /* ── STATS STRIP ── */
     .stat-pill {
       display: flex;
       flex-direction: column;
@@ -114,7 +111,6 @@
       white-space: nowrap;
     }
 
-    /* ── SEARCH / FILTER BAR ── */
     .filter-chip {
       display: inline-flex;
       align-items: center;
@@ -145,7 +141,18 @@
       opacity: 0.7;
     }
 
-    /* ── TABLE ── */
+    /* duplicate badge */
+    .badge-dupe {
+      background: rgba(168,85,247,0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168,85,247,0.35);
+    }
+    /* conflict value highlight */
+    .conflict-val {
+      color: #fbbf24;
+      font-style: italic;
+    }
+
     .reg-table {
       width: 100%;
       border-collapse: separate;
@@ -181,6 +188,8 @@
     }
     .reg-table tbody tr:hover { background: rgba(14,165,233,0.06); cursor: pointer; }
     .reg-table tbody tr.expanded { background: rgba(14,165,233,0.04); }
+    .reg-table tbody tr.is-dupe { background: rgba(168,85,247,0.04); }
+    .reg-table tbody tr.is-dupe:hover { background: rgba(168,85,247,0.09); }
 
     .reg-table td {
       padding: 11px 14px;
@@ -203,7 +212,6 @@
       color: rgba(148,163,184,0.8);
     }
 
-    /* ── BADGES ── */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -220,10 +228,7 @@
     .badge-rose { background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
     .badge-slate { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
 
-    /* ── EXPANDED ROW ── */
-    .expand-row td {
-      padding: 0;
-    }
+    .expand-row td { padding: 0; }
     .expand-content {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -246,7 +251,44 @@
     }
     .expand-value.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 
-    /* ── NUMBER BADGE ── */
+    /* dupe sub-entries inside expand */
+    .dupe-entries {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(168,85,247,0.2);
+      margin-top: 4px;
+    }
+    .dupe-entry-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(168,85,247,0.7);
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .dupe-entry-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      padding: 8px 10px;
+      background: rgba(168,85,247,0.06);
+      border: 1px solid rgba(168,85,247,0.15);
+      border-radius: 8px;
+      font-size: 11px;
+    }
+    .dupe-entry-field { display: flex; flex-direction: column; gap: 1px; }
+    .dupe-entry-field span:first-child {
+      font-size: 8.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.55);
+      font-weight: 600;
+    }
+    .dupe-entry-field span:last-child { color: rgba(226,232,240,0.85); }
+
     .reg-num {
       font-family: 'DM Mono', monospace;
       font-size: 11px;
@@ -256,7 +298,6 @@
       padding-right: 4px;
     }
 
-    /* ── MOBILE ── */
     @media (max-width: 767px) {
       .desktop-only { display: none !important; }
       .mobile-grid { display: grid !important; }
@@ -280,23 +321,15 @@
       border-color: rgba(14,165,233,0.35);
       background: rgba(14,165,233,0.05);
     }
+    .mob-card.is-dupe { border-color: rgba(168,85,247,0.2); }
+    .mob-card.is-dupe.expanded { border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.05); }
     .mob-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
     }
-    .mob-card-body {
-      display: none;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .mob-card.expanded .mob-card-body { display: grid; }
 
-    /* ── LOAD SHIMMER ── */
     @keyframes shimmer {
       0% { background-position: -400px 0; }
       100% { background-position: 400px 0; }
@@ -308,14 +341,12 @@
       border-radius: 6px;
     }
 
-    /* ── TIMESTAMP ── */
     .ts {
       font-family: 'DM Mono', monospace;
       font-size: 10.5px;
       color: rgba(100,116,139,0.8);
     }
 
-    /* ── BOTTOM NAV ── */
     .bottom-nav {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -327,7 +358,6 @@
     }
     @media (min-width: 768px) { .bottom-nav { display: none; } }
 
-    /* ── HERO ── */
     @keyframes slideUp {
       from { transform: translateY(18px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
@@ -336,7 +366,6 @@
     .slide-up-2 { animation: slideUp 0.55s 0.1s ease-out both; }
     .slide-up-3 { animation: slideUp 0.55s 0.2s ease-out both; }
 
-    /* ── ERROR / EMPTY ── */
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
       gap: 10px; padding: 60px 20px; color: rgba(100,116,139,0.8);
@@ -344,7 +373,6 @@
     }
     .empty-state svg { opacity: 0.4; }
 
-    /* ── SCROLL CONTAINER ── */
     .table-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -360,7 +388,7 @@
 
   <div id="main-content" style="opacity:0; pointer-events:none; transition: opacity 0.4s ease;">
 
-  <!-- ══ NAV ══ -->
+  <!-- NAV -->
   <nav class="fixed top-0 w-full z-40 glass">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -395,7 +423,7 @@
     </div>
   </nav>
 
-  <!-- ══ HERO ══ -->
+  <!-- HERO -->
   <section class="relative pt-24 pb-10 md:pt-32 md:pb-14 overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);">
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="slide-up inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style="background: rgba(30,41,59,0.7); border: 1px solid rgba(14,165,233,0.3);">
@@ -403,17 +431,17 @@
         <span class="text-sm font-medium text-gray-300">HC26 · Live Data</span>
       </div>
       <h1 class="slide-up-2 text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight mb-2">Registrations</h1>
-      <p class="slide-up-3 text-lg text-gray-400">Live feed from the HC26 registration form.</p>
+      <p class="slide-up-3 text-lg text-gray-400">Live feed from the HC26 registration form. Duplicate names are automatically merged.</p>
     </div>
   </section>
 
-  <!-- ══ MAIN ══ -->
+  <!-- MAIN -->
   <section class="relative z-10 py-8 md:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
 
       <!-- STAT STRIP -->
       <div id="stat-strip" class="flex flex-wrap gap-3">
-        <!-- shimmer placeholders -->
+        <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
         <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
         <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
         <div class="stat-pill shimmer" style="width:90px; height:62px;"></div>
@@ -427,7 +455,7 @@
           <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           <input id="search" type="text" placeholder="Search name, email, mobile…"
             class="w-full pl-9 pr-4 py-2 rounded-full text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2"
-            style="background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.1); focus-ring-color: rgba(14,165,233,0.5);">
+            style="background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.1);">
         </div>
 
         <div class="flex flex-wrap gap-1.5" id="filter-bar">
@@ -445,6 +473,9 @@
           </button>
           <button class="filter-chip" data-filter="noemail">
             <span class="dot" style="background:#fb7185;"></span> No email
+          </button>
+          <button class="filter-chip" data-filter="dupes">
+            <span class="dot" style="background:#c084fc;"></span> Duplicates
           </button>
         </div>
 
@@ -469,7 +500,7 @@
                 <th data-col="timestamp">Registered</th>
                 <th data-col="mobile">Mobile</th>
                 <th data-col="email">Email</th>
-                <th data-col="firsttimer">First Timer</th>
+                <th data-col="firstTimer">First Timer</th>
                 <th data-col="shirt">Shirt</th>
                 <th data-col="skins">Fri Skins</th>
                 <th data-col="sponsor">Sponsor</th>
@@ -477,10 +508,16 @@
               </tr>
             </thead>
             <tbody id="tbl-body">
-              <!-- shimmer rows -->
               <tr><td colspan="10" style="padding:0;">
                 <div style="display:flex;flex-direction:column;gap:1px;">
-                  ${Array(8).fill(0).map(() => `<div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>`).join('')}
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
+                  <div class="shimmer" style="height:44px;border-radius:0;margin:0;"></div>
                 </div>
               </td></tr>
             </tbody>
@@ -506,7 +543,7 @@
     </div>
   </section>
 
-  <!-- ══ BOTTOM NAV (mobile) ══ -->
+  <!-- BOTTOM NAV (mobile) -->
   <div class="bottom-nav md:hidden">
     <div class="flex justify-around items-center h-16">
       <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
@@ -527,7 +564,7 @@
       </a>
     </div>
   </div>
-  </div> <!-- /main-content -->
+  </div><!-- /main-content -->
 
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -568,7 +605,6 @@
       if (!allowed) { await signOut(auth); redirectToSignIn("access_denied"); return; }
     } catch (e) { console.error(e); redirectToSignIn(); return; }
 
-    // Authorised — reveal page and load data
     document.getElementById("main-content").style.opacity = "1";
     document.getElementById("main-content").style.pointerEvents = "auto";
     loadData();
@@ -579,36 +615,28 @@
   const GID = '846766573';
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
 
-  // Column indices in the sheet (0-based)
-  // 0=Timestamp 1=Name 2=Mobile 3=Email 4=col4
-  // 5=first timer (old) 6=first timer (new)
-  // 17=GA number 18=preferred partner 19=preferred roommate
-  // 20=Friday skins 21=sponsor 22=sponsor options
-  // 23=shirt size 24=memorabilia 25=acknowledgement
   const COL = {
-    timestamp:      0,   // 5/24/2026 16:33:04
-    name:           1,   // Brendo
-    mobile:         2,   // 0410558706
-    email:          3,   // hackerscup1@gmail.com
-    // col 4 = Club/Social type
-    firstTimer:     6,   // "Is this your first Hackers Cup?" (second col, active form)
-    // cols 7-15 = format/venue survey questions
-    gaNumber:      16,   // 2081806807
-    partner:       17,   // muzz
-    roommate:      18,   // muzz
-    skins:         19,   // Yes (Friday Troll Plate Skins)
-    sponsor:       20,   // Yes
-    sponsorOptions:21,   // Co-branded clothing or golf item
-    shirt:         22,   // 2XL
-    suggestions:   23,   // T Shirts
-    // col 24 = acknowledgement
+    timestamp:      0,
+    name:           1,
+    mobile:         2,
+    email:          3,
+    firstTimer:     6,
+    gaNumber:      16,
+    partner:       17,
+    roommate:      18,
+    skins:         19,
+    sponsor:       20,
+    sponsorOptions:21,
+    shirt:         22,
+    suggestions:   23,
   };
 
   // ── STATE ────────────────────────────────────────────────────
-  let allRows = [];
+  let allRows = [];       // raw parsed rows
+  let mergedRows = [];    // deduplicated rows (one per unique name)
   let activeFilter = 'all';
   let sortCol = 'timestamp';
-  let sortDir = 1; // 1 = asc, -1 = desc
+  let sortDir = 1;
   let expandedRows = new Set();
 
   // ── BOOT ────────────────────────────────────────────────────
@@ -617,7 +645,6 @@
     wireFilters();
     wireSearch();
     wireSort();
-    // loadData() is called by onAuthStateChanged once admin is verified
   });
 
   // ── DATA LOAD ────────────────────────────────────────────────
@@ -632,20 +659,22 @@
         .filter(r => r.c && r.c[COL.name] && r.c[COL.name].v)
         .map((r, i) => ({
           _idx: i + 1,
-          timestamp: cellVal(r, COL.timestamp),
-          name:      cellVal(r, COL.name),
-          mobile:    cellVal(r, COL.mobile),
-          email:     cellVal(r, COL.email),
-          firstTimer:cellVal(r, COL.firstTimer),
-          gaNumber:  cellVal(r, COL.gaNumber),
-          partner:   cellVal(r, COL.partner),
-          roommate:  cellVal(r, COL.roommate),
-          skins:     cellVal(r, COL.skins),
-          sponsor:   cellVal(r, COL.sponsor),
-          sponsorOpt:cellVal(r, COL.sponsorOptions),
-          shirt:     cellVal(r, COL.shirt),
+          timestamp:   cellVal(r, COL.timestamp),
+          name:        cellVal(r, COL.name),
+          mobile:      cellVal(r, COL.mobile),
+          email:       cellVal(r, COL.email),
+          firstTimer:  cellVal(r, COL.firstTimer),
+          gaNumber:    cellVal(r, COL.gaNumber),
+          partner:     cellVal(r, COL.partner),
+          roommate:    cellVal(r, COL.roommate),
+          skins:       cellVal(r, COL.skins),
+          sponsor:     cellVal(r, COL.sponsor),
+          sponsorOpt:  cellVal(r, COL.sponsorOptions),
+          shirt:       cellVal(r, COL.shirt),
           suggestions: cellVal(r, COL.suggestions),
         }));
+
+      mergedRows = deduplicateByName(allRows);
 
       updateStats();
       render();
@@ -663,14 +692,66 @@
     return (row.c && row.c[idx] && row.c[idx].v != null) ? String(row.c[idx].v).trim() : '';
   }
 
-  // ── STATS ────────────────────────────────────────────────────
+  // ── DEDUPLICATION ────────────────────────────────────────────
+  // Fields we merge — for each field, collect all unique non-empty values.
+  // If they agree → use that value. If they conflict → join with " / ".
+  const MERGE_FIELDS = ['mobile','email','firstTimer','gaNumber','partner','roommate','skins','sponsor','sponsorOpt','shirt','suggestions'];
+
+  function normName(name) {
+    return name.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function mergeFieldValues(entries, field) {
+    const vals = [...new Set(entries.map(e => e[field]).filter(v => v !== ''))];
+    return vals.join(' / ');
+  }
+
+  function deduplicateByName(rows) {
+    const groups = new Map(); // normName → [rows]
+    for (const r of rows) {
+      const key = normName(r.name);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    }
+
+    const result = [];
+    let counter = 1;
+    for (const [, entries] of groups) {
+      if (entries.length === 1) {
+        result.push({ ...entries[0], _mergeIdx: counter++, _dupeCount: 1, _dupeEntries: null, _hasConflict: false });
+      } else {
+        // Build merged row — use earliest entry as base
+        const base = entries[0];
+        const merged = { ...base, _mergeIdx: counter++, _dupeCount: entries.length, _dupeEntries: entries };
+
+        // Track which fields have conflicts
+        const conflictFields = new Set();
+        for (const field of MERGE_FIELDS) {
+          const vals = [...new Set(entries.map(e => e[field]).filter(v => v !== ''))];
+          merged[field] = vals.join(' / ');
+          if (vals.length > 1) conflictFields.add(field);
+        }
+        merged._hasConflict = conflictFields.size > 0;
+        merged._conflictFields = conflictFields;
+
+        // Use latest timestamp for "last seen"
+        merged.timestamp = entries[entries.length - 1].timestamp;
+
+        result.push(merged);
+      }
+    }
+    return result;
+  }
+
+  // ── STATS (use mergedRows for all counts) ────────────────────
   function updateStats() {
     const strip = document.getElementById('stat-strip');
-    const total = allRows.length;
-    const firstTimers = allRows.filter(r => isFirstTimer(r)).length;
-    const playingSkins = allRows.filter(r => yesish(r.skins)).length;
-    const sponsors = allRows.filter(r => yesish(r.sponsor)).length;
-    const noEmail = allRows.filter(r => !r.email).length;
+    const total = mergedRows.length;
+    const firstTimers = mergedRows.filter(r => isFirstTimer(r)).length;
+    const playingSkins = mergedRows.filter(r => yesish(r.skins)).length;
+    const sponsors = mergedRows.filter(r => yesish(r.sponsor)).length;
+    const noEmail = mergedRows.filter(r => !r.email).length;
+    const dupes = mergedRows.filter(r => r._dupeCount > 1).length;
 
     const stats = [
       { label: 'Registered', val: total, accent: 'var(--sky)' },
@@ -678,6 +759,7 @@
       { label: 'Fri Skins', val: playingSkins, accent: '#34d399' },
       { label: 'Sponsors', val: sponsors, accent: '#38bdf8' },
       { label: 'No Email', val: noEmail, accent: '#fb7185' },
+      { label: 'Duplicates', val: dupes, accent: '#c084fc' },
     ];
 
     strip.innerHTML = stats.map(s => `
@@ -689,7 +771,7 @@
   }
 
   function isFirstTimer(r) {
-    const v = r.firstTimer.toLowerCase();
+    const v = (r.firstTimer || '').toLowerCase();
     return v === 'yes' || v === 'true' || v === '1';
   }
 
@@ -701,22 +783,21 @@
   // ── FILTER + SEARCH ─────────────────────────────────────────
   function filteredRows() {
     const q = (document.getElementById('search')?.value || '').toLowerCase().trim();
-    return allRows.filter(r => {
-      // filter pill
+    return mergedRows.filter(r => {
       if (activeFilter === 'firsttimer' && !isFirstTimer(r)) return false;
       if (activeFilter === 'skins' && !yesish(r.skins)) return false;
       if (activeFilter === 'sponsor' && !yesish(r.sponsor)) return false;
       if (activeFilter === 'noemail' && r.email) return false;
-      // text search
+      if (activeFilter === 'dupes' && r._dupeCount <= 1) return false;
       if (q) {
         const hay = [r.name, r.email, r.mobile, r.gaNumber, r.partner, r.roommate].join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     }).sort((a, b) => {
+      if (sortCol === 'timestamp') return sortDir * (a._mergeIdx - b._mergeIdx);
       let va = a[sortCol] || '';
       let vb = b[sortCol] || '';
-      if (sortCol === 'timestamp') return sortDir * (a._idx - b._idx);
       return sortDir * va.localeCompare(vb);
     });
   }
@@ -731,7 +812,10 @@
     if (rows.length > 0) {
       bar.classList.remove('hidden');
       bar.classList.add('flex');
-      ct.textContent = `${rows.length} of ${allRows.length} registrations`;
+      const rawCount = allRows.length;
+      const dedupedCount = mergedRows.length;
+      const diff = rawCount - dedupedCount;
+      ct.textContent = `${rows.length} of ${dedupedCount} people${diff > 0 ? ` · ${rawCount} raw submissions (${diff} merged)` : ''}`;
     } else {
       bar.classList.add('hidden');
     }
@@ -744,47 +828,100 @@
     const tbody = document.getElementById('tbl-body');
     if (rows.length === 0) { tbody.innerHTML = ''; return; }
 
-    tbody.innerHTML = rows.map(r => {
-      const expanded = expandedRows.has(r._idx);
+    tbody.innerHTML = rows.map((r, i) => {
+      const expanded = expandedRows.has(r._mergeIdx);
+      const isDupe = r._dupeCount > 1;
       const ts = formatTimestamp(r.timestamp);
+
+      // For fields with conflicts, wrap in highlight span
+      const maybeConflict = (field, display) => {
+        if (isDupe && r._conflictFields && r._conflictFields.has(field) && display) {
+          return `<span class="conflict-val">${display}</span>`;
+        }
+        return display;
+      };
+
       const firstTimerBadge = isFirstTimer(r)
         ? `<span class="badge badge-gold">First Timer</span>`
         : `<span class="badge badge-slate">Returning</span>`;
+      const firstTimerDisplay = maybeConflict('firstTimer', firstTimerBadge);
+
       const skinsBadge = yesish(r.skins)
         ? `<span class="badge badge-emerald">Yes</span>`
         : `<span class="badge badge-slate">No</span>`;
+      const skinsDisplay = isDupe && r._conflictFields && r._conflictFields.has('skins')
+        ? `<span class="conflict-val text-xs font-mono">${esc(r.skins)}</span>`
+        : skinsBadge;
+
       const sponsorBadge = yesish(r.sponsor)
         ? `<span class="badge badge-sky">Yes</span>`
         : '';
-      const shirtBadge = r.shirt
-        ? `<span class="badge badge-slate">${esc(r.shirt)}</span>`
+      const sponsorDisplay = isDupe && r._conflictFields && r._conflictFields.has('sponsor')
+        ? `<span class="conflict-val text-xs font-mono">${esc(r.sponsor)}</span>`
+        : sponsorBadge;
+
+      const shirtDisplay = r.shirt
+        ? maybeConflict('shirt', `<span class="badge badge-slate">${esc(r.shirt)}</span>`)
         : '<span class="text-gray-600 text-xs">—</span>';
 
+      const emailDisplay = r.email
+        ? maybeConflict('email', `<span class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;display:block;">${esc(r.email)}</span>`)
+        : '<span class="badge badge-rose">Missing</span>';
+
+      const mobileDisplay = r.mobile
+        ? maybeConflict('mobile', esc(r.mobile))
+        : '<span class="text-gray-600">—</span>';
+
+      // Duplicate entries detail inside expand panel
+      let dupeDetailHtml = '';
+      if (isDupe && r._dupeEntries) {
+        const entryRows = r._dupeEntries.map((e, ei) => `
+          <div class="dupe-entry-row">
+            <div class="dupe-entry-field"><span>Submission</span><span>#${e._idx} · ${formatTimestamp(e.timestamp)}</span></div>
+            ${e.mobile ? `<div class="dupe-entry-field"><span>Mobile</span><span>${esc(e.mobile)}</span></div>` : ''}
+            ${e.email ? `<div class="dupe-entry-field"><span>Email</span><span>${esc(e.email)}</span></div>` : ''}
+            ${e.firstTimer ? `<div class="dupe-entry-field"><span>First Timer</span><span>${esc(e.firstTimer)}</span></div>` : ''}
+            ${e.shirt ? `<div class="dupe-entry-field"><span>Shirt</span><span>${esc(e.shirt)}</span></div>` : ''}
+            ${e.skins ? `<div class="dupe-entry-field"><span>Skins</span><span>${esc(e.skins)}</span></div>` : ''}
+            ${e.sponsor ? `<div class="dupe-entry-field"><span>Sponsor</span><span>${esc(e.sponsor)}</span></div>` : ''}
+          </div>
+        `).join('');
+        dupeDetailHtml = `
+          <div class="dupe-entries">
+            <div class="dupe-entry-label">⚠ ${r._dupeCount} submissions merged — individual entries below</div>
+            ${entryRows}
+          </div>`;
+      }
+
       const expandHtml = expanded ? `
-        <tr class="expand-row" data-expand="${r._idx}">
+        <tr class="expand-row" data-expand="${r._mergeIdx}">
           <td colspan="10">
             <div class="expand-content">
-              ${expandField('GA Number', r.gaNumber || '—')}
-              ${expandField('Preferred Partner', r.partner || '—')}
-              ${expandField('Preferred Roommate', r.roommate || '—')}
-              ${expandField('Sponsor Options', r.sponsorOpt || '—')}
-              ${expandField('Suggestions', r.suggestions || '—')}
-              ${expandField('Registered', r.timestamp || '—')}
+              ${expandField('GA Number', r.gaNumber || '—', isDupe && r._conflictFields?.has('gaNumber'))}
+              ${expandField('Preferred Partner', r.partner || '—', isDupe && r._conflictFields?.has('partner'))}
+              ${expandField('Preferred Roommate', r.roommate || '—', isDupe && r._conflictFields?.has('roommate'))}
+              ${expandField('Sponsor Options', r.sponsorOpt || '—', isDupe && r._conflictFields?.has('sponsorOpt'))}
+              ${expandField('Suggestions', r.suggestions || '—', isDupe && r._conflictFields?.has('suggestions'))}
+              ${expandField('Last Registered', r.timestamp || '—', false)}
+              ${dupeDetailHtml}
             </div>
           </td>
         </tr>` : '';
 
       return `
-        <tr data-idx="${r._idx}" class="expand-trigger ${expanded ? 'expanded' : ''}" style="cursor:pointer;">
-          <td class="reg-num" style="padding-left:16px;">${r._idx}</td>
-          <td class="name-cell">${esc(r.name)}</td>
+        <tr data-idx="${r._mergeIdx}" class="expand-trigger ${expanded ? 'expanded' : ''} ${isDupe ? 'is-dupe' : ''}" style="cursor:pointer;">
+          <td class="reg-num" style="padding-left:16px;">${i + 1}</td>
+          <td class="name-cell">
+            ${esc(r.name)}
+            ${isDupe ? `<span class="badge badge-dupe ml-1" style="font-size:9px;padding:1px 5px;">×${r._dupeCount}</span>` : ''}
+          </td>
           <td class="ts">${ts}</td>
-          <td class="mono">${r.mobile ? esc(r.mobile) : '<span class="text-gray-600">—</span>'}</td>
-          <td class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${r.email ? esc(r.email) : '<span class="badge badge-rose">Missing</span>'}</td>
-          <td>${firstTimerBadge}</td>
-          <td>${shirtBadge}</td>
-          <td>${skinsBadge}</td>
-          <td>${sponsorBadge}</td>
+          <td class="mono">${mobileDisplay}</td>
+          <td>${emailDisplay}</td>
+          <td>${firstTimerDisplay}</td>
+          <td>${shirtDisplay}</td>
+          <td>${skinsDisplay}</td>
+          <td>${sponsorDisplay}</td>
           <td style="padding-right:14px; color:rgba(100,116,139,0.6);">
             <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" class="w-3.5 h-3.5"></i>
           </td>
@@ -794,12 +931,13 @@
     }).join('');
   }
 
-  function expandField(label, value) {
+  function expandField(label, value, isConflict) {
     const isMono = label.toLowerCase().includes('number') || label.toLowerCase().includes('ga');
+    const valClass = `expand-value${isMono ? ' mono' : ''}${isConflict ? ' conflict-val' : ''}`;
     return `
       <div class="expand-field">
-        <span class="expand-label">${label}</span>
-        <span class="expand-value${isMono ? ' mono' : ''}">${esc(value)}</span>
+        <span class="expand-label">${label}${isConflict ? ' ⚠' : ''}</span>
+        <span class="${valClass}">${esc(value)}</span>
       </div>`;
   }
 
@@ -812,13 +950,11 @@
     render();
   }
 
-  // Delegated click handlers for expand (works inside module scope)
   document.addEventListener('click', e => {
     const target = e.target.closest('.expand-trigger[data-idx]');
     if (target) toggleExpand(Number(target.dataset.idx));
   });
 
-  // Expose loadData for the refresh button onclick attribute
   window.loadData = loadData;
 
   // ── MOBILE CARDS ─────────────────────────────────────────────
@@ -828,12 +964,36 @@
     if (rows.length === 0) { container.innerHTML = ''; return; }
 
     container.innerHTML = rows.map(r => {
-      const expanded = expandedRows.has(r._idx);
+      const expanded = expandedRows.has(r._mergeIdx);
+      const isDupe = r._dupeCount > 1;
+
+      let dupeRows = '';
+      if (isDupe && expanded && r._dupeEntries) {
+        dupeRows = `
+          <div style="grid-column:1/-1;margin-top:4px;padding-top:8px;border-top:1px solid rgba(168,85,247,0.2);">
+            <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(168,85,247,0.7);font-weight:700;margin-bottom:6px;">
+              ${r._dupeCount} submissions merged
+            </div>
+            ${r._dupeEntries.map(e => `
+              <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);border-radius:7px;padding:7px 9px;margin-bottom:5px;font-size:11px;color:rgba(226,232,240,0.85);">
+                <div style="font-size:9px;color:rgba(148,163,184,0.6);margin-bottom:3px;">#${e._idx} · ${formatTimestamp(e.timestamp)}</div>
+                ${e.email ? `<div>${esc(e.email)}</div>` : ''}
+                ${e.mobile ? `<div>${esc(e.mobile)}</div>` : ''}
+                ${e.shirt ? `<div>Shirt: ${esc(e.shirt)}</div>` : ''}
+                ${e.skins ? `<div>Skins: ${esc(e.skins)}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>`;
+      }
+
       return `
-        <div class="mob-card expand-trigger ${expanded ? 'expanded' : ''}" data-idx="${r._idx}">
+        <div class="mob-card expand-trigger ${expanded ? 'expanded' : ''} ${isDupe ? 'is-dupe' : ''}" data-idx="${r._mergeIdx}">
           <div class="mob-card-header">
             <div>
-              <div style="font-size:13px;font-weight:600;color:#fff;">${esc(r.name)}</div>
+              <div style="font-size:13px;font-weight:600;color:#fff;">
+                ${esc(r.name)}
+                ${isDupe ? `<span class="badge badge-dupe ml-1" style="font-size:9px;padding:1px 5px;">×${r._dupeCount}</span>` : ''}
+              </div>
               <div style="font-size:11px;color:rgba(100,116,139,0.8);font-family:'DM Mono',monospace;margin-top:1px;">${formatTimestamp(r.timestamp)}</div>
             </div>
             <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
@@ -843,25 +1003,27 @@
               <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" class="w-3.5 h-3.5" style="color:rgba(100,116,139,0.6);margin-left:2px;"></i>
             </div>
           </div>
-          <div class="mob-card-body" style="${expanded ? '' : 'display:none;'}">
-            ${mobField('Mobile', r.mobile)}
-            ${mobField('Email', r.email)}
-            ${mobField('Shirt', r.shirt)}
-            ${mobField('Partner', r.partner)}
-            ${mobField('Roommate', r.roommate)}
-            ${mobField('GA Number', r.gaNumber)}
-          </div>
+          ${expanded ? `
+          <div style="padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            ${mobField('Mobile', r.mobile, isDupe && r._conflictFields?.has('mobile'))}
+            ${mobField('Email', r.email, isDupe && r._conflictFields?.has('email'))}
+            ${mobField('Shirt', r.shirt, isDupe && r._conflictFields?.has('shirt'))}
+            ${mobField('Partner', r.partner, isDupe && r._conflictFields?.has('partner'))}
+            ${mobField('Roommate', r.roommate, isDupe && r._conflictFields?.has('roommate'))}
+            ${mobField('GA Number', r.gaNumber, false)}
+            ${dupeRows}
+          </div>` : ''}
         </div>
       `;
     }).join('');
   }
 
-  function mobField(label, value) {
+  function mobField(label, value, isConflict) {
     if (!value) return '';
     return `
       <div style="display:flex;flex-direction:column;gap:1px;">
-        <span style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(100,116,139,0.7);font-weight:600;">${label}</span>
-        <span style="font-size:11.5px;color:rgba(226,232,240,0.9);">${esc(value)}</span>
+        <span style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(100,116,139,0.7);font-weight:600;">${label}${isConflict ? ' ⚠' : ''}</span>
+        <span style="font-size:11.5px;color:${isConflict ? '#fbbf24' : 'rgba(226,232,240,0.9)'};">${esc(value)}</span>
       </div>`;
   }
 
@@ -908,14 +1070,12 @@
 
   function formatTimestamp(ts) {
     if (!ts) return '—';
-    // Google Sheets timestamps come as "Date(year,month,day,h,m,s)"
     const dateMatch = ts.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
     if (dateMatch) {
       const [,y,mo,d,h,m] = dateMatch.map(Number);
       const date = new Date(y, mo, d, h||0, m||0);
       return date.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'2-digit' });
     }
-    // Try plain string
     try {
       const d = new Date(ts);
       if (!isNaN(d)) return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'2-digit' });
