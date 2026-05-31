@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1.0" />
+  <title>Create User — Hackers Cup Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060810;
+      --surface-1: #0d1020;
+      --surface-2: #121628;
+      --surface-3: #181c30;
+      --border: rgba(255,255,255,0.06);
+      --border-active: rgba(0,229,255,0.35);
+      --aqua: #00e5ff;
+      --aqua-dim: rgba(0,229,255,0.12);
+      --aqua-glow: rgba(0,229,255,0.25);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.1);
+      --text: #e8eef8;
+      --text-2: #8892a8;
+      --text-3: #4e5878;
+      --radius: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,229,255,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(99,102,241,0.05) 0%, transparent 55%);
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--aqua), #6366f1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      flex-shrink: 0;
+    }
+
+    .status-badge.success { color: var(--green); border-color: rgba(52,211,153,0.2); background: var(--green-dim); }
+    .status-badge.success::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-badge.error { color: var(--red); border-color: rgba(248,113,113,0.2); background: var(--red-dim); }
+    .status-badge.error::before { background: var(--red); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+      text-decoration: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--aqua);
+      color: #060810;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+    .btn-ghost {
+      background: var(--surface-3);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border-active); color: var(--aqua); }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      margin-bottom: 20px;
+    }
+
+    /* Form */
+    .form-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-2);
+      letter-spacing: 0.05em;
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 4px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    input {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+
+    input:focus { border-color: var(--border-active); box-shadow: 0 0 0 3px var(--aqua-dim); }
+    input::placeholder { color: var(--text-3); }
+
+    .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* Status line */
+    .status-line {
+      font-size: 12px;
+      color: var(--text-3);
+      min-height: 18px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .status-line.success { color: var(--green); }
+    .status-line.error { color: var(--red); }
+    .status-line.warn { color: var(--amber); }
+
+    /* Sign-in card */
+    .signin-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .signin-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Password preview */
+    .password-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+
+    .password-display .pw-label {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-right: 4px;
+    }
+
+    /* Recent users list */
+    .created-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .created-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      gap: 12px;
+    }
+
+    .created-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .created-item-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .created-item-meta {
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: 'DM Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .created-item-uid {
+      font-size: 10px;
+      color: var(--text-3);
+      font-family: 'DM Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    .badge-new {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(52,211,153,0.2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-3);
+    }
+
+    .hidden { display: none !important; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-icon">👤</div>
+      <div>
+        <div class="header-title">Hackers Cup — Create User</div>
+        <div class="header-sub">Admin · Provision new accounts</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-badge" id="authStatus">Checking access…</div>
+      <a class="btn btn-ghost btn-sm" href="admin-portal.html">← Admin Portal</a>
+    </div>
+  </div>
+
+  <!-- Sign-in card (shown when not authed) -->
+  <div class="signin-card hidden" id="signinCard">
+    <div class="card-title">Sign in to Admin Portal</div>
+    <div class="signin-fields">
+      <input id="signinEmail" type="email" placeholder="Email" autocomplete="email" />
+      <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password" />
+      <button class="btn btn-primary" id="signinBtn" type="button">Sign in</button>
+      <div class="status-line" id="signinStatus"></div>
+    </div>
+  </div>
+
+  <!-- Main create user form -->
+  <div class="card hidden" id="mainCard">
+    <div class="card-title">New User Details</div>
+
+    <div class="form-fields">
+      <div class="field-group">
+        <label class="field-label" for="newDisplayName">Display Name</label>
+        <input id="newDisplayName" type="text" placeholder="e.g. Riley Oakes" autocomplete="off" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="newEmail">Email Address</label>
+        <input id="newEmail" type="email" placeholder="e.g. riley@example.com" autocomplete="off" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="newMobile">Mobile Number</label>
+        <input id="newMobile" type="tel" placeholder="e.g. 0412 345 678" autocomplete="off" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-group">
+        <label class="field-label">Default Password</label>
+        <div class="password-display">
+          <span class="pw-label">SET TO</span>
+          <span>hackerNew</span>
+        </div>
+        <div class="field-hint">User will be prompted to change this on first login.</div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="createBtn" type="button">Create Account</button>
+        <button class="btn btn-ghost btn-sm" id="clearBtn" type="button">Clear form</button>
+        <div class="status-line" id="createStatus" style="flex:1; min-width:160px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recently created users -->
+  <div class="card hidden" id="recentCard">
+    <div class="card-title">Created This Session</div>
+    <div class="created-list" id="createdList">
+      <div class="empty-state">No users created yet.</div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
+
+  // Primary app — used for admin session
+  const app = initializeApp(firebaseConfig, "admin");
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const firestore = getFirestore(app);
+
+  // Secondary app — used only to create new auth users without disrupting admin session
+  const appSecondary = initializeApp(firebaseConfig, "secondary");
+  const authSecondary = getAuth(appSecondary);
+
+  const DEFAULT_PASSWORD = "hackerNew";
+
+  const $ = id => document.getElementById(id);
+
+  const authStatus = $("authStatus");
+  const signinCard = $("signinCard");
+  const signinEmail = $("signinEmail");
+  const signinPassword = $("signinPassword");
+  const signinBtn = $("signinBtn");
+  const signinStatus = $("signinStatus");
+  const mainCard = $("mainCard");
+  const recentCard = $("recentCard");
+  const newDisplayName = $("newDisplayName");
+  const newEmail = $("newEmail");
+  const newMobile = $("newMobile");
+  const createBtn = $("createBtn");
+  const clearBtn = $("clearBtn");
+  const createStatus = $("createStatus");
+  const createdList = $("createdList");
+
+  const createdUsers = [];
+
+  function setStatus(el, message, type = "") {
+    el.textContent = message || "";
+    el.className = "status-line" + (type ? " " + type : "");
+  }
+
+  function setAuthStatus(el, message, type = "") {
+    el.textContent = message || "";
+    el.className = "status-badge" + (type ? " " + type : "");
+  }
+
+  function isAdmin(user) {
+    return get(ref(db, `admins/${user.uid}`)).then(snap => !!snap.val());
+  }
+
+  function renderCreatedList() {
+    if (createdUsers.length === 0) {
+      createdList.innerHTML = '<div class="empty-state">No users created yet.</div>';
+      return;
+    }
+    createdList.innerHTML = createdUsers.slice().reverse().map(u => `
+      <div class="created-item">
+        <div class="created-item-info">
+          <div class="created-item-name">${escapeHtml(u.displayName)}</div>
+          <div class="created-item-meta">${escapeHtml(u.email)}${u.mobile ? " · " + escapeHtml(u.mobile) : ""}</div>
+          <div class="created-item-uid">${escapeHtml(u.uid)}</div>
+        </div>
+        <span class="badge-new">CREATED</span>
+      </div>
+    `).join("");
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+  }
+
+  createBtn.addEventListener("click", async () => {
+    const displayName = newDisplayName.value.trim();
+    const email = newEmail.value.trim();
+    const mobile = newMobile.value.trim();
+
+    if (!displayName) { setStatus(createStatus, "Display name is required.", "error"); newDisplayName.focus(); return; }
+    if (!email) { setStatus(createStatus, "Email is required.", "error"); newEmail.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setStatus(createStatus, "Enter a valid email address.", "error"); newEmail.focus(); return; }
+
+    setStatus(createStatus, "Creating account…");
+    createBtn.disabled = true;
+
+    let newUid = null;
+
+    try {
+      // Create Firebase Auth user via secondary app (preserves admin session)
+      const credential = await createUserWithEmailAndPassword(authSecondary, email, DEFAULT_PASSWORD);
+      newUid = credential.user.uid;
+
+      // Sign the new user out of the secondary app immediately
+      await signOut(authSecondary);
+
+      // Write to Realtime Database: users/{uid}
+      const rtdbData = {
+        displayName,
+        email,
+        mobile: mobile || "",
+        hackerNumber: "",
+        handicap: 0,
+        fri: "",
+        sat: "",
+        sun: "",
+        roomNumber: "",
+        level: ""
+      };
+      await set(ref(db, `users/${newUid}`), rtdbData);
+
+      // Write to Firestore: users/{uid}
+      await setDoc(doc(firestore, "users", newUid), {
+        displayName,
+        email,
+        mobile: mobile || "",
+        amtOutstanding: 650,
+        financialStatus: "Pending"
+      });
+
+      // Track in session list
+      createdUsers.push({ uid: newUid, displayName, email, mobile });
+      renderCreatedList();
+      recentCard.classList.remove("hidden");
+
+      setStatus(createStatus, `Account created — UID: ${newUid}`, "success");
+
+      // Clear form
+      newDisplayName.value = "";
+      newEmail.value = "";
+      newMobile.value = "";
+      newDisplayName.focus();
+
+    } catch (error) {
+      console.error(error);
+      let msg = "Failed to create account.";
+      if (error.code === "auth/email-already-in-use") msg = "That email is already registered.";
+      else if (error.code === "auth/invalid-email") msg = "Invalid email address.";
+      else if (error.code === "auth/weak-password") msg = "Password too weak (shouldn't happen with default).";
+      setStatus(createStatus, msg, "error");
+
+      // If auth succeeded but DB writes failed, note the UID
+      if (newUid) {
+        setStatus(createStatus, `Auth user created (${newUid}) but database write failed — check console.`, "warn");
+      }
+    } finally {
+      createBtn.disabled = false;
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    newDisplayName.value = "";
+    newEmail.value = "";
+    newMobile.value = "";
+    setStatus(createStatus, "");
+    newDisplayName.focus();
+  });
+
+  // Allow Enter key to submit
+  [newDisplayName, newEmail, newMobile].forEach(input => {
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); createBtn.click(); }
+    });
+  });
+
+  signinBtn.addEventListener("click", async () => {
+    const email = signinEmail.value.trim(), password = signinPassword.value;
+    if (!email || !password) { setStatus(signinStatus, "Enter email and password.", "error"); return; }
+    setStatus(signinStatus, "Signing in…");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      signinPassword.value = "";
+      setStatus(signinStatus, "Signed in.", "success");
+    } catch (error) {
+      setStatus(signinStatus, "Sign-in failed.", "error");
+    }
+  });
+
+  signinEmail.addEventListener("keydown", e => { if (e.key === "Enter") signinPassword.focus(); });
+  signinPassword.addEventListener("keydown", e => { if (e.key === "Enter") signinBtn.click(); });
+
+  setPersistence(auth, browserLocalPersistence).catch(console.warn);
+
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      setAuthStatus(authStatus, "Not signed in", "error");
+      signinCard.classList.remove("hidden");
+      mainCard.classList.add("hidden");
+      recentCard.classList.add("hidden");
+      return;
+    }
+    signinCard.classList.add("hidden");
+    const admin = await isAdmin(user);
+    if (!admin) {
+      setAuthStatus(authStatus, "Access denied", "error");
+      mainCard.classList.add("hidden");
+      recentCard.classList.add("hidden");
+      return;
+    }
+    setAuthStatus(authStatus, user.email || user.uid, "success");
+    mainCard.classList.remove("hidden");
+    recentCard.classList.remove("hidden");
+    newDisplayName.focus();
+  });
+</script>
+</body>
+</html>

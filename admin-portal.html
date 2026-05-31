@@ -635,6 +635,7 @@
     </div>
     <div class="header-right">
       <div class="status-badge" id="authStatus">Checking access…</div>
+      <a class="btn btn-ghost btn-sm hidden" id="createUserLink" href="admin-create-user.html">+ Create user</a>
       <a class="btn btn-ghost btn-sm hidden" id="eventAdminLink" href="admin-event.html">Event admin</a>
       <a class="btn btn-ghost btn-sm hidden" id="loginLink" href="login.html">Sign in</a>
     </div>
@@ -847,6 +848,7 @@
   const signinStatus = $("signinStatus");
   const loginLink = $("loginLink");
   const eventAdminLink = $("eventAdminLink");
+  const createUserLink = $("createUserLink");
   const searchInput = $("searchInput");
   const tableBody = $("tableBody");
   const saveAllBtn = $("saveAllBtn");
@@ -1432,6 +1434,7 @@
       setAuthStatus(authStatus, "Not signed in", "error");
       loginLink.classList.remove("hidden");
       eventAdminLink.classList.add("hidden");
+      createUserLink.classList.add("hidden");
       signinCard.classList.remove("hidden");
       return;
     }
@@ -1442,10 +1445,12 @@
       setAuthStatus(authStatus, "Access denied", "error");
       setStatus(pageStatus, "This account lacks admin privileges in Realtime Database.", "error");
       eventAdminLink.classList.add("hidden");
+      createUserLink.classList.add("hidden");
       tableBody.innerHTML = "";
       return;
     }
     eventAdminLink.classList.remove("hidden");
+    createUserLink.classList.remove("hidden");
     setAuthStatus(authStatus, `${user.email || user.uid}`, "success");
     await loadUsers();
     await loadGroupSnapshot();

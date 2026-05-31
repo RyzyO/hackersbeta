@@ -882,11 +882,16 @@ window.copyPlayerEmails = function(mode) {
       const status = normalize(user.financialStatus);
       const hasOutstanding = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined;
       const outstanding = hasOutstanding ? Number(user.amtOutstanding) : null;
-      if (status.includes("partial")) return { label: "Partial", cls: "partial" };
+      // Explicitly partial status
+      if (status.includes("partial")) return { label: "Part", cls: "partial" };
+      // Paid but still has money outstanding → partial payment
+      if (status.includes("paid") && hasOutstanding && outstanding > 0) return { label: "Part", cls: "partial" };
+      // Fully paid
       if (status.includes("paid")) return { label: "Paid", cls: "paid" };
-      if (status.includes("pending")) return { label: "Pending", cls: "pending" };
       if (hasOutstanding && outstanding === 0) return { label: "Paid", cls: "paid" };
-      if (hasOutstanding && outstanding > 0) return { label: `$${outstanding} outstanding`, cls: "pending" };
+      // Pending / unpaid
+      if (status.includes("pending")) return { label: "Pending", cls: "pending" };
+      if (hasOutstanding && outstanding > 0) return { label: `$${outstanding} owed`, cls: "pending" };
       if (user.financialStatus) return { label: asString(user.financialStatus), cls: "unknown" };
       return { label: "No data", cls: "unknown" };
     }
