@@ -942,7 +942,7 @@
   function getBaseUser(uid) { return users.find(u => u.uid === uid) || null; }
 
   function isFirestorePaymentField(field) { return field === "amtOutstanding" || field === "financialStatus"; }
-  function isFirestoreMirrorField(field) { return field === "mobile"; }
+  function isFirestoreMirrorField(field) { return field === "mobile" || field === "displayName"; }
 
   function getUniquePlayerNames() {
     return Array.from(new Set(users.map(u => asString(u.displayName).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
@@ -1147,7 +1147,7 @@
       const f = firestoreUsers[uid] || {};
       return {
         uid,
-        displayName: u.displayName || "",
+        displayName: u.displayName || f.displayName || "",
         hackerNumber: u.hackerNumber || "",
         email: f.email || u.email || f.authEmail || u.authEmail || "",
         mobile: u.mobile || u.mobileNumber || f.mobile || f.mobileNumber || "",
