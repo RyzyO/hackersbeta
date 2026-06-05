@@ -386,6 +386,7 @@
         } else if (selectedTarget === 'specific') {
           const userId = document.getElementById('userId').value;
           onesignalPayload.include_external_user_ids = [userId];
+          onesignalPayload.channel_for_external_user_ids = "push";
         }
 
         if (imageUrl) {
