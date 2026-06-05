@@ -198,7 +198,7 @@
   <section class="py-12 md:py-16 -mt-8 relative z-10">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="mb-8">
-        <div class="glass-card rounded-2xl p-6 flex items-center justify-between">
+        <div id="notif-push-card" class="glass-card rounded-2xl p-6 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <i data-lucide="bell-ring" class="w-5 h-5 text-hackers-sky"></i>
             <div>
@@ -206,7 +206,7 @@
               <p class="text-sm text-gray-400">Get instant updates about schedule changes and announcements</p>
             </div>
           </div>
-          <button onclick="enableNotifications()" class="px-6 py-2 bg-gradient-to-r from-hackers-sky to-hackers-light text-white font-medium rounded-lg hover:shadow-lg hover:shadow-hackers-sky/50 transition-all whitespace-nowrap">
+          <button id="notif-enable-btn" onclick="enableNotifications()" class="px-6 py-2 bg-gradient-to-r from-hackers-sky to-hackers-light text-white font-medium rounded-lg hover:shadow-lg hover:shadow-hackers-sky/50 transition-all whitespace-nowrap">
             Enable
           </button>
         </div>
@@ -265,28 +265,46 @@
       menu.classList.toggle('hidden');
     }
 
+    function updatePushUI(isSubscribed) {
+      const card = document.getElementById('notif-push-card');
+      if (!card) return;
+      if (isSubscribed) {
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+            <div>
+              <p class="font-semibold text-white">Push Notifications Enabled</p>
+              <p class="text-sm text-gray-400">You'll receive instant updates from Hackers Cup</p>
+            </div>
+          </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+    window.updatePushUI = updatePushUI;
+
     async function enableNotifications() {
+      const btn = document.getElementById('notif-enable-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Enabling…'; }
       try {
-        console.log('Enable button clicked');
-        // Wait for OneSignal to be available
         let attempts = 0;
         while (!window.OneSignal && attempts < 50) {
           await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
-        
         if (window.OneSignal) {
-          console.log('OneSignal found, requesting permission');
-          await window.OneSignal.requestPermission();
+          await window.OneSignal.User.PushSubscription.optIn();
+          const subscribed = window.OneSignal.User.PushSubscription.optedIn;
+          updatePushUI(subscribed);
+          if (!subscribed && btn) { btn.disabled = false; btn.textContent = 'Enable'; }
         } else {
-          console.error('OneSignal did not load in time');
+          if (btn) { btn.disabled = false; btn.textContent = 'Enable'; }
         }
       } catch (error) {
-        console.error('Failed to request notification permissions:', error);
+        console.error('Failed to enable notifications:', error);
+        if (btn) { btn.disabled = false; btn.textContent = 'Enable'; }
       }
     }
-
-    // Expose to global scope for onclick handler
     window.enableNotifications = enableNotifications;
 
     // Install Prompt Handler
@@ -401,11 +419,29 @@
       });
     }
 
+    async function linkOneSignalToUser(uid) {
+      let attempts = 0;
+      while (!window.OneSignal && attempts < 40) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (!window.OneSignal) return;
+      try {
+        await window.OneSignal.login(uid);
+        const subscribed = window.OneSignal.User.PushSubscription.optedIn;
+        window.updatePushUI(subscribed);
+      } catch (e) {
+        console.warn('OneSignal login error:', e);
+      }
+    }
+
     auth.onAuthStateChanged((user) => {
       if (!user) {
         window.location.href = 'login.html';
         return;
       }
+
+      linkOneSignalToUser(user.uid);
 
       const notifRef = ref(database, `notifications/${user.uid}`);
       onValue(notifRef, (snapshot) => {
