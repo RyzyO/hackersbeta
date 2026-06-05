@@ -128,9 +128,13 @@
 
       <!-- Conditional Fields -->
       <div id="specificUserField" class="hidden">
-        <label class="block text-sm font-semibold text-white mb-2">User ID</label>
-        <input type="text" id="userId" placeholder="Enter Firebase user ID" class="w-full px-4 py-2 rounded-lg">
-        <p class="text-xs text-gray-400 mt-1">Leave empty to send to all users</p>
+        <label class="block text-sm font-semibold text-white mb-2">Search User</label>
+        <div class="relative">
+          <input type="text" id="userSearch" placeholder="Type a name…" autocomplete="off" class="w-full px-4 py-2 rounded-lg">
+          <div id="userSearchResults" class="hidden absolute z-20 w-full mt-1 rounded-lg overflow-hidden max-h-52 overflow-y-auto" style="background:#0f172a;border:1px solid rgba(255,255,255,0.12);"></div>
+        </div>
+        <input type="hidden" id="userId">
+        <p id="selectedUserDisplay" class="hidden text-xs text-hackers-sky mt-2"></p>
       </div>
 
       <div id="segmentField" class="hidden">
@@ -235,6 +239,8 @@
       // Show/hide conditional fields
       document.getElementById('specificUserField').classList.toggle('hidden', target !== 'specific');
       document.getElementById('segmentField').classList.toggle('hidden', target !== 'segment');
+
+      if (target === 'specific' && window.loadUsersForSearch) window.loadUsersForSearch();
     }
 
     // Update preview
@@ -264,6 +270,8 @@
       document.getElementById('imageUrl').value = '';
       document.getElementById('actionUrl').value = '';
       document.getElementById('userId').value = '';
+      const us = document.getElementById('userSearch'); if (us) us.value = '';
+      const sd = document.getElementById('selectedUserDisplay'); if (sd) { sd.textContent = ''; sd.classList.add('hidden'); }
       document.getElementById('segment').value = '';
       document.getElementById('charCount').textContent = '0';
       document.getElementById('previewTitle').textContent = 'Notification title';
@@ -311,6 +319,67 @@
     const database = getDatabase(app);
     const auth = getAuth(app);
     let currentUser = null;
+    let cachedUsers = null;
+
+    async function fetchUsers() {
+      if (cachedUsers) return cachedUsers;
+      const snap = await get(ref(database, 'users'));
+      if (!snap.exists()) { cachedUsers = []; return cachedUsers; }
+      cachedUsers = Object.entries(snap.val()).map(([uid, d]) => ({
+        uid,
+        displayName: d.displayName || d.name || uid,
+      }));
+      return cachedUsers;
+    }
+
+    let searchListenerAttached = false;
+    window.loadUsersForSearch = async function() {
+      const users = await fetchUsers();
+      if (searchListenerAttached) return;
+      searchListenerAttached = true;
+
+      const searchInput = document.getElementById('userSearch');
+      const resultsDiv = document.getElementById('userSearchResults');
+      if (!searchInput) return;
+
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        document.getElementById('userId').value = '';
+        if (!q) { resultsDiv.classList.add('hidden'); return; }
+
+        const matches = users.filter(u => u.displayName.toLowerCase().includes(q)).slice(0, 8);
+        if (!matches.length) { resultsDiv.classList.add('hidden'); return; }
+
+        resultsDiv.innerHTML = matches.map(u => `
+          <div class="px-4 py-3 cursor-pointer hover:bg-white/10 border-b border-white/5 last:border-0" data-uid="${u.uid}" data-name="${escapeHtml(u.displayName)}">
+            <p class="text-white text-sm font-medium">${escapeHtml(u.displayName)}</p>
+            <p class="text-gray-500 text-xs font-mono">${u.uid}</p>
+          </div>
+        `).join('');
+        resultsDiv.classList.remove('hidden');
+
+        resultsDiv.querySelectorAll('[data-uid]').forEach(el => {
+          el.addEventListener('click', () => {
+            document.getElementById('userId').value = el.dataset.uid;
+            searchInput.value = el.dataset.name;
+            resultsDiv.classList.add('hidden');
+            const disp = document.getElementById('selectedUserDisplay');
+            disp.textContent = `Sending to: ${el.dataset.name}`;
+            disp.classList.remove('hidden');
+          });
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+          resultsDiv.classList.add('hidden');
+        }
+      });
+    };
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
