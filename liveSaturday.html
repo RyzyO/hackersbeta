@@ -411,6 +411,30 @@
         display: none;
       }
     }
+
+    /* Player avatar — name cell pairing (table + cards) */
+    .player-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .player-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: #1e3a5f;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .leaderboard-name .player-cell { gap: 6px; }
+    .leaderboard-name .player-avatar {
+      width: 22px;
+      height: 22px;
+    }
   </style>
 <link rel="manifest" href="site.webmanifest">
 </head>
@@ -433,7 +457,6 @@
           <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
           <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
           <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
-        <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
           <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
         </div>
 
@@ -568,6 +591,59 @@
       </div>
     </div>
 
+  <!-- Firebase (Firestore only — read-only avatar lookup, loosely coupled to the sheet by name) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const firestore = getFirestore(app);
+
+    // Normalize a name for loose matching: lowercase, trim, collapse whitespace,
+    // strip anything in parentheses (e.g. a handicap appended like "Jane Doe (12)").
+    function normalizeName(name) {
+      return (name || '')
+        .toString()
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    window.normalizePlayerName = normalizeName;
+
+    // Build { normalizedName: avatarUrl } once, then let the sheet-rendering
+    // script (loaded separately below) consume it whenever it's ready.
+    // This keeps the two data sources loosely coupled — neither depends on the
+    // other's load order, and a missing/slow Firestore fetch never blocks the
+    // leaderboard itself from rendering.
+    window.avatarMapReady = (async () => {
+      const map = {};
+      try {
+        const snap = await getDocs(collection(firestore, 'attendeeProfiles'));
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.avatarUrl) {
+            map[normalizeName(docSnap.id)] = data.avatarUrl;
+          }
+        });
+      } catch (e) {
+        console.error('Avatar lookup failed (leaderboard will still render without photos):', e);
+      }
+      return map;
+    })();
+  </script>
+
   <script>
     function toggleMobileMenu() {
       const menu = document.getElementById('mobile-menu');
@@ -618,7 +694,21 @@
     
     const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
     const handicapUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${handicapGid}`;
-    
+
+    // Builds the player name cell. With no avatar match, this is just the
+    // plain name — no placeholder circle. An avatar is only added later if
+    // the Firestore lookup resolves a real photo for this player.
+    function renderPlayerCell(playerName, avatarMap) {
+      const safeName = playerName || '';
+      const key = window.normalizePlayerName ? window.normalizePlayerName(safeName) : safeName.toLowerCase().trim();
+      const avatarUrl = avatarMap ? avatarMap[key] : undefined;
+
+      const img = avatarUrl ? `<img src="${avatarUrl}" alt="" class="player-avatar">` : '';
+
+      return `<span class="player-cell">${img}<span>${safeName}</span></span>`;
+    }
+    window.renderPlayerCell = renderPlayerCell;
+
     // Fetch both leaderboard and handicap data concurrently
     Promise.all([
       fetch(leaderboardUrl).then(response => response.text()),
@@ -712,6 +802,11 @@
       let notPlayedToHandicap = 0;
       let scores40plus = 0;
       let through18 = 0;
+
+      // Track which cells/rows hold a player name so avatars can be painted
+      // in once the (independently-loading) Firestore avatar map resolves.
+      const nameCellRefs = []; // { el, playerName }
+
       tableData.forEach((row, index) => {
         const rankValue = row.c[1] ? row.c[1].v : 0;
         if (parseInt(rankValue, 10) === 0) return;
@@ -723,7 +818,9 @@
           if (i === 1) {
             const playerName = cell ? cell.v : `Player${index + 1}`;
             const handicap = handicapMap[playerName] ? handicapMap[playerName] : '';
-            td.textContent = handicap ? `${playerName} (${handicap})` : playerName;
+            const nameWithHandicap = handicap ? `${playerName} (${handicap})` : playerName;
+            td.innerHTML = renderPlayerCell(nameWithHandicap, null);
+            nameCellRefs.push({ el: td, playerName });
           } else {
             td.textContent = cell ? cell.v : '0';
           }
@@ -779,15 +876,18 @@
             window.location.href = `scorecard.html?player=${encodeURIComponent(playerName)}`;
           });
 
+          const nameCellHtml = renderPlayerCell(nameWithHandicap, null);
+
           card.innerHTML = `
             <div class="leaderboard-row">
               <span class="leaderboard-rank">#${rankValue}</span>
-              <span class="leaderboard-name">${nameWithHandicap}</span>
+              <span class="leaderboard-name">${nameCellHtml}</span>
               <span class="leaderboard-value">${throughValue !== '' ? throughValue : '--'}</span>
               <span class="leaderboard-value">${pointsValue !== '' ? pointsValue : '--'}</span>
             </div>
           `;
 
+          nameCellRefs.push({ el: card.querySelector('.leaderboard-name'), playerName });
           cardsContainer.appendChild(card);
         }
       });
@@ -808,6 +908,27 @@
       setPulse('pulse-through', through18);
 
       applySearchFilter();
+
+      // Paint in avatars once the (independently-loading) Firestore lookup
+      // resolves. Loosely coupled by design: if this never resolves or
+      // errors, names simply render with no photo — no placeholder circles.
+      if (window.avatarMapReady) {
+        window.avatarMapReady.then(avatarMap => {
+          nameCellRefs.forEach(({ el, playerName }) => {
+            const cell = el.querySelector('.player-cell');
+            if (!cell || cell.querySelector('.player-avatar')) return;
+            const key = window.normalizePlayerName ? window.normalizePlayerName(playerName) : (playerName || '').toLowerCase().trim();
+            const avatarUrl = avatarMap[key];
+            if (avatarUrl) {
+              const newImg = document.createElement('img');
+              newImg.src = avatarUrl;
+              newImg.alt = '';
+              newImg.className = 'player-avatar';
+              cell.insertBefore(newImg, cell.firstChild);
+            }
+          });
+        });
+      }
     })
     .catch(error => console.error('Error fetching data:', error));
   </script>
