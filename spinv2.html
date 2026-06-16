@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Hackers Cup &middot; Draw Night</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ---- Sky & Navy token system ---- */
+    --navy-900: #081225;
+    --navy-850: #0a162c;
+    --navy-800: #0c1a31;
+    --navy-700: #112341;
+    --navy-600: #16304f;
+    --navy-500: #1d3e63;
+
+    --sky-500: #0ea5e9;
+    --sky-400: #38bdf8;
+    --sky-300: #7dd3fc;
+    --sky-200: #bae6fd;
+    --sky-100: #e0f2fe;
+
+    --ink: #06101f;
+    --text-primary: #eef6fd;
+    --text-muted: #93aacb;
+    --text-dim: #5a7196;
+
+    --line: rgba(125, 211, 252, 0.14);
+    --line-soft: rgba(125, 211, 252, 0.07);
+    --panel: rgba(12, 26, 49, 0.82);
+
+    --shadow-lg: 0 24px 70px rgba(2, 8, 20, 0.6);
+    --shadow-md: 0 10px 30px rgba(2, 8, 20, 0.45);
+    --radius: 18px;
+    --radius-sm: 11px;
+
+    --font-display: 'Anton', 'Inter', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --vh: 100vh;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    min-height: 100vh;
+    background:
+      radial-gradient(120% 70% at 50% -8%, rgba(56, 189, 248, 0.16), transparent 60%),
+      radial-gradient(90% 60% at 100% 0%, rgba(14, 165, 233, 0.10), transparent 55%),
+      linear-gradient(180deg, var(--navy-850) 0%, var(--navy-900) 60%, #060d1a 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* faint drifting sky aurora */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -25%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(40% 30% at 25% 20%, rgba(56, 189, 248, 0.10), transparent 70%),
+      radial-gradient(35% 28% at 80% 30%, rgba(125, 211, 252, 0.07), transparent 70%);
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: 18px 18px 40px; }
+
+  /* ===== Broadcast header ===== */
+  .broadcast-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: linear-gradient(100deg, rgba(12,26,49,0.9), rgba(8,18,37,0.7));
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 24px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand .mark {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 3.4vw, 30px);
+    letter-spacing: 0.5px;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+  .brand .mark b { color: var(--sky-400); font-weight: inherit; }
+  .brand .est {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .bar-spacer { flex: 1; }
+  .live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(8, 18, 37, 0.5);
+    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    white-space: nowrap;
+  }
+  .live-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .live-pill.is-live { color: var(--sky-300); border-color: rgba(56,189,248,0.45); background: rgba(56,189,248,0.10); }
+  .live-pill.is-live .dot { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  .icon-btn {
+    appearance: none;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    background: rgba(8, 18, 37, 0.5);
+    color: var(--text-muted);
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--sky-300); border-color: rgba(56,189,248,0.45); background: rgba(56,189,248,0.08); }
+  .icon-btn svg { width: 19px; height: 19px; }
+
+  /* ===== Layout ===== */
+  .stage-grid { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+  @media (min-width: 1024px) {
+    .stage-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; }
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    min-width: 0;
+  }
+
+  /* ===== Wheel ===== */
+  .wheel-stage {
+    position: relative;
+    width: clamp(280px, 84vw, 560px);
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wheel-bezel {
+    position: absolute;
+    inset: -3%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(56,189,248,0.25), transparent 60%),
+      conic-gradient(from 0deg, var(--navy-600), var(--navy-800), var(--navy-600), var(--navy-700), var(--navy-600));
+    box-shadow:
+      inset 0 0 0 3px rgba(125,211,252,0.18),
+      inset 0 6px 20px rgba(0,0,0,0.5),
+      var(--shadow-lg);
+    z-index: 1;
+  }
+  .wheel-bezel::after {
+    content: '';
+    position: absolute;
+    inset: 4.5%;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px rgba(8,18,37,0.7);
+  }
+  .wheel-glow {
+    position: absolute; inset: -3%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--sky-400), transparent 20%, transparent 80%, var(--sky-400));
+    opacity: 0; filter: blur(14px);
+    z-index: 0;
+    animation: glowspin 2.4s linear infinite;
+    transition: opacity 0.45s ease;
+  }
+  .wheel-stage.is-spinning .wheel-glow { opacity: 0.6; }
+  @keyframes glowspin { to { transform: rotate(360deg); } }
+
+  .wheel-clip {
+    position: relative;
+    width: 90%; height: 90%;
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 2;
+  }
+  canvas#wheel { width: 100%; height: 100%; display: block; }
+
+  /* flapper pointer at 12 o'clock */
+  .flapper {
+    position: absolute;
+    top: -2.5%;
+    left: 50%;
+    width: 0; height: 0;
+    transform-origin: 50% 0;
+    z-index: 12;
+    will-change: transform;
+    filter: drop-shadow(0 5px 8px rgba(0,0,0,0.55));
+  }
+  .flapper i {
+    position: absolute;
+    left: -16px; top: 0;
+    width: 0; height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 38px solid var(--sky-400);
+  }
+  .flapper b {
+    position: absolute;
+    left: -8px; top: -10px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--sky-300);
+    box-shadow: 0 0 0 3px var(--navy-800);
+  }
+
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 22%; height: 22%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, var(--sky-300), var(--sky-500) 70%, var(--sky-500));
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; line-height: 1;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: clamp(13px, 2.6vw, 18px);
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(255,255,255,0.35), inset 0 -6px 12px rgba(6,16,31,0.35);
+    z-index: 3;
+  }
+  .hub span { transform: translateY(1px); }
+
+  /* ===== Controls ===== */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; max-width: 560px; }
+  .btn {
+    appearance: none; border: none; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; font-size: 12.5px;
+    padding: 14px 22px; border-radius: 13px;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+  .btn-primary {
+    flex: 1 1 200px;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--sky-300), var(--sky-500));
+    box-shadow: 0 10px 26px rgba(56, 189, 248, 0.35);
+    font-size: 14px;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(56, 189, 248, 0.45); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-ghost {
+    background: rgba(12, 26, 49, 0.6);
+    color: var(--text-primary);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover:not(:disabled) { border-color: rgba(56,189,248,0.5); color: var(--sky-200); }
+  .btn-toggle {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(12, 26, 49, 0.6);
+    color: var(--text-muted);
+    border: 1px solid var(--line);
+  }
+  .btn-toggle svg { width: 14px; height: 14px; }
+  .btn-toggle.active { color: var(--sky-300); border-color: rgba(56,189,248,0.5); background: rgba(56,189,248,0.1); }
+
+  .keyhint { font-size: 11px; color: var(--text-dim); letter-spacing: 0.4px; text-align: center; }
+  .keyhint kbd {
+    font-family: var(--font-body); font-size: 10px; font-weight: 700;
+    background: rgba(125,211,252,0.1); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px 6px; color: var(--sky-200);
+  }
+
+  /* ===== Winner reveal (broadcast lower-third) ===== */
+  .reveal {
+    width: 100%; max-width: 560px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: linear-gradient(120deg, rgba(12,26,49,0.95), rgba(8,18,37,0.85));
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 6px 1fr;
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.2,.8,.2,1);
+  }
+  .reveal.is-on { opacity: 1; transform: translateY(0) scale(1); }
+  .reveal .accent { background: linear-gradient(180deg, var(--sky-300), var(--sky-500)); }
+  .reveal .body { padding: 16px 18px; min-width: 0; }
+  .reveal .eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--sky-300); margin-bottom: 6px;
+  }
+  .reveal .who {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 6vw, 46px);
+    line-height: 0.98; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--text-primary);
+    word-break: break-word;
+  }
+  .reveal .meta { margin-top: 8px; font-size: 13px; color: var(--text-muted); }
+  .reveal .meta b { color: var(--sky-200); font-weight: 700; }
+  .reveal .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .reveal .actions .btn { flex: 1 1 auto; padding: 10px 14px; font-size: 11.5px; }
+
+  /* placeholder state before first spin */
+  .reveal.is-idle { opacity: 1; transform: none; }
+  .reveal.is-idle .who { color: var(--text-dim); font-size: clamp(20px, 4vw, 30px); }
+
+  /* ===== Right rail: The Field ===== */
+  .rail {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  @media (min-width: 1024px) { .rail { position: sticky; top: 18px; } }
+
+  .rail-head { padding: 16px 16px 0; }
+  .rail-title {
+    font-family: var(--font-display);
+    font-size: 18px; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--text-primary);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .rail-title .count { font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--sky-300); letter-spacing: 0; }
+
+  .search-wrap { position: relative; padding: 14px 16px; }
+  .search-wrap svg { position: absolute; left: 27px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-dim); pointer-events: none; }
+  .search {
+    width: 100%; padding: 12px 14px 12px 38px;
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    background: rgba(6, 16, 31, 0.6); color: var(--text-primary);
+    font-size: 15px; font-family: var(--font-body); outline: none;
+    transition: border-color 0.18s ease, background 0.18s ease;
+  }
+  .search::placeholder { color: var(--text-dim); }
+  .search:focus { border-color: rgba(56,189,248,0.55); background: rgba(6,16,31,0.85); }
+
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .stat { padding: 12px 8px; text-align: center; border-right: 1px solid var(--line-soft); }
+  .stat:last-child { border-right: none; }
+  .stat .n { font-family: var(--font-display); font-size: 24px; color: var(--text-primary); line-height: 1; }
+  .stat .n.accent { color: var(--sky-300); }
+  .stat .l { font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-top: 5px; font-weight: 700; }
+
+  .opt-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13px; color: var(--text-muted);
+    cursor: pointer; user-select: none;
+  }
+  .opt-row input { width: 18px; height: 18px; accent-color: var(--sky-400); cursor: pointer; }
+
+  .roster { list-style: none; max-height: 360px; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  @media (max-width: 1023px) { .roster { max-height: 300px; } }
+  .roster li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; border-radius: 9px;
+    background: rgba(6, 16, 31, 0.45);
+    border: 1px solid var(--line-soft);
+    font-size: 13px; transition: background 0.15s ease, opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .roster li:hover { background: rgba(56,189,248,0.06); }
+  .roster li.win { border-color: rgba(56,189,248,0.55); background: rgba(56,189,248,0.12); }
+  .roster li.out { opacity: 0.32; text-decoration: line-through; }
+  .roster .no { font-family: var(--font-display); color: var(--sky-300); min-width: 40px; font-size: 14px; letter-spacing: 0.5px; }
+  .roster .nm { flex: 1; text-align: right; margin-left: 8px; color: var(--text-primary); }
+  .roster::-webkit-scrollbar { width: 7px; }
+  .roster::-webkit-scrollbar-thumb { background: rgba(125,211,252,0.18); border-radius: 4px; }
+  .roster::-webkit-scrollbar-thumb:hover { background: rgba(125,211,252,0.32); }
+  .roster .empty { text-align: center; color: var(--text-dim); padding: 24px 8px; font-size: 13px; }
+
+  /* ===== Kiosk ===== */
+  body.kiosk .broadcast-bar,
+  body.kiosk .rail,
+  body.kiosk .keyhint { display: none !important; }
+  body.kiosk .app { padding: 0; height: var(--vh); display: flex; align-items: center; }
+  body.kiosk .stage-grid { grid-template-columns: 1fr; width: 100%; }
+  body.kiosk .stage { gap: 26px; }
+  body.kiosk .wheel-stage { width: min(74vmin, 660px); }
+  body.kiosk * { cursor: none !important; }
+  body.kiosk .kiosk-hint { display: block; }
+  .kiosk-hint {
+    display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--text-dim); letter-spacing: 1px; z-index: 40;
+  }
+
+  /* ===== Confetti ===== */
+  #confetti { position: fixed; inset: 0; z-index: 900; pointer-events: none; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; bottom: 22px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--navy-700); border: 1px solid var(--line);
+    color: var(--text-primary); padding: 11px 18px; border-radius: 11px;
+    font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md);
+    opacity: 0; pointer-events: none; z-index: 1200;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== Profile modal ===== */
+  .modal {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(4, 10, 22, 0.82); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal.active { display: flex; }
+  .modal-card {
+    background: linear-gradient(160deg, var(--navy-800), var(--navy-850));
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 28px 22px; width: min(66vw, 980px); height: min(66vh, 760px); max-width: none; max-height: none;
+    overflow-y: auto; position: relative; box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
+  }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px;
+    background: transparent; border: none; color: var(--text-muted);
+    font-size: 28px; cursor: pointer; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center; border-radius: 9px;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .modal-close:hover { background: rgba(125,211,252,0.1); color: var(--text-primary); }
+  .modal-head { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .modal-name { font-family: var(--font-display); font-size: 30px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--sky-300); margin-bottom: 4px; }
+  .modal-num { font-size: 13px; color: var(--text-muted); }
+  .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .modal-stat { background: rgba(6,16,31,0.55); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 13px; text-align: center; }
+  .modal-stat .l { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-weight: 700; }
+  .modal-stat .v { font-family: var(--font-display); font-size: 22px; color: var(--text-primary); }
+  .modal-sec { margin-bottom: 20px; }
+  .modal-sec:last-child { margin-bottom: 0; }
+  .modal-sec-title { font-size: 10px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: linear-gradient(135deg, var(--sky-300), var(--sky-500)); color: var(--ink); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .chip.milestone { background: linear-gradient(135deg, var(--sky-200), var(--sky-400)); box-shadow: 0 2px 10px rgba(56,189,248,0.3); }
+  .years { display: flex; flex-wrap: wrap; gap: 8px; }
+  .year { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); color: var(--sky-200); padding: 6px 10px; border-radius: 7px; font-size: 12px; font-weight: 700; }
+  .honours { display: flex; flex-direction: column; gap: 10px; }
+  .honour { background: rgba(6,16,31,0.55); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 11px; font-size: 12px; color: var(--text-muted); }
+  .honour .t { color: var(--text-primary); font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+
+  /* ===== a11y / motion ===== */
+  .sr-only { position: absolute; left: -9999px; }
+  .btn:focus-visible, .icon-btn:focus-visible, .search:focus-visible, .opt-row:focus-within {
+    outline: 2px solid var(--sky-400); outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body::before, .wheel-glow, .live-pill.is-live .dot { animation: none !important; }
+    .reveal { transition: opacity 0.2s ease !important; transform: none !important; }
+    *, *::before, *::after { transition-duration: 0.01ms !important; }
+  }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 640px) {
+    .app { padding: 14px 14px 32px; }
+    .broadcast-bar { gap: 10px; padding: 11px 13px; margin-bottom: 18px; }
+    .brand .est { display: none; }
+    .stage-grid { gap: 20px; }
+    .stage { gap: 18px; }
+    .controls { gap: 8px; }
+    .btn { padding: 13px 16px; }
+    .btn-primary { flex-basis: 100%; }
+    .roster { max-height: 260px; }
+  }
+  @media (max-width: 380px) {
+    .reveal .actions { flex-direction: column; }
+    .reveal .actions .btn { flex-basis: 100%; }
+  }
+  @media (max-width: 1023px) {
+    .modal-card { width: calc(100vw - 32px); height: min(80vh, 760px); }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<div class="app">
+  <div class="broadcast-bar">
+    <div class="brand">
+      <span class="mark">Hackers <b>Cup</b></span>
+      
+    </div>
+    <div class="bar-spacer"></div>
+    <div class="live-pill" id="livePill"><span class="dot"></span><span id="liveText">Ready</span></div>
+    <button class="icon-btn" id="kioskBtn" title="Big-screen mode" aria-label="Toggle big-screen mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
+  </div>
+
+  <div class="stage-grid">
+    <main class="stage">
+      <div class="wheel-stage" id="wheelStage">
+        <div class="wheel-glow"></div>
+        <div class="wheel-bezel"></div>
+        <div class="wheel-clip">
+          <canvas id="wheel" width="1100" height="1100" role="img" aria-label="Spin wheel of Hackers Cup members"></canvas>
+        </div>
+        <div class="flapper" id="flapper"><i></i><b></b></div>
+        <div class="hub"><span>HC</span></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="spinBtn">Spin the Wheel</button>
+        <button class="btn btn-ghost" id="spinFilteredBtn">Spin Filtered</button>
+        <button class="btn btn-ghost" id="resetBtn">Reset</button>
+        <button class="btn btn-toggle" id="noRepeatBtn" aria-pressed="false" title="Remove each winner from the wheel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          No Repeats
+        </button>
+      </div>
+      <div class="keyhint">Press <kbd>Space</kbd> to spin</div>
+
+      <section class="reveal is-idle" id="reveal" aria-live="polite">
+        <div class="accent"></div>
+        <div class="body">
+          <div class="eyebrow" id="revealEyebrow">On the wheel</div>
+          <div class="who" id="revealName">Ready to draw</div>
+          <div class="meta" id="revealMeta"><b id="revealCount">273</b> hackers loaded &middot; press spin</div>
+          <div class="actions">
+            <button class="btn btn-ghost" id="viewProfileBtn" style="display:none;">View Profile</button>
+            <button class="btn btn-ghost" id="shareBtn" style="display:none;">Share Result</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="rail">
+      <div class="rail-head">
+        <div class="rail-title">The Field <span class="count" id="railCount">273</span></div>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" class="search" type="text" placeholder="Filter by name or number" aria-label="Filter players" />
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Loaded</div></div>
+        <div class="stat"><div class="n accent" id="statPool">0</div><div class="l">In Draw</div></div>
+        <div class="stat"><div class="n" id="statDrawn">0</div><div class="l">Drawn</div></div>
+      </div>
+      <label class="opt-row" for="noRepeatCheck">
+        <input type="checkbox" id="noRepeatCheck" />
+        Remove winners from future spins
+      </label>
+      <ul class="roster" id="roster"></ul>
+    </aside>
+  </div>
+</div>
+
+<div class="kiosk-hint">Press <strong>Esc</strong> to exit big-screen mode</div>
+<div class="toast" id="toast"></div>
+<div class="sr-only" id="srLive" aria-live="assertive"></div>
+
+<!-- Profile modal -->
+<div id="profileModal" class="modal" onclick="if(event.target===this) closeProfileModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">&times;</button>
+    <div class="modal-head">
+      <div class="modal-name" id="profileName">Loading...</div>
+      <div class="modal-num" id="profileNumber"></div>
+    </div>
+    <div class="modal-stats">
+      <div class="modal-stat"><div class="l">Events Attended</div><div class="v" id="profileEventsAttended">-</div></div>
+      <div class="modal-stat"><div class="l">Last Attended</div><div class="v" id="profileLastAttended">-</div></div>
+    </div>
+    <div class="modal-sec" id="anniversarySection" style="display:none;">
+      <div class="modal-sec-title">Milestone Badges</div>
+      <div class="chips" id="profileAnniversaryBadges"></div>
+    </div>
+    <div class="modal-sec" id="badgesSection" style="display:none;">
+      <div class="modal-sec-title">Badges</div>
+      <div class="chips" id="profileBadges"></div>
+    </div>
+    <div class="modal-sec" id="yearsSection" style="display:none;">
+      <div class="modal-sec-title">Years Attended</div>
+      <div class="years" id="profileYears"></div>
+    </div>
+    <div class="modal-sec" id="honoursSection" style="display:none;">
+      <div class="modal-sec-title">Honours &amp; Awards</div>
+      <div class="honours" id="profileHonours"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+  // ---- Firebase (profiles) ----
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+    authDomain: "hackers-cup.firebaseapp.com",
+    databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+    projectId: "hackers-cup",
+    storageBucket: "hackers-cup.appspot.com",
+    messagingSenderId: "765736070872",
+    appId: "1:765736070872:web:86a51c41916e7af75631ad",
+    measurementId: "G-6E1M14F510"
+  };
+  let db = null;
+  try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); } catch (e) { console.warn('Firebase init failed', e); }
+
+  function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
+  function showProfileModal(displayName, hackerNumber) {
+    document.getElementById('profileModal').classList.add('active');
+    loadAndDisplayProfile(displayName, hackerNumber);
+  }
+  async function loadAndDisplayProfile(displayName, hackerNumber) {
+    if (!db) { renderProfileModal({}, displayName, hackerNumber); return; }
+    try {
+      const doc = await db.collection('attendeeProfiles').doc(displayName).get();
+      renderProfileModal(doc.exists ? doc.data() : {}, displayName, hackerNumber);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      renderProfileModal({}, displayName, hackerNumber);
+    }
+  }
+  function renderProfileModal(profile, displayName, hackerNumber) {
+    document.getElementById('profileName').textContent = displayName;
+    document.getElementById('profileNumber').textContent = hackerNumber ? `Hacker #${hackerNumber}` : '';
+    document.getElementById('profileEventsAttended').textContent = profile.eventsAttended || '-';
+    document.getElementById('profileLastAttended').textContent = profile.lastAttended ? `HC${profile.lastAttended}` : '-';
+
+    const allTotal = profile.totalBadges || [];
+    const allConsec = profile.consecutiveBadges || [];
+    const annivRe = /^\s*(5|10|15|20|25)\s*(year|years|yrs|yr)?\s*$/i;
+    const anniv = [...allTotal, ...allConsec].filter(b => annivRe.test(b));
+    const regular = [...allTotal, ...allConsec].filter(b => !annivRe.test(b));
+
+    const annivSec = document.getElementById('anniversarySection');
+    if (anniv.length) { annivSec.style.display = 'block'; document.getElementById('profileAnniversaryBadges').innerHTML = anniv.map(b => `<div class="chip milestone">${b}</div>`).join(''); }
+    else annivSec.style.display = 'none';
+
+    const badgesSec = document.getElementById('badgesSection');
+    if (regular.length) { badgesSec.style.display = 'block'; document.getElementById('profileBadges').innerHTML = regular.map(b => `<div class="chip">${b}</div>`).join(''); }
+    else badgesSec.style.display = 'none';
+
+    const years = profile.attendedYears || [];
+    const yearsSec = document.getElementById('yearsSection');
+    if (years.length) { yearsSec.style.display = 'block'; document.getElementById('profileYears').innerHTML = years.slice().sort((a,b)=>a-b).map(y => `<div class="year">HC${y}</div>`).join(''); }
+    else yearsSec.style.display = 'none';
+
+    const honours = profile.honours || [];
+    const honoursSec = document.getElementById('honoursSection');
+    if (honours.length) {
+      honoursSec.style.display = 'block';
+      document.getElementById('profileHonours').innerHTML = honours.slice(0, 5).map(h => `
+        <div class="honour"><div class="t">${h.text || h.category || 'Award'}</div>
+        <div>${h.eventId ? `${h.eventId}` : ''} ${h.year ? `&bull; ${h.year}` : ''} ${h.location ? `&bull; ${h.location}` : ''}</div></div>`).join('');
+    } else honoursSec.style.display = 'none';
+  }
+</script>
+
+<script>
+window.__PLAYERS__ = [
+{no:1,name:"Brendan Oakes"},{no:2,name:"Andrew Murray"},{no:3,name:"Tony Best"},{no:4,name:"Noel Jago"},{no:5,name:"Peter Keen"},{no:6,name:"Martyn Budden"},{no:7,name:"Scott Anderson"},{no:8,name:"Ashley Oakes"},{no:9,name:"Andrew Bunting"},{no:10,name:"Steve Brooks"},{no:11,name:"Mat Beasley"},{no:12,name:"Hayden Remnant"},{no:13,name:"Ken Roberts"},{no:14,name:"Paul Nelson"},{no:15,name:"Trevor Brown (Late)"},{no:16,name:"John LÉstrange"},{no:17,name:"Mat Jackson"},{no:18,name:"Dave Puxty"},{no:19,name:"Dale Puxty"},{no:20,name:"Ian Ward"},{no:21,name:"Brett Hinton"},{no:22,name:"Dave Hall"},{no:23,name:"Brian Haverty"},{no:24,name:"Scott Good"},{no:25,name:"John Scobie"},{no:26,name:"Ian Keogh"},{no:27,name:"Sam Koh"},{no:28,name:"John King"},{no:29,name:"Steve Rochaix"},{no:30,name:"Phil Carney"},{no:31,name:"Richard Skender"},{no:32,name:"Sebastian Baldwin"},{no:33,name:"Chris Chilcott"},{no:34,name:"Mathew Andrews"},{no:35,name:"David Wright"},{no:36,name:"Steve Clarke"},{no:37,name:"Ben Harper"},{no:38,name:"Damien Starcic"},{no:39,name:"Chris Caine"},{no:40,name:"Patrick Weinstein"},{no:41,name:"Daniel Graham"},{no:42,name:"Adam Buttifant"},{no:43,name:"Nathan McDonald"},{no:44,name:"Adam Paton"},{no:45,name:"Chris Campbell"},{no:46,name:"Cameron Wark"},{no:47,name:"Geoff Fletcher"},{no:48,name:"Emil Montibeler"},{no:49,name:"Mitch Buttifant"},{no:50,name:"Michael Maceijak"},{no:51,name:"Daniel McFadden"},{no:52,name:"Mat Rowan"},{no:53,name:"Neil Gowdie"},{no:54,name:"Steve Press"},{no:55,name:"Paul Kedwell"},{no:56,name:"Dempster Bleechmore"},{no:57,name:"Steve Walters"},{no:58,name:"Simon Day"},{no:59,name:"Mark Hawes"},{no:60,name:"Stan King"},{no:61,name:"Steve Phan"},{no:62,name:"Adam Dragic"},{no:63,name:"Bryan Davis"},{no:64,name:"Darren Younger"},{no:65,name:"Brett Davies"},{no:66,name:"Brian Farrelly"},{no:67,name:"Jimmy Lam"},{no:68,name:"Gavin Hoy"},{no:69,name:"Shane Curry"},{no:70,name:"Shane McDonald"},{no:71,name:"Phil Rayner"},{no:72,name:"Aaron Johnson"},{no:73,name:"Darryn Rooks"},{no:74,name:"Joel Bailey"},{no:75,name:"Christian Wood"},{no:76,name:"Alan Bampton"},{no:77,name:"Josh Fryer"},{no:78,name:"Jason Simpson"},{no:79,name:"Shaun Ware"},{no:80,name:"Andrew Kazaglis"},{no:81,name:"Luke Singleton"},{no:82,name:"James Singleton"},{no:83,name:"Daryl Symanski"},{no:84,name:"Andrew Wheeler"},{no:85,name:"Bruce Harper"},{no:86,name:"Scott Austin"},{no:87,name:"Wayne Tower"},{no:88,name:"Kevin Oliver"},{no:89,name:"Jez Clayton"},{no:90,name:"Andrew Murrie"},{no:91,name:"James Murphy"},{no:92,name:"Mick Cooper"},{no:93,name:"Craig Simmons"},{no:94,name:"Brian Gibson"},{no:95,name:"Christian Fox"},{no:96,name:"Mat Herbert"},{no:97,name:"Craig Broderick"},{no:98,name:"Les Connell"},{no:99,name:"David Timso"},{no:100,name:"James Mattinson"},{no:101,name:"Nick Brady"},{no:102,name:"Jarrod Hoddinott"},{no:103,name:"Bill Pearce"},{no:104,name:"Terry Takouridis"},{no:105,name:"Rob Crump"},{no:106,name:"Peter Stofka"},{no:107,name:"Matthew Zibert"},{no:108,name:"Tony Wicht"},{no:109,name:"Grant Hasell"},{no:110,name:"Dean Connelly"},{no:111,name:"Trevor Griffiths"},{no:112,name:"Matt Burns"},{no:113,name:"Mark Bewey"},{no:114,name:"Mark Lever"},{no:115,name:"Matt Ware"},{no:116,name:"Ben Lusher"},{no:117,name:"Tejas Bhatia"},{no:118,name:"Daniel Renoux"},{no:119,name:"Phil Lambert"},{no:120,name:"Bruce Brown"},{no:121,name:"Brenton Humphris"},{no:122,name:"Ashley Hastings"},{no:123,name:"Raymond Hastings"},{no:124,name:"Grant Hastings"},{no:125,name:"Greg Davies"},{no:126,name:"Jimmy Austin"},{no:127,name:"Simon Livingston"},{no:128,name:"Adam Vivelis"},{no:129,name:"Phil Vivelis"},{no:130,name:"Adam Wearing"},{no:131,name:"Ben Wearing"},{no:132,name:"Craig Upton"},{no:133,name:"Michael Whittaker"},{no:134,name:"Scott Tasker"},{no:135,name:"Dale Buttifant"},{no:136,name:"Warren Gibson"},{no:137,name:"Mark Bass"},{no:138,name:"Sam Ballieau"},{no:139,name:"Simon Harper"},{no:140,name:"Chris Godfrey"},{no:141,name:"Phil Buttifant"},{no:142,name:"Damien Lynch"},{no:143,name:"Ross Chippendale"},{no:144,name:"Rob Stavely"},{no:145,name:"Warren Mansell"},{no:146,name:"Ernie Zibert"},{no:147,name:"Geoff Roach"},{no:148,name:"John Winter"},{no:149,name:"Ed Henning"},{no:150,name:"Myles Carney"},{no:151,name:"Chris Bell"},{no:152,name:"Cam Cumming"},{no:153,name:"Glenn Roberts"},{no:154,name:"Griffin Czipri"},{no:155,name:"Gary Parker"},{no:156,name:"Joe Pajeska"},{no:157,name:"Chris Waters"},{no:158,name:"Brad Thomas"},{no:159,name:"Will Fahey"},{no:160,name:"James Balfour-Ogilvy"},{no:161,name:"Brenden Ball"},{no:162,name:"Martin McCausland"},{no:163,name:"James King"},{no:164,name:"Cam Mitchell"},{no:165,name:"Llewelyn Fourie"},{no:166,name:"Adrian Harper"},{no:167,name:"Justin Knight"},{no:168,name:"Paul Collis"},{no:169,name:"Oliver Adams"},{no:170,name:"Brad Younger"},{no:171,name:"Brad Grant"},{no:172,name:"Darren Grant"},{no:173,name:"Ian Allt"},{no:174,name:"Anthony Edwards"},{no:175,name:"Andrew Teitzel"},{no:176,name:"James Brady"},{no:177,name:"Cameron Allen"},{no:178,name:"Felix Lewandowski"},{no:179,name:"David Brown"},{no:180,name:"Michael Brown"},{no:181,name:"Stephen David"},{no:182,name:"Jacob Peters"},{no:183,name:"Andrew Graham"},{no:184,name:"Ben McFadden"},{no:185,name:"Tony Mills"},{no:186,name:"Michael Banzer"},{no:187,name:"Troy Hackett"},{no:188,name:"Adam Camilleri"},{no:189,name:"Jason Mills"},{no:190,name:"Glenn Lyall"},{no:191,name:"James Longford"},{no:192,name:"Phil Foo"},{no:193,name:"Jeffrey Dohnt"},{no:194,name:"Glenn Palmer"},{no:195,name:"Brad Rogers"},{no:196,name:"Marcus Macdonald"},{no:197,name:"Glen Marler"},{no:198,name:"Garry Kerr"},{no:199,name:"Sarkis Akle"},{no:200,name:"Glen Coddington"},{no:201,name:"Graeme Daines"},{no:202,name:"Johan Bustamante"},{no:203,name:"Warren McMahon"},{no:204,name:"Steve Shaw"},{no:205,name:"Paul Murray"},{no:206,name:"Daniel Bennett"},{no:207,name:"Mark Anderson"},{no:208,name:"Chris Stauber"},{no:209,name:"Kieran Prior"},{no:210,name:"Wayne Ritchie"},{no:211,name:"Michael Lagudi"},{no:212,name:"Nick Williams"},{no:213,name:"Dave Dollard"},{no:214,name:"Dan Sullivan"},{no:215,name:"Adam Goodall"},{no:216,name:"Mark Leaney"},{no:217,name:"Duane Roy"},{no:218,name:"Adrian Lockley"},{no:219,name:"Brian Spratt"},{no:220,name:"Paul Fawkes"},{no:221,name:"Glen Duley"},{no:222,name:"Robert Graham"},{no:223,name:"William Jackett"},{no:224,name:"Craig Board"},{no:225,name:"Nick Flanagan"},{no:226,name:"Glen Harding"},{no:227,name:"Mathew Rapa"},{no:228,name:"Thomas Moc (Late)"},{no:229,name:"Keiran Tanner"},{no:230,name:"David Clune"},{no:231,name:"Gavin Blick"},{no:232,name:"Mark Braund"},{no:233,name:"Stuart MacLennan"},{no:234,name:"Garry Giles"},{no:235,name:"Ed Howitt"},{no:236,name:"Luke O'Brien"},{no:237,name:"Luke Shafer"},{no:238,name:"Justinn Curan"},{no:239,name:"Antony Seel"},{no:240,name:"Glenn Clay"},{no:241,name:"Neil Watson"},{no:242,name:"Blake McIntosh"},{no:243,name:"Shaun Thompson"},{no:244,name:"Jeff Hawkins"},{no:245,name:"David Simpson"},{no:246,name:"Shane Cook"},{no:247,name:"Jacob Issa"},{no:248,name:"Anker Christensen"},{no:249,name:"Grant Pelley"},{no:250,name:"Riley Oakes"},{no:251,name:"Joel Shepherd"},{no:252,name:"Sam Edwards"},{no:253,name:"Ben Wood"},{no:254,name:"Jordan Whitehorn"},{no:255,name:"Derek Shepherd"},{no:256,name:"Paul Zepernick"},{no:257,name:"Brad Spurway"},{no:258,name:"Paul McLean"},{no:259,name:"Andrew Minnikin"},{no:260,name:"Tamas Mendick"},{no:261,name:"Joe Foia"},{no:262,name:"Matt Kennerson"},{no:263,name:"Matt Toohey"},{no:264,name:"Glenn Hickey"},{no:265,name:"Greg Gomes"},{no:266,name:"Edward O'Sullivan"},{no:267,name:"Willie Cooper"},{no:268,name:"Scott Griffiths"},{no:269,name:"Ray Vella"},{no:270,name:"Lachlan Hill"},{no:271,name:"John O'Toole"},{no:272,name:"Charlie Sharp"},{no:273,name:"Ryan Nancarrow"}
+];
+</script>
+<script>
+/* =========================================================
+   Hackers Cup draw wheel — interaction engine
+   ========================================================= */
+const players = window.__PLAYERS__ || [];
+
+const el = id => document.getElementById(id);
+const canvas = el('wheel'), ctx = canvas.getContext('2d');
+const wheelStage = el('wheelStage'), flapper = el('flapper');
+const spinBtn = el('spinBtn'), spinFilteredBtn = el('spinFilteredBtn'), resetBtn = el('resetBtn');
+const noRepeatBtn = el('noRepeatBtn'), noRepeatCheck = el('noRepeatCheck');
+const search = el('search'), kioskBtn = el('kioskBtn');
+const livePill = el('livePill'), liveText = el('liveText');
+const reveal = el('reveal'), revealEyebrow = el('revealEyebrow'), revealName = el('revealName'),
+      revealMeta = el('revealMeta'), revealCount = el('revealCount');
+const viewProfileBtn = el('viewProfileBtn'), shareBtn = el('shareBtn');
+const roster = el('roster'), railCount = el('railCount');
+const statTotal = el('statTotal'), statPool = el('statPool'), statDrawn = el('statDrawn');
+const toast = el('toast'), srLive = el('srLive');
+
+let rotation = 0, spinning = false;
+let filtered = [...players];
+let removed = new Set();
+let noRepeat = false;
+let lastWinner = null;
+let cacheCanvas = null, cacheKey = '';
+const TAU = Math.PI * 2;
+
+/* ---------- spin sound ---------- */
+const spinAudio = new Audio('assets/audio/spin.mp3');
+spinAudio.preload = 'auto';
+spinAudio.loop = true;
+spinAudio.volume = 0.85;
+
+function startSpinAudio() {
+  spinAudio.currentTime = 0;
+  spinAudio.play().catch(() => {});
+}
+
+function stopSpinAudio() {
+  spinAudio.pause();
+  spinAudio.currentTime = 0;
+}
+
+/* ---------- tiny Web Audio sound engine (no external files) ---------- */
+let actx = null;
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function fanfare() {
+  const a = audio(); if (!a) return;
+  const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+  notes.forEach((f, i) => {
+    const t = a.currentTime + i * 0.1;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + 0.5);
+  });
+}
+
+/* ---------- helpers ---------- */
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add('show');
+  clearTimeout(showToast._t); showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+function activePool() { return noRepeat ? players.filter(p => !removed.has(p.no)) : players; }
+
+/* Two-tone sky/navy slice colouring — alternating light/dark with a gentle hue drift */
+function sliceColors(i, total) {
+  const drift = (i / Math.max(1, total)) * 14;      // subtle hue movement around the wheel
+  const light = i % 2 === 0;
+  if (light) {
+    return { c1: `hsl(${199 + drift}, 92%, 78%)`, c2: `hsl(${201 + drift}, 90%, 60%)`, text: '#06101f' };
+  }
+  return { c1: `hsl(${213 + drift}, 64%, 30%)`, c2: `hsl(${211 + drift}, 70%, 19%)`, text: '#eef6fd' };
+}
+
+/* ---------- wheel rendering (cached, then just rotated) ---------- */
+function cacheKeyFor(pool) {
+  if (!pool.length) return 'empty';
+  return `${pool.length}:${pool[0].no}:${pool[pool.length-1].no}:${canvas.width}`;
+}
+function buildCache(pool) {
+  const w = canvas.width, h = canvas.height, cx = w/2, cy = h/2, R = Math.min(w,h)/2 - 8;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const c = cv.getContext('2d');
+  c.save(); c.translate(cx, cy);
+
+  if (!pool.length) {
+    c.beginPath(); c.arc(0,0,R,0,TAU); c.fillStyle = '#16304f'; c.fill();
+    c.fillStyle = '#93aacb'; c.font = '600 50px "Anton", Arial';
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('NO MATCHES', 0, 0);
+    c.restore(); return cv;
+  }
+
+  const slice = TAU / pool.length;
+  const showName = pool.length <= 110;
+  const fontSize = Math.max(15, Math.min(34, 250 / Math.sqrt(pool.length)));
+
+  for (let i = 0; i < pool.length; i++) {
+    const start = i * slice - Math.PI/2, end = start + slice;
+    const { c1, c2, text } = sliceColors(i, pool.length);
+    const g = c.createLinearGradient(Math.cos(start)*R, Math.sin(start)*R, Math.cos(end)*R, Math.sin(end)*R);
+    g.addColorStop(0, c1); g.addColorStop(1, c2);
+    c.beginPath(); c.moveTo(0,0); c.arc(0,0,R,start,end); c.closePath();
+    c.fillStyle = g; c.fill();
+    c.lineWidth = 1.5; c.strokeStyle = 'rgba(238,246,253,0.16)'; c.stroke();
+
+    const mid = start + slice/2;
+    c.save(); c.rotate(mid); c.textAlign = 'right'; c.fillStyle = text;
+    c.font = `700 ${fontSize}px "Inter", Arial`;
+    c.translate(R - 24, 0); c.rotate(Math.PI/2);
+    let label = showName ? `#${pool[i].no}  ${pool[i].name}` : `${pool[i].no}`;
+    const maxW = R * 0.7;
+    while (c.measureText(label).width > maxW && label.length > 10) label = label.slice(0, -2);
+    if (showName && label !== `#${pool[i].no}  ${pool[i].name}`) label = label.trim() + '…';
+    c.fillText(label, 0, 0);
+    c.restore();
+  }
+
+  // peg dots on the rim (only when sparse enough to read cleanly)
+  if (pool.length <= 80) {
+    for (let i = 0; i < pool.length; i++) {
+      const ang = i * slice - Math.PI/2;
+      c.beginPath(); c.arc(Math.cos(ang)*(R-4), Math.sin(ang)*(R-4), 4, 0, TAU);
+      c.fillStyle = 'rgba(238,246,253,0.55)'; c.fill();
+    }
+  }
+
+  // inner ring
+  c.beginPath(); c.arc(0,0,R*0.135,0,TAU); c.fillStyle = 'rgba(8,18,37,0.85)'; c.fill();
+  c.lineWidth = 3; c.strokeStyle = 'rgba(125,211,252,0.4)'; c.stroke();
+  c.restore();
+  return cv;
+}
+function ensureCache(pool) {
+  const k = cacheKeyFor(pool);
+  if (k !== cacheKey || !cacheCanvas) { cacheCanvas = buildCache(pool); cacheKey = k; }
+}
+function draw(pool = filtered) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ensureCache(pool);
+  ctx.save(); ctx.translate(w/2, h/2); ctx.rotate(rotation);
+  ctx.drawImage(cacheCanvas, -w/2, -h/2, w, h); ctx.restore();
+}
+function sizeCanvas() {
+  const rect = wheelStage.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const disp = Math.max(240, Math.floor(Math.min(rect.width, rect.height) * 0.9));
+  const internal = Math.floor(disp * dpr);
+  if (canvas.width !== internal) { canvas.width = internal; canvas.height = internal; cacheKey = ''; }
+}
+
+/* ---------- roster + stats ---------- */
+function renderRoster() {
+  if (!filtered.length) { roster.innerHTML = '<li class="empty">No hackers match that filter.</li>'; return; }
+  roster.innerHTML = filtered.map(p => {
+    const out = noRepeat && removed.has(p.no), win = lastWinner && lastWinner.no === p.no;
+    return `<li class="${out?'out ':''}${win?'win':''}"><span class="no">#${p.no}</span><span class="nm">${p.name}</span></li>`;
+  }).join('');
+}
+function getFiltered() {
+  const base = activePool(), q = norm(search.value || '');
+  if (!q) return [...base];
+  return base.filter(p => norm(p.name).includes(q) || String(p.no).includes(q));
+}
+function refresh() {
+  filtered = getFiltered();
+  railCount.textContent = filtered.length;
+  statTotal.textContent = players.length;
+  statPool.textContent = activePool().length;
+  statDrawn.textContent = removed.size;
+  renderRoster();
+  cacheKey = '';
+  draw(filtered);
+}
+
+/* ---------- spin ---------- */
+const easeOutQuint = t => 1 - Math.pow(1 - t, 5);
+
+function setSpinning(on) {
+  spinning = on;
+  [spinBtn, spinFilteredBtn, resetBtn].forEach(b => b.disabled = on);
+  wheelStage.classList.toggle('is-spinning', on);
+  livePill.classList.toggle('is-live', on);
+  liveText.textContent = on ? 'On the clock' : (lastWinner ? 'Drawn' : 'Ready');
+}
+
+function spin(pool) {
+  if (spinning || !pool.length) return;
+  startSpinAudio();
+  setSpinning(true);
+  reveal.classList.remove('is-on'); reveal.classList.add('is-idle');
+  revealEyebrow.textContent = 'Drawing';
+  revealName.textContent = '…';
+  viewProfileBtn.style.display = 'none'; shareBtn.style.display = 'none';
+
+  const target = Math.floor(Math.random() * pool.length);
+  const slice = TAU / pool.length;
+  const targetMid = target * slice + slice / 2;
+  const current = rotation % TAU;
+  const extra = TAU * (5 + Math.random() * 2.5);
+  const finalRotation = rotation + extra + ((-targetMid) - current);
+  const startRotation = rotation;
+  const duration = 5400;
+  const start = performance.now();
+
+  let lastBoundary = Math.floor((rotation + Math.PI/2) / slice);
+  let flapDeflect = 0;
+
+  function frame(now) {
+    const elapsed = now - start;
+    const t = Math.min(1, elapsed / duration);
+    rotation = startRotation + (finalRotation - startRotation) * easeOutQuint(t);
+    draw(pool);
+
+    // peg crossing detection -> flapper tick
+    const boundary = Math.floor((rotation + Math.PI/2) / slice);
+    if (boundary !== lastBoundary) {
+      lastBoundary = boundary;
+      flapDeflect = 12;
+      // live name flicker on the reveal during the draw
+      if (t < 0.95) revealName.textContent = pool[((boundary % pool.length) + pool.length) % pool.length].name;
+    }
+    flapDeflect *= 0.82;                       // spring back
+    flapper.style.transform = `rotate(${flapDeflect}deg)`;
+
+    if (t < 1) { requestAnimationFrame(frame); }
+    else {
+      rotation = finalRotation; draw(pool);
+      flapper.style.transform = 'rotate(0deg)';
+      finishSpin(pool[target], pool.length);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function finishSpin(winner, poolSize) {
+  lastWinner = winner;
+  if (noRepeat) removed.add(winner.no);
+
+  revealEyebrow.textContent = 'Winner';
+  revealName.textContent = winner.name;
+  revealMeta.innerHTML = `<b>Hacker #${winner.no}</b> &middot; drawn from ${poolSize}`;
+  reveal.classList.remove('is-idle'); reveal.classList.add('is-on');
+  viewProfileBtn.style.display = ''; viewProfileBtn.onclick = () => showProfileModal(winner.name, winner.no);
+  shareBtn.style.display = ''; shareBtn.onclick = () => shareResult(winner);
+
+  setSpinning(false);
+  stopSpinAudio();
+  showProfileModal(winner.name, winner.no);
+  fanfare();
+  fireConfetti();
+  srLive.textContent = `Winner: ${winner.name}, Hacker number ${winner.no}`;
+  refresh();
+}
+
+/* ---------- share image (canvas -> PNG, native share if available) ---------- */
+function shareResult(winner) {
+  const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1080;
+  const c = cv.getContext('2d');
+  const bg = c.createLinearGradient(0, 0, 1080, 1080);
+  bg.addColorStop(0, '#0a162c'); bg.addColorStop(1, '#06101f');
+  c.fillStyle = bg; c.fillRect(0, 0, 1080, 1080);
+  // sky accent bar
+  const sky = c.createLinearGradient(0, 0, 1080, 0); sky.addColorStop(0, '#7dd3fc'); sky.addColorStop(1, '#0ea5e9');
+  c.fillStyle = sky; c.fillRect(120, 470, 14, 200);
+  c.textAlign = 'left';
+  c.fillStyle = '#7dd3fc'; c.font = '700 30px Inter, Arial';
+  c.fillText('HACKERS CUP · DRAW NIGHT', 160, 380);
+  c.fillStyle = '#eef6fd'; c.font = '900 96px Inter, Arial';
+  wrapText(c, winner.name.toUpperCase(), 160, 560, 820, 96);
+  c.fillStyle = '#7dd3fc'; c.font = '700 40px Inter, Arial';
+  c.fillText(`HACKER #${winner.no}`, 160, 820);
+  c.fillStyle = '#5a7196'; c.font = '400 24px Inter, Arial';
+  c.fillText('hackerscup.com.au', 160, 980);
+
+  cv.toBlob(async blob => {
+    const file = new File([blob], `hackers-cup-${winner.no}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Hackers Cup Draw', text: `${winner.name} — Hacker #${winner.no}` }); return; } catch (e) {}
+    }
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = `hackers-cup-${winner.no}.png`; a.click(); URL.revokeObjectURL(url);
+    showToast('Result image downloaded');
+  }, 'image/png');
+}
+function wrapText(c, text, x, y, maxW, lh) {
+  const words = text.split(' '); let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (c.measureText(test).width > maxW && line) { c.fillText(line, x, y); line = w; y += lh; }
+    else line = test;
+  }
+  c.fillText(line, x, y);
+}
+
+/* ---------- confetti ---------- */
+const confetti = el('confetti'), cc = confetti.getContext('2d');
+let parts = [], running = false;
+function sizeConfetti() { confetti.width = innerWidth; confetti.height = innerHeight; }
+addEventListener('resize', sizeConfetti); sizeConfetti();
+function fireConfetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#7dd3fc', '#38bdf8', '#0ea5e9', '#bae6fd', '#eef6fd'];
+  for (let i = 0; i < 150; i++) {
+    parts.push({
+      x: innerWidth/2 + (Math.random()-0.5)*220, y: innerHeight*0.34,
+      vx: (Math.random()-0.5)*13, vy: Math.random()*-11-4,
+      s: Math.random()*7+4, col: colors[(Math.random()*colors.length)|0],
+      r: Math.random()*TAU, vr: (Math.random()-0.5)*0.3, life: 0, max: 110 + Math.random()*45
+    });
+  }
+  if (!running) { running = true; requestAnimationFrame(confettiLoop); }
+}
+function confettiLoop() {
+  cc.clearRect(0,0,confetti.width,confetti.height);
+  for (const p of parts) {
+    p.vy += 0.33; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life++;
+    cc.save(); cc.translate(p.x, p.y); cc.rotate(p.r);
+    cc.globalAlpha = Math.max(0, 1 - p.life / p.max); cc.fillStyle = p.col;
+    cc.fillRect(-p.s/2, -p.s/4, p.s, p.s/2); cc.restore();
+  }
+  parts = parts.filter(p => p.life < p.max && p.y < confetti.height + 60);
+  if (parts.length) requestAnimationFrame(confettiLoop);
+  else { running = false; cc.clearRect(0,0,confetti.width,confetti.height); }
+}
+
+/* ---------- no-repeat ---------- */
+function setNoRepeat(v) {
+  noRepeat = v;
+  noRepeatBtn.classList.toggle('active', v);
+  noRepeatBtn.setAttribute('aria-pressed', String(v));
+  noRepeatCheck.checked = v;
+  refresh();
+}
+noRepeatBtn.addEventListener('click', () => setNoRepeat(!noRepeat));
+noRepeatCheck.addEventListener('change', () => setNoRepeat(noRepeatCheck.checked));
+
+/* ---------- kiosk ---------- */
+function setKiosk(on) {
+  document.body.classList.toggle('kiosk', on);
+  try {
+    if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    else if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+  } catch (e) {}
+  sizeCanvas(); draw(filtered);
+}
+kioskBtn.addEventListener('click', () => setKiosk(!document.body.classList.contains('kiosk')));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.body.classList.remove('kiosk'); });
+
+/* ---------- events ---------- */
+spinBtn.addEventListener('click', () => spin(activePool()));
+spinFilteredBtn.addEventListener('click', () => spin(filtered));
+resetBtn.addEventListener('click', () => {
+  rotation = 0; lastWinner = null; removed.clear(); search.value = '';
+  flapper.style.transform = 'rotate(0deg)';
+  reveal.classList.remove('is-on'); reveal.classList.add('is-idle');
+  revealEyebrow.textContent = 'On the wheel';
+  revealName.textContent = 'Ready to draw';
+  revealMeta.innerHTML = `<b id="revealCount">${players.length}</b> hackers loaded &middot; press spin`;
+  viewProfileBtn.style.display = 'none'; shareBtn.style.display = 'none';
+  liveText.textContent = 'Ready';
+  refresh();
+  showToast('Wheel reset');
+});
+search.addEventListener('input', refresh);
+addEventListener('resize', () => { sizeCanvas(); draw(filtered); });
+addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('kiosk')) setKiosk(false);
+  if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); spin(filtered); }
+});
+
+/* ---------- init ---------- */
+sizeCanvas();
+refresh();
+</script>
+</body>
+</html>
