@@ -515,7 +515,7 @@
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Tee Sheet Maker</h3>
-            <p class="text-xs text-slate-600 mt-1">Auto-group per day — Friday uses skins players, Saturday respects Ambrose pairs, Sunday groups all coming players.</p>
+            <p class="text-xs text-slate-600 mt-1">Auto-group per day — Friday uses skins players, Saturday groups all coming players (Stableford), Sunday respects Ambrose pairs (shotgun).</p>
           </div>
           <div class="flex gap-2">
             <button id="tsLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load</button>
@@ -529,10 +529,10 @@
             <div>Friday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Shotgun · Skins</div>
           </button>
           <button id="tsTabSaturday" data-ts-day="saturday" class="ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left">
-            <div>Saturday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Traditional · Ambrose</div>
+            <div>Saturday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Traditional · Stableford</div>
           </button>
           <button id="tsTabSunday" data-ts-day="sunday" class="ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left">
-            <div>Sunday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Shotgun · Individual</div>
+            <div>Sunday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Shotgun · Ambrose</div>
           </button>
         </div>
 
@@ -1271,7 +1271,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           ${sub ? `<div class="text-[10px] text-slate-600 mt-0.5">${sub}</div>` : ''}
         </div>`;
 
-      const dayLabel = { friday: 'skins', saturday: 'coming + ambrose', sunday: 'coming' }[activeTeeDay];
+      const dayLabel = { friday: 'skins', saturday: 'coming', sunday: 'coming + ambrose' }[activeTeeDay];
       el.innerHTML =
         statCard('Eligible', eligible.length, dayLabel) +
         statCard('Groups', groups.length) +
@@ -1390,7 +1390,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
                       <div class="min-w-0">
                         <span class="text-sm text-white font-medium">${escapeHtml(u ? (u.displayName || '(no name)') : uid.slice(0, 8))}</span>
                         ${hc !== null ? `<span class="text-[10px] text-slate-500 ml-1.5 font-mono">HC ${hc}</span>` : ''}
-                        ${partner && activeTeeDay === 'saturday' ? `<span class="text-[10px] ml-1.5 ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partner.displayName || 'Unknown')}</span>` : ''}
+                        ${partner && activeTeeDay === 'sunday' ? `<span class="text-[10px] ml-1.5 ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partner.displayName || 'Unknown')}</span>` : ''}
                       </div>
                       <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition shrink-0" data-ts-rem-player="${gi},${pi}">✕</button>
                     </div>`;
@@ -1453,7 +1453,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       const interval = Math.max(1, Number(document.getElementById('tsInterval')?.value) || 8);
       const startHole = Math.min(18, Math.max(1, Number(document.getElementById('tsStartHole')?.value) || 1));
       const shotgun = isShotgun(activeTeeDay);
-      const groupUids = activeTeeDay === 'saturday' ? formGroupsAmbrose(players) : formGroupsSnake(players);
+      const groupUids = activeTeeDay === 'sunday' ? formGroupsAmbrose(players) : formGroupsSnake(players);
       teeSheets[activeTeeDay] = groupUids.map((uids, i) => ({
         // Shotgun: each group gets a sequential hole, all share the same start time
         // Traditional: all start on hole 1 (or startHole), tee times increment
@@ -1535,8 +1535,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
       const meta = {
         friday:   { label: 'Friday',   format: 'Shotgun Start · Skins',            shotgun: true  },
-        saturday: { label: 'Saturday', format: 'Traditional Start · Ambrose Pairs', shotgun: false },
-        sunday:   { label: 'Sunday',   format: 'Shotgun Start · Individual',        shotgun: true  },
+        saturday: { label: 'Saturday', format: 'Traditional Start · Stableford',     shotgun: false },
+        sunday:   { label: 'Sunday',   format: 'Shotgun Start · Ambrose Pairs',     shotgun: true  },
       }[day];
 
       const totalPlayers = groups.flatMap(g => g.players || []).length;
@@ -1557,7 +1557,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         const players = group.players || [];
 
         let playersHtml = '';
-        if (day === 'saturday') {
+        if (day === 'sunday') {
           const done = new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
