@@ -688,6 +688,7 @@
       signInWithEmailAndPassword, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import {
       getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -1572,8 +1573,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
               const h2 = numericHandicapFor(pid, prec);
               const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(1) : null;
               playersHtml += `
-                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
-                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+                <div style="background:#f0fdf4;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #06d6a4;">
+                  <div style="font-size:9px;font-weight:700;color:#059669;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
                     <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName || '?')}</span>
                     <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1 !== null ? 'HC ' + h1 : '—'}</span>
@@ -1593,17 +1594,17 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         }
 
         const holeTag = group.hole
-          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>`
+          ? `<span style="display:inline-block;font-size:10px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>`
           : '';
         const timeTag = !meta.shotgun && group.teeTime
-          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>`
+          ? `<span style="display:inline-block;font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>`
           : '';
 
         return `
           <div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f3f4f6;">
               <div>
-                <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#3b82f6;margin-bottom:4px;">Group ${gi + 1}</div>
+                <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#06d6a4;margin-bottom:4px;">Group ${gi + 1}</div>
                 <div>${holeTag}${timeTag}</div>
               </div>
               ${avgHc !== null ? `<div style="text-align:right;"><div style="font-size:8px;color:#9ca3af;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Avg HC</div><div style="font-size:18px;font-weight:800;color:#374151;line-height:1.1;">${avgHc}</div></div>` : ''}
@@ -1634,7 +1635,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
                 <div style="font-size:11px;color:#64748b;margin-top:2px;">${dateStr}</div>
               </div>
             </div>
-            <div style="height:2px;background:linear-gradient(90deg,#3b82f6,#60a5fa,rgba(96,165,250,0));margin-top:20px;border-radius:1px;"></div>
+            <div style="height:2px;background:linear-gradient(90deg,#fbbf24,#f59e0b,rgba(245,158,11,0));margin-top:20px;border-radius:1px;"></div>
           </div>
           <!-- Groups grid -->
           <div style="padding:20px 36px 28px;">
@@ -2565,7 +2566,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile, editRoomNumber].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
