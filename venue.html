@@ -225,12 +225,17 @@
           <p class="text-lg text-gray-300">Everything you need for the road trip: course details, hotel info, and your assigned room.</p>
         </div>
         <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
-          <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Your Room</p>
-          <p id="room-number" class="text-3xl font-semibold mt-3">Loading room number...</p>
-          <p class="text-sm text-gray-400 mt-2">Assigned room at Shoalhaven Springs.</p>
-          <div id="room-level-card" class="mt-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
-            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Level</p>
-            <p id="room-level" class="text-lg font-semibold">Loading level...</p>
+          <div class="flex items-center justify-between gap-6">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 shrink-0 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+                <i data-lucide="hotel" class="w-5 h-5 text-hackers-gold"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Your Room</p>
+                <p class="text-sm text-gray-400 mt-0.5 truncate">Shoalhaven Springs</p>
+              </div>
+            </div>
+            <p id="room-number" class="text-5xl font-bold text-hackers-gold tabular-nums shrink-0">—</p>
           </div>
         </div>
       </div>
@@ -345,55 +350,18 @@
 
     const app = initializeApp(firebaseConfig);
     getAnalytics(app);
-    const database = getDatabase();
+    const database = getDatabase(app);
     const auth = getAuth(app);
 
     function setRoomNumber(text) {
       const roomEl = document.getElementById('room-number');
-      if (roomEl) {
-        roomEl.textContent = text;
-      }
+      if (roomEl) roomEl.textContent = text;
     }
 
-    function setRoomLevelVisibility(isVisible) {
-      const levelCard = document.getElementById('room-level-card');
-      if (levelCard) {
-        levelCard.classList.toggle('hidden', !isVisible);
-      }
-    }
-
-    function getRoomNumber(user) {
-      const roomRef = ref(database, `users/${user.uid}/roomNumber`);
-      onValue(roomRef, (snapshot) => {
-        const roomNumber = snapshot.val();
-        if (roomNumber) {
-          setRoomNumber(`${roomNumber}`);
-          setRoomLevelVisibility(true);
-          getRoomLevel(user);
-        } else {
-          setRoomNumber('Room number not assigned yet.');
-          setRoomLevel('');
-          setRoomLevelVisibility(false);
-        }
-      });
-    }
-
-    function setRoomLevel(text) {
-      const levelEl = document.getElementById('room-level');
-      if (levelEl) {
-        levelEl.textContent = text;
-      }
-    }
-
-    function getRoomLevel(user) {
-      const levelRef = ref(database, `users/${user.uid}/level`);
-      onValue(levelRef, (snapshot) => {
-        const level = snapshot.val();
-        if (level !== null && level !== undefined && level !== '') {
-          setRoomLevel(`${level}`);
-        } else {
-          setRoomLevel('Level not assigned yet.');
-        }
+    function watchRoomNumber(user) {
+      onValue(ref(database, `users/${user.uid}/roomNumber`), (snap) => {
+        const roomNumber = snap.val();
+        setRoomNumber(roomNumber ? `${roomNumber}` : "—");
       });
     }
 
@@ -401,7 +369,7 @@
       if (!user) {
         window.location.href = 'login.html';
       } else {
-        getRoomNumber(user);
+        watchRoomNumber(user);
       }
     });
   </script>

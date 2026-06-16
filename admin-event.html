@@ -239,6 +239,19 @@
       <!-- Roommates -->
       <section>
         <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Roommates <span class="text-slate-600 font-normal normal-case">(max 2)</span></h3>
+        <div class="mb-3 flex items-center justify-between gap-4 rounded-xl bg-s2 border border-brd px-4 py-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 shrink-0 rounded-lg bg-accent/15 flex items-center justify-center">
+              <i data-lucide="hotel" class="w-4 h-4 text-accent"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Room</p>
+              <p class="text-xs text-slate-600 mt-0.5 truncate">Worrigee Links</p>
+            </div>
+          </div>
+          <input id="editRoomNumber" type="text" placeholder="—"
+            class="w-20 text-right text-2xl font-bold bg-transparent text-white placeholder-slate-600 focus:outline-none tabular-nums" autocomplete="off" />
+        </div>
         <div id="roommateChips" class="flex flex-wrap gap-2 mb-2 min-h-[8px]"></div>
         <div class="relative">
           <input id="roommateSearch" type="text" placeholder="Search players to add..."
@@ -246,7 +259,7 @@
           <div id="roommateDropdown" class="absolute top-full left-0 right-0 mt-1 bg-s2 border border-brd rounded-xl shadow-2xl max-h-48 overflow-y-auto hidden z-10">
           </div>
         </div>
-        <p class="text-[11px] text-slate-600 mt-1">Saving a room also updates the other players in the room.</p>
+        <p class="text-[11px] text-slate-600 mt-1">Room number and roommate changes apply to all players in the room.</p>
       </section>
 
       <!-- Sponsor Notes -->
@@ -497,69 +510,111 @@
         Click any row to edit player details. Roommate and partner changes update both sides automatically. <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">Esc</kbd> to close panel, <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">/</kbd> to search.
       </p>
 
-      <!-- GROUP MAKER -->
+      <!-- TEE SHEET MAKER -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Group Maker</h3>
-            <p class="text-xs text-slate-600 mt-1">Build tee groups for the active event and save them to the event document.</p>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Tee Sheet Maker</h3>
+            <p class="text-xs text-slate-600 mt-1">Auto-group per day — Friday uses skins players, Saturday groups all coming players (Stableford), Sunday respects Ambrose pairs (shotgun).</p>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button id="gbLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load groups</button>
-            <button id="gbSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save groups</button>
+          <div class="flex gap-2">
+            <button id="tsLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load</button>
+            <button id="tsSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4">
+        <!-- Day tabs -->
+        <div class="flex gap-1 bg-s2 border border-brd rounded-xl p-1">
+          <button id="tsTabFriday" data-ts-day="friday" class="ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left">
+            <div>Friday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Shotgun · Skins</div>
+          </button>
+          <button id="tsTabSaturday" data-ts-day="saturday" class="ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left">
+            <div>Saturday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Traditional · Stableford</div>
+          </button>
+          <button id="tsTabSunday" data-ts-day="sunday" class="ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left">
+            <div>Sunday</div><div class="text-[10px] font-normal text-slate-500 mt-0.5">Shotgun · Ambrose</div>
+          </button>
+        </div>
+
+        <!-- Stats bar -->
+        <div id="tsDayStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-4">
+          <!-- Left: controls + player pool -->
           <div class="bg-s2 border border-brd rounded-xl p-4 space-y-4">
             <div>
-              <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Selected Players</div>
-              <div id="gbSelectedPlayers" class="flex flex-wrap gap-2 min-h-[32px]"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs text-slate-500 mb-1 block">Hole</label>
-                <input id="gbHoleInput" type="number" min="1" max="18" step="1" placeholder="1" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Auto-Group Settings</div>
+                <div id="tsFormatBadge" class="text-[10px] px-2 py-0.5 rounded-full border border-brd text-slate-500"></div>
               </div>
-              <div>
-                <label class="text-xs text-slate-500 mb-1 block">Tee Time</label>
-                <input id="gbTeeTimeInput" type="text" placeholder="8:30 AM" class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label id="tsStartTimeLabel" class="text-[10px] text-slate-500 mb-1 block">Start Time</label>
+                  <input id="tsStartTime" type="text" value="8:00 AM" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                </div>
+                <div id="tsIntervalWrap">
+                  <label class="text-[10px] text-slate-500 mb-1 block">Interval (min)</label>
+                  <input id="tsInterval" type="number" value="8" min="1" max="30" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                </div>
               </div>
+              <div class="mb-2">
+                <label id="tsStartHoleLabel" class="text-[10px] text-slate-500 mb-1 block">Starting Hole</label>
+                <input id="tsStartHole" type="text" value="1" maxlength="3" placeholder="1 or 1A" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+              </div>
+              <button id="tsAutoGroupBtn" class="w-full py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Auto-group this day</button>
             </div>
-            <div class="flex gap-2 flex-wrap">
-              <button id="gbAddGroupBtn" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Add group</button>
-              <button id="gbResetBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Reset</button>
-            </div>
+
             <div class="border-t border-brd pt-4">
-              <div class="relative">
-                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
-                <input id="gbPlayerSearch" type="text" placeholder="Search players to add..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Manual Group</div>
+              <div id="tsSelectedChips" class="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
+                <span class="text-xs text-slate-600">Select players below.</span>
               </div>
-              <div id="gbPlayerList" class="mt-3 border border-brd rounded-xl max-h-72 overflow-y-auto bg-s1"></div>
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label class="text-[10px] text-slate-500 mb-1 block">Hole</label>
+                  <input id="tsManualHole" type="text" maxlength="3" placeholder="1A" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-500 mb-1 block">Tee Time</label>
+                  <input id="tsManualTime" type="text" placeholder="8:30 AM" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button id="tsAddGroupBtn" class="flex-1 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs font-medium hover:bg-s4 transition">Add Group</button>
+                <button id="tsClearSelBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-400 text-xs hover:bg-s4 transition">Clear</button>
+              </div>
+            </div>
+
+            <div class="border-t border-brd pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Player Pool</div>
+                <span id="tsPoolCount" class="text-[10px] text-slate-600"></span>
+              </div>
+              <div class="relative mb-2">
+                <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+                <input id="tsPoolSearch" type="text" placeholder="Search..." class="w-full pl-8 pr-3 py-2 rounded-lg bg-s1 border border-brd text-white text-xs placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+              </div>
+              <div id="tsPoolList" class="border border-brd rounded-xl max-h-64 overflow-y-auto bg-s1"></div>
             </div>
           </div>
 
+          <!-- Right: groups -->
           <div class="bg-s2 border border-brd rounded-xl p-4 space-y-3">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Current Groups</div>
-                <div class="text-xs text-slate-600 mt-1">Edit, delete, and reorder the groups for this event.</div>
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Groups</div>
+                <span id="tsGroupCount" class="text-[10px] text-slate-600"></span>
               </div>
-              <div id="gbStatus" class="text-xs text-slate-500 min-h-[18px]"></div>
+              <div class="flex items-center gap-2">
+                <div id="tsStatus" class="text-xs text-slate-500 min-h-[16px]"></div>
+                <button id="tsExportBtn" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/20 text-accent text-[10px] font-medium hover:bg-accent/25 transition">
+                  <i data-lucide="download" class="w-3 h-3"></i>Export PDF
+                </button>
+                <button id="tsClearDayBtn" class="px-2.5 py-1 rounded-lg bg-s3 border border-brd text-slate-400 text-[10px] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 transition">Clear day</button>
+              </div>
             </div>
-            <div class="overflow-x-auto border border-brd rounded-xl">
-              <table class="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr class="bg-s1/80 border-b border-brd">
-                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Hole</th>
-                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Tee Time</th>
-                    <th class="px-3 py-2 text-left text-[10px] uppercase tracking-widest text-slate-500">Players</th>
-                    <th class="px-3 py-2 text-right text-[10px] uppercase tracking-widest text-slate-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="gbGroupTableBody" class="divide-y divide-brd bg-s1"></tbody>
-              </table>
-            </div>
+            <div id="tsGroupsDisplay" class="space-y-2"></div>
+            <div id="tsUnassigned" class="hidden"></div>
           </div>
         </div>
       </section>
@@ -633,6 +688,7 @@
       signInWithEmailAndPassword, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+   
     import {
       getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -679,8 +735,9 @@
     let currentEditUid = null;
     let editPanelExistingRoommates = [];
     let activeFilter = "all";
-    let groupBuilderGroups = [];
-    let groupBuilderSelectedPlayers = [];
+    let teeSheets = { friday: [], saturday: [], sunday: [] };
+    let activeTeeDay = 'friday';
+    let tsSelectedPlayers = [];
     let currentPage = 1;
     let recordsPerPage = 15;
 
@@ -729,22 +786,12 @@
     const editAmtOutstanding = $("#editAmtOutstanding");
     const editNotes = $("#editNotes");
     const editPaidBadge = $("#editPaidBadge");
+    const editRoomNumber = $("#editRoomNumber");
     const roommateChips = $("#roommateChips");
     const roommateSearch = $("#roommateSearch");
     const roommateDropdown = $("#roommateDropdown");
-    const gbLoadBtn = $("#gbLoadBtn");
-    const gbSaveBtn = $("#gbSaveBtn");
-    const gbSelectedPlayers = $("#gbSelectedPlayers");
-    const gbHoleInput = $("#gbHoleInput");
-    const gbTeeTimeInput = $("#gbTeeTimeInput");
-    const gbAddGroupBtn = $("#gbAddGroupBtn");
-    const gbResetBtn = $("#gbResetBtn");
-    const gbPlayerSearch = $("#gbPlayerSearch");
-    const gbPlayerList = $("#gbPlayerList");
     const editEmail = $("#editEmail");
     const editMobile = $("#editMobile");
-    const gbGroupTableBody = $("#gbGroupTableBody");
-    const gbStatus = $("#gbStatus");
 
     const dirtyIndicator = $("#dirtyIndicator");
     const dirtyCountSpan = $("#dirtyCount");
@@ -971,6 +1018,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       return {
         shirtSize: asString(data.shirtSize),
         pantSize: asString(data.pantSize),
+        roomNumber: asString(data.roomNumber),
         roommates: Array.isArray(data.roommates) ? uniqueSorted(data.roommates.filter(roommateUid => roommateUid && roommateUid !== uid)) : [],
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         skins: !!data.skins,
@@ -1009,9 +1057,13 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       Object.entries(cached).forEach(([uid, cachedRecord]) => {
         if (!eventPlayers.has(uid)) return;
         const current = getEventRecord(uid);
+        const merged = normalizeEventRecord(uid, cachedRecord, users.find(u => u.uid === uid));
         eventPlayers.set(uid, {
           ...current,
-          ...normalizeEventRecord(uid, cachedRecord, users.find(u => u.uid === uid))
+          ...merged,
+          // Firestore is authoritative for eligibility — never let stale cache downgrade these
+          coming: current.coming,
+          skins: current.skins,
         });
       });
     }
@@ -1096,138 +1148,571 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       editTeamHandicap.textContent = `Team handicap: ${formatTeamHandicap((currentHandicap + partnerHandicap) / 4)}`;
     }
 
-    function getBuilderPlayerLabel(uid) {
-      const user = users.find(player => player.uid === uid);
-      return user ? userLabel(user) : uid.slice(0, 8);
+    // === TEE SHEET MAKER ===
+
+    function tsPlayerLabel(uid) {
+      const user = users.find(u => u.uid === uid);
+      if (!user) return uid.slice(0, 8);
+      const rec = getEventRecord(uid);
+      const hc = numericHandicapFor(uid, rec);
+      const hcStr = hc !== null ? ` (${hc})` : '';
+      return userLabel(user) + hcStr;
     }
 
-    function builderGroupKey(group) {
-      return Number(group.hole) || 0;
+    function tsGetHC(uid) {
+      const rec = getEventRecord(uid);
+      const hc = numericHandicapFor(uid, rec);
+      return hc !== null ? hc : 36;
     }
 
-    function builderAssignedPlayers() {
-      return new Set(groupBuilderGroups.flatMap(group => group.players || []));
+    function getEligibleForDay(day) {
+      return users.filter(u => {
+        const r = getEventRecord(u.uid);
+        if (day === 'friday') return !!r.coming && !!r.skins;
+        return !!r.coming;
+      });
     }
 
-    function setBuilderStatus(message = "", type = "") {
-      if (!gbStatus) return;
-      gbStatus.textContent = message;
-      gbStatus.className = "text-xs min-h-[18px] " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-500");
+    function parseTeeTime(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2}):?(\d{2})\s*(AM|PM)?$/);
+      if (!m) return 8 * 60;
+      let h = Number(m[1]), min = Number(m[2]);
+      if (m[3] === 'PM' && h < 12) h += 12;
+      if (m[3] === 'AM' && h === 12) h = 0;
+      return h * 60 + min;
     }
 
-    function clearBuilderSelection() {
-      groupBuilderSelectedPlayers = [];
-      gbHoleInput.value = "";
-      gbTeeTimeInput.value = "";
-      renderBuilderSelectedPlayers();
-      renderBuilderPlayerList();
+    function formatTeeTime(totalMins) {
+      const h = Math.floor(totalMins / 60) % 24;
+      const m = totalMins % 60;
+      const disp = h % 12 === 0 ? 12 : h % 12;
+      return `${disp}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
     }
 
-    function renderBuilderSelectedPlayers() {
-      if (!gbSelectedPlayers) return;
-      if (groupBuilderSelectedPlayers.length === 0) {
-        gbSelectedPlayers.innerHTML = '<span class="text-xs text-slate-600">Select up to 4 players below.</span>';
+    function setTsStatus(msg = '', type = '') {
+      const el = document.getElementById('tsStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'text-xs min-h-[16px] ' + (type === 'error' ? 'text-red-400' : type === 'success' ? 'text-emerald-400' : type === 'warn' ? 'text-amber-400' : 'text-slate-500');
+    }
+
+    function formGroupsSnake(players) {
+      if (players.length === 0) return [];
+      const sorted = [...players].sort((a, b) => tsGetHC(a.uid) - tsGetHC(b.uid));
+      const n = sorted.length;
+      const groupCount = n <= 4 ? 1 : Math.ceil(n / 4);
+      const buckets = Array.from({ length: groupCount }, () => []);
+      let dir = 1, g = 0;
+      for (const p of sorted) {
+        buckets[g].push(p.uid);
+        g += dir;
+        if (g >= groupCount) { g = groupCount - 1; dir = -1; }
+        else if (g < 0) { g = 0; dir = 1; }
+      }
+      return buckets.filter(b => b.length > 0);
+    }
+
+    function formGroupsAmbrose(players) {
+      const paired = new Set();
+      const validPairs = [];
+      for (const u of players) {
+        if (paired.has(u.uid)) continue;
+        const rec = getEventRecord(u.uid);
+        const pid = rec.ambrosePartnerUid;
+        if (!pid) continue;
+        const pUser = players.find(p => p.uid === pid);
+        if (!pUser) continue;
+        const pRec = getEventRecord(pid);
+        if (pRec.ambrosePartnerUid !== u.uid) continue;
+        validPairs.push([u.uid, pid]);
+        paired.add(u.uid);
+        paired.add(pid);
+      }
+      // Sort pairs by average handicap ascending, then snake-interleave low+high
+      validPairs.sort((a, b) => (tsGetHC(a[0]) + tsGetHC(a[1])) / 2 - (tsGetHC(b[0]) + tsGetHC(b[1])) / 2);
+      const groups = [];
+      let lo = 0, hi = validPairs.length - 1;
+      while (lo <= hi) {
+        if (lo === hi) { groups.push([...validPairs[lo]]); lo++; }
+        else { groups.push([...validPairs[lo], ...validPairs[hi]]); lo++; hi--; }
+      }
+      // Append unpaired singles via snake draft into existing groups first, then overflow
+      const singles = players.filter(u => !paired.has(u.uid))
+        .sort((a, b) => tsGetHC(a.uid) - tsGetHC(b.uid))
+        .map(u => u.uid);
+      for (let i = 0; i < groups.length && singles.length > 0; i++) {
+        while (groups[i].length < 4 && singles.length > 0) groups[i].push(singles.shift());
+      }
+      while (singles.length > 0) {
+        const g = [];
+        while (g.length < 4 && singles.length > 0) g.push(singles.shift());
+        groups.push(g);
+      }
+      return groups;
+    }
+
+    function tsAssignedSet() {
+      return new Set(teeSheets[activeTeeDay].flatMap(g => g.players || []));
+    }
+
+    function renderTsDayStats() {
+      const el = document.getElementById('tsDayStats');
+      if (!el) return;
+      const eligible = getEligibleForDay(activeTeeDay);
+      const groups = teeSheets[activeTeeDay];
+      const assigned = groups.flatMap(g => g.players || []);
+      const unassigned = eligible.filter(u => !assigned.includes(u.uid));
+
+      const statCard = (label, val, sub = '') => `
+        <div class="bg-s1 border border-brd rounded-xl px-3 py-2.5">
+          <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">${label}</div>
+          <div class="text-xl font-bold text-white mt-0.5">${val}</div>
+          ${sub ? `<div class="text-[10px] text-slate-600 mt-0.5">${sub}</div>` : ''}
+        </div>`;
+
+      const dayLabel = { friday: 'skins', saturday: 'coming', sunday: 'coming + ambrose' }[activeTeeDay];
+      el.innerHTML =
+        statCard('Eligible', eligible.length, dayLabel) +
+        statCard('Groups', groups.length) +
+        statCard('Assigned', assigned.length) +
+        statCard('Unassigned', unassigned.length, unassigned.length > 0 ? 'not yet placed' : 'all placed');
+    }
+
+    function renderTsSelectedChips() {
+      const el = document.getElementById('tsSelectedChips');
+      if (!el) return;
+      if (tsSelectedPlayers.length === 0) {
+        el.innerHTML = '<span class="text-xs text-slate-600">Select players below.</span>';
         return;
       }
-      gbSelectedPlayers.innerHTML = groupBuilderSelectedPlayers.map((uid, index) => `
-        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-accent/15 border border-accent/20 text-accent text-xs font-medium">
-          ${escapeHtml(getBuilderPlayerLabel(uid))}
-          <button type="button" class="w-4 h-4 rounded-full bg-slate-700/60 hover:bg-slate-600/80 flex items-center justify-center text-[10px] text-white" data-remove-selected="${index}">×</button>
-        </span>
-      `).join("");
+      el.innerHTML = tsSelectedPlayers.map((uid, i) => `
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/15 border border-accent/20 text-accent text-xs font-medium">
+          ${escapeHtml(tsPlayerLabel(uid))}
+          <button type="button" class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] hover:bg-accent/20" data-ts-desel="${i}">×</button>
+        </span>`).join('');
     }
 
-    function renderBuilderPlayerList() {
-      if (!gbPlayerList) return;
-      const q = normalize(gbPlayerSearch.value);
-      const assigned = builderAssignedPlayers();
-      const available = users.filter(user => normalize(userLabel(user)).includes(q) || normalize(user.uid).includes(q));
-
-      if (available.length === 0) {
-        gbPlayerList.innerHTML = '<div class="p-4 text-sm text-slate-600">No players match.</div>';
+    function renderTsPool() {
+      const list = document.getElementById('tsPoolList');
+      const count = document.getElementById('tsPoolCount');
+      if (!list) return;
+      const q = normalize(document.getElementById('tsPoolSearch')?.value || '');
+      const eligible = getEligibleForDay(activeTeeDay);
+      const assigned = tsAssignedSet();
+      const filtered = eligible.filter(u =>
+        normalize(userLabel(u)).includes(q) || normalize(u.uid).includes(q)
+      );
+      if (count) count.textContent = `${eligible.length} eligible`;
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="p-4 text-sm text-slate-600">No players match.</div>';
         return;
       }
-
-      gbPlayerList.innerHTML = available.map(user => {
-        const isSelected = groupBuilderSelectedPlayers.includes(user.uid);
+      list.innerHTML = filtered.map(user => {
+        const isSelected = tsSelectedPlayers.includes(user.uid);
         const isAssigned = assigned.has(user.uid) && !isSelected;
-        const label = isAssigned ? "Assigned" : isSelected ? "Selected" : "Add";
+        const rec = getEventRecord(user.uid);
+        const hc = numericHandicapFor(user.uid, rec);
+        const partner = rec.ambrosePartnerUid ? users.find(u => u.uid === rec.ambrosePartnerUid) : null;
+        const partnerName = partner ? (partner.displayName || 'Unknown') : null;
+        // Check if partner is confirmed (bidirectional)
+        const partnerRec = partner ? getEventRecord(partner.uid) : null;
+        const pairConfirmed = partner && partnerRec && partnerRec.ambrosePartnerUid === user.uid;
         return `
-          <button type="button" class="w-full flex items-center justify-between px-4 py-3 text-left border-b border-brd last:border-b-0 transition ${isSelected ? "bg-accent/10" : isAssigned ? "opacity-50 cursor-not-allowed" : "hover:bg-s2"}" data-builder-player="${escapeHtml(user.uid)}" data-assigned="${isAssigned ? "1" : "0"}">
-            <span>
-              <span class="block text-sm text-white font-medium">${escapeHtml(userLabel(user))}</span>
-              <span class="block text-[11px] text-slate-600 font-mono">${escapeHtml(user.uid.slice(0, 12))}</span>
+          <button type="button" class="w-full flex items-center justify-between px-3 py-2.5 text-left border-b border-brd last:border-b-0 transition
+            ${isSelected ? 'bg-accent/10' : isAssigned ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'}"
+            data-ts-pool="${escapeHtml(user.uid)}" ${isAssigned ? 'disabled' : ''}>
+            <div class="min-w-0">
+              <div class="text-sm font-medium text-white truncate">${escapeHtml(userLabel(user))}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                ${hc !== null ? `<span class="text-[10px] text-slate-500 font-mono">HC ${hc}</span>` : ''}
+                ${partnerName ? `<span class="text-[10px] ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partnerName)}</span>` : ''}
+                ${isAssigned ? '<span class="text-[10px] text-slate-600">In group</span>' : ''}
+              </div>
+            </div>
+            <span class="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ml-2
+              ${isAssigned ? 'border-slate-700 text-slate-600' : isSelected ? 'border-accent/30 text-accent' : 'border-brd text-slate-400'}">
+              ${isAssigned ? 'Placed' : isSelected ? 'Selected' : 'Add'}
             </span>
-            <span class="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border ${isAssigned ? "border-slate-600 text-slate-500" : isSelected ? "border-accent/30 text-accent" : "border-brd text-slate-400"}">${label}</span>
-          </button>
-        `;
-      }).join("");
+          </button>`;
+      }).join('');
     }
 
-    function renderBuilderGroups() {
-      if (!gbGroupTableBody) return;
-      if (groupBuilderGroups.length === 0) {
-        gbGroupTableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-sm text-slate-600">No groups yet.</td></tr>';
+    function renderTsGroups() {
+      const display = document.getElementById('tsGroupsDisplay');
+      const groupCount = document.getElementById('tsGroupCount');
+      const unassigned = document.getElementById('tsUnassigned');
+      if (!display) return;
+      const groups = teeSheets[activeTeeDay];
+      const eligible = getEligibleForDay(activeTeeDay);
+      const assignedSet = tsAssignedSet();
+      const unassignedPlayers = eligible.filter(u => !assignedSet.has(u.uid));
+
+      if (groupCount) groupCount.textContent = groups.length ? `${groups.length} group${groups.length !== 1 ? 's' : ''}` : '';
+
+      if (groups.length === 0) {
+        display.innerHTML = '<div class="text-center py-10 text-slate-600 text-sm">No groups yet. Use Auto-group or add manually.</div>';
+      } else {
+        display.innerHTML = groups.map((group, gi) => {
+          const players = Array.isArray(group.players) ? group.players : [];
+          const hcVals = players.map(tsGetHC);
+          const avgHC = hcVals.length > 0 ? (hcVals.reduce((s, v) => s + v, 0) / hcVals.length).toFixed(1) : '—';
+          return `
+            <div class="bg-s1 border border-brd rounded-xl p-3 space-y-2" data-ts-group="${gi}">
+              <div class="flex items-center gap-2 justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Group ${gi + 1}</span>
+                  <span class="text-[10px] text-slate-600">Avg HC ${avgHC}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-slate-500">Hole</span>
+                    <input type="text" maxlength="3" value="${escapeHtml(asString(group.hole || 1))}"
+                      class="w-16 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-hole" data-gi="${gi}" />
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-slate-500">Time</span>
+                    <input type="text" value="${escapeHtml(asString(group.teeTime || ''))}"
+                      class="w-20 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-time" data-gi="${gi}" />
+                  </div>
+                  <button type="button" class="text-[10px] text-red-400 hover:text-red-300 transition px-1" data-ts-del-group="${gi}">✕</button>
+                </div>
+              </div>
+              <div class="space-y-1">
+                ${players.map((uid, pi) => {
+                  const u = users.find(x => x.uid === uid);
+                  const rec = getEventRecord(uid);
+                  const hc = numericHandicapFor(uid, rec);
+                  const partner = rec.ambrosePartnerUid ? users.find(x => x.uid === rec.ambrosePartnerUid) : null;
+                  const pairConfirmed = partner && getEventRecord(partner.uid).ambrosePartnerUid === uid;
+                  return `
+                    <div class="flex items-center justify-between gap-2 py-1 border-b border-brd/40 last:border-b-0">
+                      <div class="min-w-0">
+                        <span class="text-sm text-white font-medium">${escapeHtml(u ? (u.displayName || '(no name)') : uid.slice(0, 8))}</span>
+                        ${hc !== null ? `<span class="text-[10px] text-slate-500 ml-1.5 font-mono">HC ${hc}</span>` : ''}
+                        ${partner && activeTeeDay === 'sunday' ? `<span class="text-[10px] ml-1.5 ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partner.displayName || 'Unknown')}</span>` : ''}
+                      </div>
+                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition shrink-0" data-ts-rem-player="${gi},${pi}">✕</button>
+                    </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      // Unassigned warning
+      if (unassigned) {
+        if (unassignedPlayers.length > 0) {
+          unassigned.className = 'bg-amber-500/10 border border-amber-500/20 rounded-xl p-3';
+          unassigned.innerHTML = `
+            <div class="text-[10px] uppercase tracking-widest text-amber-400 font-semibold mb-1.5">Unassigned (${unassignedPlayers.length})</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${unassignedPlayers.map(u => `<span class="text-xs text-amber-300/80">${escapeHtml(userLabel(u))}</span>`).join('<span class="text-slate-600">·</span>')}
+            </div>`;
+        } else {
+          unassigned.className = 'hidden';
+          unassigned.innerHTML = '';
+        }
+      }
+    }
+
+    function renderTeeSheet() {
+      renderTsDayStats();
+      renderTsSelectedChips();
+      renderTsPool();
+      renderTsGroups();
+    }
+
+    function isShotgun(day) { return day !== 'saturday'; }
+
+    function parseHoleLabel(s) {
+      const m = String(s || '').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
+      return m ? { num: Math.min(18, Math.max(1, parseInt(m[1], 10))), letter: m[2] } : { num: 1, letter: '' };
+    }
+
+    function shotgunHoleLabel(startNum, startLetter, groupIndex, totalGroups) {
+      if (!startLetter) return (((startNum - 1 + groupIndex) % 18) + 1);
+      const groupsPerHole = Math.max(2, Math.ceil(totalGroups / 18));
+      const absIdx = (startLetter.charCodeAt(0) - 65) + groupIndex;
+      const holeNum = (((startNum - 1 + Math.floor(absIdx / groupsPerHole)) % 18) + 1);
+      return `${holeNum}${String.fromCharCode(65 + absIdx % groupsPerHole)}`;
+    }
+
+    function switchTeeDay(day) {
+      activeTeeDay = day;
+      tsSelectedPlayers = [];
+      document.querySelectorAll('.ts-day-tab').forEach(btn => {
+        const active = btn.dataset.tsDay === day;
+        btn.className = 'ts-day-tab flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-left ' +
+          (active ? 'bg-accent text-s0' : 'text-slate-400 hover:text-white hover:bg-s3');
+      });
+      // Update settings panel context
+      const shotgun = isShotgun(day);
+      const badge = document.getElementById('tsFormatBadge');
+      const intervalWrap = document.getElementById('tsIntervalWrap');
+      const startTimeLabel = document.getElementById('tsStartTimeLabel');
+      const startHoleLabel = document.getElementById('tsStartHoleLabel');
+      if (badge) badge.textContent = shotgun ? 'Shotgun' : 'Traditional';
+      if (intervalWrap) intervalWrap.style.display = shotgun ? 'none' : '';
+      if (startTimeLabel) startTimeLabel.textContent = shotgun ? 'Shotgun Time' : 'First Tee Time';
+      if (startHoleLabel) startHoleLabel.textContent = shotgun ? 'First Hole' : 'Starting Hole';
+      renderTeeSheet();
+    }
+
+    function autoGroupForDay() {
+      const players = getEligibleForDay(activeTeeDay);
+      if (players.length === 0) { setTsStatus('No eligible players for this day.', 'warn'); return; }
+      const startMins = parseTeeTime(document.getElementById('tsStartTime')?.value);
+      const interval = Math.max(1, Number(document.getElementById('tsInterval')?.value) || 8);
+      const { num: startNum, letter: startLetter } = parseHoleLabel(document.getElementById('tsStartHole')?.value);
+      const shotgun = isShotgun(activeTeeDay);
+      const groupUids = activeTeeDay === 'sunday' ? formGroupsAmbrose(players) : formGroupsSnake(players);
+      teeSheets[activeTeeDay] = groupUids.map((uids, i) => ({
+        hole: shotgun ? shotgunHoleLabel(startNum, startLetter, i, groupUids.length) : startNum,
+        teeTime: shotgun ? formatTeeTime(startMins) : formatTeeTime(startMins + i * interval),
+        players: uids,
+      }));
+      tsSelectedPlayers = [];
+      renderTeeSheet();
+      const fmt = shotgun ? 'shotgun' : 'traditional';
+      setTsStatus(`${players.length} players → ${teeSheets[activeTeeDay].length} groups (${fmt}).`, 'success');
+    }
+
+    function tsAddManualGroup() {
+      if (tsSelectedPlayers.length === 0) { setTsStatus('Select at least one player.', 'error'); return; }
+      if (tsSelectedPlayers.length > 4) { setTsStatus('Max 4 players per group.', 'error'); return; }
+      const hole = document.getElementById('tsManualHole')?.value.trim() || '1';
+      const teeTime = document.getElementById('tsManualTime')?.value.trim() || '';
+      teeSheets[activeTeeDay].push({ hole, teeTime, players: [...tsSelectedPlayers] });
+      tsSelectedPlayers = [];
+      if (document.getElementById('tsManualHole')) document.getElementById('tsManualHole').value = '';
+      if (document.getElementById('tsManualTime')) document.getElementById('tsManualTime').value = '';
+      renderTeeSheet();
+      setTsStatus('Group added.', 'success');
+    }
+
+    async function loadTeeSheets() {
+      try {
+        setTsStatus('Loading…');
+        const snap = await getDoc(doc(firestore, 'eventYears', currentEventId));
+        const data = snap.exists() ? snap.data() || {} : {};
+        const saved = data.teeSheets || {};
+        teeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        renderTeeSheet();
+        const total = teeSheets.friday.length + teeSheets.saturday.length + teeSheets.sunday.length;
+        setTsStatus(total ? `Loaded (${total} groups total).` : 'No tee sheets saved yet.', total ? 'success' : 'warn');
+      } catch (err) {
+        console.error(err);
+        setTsStatus('Load failed: ' + err.message, 'error');
+      }
+    }
+
+    async function saveTeeSheets() {
+      try {
+        setTsStatus('Saving…');
+        await setDoc(doc(firestore, 'eventYears', currentEventId), {
+          eventId: currentEventId,
+          teeSheets: {
+            friday: teeSheets.friday,
+            saturday: teeSheets.saturday,
+            sunday: teeSheets.sunday,
+          },
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        setTsStatus('Tee sheets saved.', 'success');
+        showToast('Tee sheets saved', 'success');
+      } catch (err) {
+        console.error(err);
+        setTsStatus('Save failed: ' + err.message, 'error');
+        showToast('Save failed', 'error');
+      }
+    }
+
+    // === TEE SHEET PDF EXPORT ===
+    async function exportTeeSheetPdf(day) {
+      const groups = teeSheets[day];
+      if (!groups || groups.length === 0) {
+        showToast(`No ${day} groups to export — auto-group or add groups first.`, 'warn');
         return;
       }
 
-      gbGroupTableBody.innerHTML = groupBuilderGroups.map((group, index) => {
-        const players = Array.isArray(group.players) ? group.players : [];
-        const playerNames = players.map(getBuilderPlayerLabel).join(", ");
+      const btn = document.getElementById('tsExportBtn');
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+      const meta = {
+        friday:   { label: 'Friday',   format: 'Shotgun Start · Skins',            shotgun: true  },
+        saturday: { label: 'Saturday', format: 'Traditional Start · Stableford',     shotgun: false },
+        sunday:   { label: 'Sunday',   format: 'Shotgun Start · Ambrose Pairs',     shotgun: true  },
+      }[day];
+
+      const totalPlayers = groups.flatMap(g => g.players || []).length;
+      const shotgunTime = meta.shotgun && groups[0]?.teeTime ? groups[0].teeTime : null;
+
+      function pRow(uid) {
+        const u = users.find(x => x.uid === uid);
+        const rec = getEventRecord(uid);
+        const hc = numericHandicapFor(uid, rec);
+        const nm = escapeHtml(u ? (u.displayName || '(no name)') : uid.slice(0, 8));
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;">
+          <span style="font-size:13px;font-weight:600;color:#111827;">${nm}</span>
+          <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${hc !== null ? 'HC ' + hc : '—'}</span>
+        </div>`;
+      }
+
+      function groupCard(group, gi) {
+        const players = group.players || [];
+
+        let playersHtml = '';
+        if (day === 'sunday') {
+          const done = new Set();
+          for (const uid of players) {
+            if (done.has(uid)) continue;
+            const rec = getEventRecord(uid);
+            const pid = rec.ambrosePartnerUid;
+            const prec = pid ? getEventRecord(pid) : null;
+            const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
+            if (confirmed) {
+              done.add(uid); done.add(pid);
+              const u1 = users.find(x => x.uid === uid);
+              const u2 = users.find(x => x.uid === pid);
+              const h1 = numericHandicapFor(uid, rec);
+              const h2 = numericHandicapFor(pid, prec);
+              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(1) : null;
+              playersHtml += `
+                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
+                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName || '?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1 !== null ? 'HC ' + h1 : '—'}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;">
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u2?.displayName || '?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h2 !== null ? 'HC ' + h2 : '—'}</span>
+                  </div>
+                </div>`;
+            } else {
+              done.add(uid);
+              playersHtml += pRow(uid);
+            }
+          }
+        } else {
+          playersHtml = players.map(pRow).join('');
+        }
+
+        const holeTag = group.hole
+          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>`
+          : '';
+        const timeTag = !meta.shotgun && group.teeTime
+          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>`
+          : '';
+
         return `
-          <tr>
-            <td class="px-3 py-3 text-sm font-semibold text-white">${escapeHtml(asString(group.hole))}</td>
-            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(asString(group.teeTime) || "—")}</td>
-            <td class="px-3 py-3 text-sm text-slate-300">${escapeHtml(playerNames || "—")}</td>
-            <td class="px-3 py-3 text-right">
-              <div class="inline-flex items-center gap-1">
-                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-edit="${index}">Edit</button>
-                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-up="${index}">↑</button>
-                <button type="button" class="px-2 py-1 rounded-md bg-s3 border border-brd text-xs text-slate-300 hover:bg-s4 transition" data-gb-down="${index}">↓</button>
-                <button type="button" class="px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-300 hover:bg-red-500/20 transition" data-gb-delete="${index}">Del</button>
+          <div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f3f4f6;">
+              <div>
+                <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#3b82f6;margin-bottom:4px;">Group ${gi + 1}</div>
+                <div>${holeTag}${timeTag}</div>
               </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
 
-    function sortBuilderGroups() {
-      groupBuilderGroups.sort((a, b) => Number(a.hole) - Number(b.hole));
-    }
+            </div>
+            ${playersHtml}
+          </div>`;
+      }
 
-    function addBuilderGroup() {
-      const hole = Number(gbHoleInput.value);
-      const teeTime = gbTeeTimeInput.value.trim();
-      const players = [...groupBuilderSelectedPlayers];
-      if (!Number.isFinite(hole) || hole < 1 || hole > 18) { setBuilderStatus("Hole must be 1–18.", "error"); return; }
-      if (players.length === 0) { setBuilderStatus("Select at least one player.", "error"); return; }
-      if (players.length > 4) { setBuilderStatus("Max 4 players per group.", "error"); return; }
-      groupBuilderGroups.push({ hole, teeTime, players });
-      sortBuilderGroups();
-      renderBuilderGroups();
-      clearBuilderSelection();
-      setBuilderStatus("Group added.", "success");
-    }
+      const cols = groups.length <= 4 ? 2 : 3;
+      const headerSub = meta.shotgun && shotgunTime
+        ? `${meta.format} — Shotgun ${shotgunTime}`
+        : meta.format;
+      const dateStr = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-    async function loadEventGroups() {
-      const eventDocSnap = await getDoc(doc(firestore, "eventYears", currentEventId));
-      const data = eventDocSnap.exists() ? eventDocSnap.data() || {} : {};
-      groupBuilderGroups = Array.isArray(data.groups) ? data.groups : [];
-      sortBuilderGroups();
-      renderBuilderGroups();
-      setBuilderStatus(groupBuilderGroups.length ? `Loaded ${groupBuilderGroups.length} groups.` : "No groups saved yet.", groupBuilderGroups.length ? "success" : "warn");
-    }
+      const canvasContent = `
+        <div style="font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f8fafc;width:794px;">
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:28px 36px 22px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#3b82f6;font-weight:700;margin-bottom:6px;">Hackers Cup 26</div>
+                <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;line-height:1.15;">${meta.label} Tee Sheet</div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${headerSub}</div>
+              </div>
+              <div style="text-align:right;padding-top:2px;">
+                <div style="font-size:13px;font-weight:700;color:#f1f5f9;">${groups.length} groups · ${totalPlayers} players</div>
+                <div style="font-size:11px;color:#64748b;margin-top:3px;">Worrigee Links</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">${dateStr}</div>
+              </div>
+            </div>
+            <div style="height:2px;background:linear-gradient(90deg,#3b82f6,#60a5fa,rgba(96,165,250,0));margin-top:20px;border-radius:1px;"></div>
+          </div>
+          <!-- Groups grid -->
+          <div style="padding:20px 36px 28px;">
+            <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px;">
+              ${groups.map((g, i) => groupCard(g, i)).join('')}
+            </div>
+          </div>
+          <!-- Footer -->
+          <div style="background:#0f172a;padding:11px 36px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:9px;color:#475569;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">Hackers Cup 26 · ${meta.label} Tee Sheet</div>
+            <div style="font-size:9px;color:#475569;">Worrigee Links</div>
+          </div>
+        </div>`;
 
-    async function saveEventGroups() {
-      if (groupBuilderGroups.length === 0) { setBuilderStatus("No groups to save.", "error"); return; }
-      setBuilderStatus("Saving groups…");
-      await setDoc(doc(firestore, "eventYears", currentEventId), {
-        eventId: currentEventId,
-        groups: groupBuilderGroups,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-      setBuilderStatus("Groups saved.", "success");
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;';
+      wrap.innerHTML = canvasContent;
+      document.body.appendChild(wrap);
+
+      try {
+        await document.fonts.ready;
+        const el = wrap.firstElementChild;
+        const canvas = await html2canvas(el, {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: '#f8fafc',
+          logging: false,
+          width: 794,
+          height: el.scrollHeight,
+          windowWidth: 794,
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+
+        // Pixels per PDF point at this scale
+        const pxPerPt = canvas.width / pdfW;
+        const pageHeightPx = Math.round(pdfH * pxPerPt);
+        const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+        // Slice canvas into exact per-page chunks — avoids float drift at boundaries
+        for (let i = 0; i < totalPages; i++) {
+          if (i > 0) pdf.addPage();
+          const srcY = i * pageHeightPx;
+          const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = pageHeightPx;
+          const ctx = pageCanvas.getContext('2d');
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+          pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
+        }
+
+        pdf.save(`hackerscup-2026-${day}-teesheet.pdf`);
+        showToast(`${meta.label} tee sheet exported.`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('PDF export failed: ' + err.message, 'error');
+      } finally {
+        document.body.removeChild(wrap);
+        if (btn) { btn.disabled = false; btn.innerHTML = origHtml; lucide.createIcons({ nodes: [btn] }); }
+      }
     }
 
     // === REGO SHEET SYNC ===
@@ -1462,6 +1947,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         await Promise.all(writes);
         persistEventPlayersCache(currentEventId);
         filterAndRender();
+        renderTeeSheet();
 
         regoSyncSetStatus(`Applied ${toApply.length} update${toApply.length !== 1 ? "s" : ""} successfully.`, "success");
         showToast(`Rego sync: ${toApply.length} players updated`, "success");
@@ -1596,7 +2082,10 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
             <span class="font-mono text-slate-300 text-sm">${record.handicap !== "" ? escapeHtml(asString(record.handicap)) : "—"}</span>
           </td>
           <td class="px-3 py-3">
-            <span class="text-sm text-slate-300">${roomNames ? escapeHtml(roomNames) : '<span class="text-slate-600">—</span>'}</span>
+            <div class="flex flex-col gap-0.5">
+              ${record.roomNumber ? `<span class="text-sm font-bold text-accent tabular-nums">${escapeHtml(asString(record.roomNumber))}</span>` : `<span class="text-slate-600 text-sm">—</span>`}
+              ${roomNames ? `<span class="text-[11px] text-slate-500 leading-tight">${escapeHtml(roomNames)}</span>` : ""}
+            </div>
           </td>
           <td class="px-3 py-3">
             <span class="text-sm text-slate-300">${partnerName ? escapeHtml(partnerName) : '<span class="text-slate-600">—</span>'}</span>
@@ -1634,7 +2123,10 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
                 <div class="font-semibold text-white text-sm">${escapeHtml(user.displayName || "(no name)")}</div>
                 <div class="text-[11px] text-slate-600 font-mono">${escapeHtml(user.uid.slice(0, 12))}</div>
               </div>
-              <div class="flex items-center gap-2">${badgeHtml(paid)}</div>
+              <div class="flex items-center gap-2">
+                ${badgeHtml(paid)}
+                ${record.roomNumber ? `<span class="text-lg font-bold text-accent tabular-nums">${escapeHtml(asString(record.roomNumber))}</span>` : ""}
+              </div>
             </div>
             <div class="flex flex-wrap gap-2 mt-2">
               ${record.coming ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-medium">Coming</span>' : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-s3 text-slate-500 border border-slate-600/30 font-medium">Not coming</span>'}
@@ -1779,6 +2271,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       updateDirtyUI();
       renderEventSelect();
       filterAndRender();
+      renderTeeSheet();
       showToast(`${eventId} event data loaded`, "success");
     }
 
@@ -1836,18 +2329,23 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       writes.push(set(ref(db, `users/${uid}/displayName`), asString(fieldValues.displayName).trim()));
 
       // Room cascading updates
+      const nextRoomNumber = asString(nextRecord.roomNumber).trim();
       roomAffected.forEach(playerUid => {
         const targetRecord = getEventRecord(playerUid);
         let updatedRoommates;
+        let updatedRoomNumber;
         if (nextRoomGroup.includes(playerUid)) {
           updatedRoommates = nextRoomGroup.filter(m => m !== playerUid);
+          updatedRoomNumber = nextRoomNumber;
         } else if (previousRoomGroup.includes(playerUid)) {
           updatedRoommates = (targetRecord.roommates || []).filter(m => m !== uid);
+          updatedRoomNumber = "";
         } else return;
 
-        const payload = { ...targetRecord, roommates: uniqueSorted(updatedRoommates), updatedAt: serverTimestamp() };
+        const payload = { ...targetRecord, roommates: uniqueSorted(updatedRoommates), roomNumber: updatedRoomNumber, updatedAt: serverTimestamp() };
         if (playerUid === uid) Object.assign(payload, eventPayload);
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), payload, { merge: true }));
+        writes.push(set(ref(db, `users/${playerUid}/roomNumber`), updatedRoomNumber || null));
       });
 
       // Partner cascading updates
@@ -1898,8 +2396,10 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         const rec = getEventRecord(playerUid);
         if (nextRoomGroup.includes(playerUid)) {
           rec.roommates = nextRoomGroup.filter(m => m !== playerUid);
+          rec.roomNumber = nextRoomNumber;
         } else if (previousRoomGroup.includes(playerUid)) {
           rec.roommates = previousRoomGroup.filter(m => m !== playerUid && m !== uid);
+          rec.roomNumber = "";
         }
         eventPlayers.set(playerUid, rec);
       });
@@ -1974,7 +2474,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       };
       editPaidBadge.innerHTML = renderPaidBadgeHtml(paid);
 
-      // Roommate chips
+      // Roommate chips + room number
+      editRoomNumber.value = asString(record.roomNumber);
       editPanelExistingRoommates = [...(record.roommates || [])];
       renderRoommateChips();
       updateAmbroseTeamHandicap();
@@ -2082,7 +2583,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editDisplayName, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile, editRoomNumber].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -2101,6 +2602,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           skins: editSkins.checked,
           handicap: editHandicap.value,
           ambrosePartnerUid: editPartner.value,
+          roomNumber: editRoomNumber.value.trim(),
           roommates: [...editPanelExistingRoommates],
           sponsorNotes: editNotes.value,
           financialStatus: editFinancialStatus.value,
@@ -2115,6 +2617,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         await saveEventPlayer(currentEditUid, fieldValues);
         showToast("Saved successfully", "success");
         filterAndRender();
+        renderTeeSheet();
         closeEditPanel();
       } catch (err) {
         console.error(err);
@@ -2218,6 +2721,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         }
         showToast("All changes saved", "success");
         filterAndRender();
+        renderTeeSheet();
       } catch (err) {
         console.error(err);
         showToast(err.message || "Some saves failed", "error");
@@ -2234,6 +2738,106 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
     // Mobile card clicks
     document.addEventListener("editPlayer", (e) => openEditPanel(e.detail));
+
+    // === TEE SHEET EVENT LISTENERS ===
+
+    // Day tab switching
+    document.querySelectorAll('.ts-day-tab').forEach(btn => {
+      btn.addEventListener('click', () => switchTeeDay(btn.dataset.tsDay));
+    });
+
+    // Load / Save / Export
+    document.getElementById('tsLoadBtn')?.addEventListener('click', loadTeeSheets);
+    document.getElementById('tsSaveBtn')?.addEventListener('click', saveTeeSheets);
+    document.getElementById('tsExportBtn')?.addEventListener('click', () => exportTeeSheetPdf(activeTeeDay));
+
+    // Auto-group
+    document.getElementById('tsAutoGroupBtn')?.addEventListener('click', autoGroupForDay);
+
+    // Manual add group
+    document.getElementById('tsAddGroupBtn')?.addEventListener('click', tsAddManualGroup);
+
+    // Clear selection
+    document.getElementById('tsClearSelBtn')?.addEventListener('click', () => {
+      tsSelectedPlayers = [];
+      renderTsSelectedChips();
+      renderTsPool();
+    });
+
+    // Clear entire day
+    document.getElementById('tsClearDayBtn')?.addEventListener('click', () => {
+      if (!confirm(`Clear all ${activeTeeDay} groups?`)) return;
+      teeSheets[activeTeeDay] = [];
+      tsSelectedPlayers = [];
+      renderTeeSheet();
+      setTsStatus('Day cleared.', 'warn');
+    });
+
+    // Pool search live filter
+    document.getElementById('tsPoolSearch')?.addEventListener('input', renderTsPool);
+
+    // Delegated clicks within the tee sheet section
+    document.addEventListener('click', e => {
+      // Player pool — toggle selection
+      const poolBtn = e.target.closest('[data-ts-pool]');
+      if (poolBtn && !poolBtn.disabled) {
+        const uid = poolBtn.dataset.tsPool;
+        const idx = tsSelectedPlayers.indexOf(uid);
+        if (idx === -1) {
+          if (tsSelectedPlayers.length >= 4) { setTsStatus('Max 4 players per group.', 'warn'); return; }
+          tsSelectedPlayers.push(uid);
+        } else {
+          tsSelectedPlayers.splice(idx, 1);
+        }
+        renderTsSelectedChips();
+        renderTsPool();
+        return;
+      }
+
+      // Deselect chip
+      const deselBtn = e.target.closest('[data-ts-desel]');
+      if (deselBtn) {
+        tsSelectedPlayers.splice(Number(deselBtn.dataset.tsDesel), 1);
+        renderTsSelectedChips();
+        renderTsPool();
+        return;
+      }
+
+      // Delete group
+      const delGroup = e.target.closest('[data-ts-del-group]');
+      if (delGroup) {
+        teeSheets[activeTeeDay].splice(Number(delGroup.dataset.tsDelGroup), 1);
+        renderTeeSheet();
+        return;
+      }
+
+      // Remove player from group
+      const remPlayer = e.target.closest('[data-ts-rem-player]');
+      if (remPlayer) {
+        const [gi, pi] = remPlayer.dataset.tsRemPlayer.split(',').map(Number);
+        teeSheets[activeTeeDay][gi]?.players?.splice(pi, 1);
+        if (teeSheets[activeTeeDay][gi]?.players?.length === 0) teeSheets[activeTeeDay].splice(gi, 1);
+        renderTeeSheet();
+        return;
+      }
+    });
+
+    // Inline hole/time edits in groups (delegated via input event)
+    document.addEventListener('input', e => {
+      const holeInput = e.target.closest('.ts-group-hole');
+      if (holeInput) {
+        const gi = Number(holeInput.dataset.gi);
+        if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].hole = holeInput.value.trim() || '1';
+        renderTsDayStats();
+        return;
+      }
+      const timeInput = e.target.closest('.ts-group-time');
+      if (timeInput) {
+        const gi = Number(timeInput.dataset.gi);
+        if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].teeTime = timeInput.value;
+        return;
+      }
+    });
 
     // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
@@ -2288,6 +2892,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     // === BOOT ===
     renderEventSelect();
     populateEditSelects();
+    switchTeeDay('friday');
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -2337,6 +2942,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     // Init Lucide
     lucide.createIcons();
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </body>
 </html>
