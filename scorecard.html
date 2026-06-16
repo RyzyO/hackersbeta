@@ -291,6 +291,22 @@
       color: rgba(148, 163, 184, 0.9);
     }
 
+    .player-identity {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .player-avatar-lg {
+      width: 100px;
+      height: 100px;
+      border-radius: 9999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 8px 24px rgba(2, 6, 23, 0.5);
+    }
+
     .player-name {
       font-size: 24px;
       font-weight: 700;
@@ -525,6 +541,11 @@
         font-size: 22px;
       }
 
+      .player-avatar-lg {
+        width: 52px;
+        height: 52px;
+      }
+
       .kpi-value {
         font-size: 20px;
       }
@@ -666,7 +687,10 @@
             <div class="player-info">
               <span class="player-label">Player</span>
               <div class="player-top">
-                <h2 id="player-name" class="player-name">Player Name</h2>
+                <div class="player-identity">
+                  <img id="player-avatar" src="" alt="" class="player-avatar-lg hidden">
+                  <h2 id="player-name" class="player-name">Player Name</h2>
+                </div>
                 <div class="player-meta">
                   <span class="player-meta-label">Handicap</span>
                   <span id="player-handicap" class="player-meta-value">--</span>
@@ -947,6 +971,55 @@
     });
   </script>
 
+  <!-- Firebase (Firestore only) — loosely coupled avatar lookup by player name -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const firestore = getFirestore(app);
+
+    function normalizeName(name) {
+      return (name || '')
+        .toString()
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    window.normalizePlayerName = normalizeName;
+
+    // Resolves to { normalizedName: avatarUrl }. Independent of the
+    // page's other data fetches — if this fails or is slow, the player
+    // name still renders fine with no avatar shown.
+    window.avatarMapReady = (async () => {
+      const map = {};
+      try {
+        const snap = await getDocs(collection(firestore, 'attendeeProfiles'));
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.avatarUrl) {
+            map[normalizeName(docSnap.id)] = data.avatarUrl;
+          }
+        });
+      } catch (e) {
+        console.error('Avatar lookup failed (scorecard still works without it):', e);
+      }
+      return map;
+    })();
+  </script>
+
   <!-- Main Script to Fetch & Populate Scorecard Data -->
   <script>
   /****************************************************
@@ -955,6 +1028,38 @@
   const urlParams = new URLSearchParams(window.location.search);
   const playerName = urlParams.get('player') || "Unknown Player";
   document.getElementById('player-name').textContent = playerName;
+
+  // Apply the player's avatar above the name if one exists. No placeholder
+  // circle is shown for players without a saved profile picture.
+  // The avatar lookup is defined in a <script type="module"> tag above.
+  // Module scripts are deferred by default, so this plain script can run
+  // BEFORE that one finishes — window.avatarMapReady may not exist yet.
+  // Poll briefly instead of checking once, so we don't silently skip it.
+  function applyAvatarWhenReady(attemptsLeft) {
+    if (window.avatarMapReady) {
+      window.avatarMapReady.then(avatarMap => {
+        const key = window.normalizePlayerName ? window.normalizePlayerName(playerName) : playerName.toLowerCase().trim();
+        console.log('[avatar debug] playerName from URL:', JSON.stringify(playerName));
+        console.log('[avatar debug] normalized key:', JSON.stringify(key));
+        console.log('[avatar debug] avatarMap keys:', Object.keys(avatarMap));
+        console.log('[avatar debug] match found:', avatarMap[key]);
+        const avatarUrl = avatarMap[key];
+        const avatarEl = document.getElementById('player-avatar');
+        if (avatarUrl && avatarEl) {
+          avatarEl.src = avatarUrl;
+          avatarEl.alt = playerName;
+          avatarEl.classList.remove('hidden');
+        }
+      });
+      return;
+    }
+    if (attemptsLeft <= 0) {
+      console.warn('[avatar debug] window.avatarMapReady never appeared — avatar module script may have failed to load.');
+      return;
+    }
+    setTimeout(() => applyAvatarWhenReady(attemptsLeft - 1), 100);
+  }
+  applyAvatarWhenReady(20); // retries for up to ~2 seconds
 
   /****************************************************
    * Hole order (exactly as requested)
