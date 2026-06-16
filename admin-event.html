@@ -174,6 +174,12 @@
         <input id="editHackerNumber" type="text" placeholder="e.g., HC25-001"
           class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
       </section>
+
+      <section>
+        <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Display Name</h3>
+        <input id="editDisplayName" type="text" placeholder="Full name shown across the app"
+          class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+      </section>
 <!-- Email -->
 <section>
   <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-3">Email</h3>
@@ -396,6 +402,12 @@
       </button>
       <button onclick="copyPlayerEmails('notcoming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
         Not coming
+      </button>
+      <button id="exportComingCsvBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+        Export coming CSV
+      </button>
+      <button id="exportFullCsvBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Export full CSV
       </button>
     </div>
   </div>
@@ -765,6 +777,7 @@
     const editPantSize = $("#editPantSize");
     const editHandicap = $("#editHandicap");
     const editHackerNumber = $("#editHackerNumber");
+    const editDisplayName = $("#editDisplayName");
     const editGolfAustraliaNumber = $("#editGolfAustraliaNumber");
     const editPartner = $("#editPartner");
     const editTeamHandicap = $("#editTeamHandicap");
@@ -790,6 +803,8 @@
 
     const downloadAmbroseBtn = $("#downloadAmbroseBtn");
     const ambrosePreview = $("#ambrosePreview");
+    const exportComingCsvBtn = $("#exportComingCsvBtn");
+    const exportFullCsvBtn = $("#exportFullCsvBtn");
 
 window.copyPlayerEmails = function(mode) {
   // Pull emails from the users array and their event participation data
@@ -823,6 +838,129 @@ window.copyPlayerEmails = function(mode) {
     setTimeout(() => flash.style.opacity = '0', 2500);
   });
 };
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function sanitizeCsvFilename(value) {
+  return String(value || "export").replace(/[^a-z0-9._-]+/gi, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function hackerNumberSortKey(value) {
+  const text = asString(value).trim();
+  const normalized = text.toLowerCase();
+  if (!text || normalized === "new" || normalized === "black") return { bucket: 1, value: Number.POSITIVE_INFINITY, text: normalized };
+  const parsed = Number(text);
+  if (!Number.isFinite(parsed)) return { bucket: 1, value: Number.POSITIVE_INFINITY, text: normalized };
+  return { bucket: 0, value: parsed, text: normalized };
+}
+
+function sortComingPlayersByHackerNumber(left, right) {
+  const a = hackerNumberSortKey(left.hackerNumber);
+  const b = hackerNumberSortKey(right.hackerNumber);
+  if (a.bucket !== b.bucket) return a.bucket - b.bucket;
+  if (a.bucket === 0 && a.value !== b.value) return a.value - b.value;
+  return a.text.localeCompare(b.text);
+}
+
+function getComingPlayersForExport() {
+  return users
+    .filter(user => {
+      const record = eventPlayers.get(user.uid);
+      return !!record && !!record.coming;
+    })
+    .slice()
+    .sort(sortComingPlayersByHackerNumber);
+}
+
+function downloadComingPlayersCsv() {
+  const rows = getComingPlayersForExport()
+    .map(user => {
+      const record = eventPlayers.get(user.uid) || {};
+      return [
+        asString(user.hackerNumber).trim(),
+        asString(user.displayName).trim(),
+        asString(record.shirtSize).trim()
+      ];
+    });
+
+  if (rows.length === 0) {
+    showToast("No coming players to export", "warn");
+    return;
+  }
+
+  const csv = [
+    ["hacker number", "displayName", "Shirt Size"].map(csvEscape).join(","),
+    ...rows.map(row => row.map(csvEscape).join(","))
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const filename = `${sanitizeCsvFilename(currentEventId)}_coming_players.csv`;
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} coming player${rows.length === 1 ? "" : "s"}`, "success");
+}
+
+function downloadFullComingSpreadsheetCsv() {
+  const rows = getComingPlayersForExport().map(user => {
+    const record = eventPlayers.get(user.uid) || {};
+    const partner = users.find(candidate => candidate.uid === record.ambrosePartnerUid);
+    const roommateNames = (record.roommates || [])
+      .map(roommateUid => {
+        const roommate = users.find(candidate => candidate.uid === roommateUid);
+        return roommate ? asString(roommate.displayName).trim() : "";
+      })
+      .filter(Boolean)
+      .join(", ");
+
+    return [
+      asString(user.displayName).trim(),
+      asString(user.handicap).trim(),
+      asString(user.mobile).trim(),
+      asString(user.email).trim(),
+      asString(user.hackerNumber).trim(),
+      asString(record.shirtSize).trim(),
+      roommateNames,
+      partner ? asString(partner.displayName).trim() : "",
+      record.coming ? "Yes" : "No",
+      paidStatusFor(user).label,
+      record.skins ? "Yes" : "No"
+    ];
+  });
+
+  if (rows.length === 0) {
+    showToast("No coming players to export", "warn");
+    return;
+  }
+
+  const csv = [
+    ["Name", "Handicap", "Mobile", "Email", "Hackers No.", "Shirt Siz", "Room", "Ambrose", "Coming", "Paid", "Skins"].map(csvEscape).join(","),
+    ...rows.map(row => row.map(csvEscape).join(","))
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const filename = `${sanitizeCsvFilename(currentEventId)}_full_coming_spreadsheet.csv`;
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} coming player${rows.length === 1 ? "" : "s"}`, "success");
+}
+
+exportComingCsvBtn?.addEventListener("click", downloadComingPlayersCsv);
+exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
     // === TOAST SYSTEM ===
     function showToast(message, type = "info") {
@@ -1434,8 +1572,8 @@ window.copyPlayerEmails = function(mode) {
               const h2 = numericHandicapFor(pid, prec);
               const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(1) : null;
               playersHtml += `
-                <div style="background:#f0fdf4;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #06d6a4;">
-                  <div style="font-size:9px;font-weight:700;color:#059669;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
+                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
                   <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
                     <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName || '?')}</span>
                     <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1 !== null ? 'HC ' + h1 : '—'}</span>
@@ -1455,17 +1593,17 @@ window.copyPlayerEmails = function(mode) {
         }
 
         const holeTag = group.hole
-          ? `<span style="display:inline-block;font-size:10px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>`
+          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>`
           : '';
         const timeTag = !meta.shotgun && group.teeTime
-          ? `<span style="display:inline-block;font-size:10px;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>`
+          ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>`
           : '';
 
         return `
           <div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f3f4f6;">
               <div>
-                <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#06d6a4;margin-bottom:4px;">Group ${gi + 1}</div>
+                <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#3b82f6;margin-bottom:4px;">Group ${gi + 1}</div>
                 <div>${holeTag}${timeTag}</div>
               </div>
               ${avgHc !== null ? `<div style="text-align:right;"><div style="font-size:8px;color:#9ca3af;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Avg HC</div><div style="font-size:18px;font-weight:800;color:#374151;line-height:1.1;">${avgHc}</div></div>` : ''}
@@ -1496,7 +1634,7 @@ window.copyPlayerEmails = function(mode) {
                 <div style="font-size:11px;color:#64748b;margin-top:2px;">${dateStr}</div>
               </div>
             </div>
-            <div style="height:2px;background:linear-gradient(90deg,#fbbf24,#f59e0b,rgba(245,158,11,0));margin-top:20px;border-radius:1px;"></div>
+            <div style="height:2px;background:linear-gradient(90deg,#3b82f6,#60a5fa,rgba(96,165,250,0));margin-top:20px;border-radius:1px;"></div>
           </div>
           <!-- Groups grid -->
           <div style="padding:20px 36px 28px;">
@@ -2082,7 +2220,7 @@ window.copyPlayerEmails = function(mode) {
         const f = firestoreUsers[uid] || {};
         return {
           uid,
-          displayName: r.displayName || "",
+          displayName: r.displayName || f.displayName || "",
           hackerNumber: f.hackerNumber || r.hackerNumber || "",
           golfAustraliaNumber: f.golfAustraliaNumber || r.golfAustraliaNumber || "",
           email: f.email || r.email || f.authEmail || r.authEmail || "",
@@ -2170,6 +2308,7 @@ window.copyPlayerEmails = function(mode) {
 
       const writes = [];
       const eventPayload = { ...nextRecord };
+      writes.push(set(ref(db, `users/${uid}/displayName`), asString(fieldValues.displayName).trim()));
 
       // Room cascading updates
       const nextRoomNumber = asString(nextRecord.roomNumber).trim();
@@ -2213,6 +2352,7 @@ window.copyPlayerEmails = function(mode) {
       }
 
       writes.push(setDoc(doc(firestore, "users", uid), {
+        displayName: asString(fieldValues.displayName).trim(),
         financialStatus: nextPayment.financialStatus,
         amtOutstanding: nextPayment.amtOutstanding,
         hackerNumber: fieldValues.hackerNumber || "",
@@ -2228,6 +2368,7 @@ window.copyPlayerEmails = function(mode) {
       eventPlayers.set(uid, eventPayload);
       currentUser.financialStatus = nextPayment.financialStatus;
       currentUser.amtOutstanding = nextPayment.amtOutstanding;
+      currentUser.displayName = asString(fieldValues.displayName).trim();
       currentUser.hackerNumber = fieldValues.hackerNumber || "";
       currentUser.golfAustraliaNumber = fieldValues.golfAustraliaNumber || "";
       currentUser.mobile = fieldValues.mobile || "";
@@ -2293,6 +2434,7 @@ window.copyPlayerEmails = function(mode) {
       editPantSize.value = asString(record.pantSize);
       editHandicap.value = record.handicap !== "" ? asString(record.handicap) : "";
       editHackerNumber.value = asString(user.hackerNumber || "");
+      editDisplayName.value = asString(user.displayName || "");
       editGolfAustraliaNumber.value = asString(user.golfAustraliaNumber || "");
       editNotes.value = asString(record.sponsorNotes);
       editFinancialStatus.value = asString(user.financialStatus);
@@ -2423,7 +2565,7 @@ window.copyPlayerEmails = function(mode) {
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile, editRoomNumber].forEach(el => {
+    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -2448,6 +2590,7 @@ window.copyPlayerEmails = function(mode) {
           financialStatus: editFinancialStatus.value,
           amtOutstanding: editAmtOutstanding.value,
           hackerNumber: editHackerNumber.value.trim(),
+          displayName: editDisplayName.value.trim(),
           golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
           mobile: editMobile.value.trim(),
           email: editEmail.value.trim(),
@@ -2551,6 +2694,7 @@ window.copyPlayerEmails = function(mode) {
             financialStatus: editFinancialStatus.value,
             amtOutstanding: editAmtOutstanding.value,
             hackerNumber: editHackerNumber.value.trim(),
+            displayName: editDisplayName.value.trim(),
             golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
             mobile: editMobile.value.trim(),
             email: editEmail.value.trim(),
