@@ -273,7 +273,7 @@
           <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
           <a href="score.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Score</a>
           <div class="relative group" id="profileMenuContainer">
-            <button id="profileMenuButton" class="w-10 h-10 rounded-full bg-hackers-navy text-hackers-sky font-bold flex items-center justify-center text-lg hover:ring-2 hover:ring-hackers-sky/60 transition-all" onclick="window.location.href='profile.html'">
+            <button id="profileMenuButton" class="w-10 h-10 rounded-full bg-hackers-navy text-hackers-sky font-bold flex items-center justify-center text-lg hover:ring-2 hover:ring-hackers-sky/60 transition-all overflow-hidden" onclick="window.location.href='profile.html'">
               <span id="navbarHackerNumber">#</span>
             </button>
             <div class="absolute right-0 mt-0 w-44 bg-hackers-navy text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity z-50" tabindex="0">
@@ -597,6 +597,7 @@
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -614,6 +615,7 @@
     const database = getDatabase(app);
     const auth = getAuth(app);
     const messaging = getMessaging(app);
+    const firestore = getFirestore(app);
     
     // Auth State Management
     onAuthStateChanged(auth, (user) => {
@@ -623,6 +625,30 @@
         loadUserData(user);
       }
     });
+
+    // Render a profile picture into the navbar circle, replacing the hacker-number
+    // text. If no avatar is set, the circle is left exactly as-is (number visible).
+    function applyNavbarAvatar(avatarUrl) {
+      const btn = document.getElementById('profileMenuButton');
+      const numberSpan = document.getElementById('navbarHackerNumber');
+      if (!btn) return;
+
+      let img = btn.querySelector('img.navbar-avatar-img');
+
+      if (avatarUrl) {
+        if (numberSpan) numberSpan.style.display = 'none';
+        if (!img) {
+          img = document.createElement('img');
+          img.className = 'navbar-avatar-img w-full h-full object-cover rounded-full';
+          img.alt = 'Profile picture';
+          btn.appendChild(img);
+        }
+        img.src = avatarUrl;
+      } else {
+        if (img) img.remove();
+        if (numberSpan) numberSpan.style.display = '';
+      }
+    }
     
     function loadUserData(user) {
       // Load Display Name
@@ -639,6 +665,16 @@
           if (name && name.trim() !== '') {
             set(userRef, name.trim());
           }
+        }
+
+        // Profile doc is keyed by displayName (matches profile.html), so the
+        // avatar lookup waits until we know the name, then listens live.
+        if (displayName) {
+          const profileDocRef = doc(firestore, 'attendeeProfiles', displayName);
+          onSnapshot(profileDocRef, (snap) => {
+            const data = snap.exists() ? snap.data() : null;
+            applyNavbarAvatar(data && data.avatarUrl ? data.avatarUrl : null);
+          });
         }
       });
       
