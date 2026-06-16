@@ -559,7 +559,7 @@
               </div>
               <div class="mb-2">
                 <label id="tsStartHoleLabel" class="text-[10px] text-slate-500 mb-1 block">Starting Hole</label>
-                <input id="tsStartHole" type="number" value="1" min="1" max="18" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                <input id="tsStartHole" type="text" value="1" maxlength="3" placeholder="1 or 1A" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
               </div>
               <button id="tsAutoGroupBtn" class="w-full py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Auto-group this day</button>
             </div>
@@ -572,7 +572,7 @@
               <div class="grid grid-cols-2 gap-2 mb-2">
                 <div>
                   <label class="text-[10px] text-slate-500 mb-1 block">Hole</label>
-                  <input id="tsManualHole" type="number" min="1" max="18" placeholder="1" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
+                  <input id="tsManualHole" type="text" maxlength="3" placeholder="1A" class="w-full px-2.5 py-2 rounded-lg bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition" />
                 </div>
                 <div>
                   <label class="text-[10px] text-slate-500 mb-1 block">Tee Time</label>
@@ -1367,8 +1367,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
                 <div class="flex items-center gap-2">
                   <div class="flex items-center gap-1">
                     <span class="text-[10px] text-slate-500">Hole</span>
-                    <input type="number" min="1" max="18" value="${escapeHtml(asString(group.hole || 1))}"
-                      class="w-12 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-hole" data-gi="${gi}" />
+                    <input type="text" maxlength="3" value="${escapeHtml(asString(group.hole || 1))}"
+                      class="w-16 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-hole" data-gi="${gi}" />
                   </div>
                   <div class="flex items-center gap-1">
                     <span class="text-[10px] text-slate-500">Time</span>
@@ -1425,6 +1425,19 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
     function isShotgun(day) { return day !== 'saturday'; }
 
+    function parseHoleLabel(s) {
+      const m = String(s || '').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
+      return m ? { num: Math.min(18, Math.max(1, parseInt(m[1], 10))), letter: m[2] } : { num: 1, letter: '' };
+    }
+
+    function shotgunHoleLabel(startNum, startLetter, groupIndex, totalGroups) {
+      if (!startLetter) return (((startNum - 1 + groupIndex) % 18) + 1);
+      const groupsPerHole = Math.max(2, Math.ceil(totalGroups / 18));
+      const absIdx = (startLetter.charCodeAt(0) - 65) + groupIndex;
+      const holeNum = (((startNum - 1 + Math.floor(absIdx / groupsPerHole)) % 18) + 1);
+      return `${holeNum}${String.fromCharCode(65 + absIdx % groupsPerHole)}`;
+    }
+
     function switchTeeDay(day) {
       activeTeeDay = day;
       tsSelectedPlayers = [];
@@ -1451,13 +1464,11 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       if (players.length === 0) { setTsStatus('No eligible players for this day.', 'warn'); return; }
       const startMins = parseTeeTime(document.getElementById('tsStartTime')?.value);
       const interval = Math.max(1, Number(document.getElementById('tsInterval')?.value) || 8);
-      const startHole = Math.min(18, Math.max(1, Number(document.getElementById('tsStartHole')?.value) || 1));
+      const { num: startNum, letter: startLetter } = parseHoleLabel(document.getElementById('tsStartHole')?.value);
       const shotgun = isShotgun(activeTeeDay);
       const groupUids = activeTeeDay === 'sunday' ? formGroupsAmbrose(players) : formGroupsSnake(players);
       teeSheets[activeTeeDay] = groupUids.map((uids, i) => ({
-        // Shotgun: each group gets a sequential hole, all share the same start time
-        // Traditional: all start on hole 1 (or startHole), tee times increment
-        hole: shotgun ? (((startHole - 1 + i) % 18) + 1) : startHole,
+        hole: shotgun ? shotgunHoleLabel(startNum, startLetter, i, groupUids.length) : startNum,
         teeTime: shotgun ? formatTeeTime(startMins) : formatTeeTime(startMins + i * interval),
         players: uids,
       }));
@@ -1470,7 +1481,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     function tsAddManualGroup() {
       if (tsSelectedPlayers.length === 0) { setTsStatus('Select at least one player.', 'error'); return; }
       if (tsSelectedPlayers.length > 4) { setTsStatus('Max 4 players per group.', 'error'); return; }
-      const hole = Number(document.getElementById('tsManualHole')?.value) || 1;
+      const hole = document.getElementById('tsManualHole')?.value.trim() || '1';
       const teeTime = document.getElementById('tsManualTime')?.value.trim() || '';
       teeSheets[activeTeeDay].push({ hole, teeTime, players: [...tsSelectedPlayers] });
       tsSelectedPlayers = [];
@@ -1659,7 +1670,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         await document.fonts.ready;
         const el = wrap.firstElementChild;
         const canvas = await html2canvas(el, {
-          scale: 2,
+          scale: 3,
           useCORS: true,
           backgroundColor: '#f8fafc',
           logging: false,
@@ -1668,23 +1679,29 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           windowWidth: 794,
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.93);
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
         const pdfW = pdf.internal.pageSize.getWidth();
         const pdfH = pdf.internal.pageSize.getHeight();
-        const imgH = (canvas.height / canvas.width) * pdfW;
 
-        // Slice tall canvas across multiple A4 pages
-        let pos = 0;
-        let left = imgH;
-        pdf.addImage(imgData, 'JPEG', 0, pos, pdfW, imgH);
-        left -= pdfH;
-        while (left > 0) {
-          pos -= pdfH;
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, pos, pdfW, imgH);
-          left -= pdfH;
+        // Pixels per PDF point at this scale
+        const pxPerPt = canvas.width / pdfW;
+        const pageHeightPx = Math.round(pdfH * pxPerPt);
+        const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+        // Slice canvas into exact per-page chunks — avoids float drift at boundaries
+        for (let i = 0; i < totalPages; i++) {
+          if (i > 0) pdf.addPage();
+          const srcY = i * pageHeightPx;
+          const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = pageHeightPx;
+          const ctx = pageCanvas.getContext('2d');
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+          pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
         }
 
         pdf.save(`hackerscup-2026-${day}-teesheet.pdf`);
@@ -2810,7 +2827,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       const holeInput = e.target.closest('.ts-group-hole');
       if (holeInput) {
         const gi = Number(holeInput.dataset.gi);
-        if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].hole = Number(holeInput.value) || 1;
+        if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].hole = holeInput.value.trim() || '1';
         renderTsDayStats();
         return;
       }
