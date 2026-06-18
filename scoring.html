@@ -29,8 +29,9 @@
     appId: '1:765736070872:web:86a51c41916e7af75631ad',
     measurementId: 'G-6E1M14F510'
   };
-  const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v2';
-  const SESSION_QUEUE_KEY = 'hackerscup.scoring.queue.v2';
+  const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v3';
+  const SESSION_QUEUE_KEY   = 'hackerscup.scoring.queue.v2';
+  const SHEET_NAMES_CACHE_KEY = 'hackerscup.scoring.sheetnames.v1';
 
   // ── COURSE DATA ─────────────────────────────────────────────
   const COURSE_BASE_URL = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
@@ -65,7 +66,7 @@
   const firebaseDb = getDatabase(firebaseApp);
 
   function proxiedAppScriptUrl(url) {
-    return `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+    return `https://corsproxy.io/?${url}`;
   }
 
   async function fetchJsonViaProxy(url, options) {
@@ -159,9 +160,10 @@
   // ── SESSION PERSISTENCE ──────────────────────────────────────
   function getSessionSnapshot() {
     return {
-      version: 1, stage: sessionStage,
+      version: 3, stage: sessionStage,
       selectedSheetNames: [...selectedSheetNames],
-      players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) } })),
+      players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) }, holes: p.holes ? [...p.holes] : [] })),
+      holeData: holeData ? [...holeData] : [],
       scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now()
     };
   }
@@ -183,11 +185,15 @@
   }
 
   function isResumeEligibleSession(session) {
-    if (!firebaseUid || !session) return false;
+    if (!session) return false;
     if (session.stage !== 'active') return false;
     if (!Array.isArray(session.selectedSheetNames) || !session.selectedSheetNames.length) return false;
     const playersWithScores = Array.isArray(session.players) ? session.players : [];
     return playersWithScores.some(p => Object.values(p?.scores || {}).some(s => s !== null && s !== undefined && s !== ''));
+  }
+
+  function sessionHasCachedHoles(snapshot) {
+    return snapshot && Array.isArray(snapshot.holeData) && snapshot.holeData.length > 0;
   }
 
   function setResumeSessionCandidate(session) {
@@ -235,11 +241,15 @@
     sessionStage = snapshot.stage || 'draft';
     selectedSheetNames = Array.isArray(snapshot.selectedSheetNames) ? [...snapshot.selectedSheetNames] : [];
     players = Array.isArray(snapshot.players) && snapshot.players.length
-      ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: [], scores: { ...(p.scores || {}) } }))
+      ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: p.holes ? [...p.holes] : [], scores: { ...(p.scores || {}) } }))
       : selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
     scores = snapshot.scores || {};
     currentHoleIndex = Number(snapshot.currentHoleIndex || 0);
     startHoleNumber = snapshot.startHoleNumber ?? null;
+    if (Array.isArray(snapshot.holeData) && snapshot.holeData.length) {
+      holeData = [...snapshot.holeData];
+      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+    }
     $('input-sheet-search').value = '';
     $('login-error').textContent = '';
     renderSelectedList();
@@ -250,8 +260,44 @@
     if (!snapshot) return;
     restoreSessionSnapshot(snapshot);
     hide('screen-login');
-    show('screen-loading');
-    await loadHoles();
+
+    if (sessionHasCachedHoles(snapshot)) {
+      // Instant resume — render immediately from cache, sync in background
+      show('screen-scoring');
+      hide('scorecard-loading');
+      const rn = $('round-nav');
+      if (rn) { rn.classList.remove('hidden'); rn.style.display = 'flex'; }
+      if (startHoleNumber !== null) startRoundAtHole(startHoleNumber);
+      else renderStartHolePicker();
+      updateTotals();
+      updateConnectionStatus();
+      startContinuousVerification();
+      flushPendingScoreUpdates().catch(() => {});
+      // Quietly refresh holes in background so points stay accurate
+      refreshHolesInBackground();
+    } else {
+      show('screen-loading');
+      await loadHoles();
+    }
+  }
+
+  async function refreshHolesInBackground() {
+    if (!players.length || !navigator.onLine) return;
+    try {
+      const results = await Promise.all(players.map(async (p) => {
+        const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
+        if (!resp.success) return null;
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord) };
+      }));
+      results.forEach(r => { if (r) r.player.holes = r.holes; });
+      if (results[0]) {
+        holeData = results[0].holes;
+        roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+        renderCurrentHole();
+        persistScoringSession();
+      }
+    } catch (_) {}
+    fetchAndMergeGvizPoints(); // pick up sheet points in background
   }
 
   window.continueSavedScoringSession = async function() {
@@ -283,9 +329,10 @@
       pendingScoreUpdates.push({ sheetName: player.sheetName, rowIndex: Number(rowIndex), score, savedAt: Date.now() });
     }
     savePendingQueue();
+    updateConnectionStatus();
     if (!navigator.onLine) return;
     if (!pendingFlushPromise) {
-      pendingFlushPromise = flushPendingScoreUpdates().finally(() => { pendingFlushPromise = null; });
+      pendingFlushPromise = flushPendingScoreUpdates().finally(() => { pendingFlushPromise = null; updateConnectionStatus(); });
     }
     await pendingFlushPromise;
   }
@@ -331,7 +378,7 @@
   async function startContinuousVerification() {
     if (verifyTimer) clearInterval(verifyTimer);
     // Verify sheet scores every 5 seconds
-    verifyTimer = setInterval(async () => {
+    verifyTimer = setInterval(async () => { // 30s — gentle on spotty coverage
       if (!players.length || !navigator.onLine) return;
       try {
         for (const player of players) {
@@ -358,7 +405,7 @@
       } catch (err) {
         console.warn('Verification check failed:', err);
       }
-    }, 5000);
+    }, 30000);
   }
 
   function stopContinuousVerification() {
@@ -368,10 +415,18 @@
 
   // ── SHEET LOADING ─────────────────────────────────────────────
   async function loadSheetNames() {
+    // Serve from cache immediately so search works without waiting for network
+    try {
+      const cached = localStorage.getItem(SHEET_NAMES_CACHE_KEY);
+      if (cached) { allSheetNames = JSON.parse(cached) || []; renderSheetSearch($('input-sheet-search').value.trim()); }
+    } catch (_) {}
+
+    if (!navigator.onLine) return;
     try {
       const data = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getSheetNames`);
       if (!data.success) throw new Error(data.error || 'Unable to load sheet names');
       allSheetNames = data.sheets || [];
+      try { localStorage.setItem(SHEET_NAMES_CACHE_KEY, JSON.stringify(allSheetNames)); } catch (_) {}
       renderSheetSearch($('input-sheet-search').value.trim());
       const urlSheet = new URLSearchParams(window.location.search).get('sheet');
       if (urlSheet) {
@@ -379,7 +434,7 @@
         if (exact) selectSheet(exact);
       }
     } catch (err) {
-      $('login-error').textContent = err.message;
+      if ($('login-error')) $('login-error').textContent = err.message;
     }
   }
 
@@ -489,40 +544,75 @@
   };
 
   // ── SCORING SCREEN ────────────────────────────────────────────
+
+  // Retry wrapper: one auto-retry after 1s — handles transient proxy blips
+  async function fetchJsonWithRetry(url) {
+    try { return await fetchJsonViaProxy(url); }
+    catch (_) {
+      await new Promise(r => setTimeout(r, 1000));
+      return fetchJsonViaProxy(url);
+    }
+  }
+
+  // Runs after loadHoles shows the UI — merges gviz sheet points in background
+  async function fetchAndMergeGvizPoints() {
+    if (!navigator.onLine || !players.length) return;
+    try {
+      await Promise.all(players.map(async (p, idx) => {
+        try {
+          const rawRows = await fetchSheetRowsViaProxy(p.sheetName);
+          p.holes = mergeSheetPointsIntoHoles(p.holes, rawRows);
+          if (idx === 0) holeData = mergeSheetPointsIntoHoles(holeData, rawRows);
+          // Pre-fill scores from sheet only for holes not yet scored locally
+          rawRows.forEach(row => {
+            const cells = row?.c || [];
+            const ri = cells[0]?.v ?? null;
+            const sheetScore = cells[8]?.v ?? null;
+            if (ri !== null && sheetScore !== null && p.scores[ri] == null) p.scores[ri] = sheetScore;
+          });
+        } catch (_) {}
+      }));
+      renderCurrentHole();
+      persistScoringSession();
+    } catch (_) {}
+  }
+
   async function loadHoles() {
     if (!players || !players.length) { hide('screen-loading'); show('screen-login'); return; }
     $('sheet-label').textContent = players.map(p => p.name).join(' · ');
     show('scorecard-loading'); hide('hole-view'); hide('round-nav');
     try {
-      const templateResp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(players[0].sheetName)}`);
-      if (!templateResp.success) throw new Error(templateResp.error);
-      let templateRows = [];
-      try { templateRows = await fetchSheetRowsViaProxy(players[0].sheetName); } catch (err) {}
-      holeData = mergeSheetPointsIntoHoles((templateResp.holes || []).map(normalizeHoleRecord), templateRows);
-
-      await Promise.all(players.map(async (p) => {
-        const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
-        if (!resp.success) throw new Error(resp.error || `Failed to load ${p.sheetName}`);
-        let rawRows = [];
-        try { rawRows = await fetchSheetRowsViaProxy(p.sheetName); } catch (err) {}
-        p.holes = mergeSheetPointsIntoHoles((resp.holes || []).map(normalizeHoleRecord), rawRows);
-        p.scores = {};
-        p.holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) p.scores[h.rowIndex] = h.currentScore; });
+      // One parallel pass for all players — no separate template fetch for player[0]
+      const results = await Promise.all(players.map(async (p) => {
+        const resp = await fetchJsonWithRetry(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
+        if (!resp.success) throw new Error(resp.error || `Failed to load holes for ${p.sheetName}`);
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord) };
       }));
 
+      results.forEach(({ player, holes }) => {
+        player.holes = holes;
+        player.scores = {};
+        holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) player.scores[h.rowIndex] = h.currentScore; });
+      });
+      holeData = results[0].holes;
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+
       hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
       startContinuousVerification();
 
       if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
       else renderStartHolePicker();
 
-      persistScoringSession(); await flushPendingScoreUpdates();
+      persistScoringSession();
+      flushPendingScoreUpdates().catch(() => {});
+      fetchAndMergeGvizPoints(); // background — doesn't block scoring
     } catch (err) {
-      $('scorecard-loading').textContent = '⚠ ' + err.message;
+      const el = $('scorecard-loading');
+      if (el) el.innerHTML = `<div style="color:var(--gold);margin-bottom:14px">⚠ ${err.message}</div><button onclick="window._retryLoadHoles()" style="background:var(--sky);border:none;border-radius:12px;color:#fff;padding:11px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px">Retry</button><button onclick="handleSignOut()" style="background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);padding:11px 18px;font-size:13px;cursor:pointer">← Back</button>`;
       hide('screen-loading'); show('screen-scoring');
     }
   }
+  window._retryLoadHoles = () => loadHoles();
 
   function renderStartHolePicker() {
     const overlay = $('start-hole-overlay');
@@ -734,6 +824,22 @@
     renderCurrentHole(); persistScoringSession();
   };
 
+  function updateConnectionStatus() {
+    const el = $('connection-status');
+    if (!el) return;
+    if (!navigator.onLine) {
+      const n = pendingScoreUpdates.length;
+      el.textContent = n ? `Offline · ${n} queued` : 'Offline';
+      el.className = 'conn-status conn-offline';
+    } else if (pendingScoreUpdates.length) {
+      el.textContent = `Syncing ${pendingScoreUpdates.length}…`;
+      el.className = 'conn-status conn-syncing';
+    } else {
+      el.textContent = '';
+      el.className = 'conn-status';
+    }
+  }
+
   function setSaveStatus(message, kind) {
     const status = $('save-status');
     if (!status) return;
@@ -832,25 +938,53 @@
   // ── INIT ─────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
-    renderSheetSearch('');
+    updateConnectionStatus();
 
+    // ── Instant resume: if we have a cached active session with hole data,
+    //    go straight to scoring without any network calls. ──────────────────
+    const localSession = loadLocalSession();
+    if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
+      continueSavedSession(localSession);
+    } else {
+      renderSheetSearch('');
+      loadSheetNames();
+    }
+
+    // Auth runs in parallel — only needed for Firebase sync, not for scoring
     onAuthStateChanged(firebaseAuth, async (user) => {
       firebaseUid = user ? user.uid : null;
       if (firebaseUid) {
         pendingRemoteSession = loadLocalSession();
-        const bestSession = await refreshResumeCandidate();
-        if (bestSession && bestSession.stage === 'active' && !players.length) {
-          $('login-helper').textContent = 'Resume your saved session or start a new one.';
+        // Only show the resume card if we didn't already auto-resume
+        if (sessionStage !== 'active') {
+          const bestSession = await refreshResumeCandidate();
+          if (bestSession && bestSession.stage === 'active' && !players.length) {
+            if ($('login-helper')) $('login-helper').textContent = 'Resume your saved session or start a new one.';
+          }
+          await loadSheetNames();
         }
         await flushRemoteSession(pendingRemoteSession);
         await flushPendingScoreUpdates();
-      } else { setResumeSessionCandidate(null); }
+      } else {
+        setResumeSessionCandidate(null);
+      }
     });
 
-    window.addEventListener('online', () => { flushRemoteSession(); flushPendingScoreUpdates(); });
+    window.addEventListener('online', () => {
+      updateConnectionStatus();
+      flushRemoteSession();
+      flushPendingScoreUpdates();
+    });
+    window.addEventListener('offline', () => { updateConnectionStatus(); });
     window.addEventListener('beforeunload', () => { persistScoringSession(); savePendingQueue(); });
 
-    loadSheetNames().then(() => refreshResumeCandidate());
+    // Flush pending scores whenever the player returns to the tab/app
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        updateConnectionStatus();
+        if (navigator.onLine && pendingScoreUpdates.length) flushPendingScoreUpdates().catch(() => {});
+      }
+    });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/scoring-sw.js').catch(() => {});
@@ -1046,6 +1180,9 @@ body{
 .save-status-saving{color:var(--gold)}
 .save-status-saved{color:var(--green)}
 .save-status-error{color:var(--red)}
+.conn-status{font-size:10px;letter-spacing:.5px;font-weight:600;padding:2px 8px;border-radius:99px;transition:all .3s}
+.conn-offline{background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3)}
+.conn-syncing{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
 .signout-btn{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:.5px;cursor:pointer;text-transform:uppercase;padding:4px 8px;border-radius:6px}
 .signout-btn:hover{color:var(--light)}
 
@@ -1381,6 +1518,7 @@ body{
       </div>
       <div class="header-right">
         <div id="save-status" class="save-status"></div>
+        <div id="connection-status" class="conn-status"></div>
         <button class="signout-btn" onclick="handleSignOut()">Change</button>
       </div>
     </div>
