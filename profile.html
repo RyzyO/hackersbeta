@@ -357,6 +357,38 @@
       .honour-card .title { font-weight: 700; margin-top: .3rem; font-size: .95rem; line-height: 1.35; }
       .honour-card .loc-row { display: flex; align-items: center; gap: .3rem; margin-top: .45rem; color: #94a3b8; font-size: .82rem; }
 
+      /* Personal details grid */
+      .personal-detail-cell {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: .9rem;
+        padding: .85rem 1rem;
+      }
+      .personal-detail-cell .pd-label {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        font-weight: 600;
+        color: #94a3b8;
+        margin-bottom: .4rem;
+      }
+      .personal-detail-cell .pd-value {
+        font-size: .95rem;
+        font-weight: 700;
+        color: #f1f5f9;
+      }
+      .pd-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: .2rem .7rem;
+        border-radius: 9999px;
+        font-size: .78rem;
+        font-weight: 700;
+        border: 1px solid;
+      }
+      .pd-badge.yes { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.25); }
+      .pd-badge.no  { background: rgba(148,163,184,0.08); color: #94a3b8; border-color: rgba(148,163,184,0.15); }
+
       .no-data {
         color: #94a3b8;
         font-size: .9rem;
@@ -498,6 +530,19 @@
         <div class="anniv-track" id="anniversaryBadges"></div>
       </div>
 
+      <!-- Personal Details -->
+      <div class="section-shell animate-slide-up">
+        <div class="section-heading">
+          <h4><span class="icon-chip"><i data-lucide="id-card" class="w-4 h-4 text-hackers-sky"></i></span>Personal Details</h4>
+        </div>
+        <div class="grid grid-cols-2 gap-3" id="personalDetailsGrid">
+          <div class="personal-detail-cell skel" style="height:62px;"></div>
+          <div class="personal-detail-cell skel" style="height:62px;"></div>
+          <div class="personal-detail-cell skel" style="height:62px;"></div>
+          <div class="personal-detail-cell skel" style="height:62px;"></div>
+        </div>
+      </div>
+
       <!-- Attendance Badges -->
       <div class="section-shell animate-slide-up">
         <div class="section-heading">
@@ -611,7 +656,7 @@
       }
 
       const hackerNumEl = document.getElementById('hackerNumber');
-      hackerNumEl.innerHTML = hackerNumber ? `<i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;Hacker No. ${hackerNumber}` : `<i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;Unranked`;
+      hackerNumEl.innerHTML = hackerNumber ? `<i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;${hackerNumber}` : `<i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;Unranked`;
 
       const eventsEl = document.getElementById('eventsAttended');
       eventsEl.textContent = profile.eventsAttended || '0';
@@ -833,6 +878,26 @@
       lucide.createIcons();
     }
 
+    function renderPersonalDetails(gaNumber, shirtSize, coming, skins) {
+      const grid = document.getElementById('personalDetailsGrid');
+      function detailItem(label, value, badge) {
+        let valHtml;
+        if (badge) {
+          const yes = !!value;
+          valHtml = `<span class="pd-badge ${yes ? 'yes' : 'no'}">${yes ? 'Yes' : 'No'}</span>`;
+        } else {
+          valHtml = `<span class="pd-value">${value || '&mdash;'}</span>`;
+        }
+        return `<div class="personal-detail-cell"><div class="pd-label">${label}</div>${valHtml}</div>`;
+      }
+      grid.innerHTML = [
+        detailItem('Golf Australia No.', gaNumber, false),
+        detailItem('Shirt Size', shirtSize, false),
+        detailItem('Attending HC26', coming, true),
+        detailItem('Skins', skins, true),
+      ].join('');
+    }
+
     firebase.auth().onAuthStateChanged(async function(user) {
       if (!user) {
         window.location.href = 'login.html';
@@ -846,6 +911,16 @@
       await hackerRef.once('value').then(snap => { if (snap.exists()) hackerNumber = snap.val(); });
       const profileRef = db.collection('attendeeProfiles').doc(displayName);
       window.currentProfileRef = profileRef; // used by avatar upload to persist avatarUrl
+
+      // Fetch personal details from users doc and HC26 event record
+      db.collection('users').doc(user.uid).get().then(userDoc => {
+        const gaNumber = userDoc.exists ? (userDoc.data().golfAustraliaNumber || '') : '';
+        db.collection('eventYears').doc('HC26').collection('players').doc(user.uid).get().then(eventDoc => {
+          const ep = eventDoc.exists ? eventDoc.data() : {};
+          renderPersonalDetails(gaNumber, ep.shirtSize || '', !!ep.coming, !!ep.skins);
+        });
+      });
+
       profileRef.onSnapshot(doc => {
         if (doc.exists) {
           renderProfile(doc.data(), displayName, hackerNumber);
