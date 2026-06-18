@@ -36,6 +36,10 @@ function doGet(e) {
         throw new Error('Could not find header row containing HOLE');
       }
 
+      // Q2 = row 2 (data index 1), column Q (index 16) — the player's total points formula
+      const q2Raw = data.length > 1 ? data[1][16] : null;
+      const q2Total = (q2Raw === '' || q2Raw === null || q2Raw === undefined) ? null : Number(q2Raw);
+
       const holes = [];
       let frontPoints = 0;
       let backPoints = 0;
@@ -62,16 +66,38 @@ function doGet(e) {
           front: String(row[3]).toUpperCase() === 'FRONT', // Column D
           currentScore: row[8], // Column I
           points: pointsValue, // Column M
-          sheetPoints: pointsValue, // alias for the frontend
-          currentPoints: pointsValue, // alias for the frontend
-          pointsFromSheet: pointsValue, // alias for the frontend
+          sheetPoints: pointsValue,
+          currentPoints: pointsValue,
+          pointsFromSheet: pointsValue,
           frontPoints,
           backPoints,
           totalPoints: frontPoints + backPoints
         });
       }
 
-      output.setContent(JSON.stringify({ success: true, holes }));
+      output.setContent(JSON.stringify({ success: true, holes, q2Total }));
+      return output;
+    }
+
+    if (action === 'saveScore') {
+      const sheetName = e.parameter.sheet;
+      const rowIndex = parseInt(e.parameter.rowIndex, 10);
+      const score = e.parameter.score;
+
+      if (!sheetName) throw new Error('Missing sheet param');
+      if (isNaN(rowIndex)) throw new Error('Invalid rowIndex');
+
+      const sheet = ss.getSheetByName(sheetName);
+      if (!sheet) throw new Error('Sheet not found: ' + sheetName);
+
+      const cellRow = rowIndex + 1; // convert 0-based data index to 1-based sheet row
+      if (score === '' || score === null || score === undefined) {
+        sheet.getRange(cellRow, SCORE_COLUMN).clearContent();
+      } else {
+        sheet.getRange(cellRow, SCORE_COLUMN).setValue(Number(score));
+      }
+
+      output.setContent(JSON.stringify({ success: true }));
       return output;
     }
 

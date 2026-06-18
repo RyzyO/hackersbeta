@@ -4,20 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hackers Cup Live Scoring</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Kanit:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 <link rel="manifest" href="site.webmanifest">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-
+<!--
+  TAILWIND: this is a static, pre-built stylesheet generated via the Tailwind CLI
+  (`npx tailwindcss -i input.css -o tailwind-built.css --minify`) scanning only the
+  classes actually used in this file. It is NOT the runtime CDN script — no compiler
+  ships to the browser, no recompilation happens on load. To regenerate after changing
+  classes in the markup below, re-run the CLI build against this file.
+-->
+<link rel="stylesheet" href="tailwind-built.css">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw73W4rDPFKEWFl5bkRypsURI-29-fJWBvaqulcfGDMVXeLofai1OPd__a_Y-DXZy4w/exec';
+  import { getDatabase, ref, get, set, remove, onValue, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKRUXu15WVYV6w7RrunYYf-w5bDeUorJN_cEPxUwfmsIJ6xlWfa3DgHGrajZ8hGqE/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
@@ -32,7 +35,6 @@
   const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v3';
   const SESSION_QUEUE_KEY   = 'hackerscup.scoring.queue.v2';
   const SHEET_NAMES_CACHE_KEY = 'hackerscup.scoring.sheetnames.v1';
-
   // ── COURSE DATA ─────────────────────────────────────────────
   const COURSE_BASE_URL = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
   const COURSE_HOLES = [
@@ -55,27 +57,19 @@
     { num: 17, par: 3, dist: 132, yards: 132, index1: 13, index2: 35, video: 'hole_17-1080p.mp4', note: 'Short par 3 with a palm tree left and bunkers surrounding the green. OB right. Wind can affect club selection. Miss just short for an easy chip to the sloping green.' },
     { num: 18, par: 5, dist: 445, yards: 445, index1: 14, index2: 28, video: 'hole_18-1080p.mp4', note: 'A good finishing par 5. A few fairway bunkers left but otherwise fine. Avoid the grassy mound short left and bunkers either side. Land just short for an easy chip — finish well.' },
   ];
-
   function getCourseHole(holeNumber) {
     return COURSE_HOLES.find(h => h.num === Number(holeNumber)) || null;
   }
-
   // ── FIREBASE ─────────────────────────────────────────────────
   const firebaseApp = initializeApp(FIREBASE_CONFIG);
   const firebaseAuth = getAuth(firebaseApp);
   const firebaseDb = getDatabase(firebaseApp);
-
-  function proxiedAppScriptUrl(url) {
-    return `https://corsproxy.io/?${url}`;
-  }
-
   async function fetchJsonViaProxy(url, options) {
-    const response = await fetch(proxiedAppScriptUrl(url), options);
+    const response = await fetch(url, options);
     const text = await response.text();
     if (!response.ok) throw new Error(text || `Request failed with status ${response.status}`);
     try { return JSON.parse(text); } catch (err) { throw new Error(`Expected JSON but received: ${text.slice(0, 120)}`); }
   }
-
   // ── STATE ────────────────────────────────────────────────────
   let selectedSheetNames = [];
   let allSheetNames = [];
@@ -91,99 +85,75 @@
   let firebaseUid = null;
   let pendingRemoteSession = null;
   let pendingScoreUpdates = [];
-  let pendingFlushPromise = null;
   let resumeSessionCandidate = null;
   let courseGuideOpen = false;
   let scoreUpdateTimers = new Map(); // Debounce timers for score updates
-  let lastSavedScores = new Map(); // Track last saved values to verify against sheet
+  let liveListenerUnsubs = []; // Firebase onValue unsubscribe fns, one per player sheet
+
+  // ── REQUEST QUEUE ────────────────────────────────────────────
+  // Single-flight, ordered queue for every Apps Script call. Previously, online events,
+  // visibilitychange, and post-save refreshes could each independently kick off overlapping
+  // requests against Apps Script. This collapses everything into one in-flight call at a time,
+  // so a flaky course wifi connection can't pile up redundant requests against the same backend.
+  const requestQueue = [];
+  let requestQueueRunning = false;
+  function enqueueRequest(fn) {
+    return new Promise((resolve, reject) => {
+      requestQueue.push({ fn, resolve, reject });
+      runRequestQueue();
+    });
+  }
+  async function runRequestQueue() {
+    if (requestQueueRunning) return;
+    requestQueueRunning = true;
+    while (requestQueue.length) {
+      const { fn, resolve, reject } = requestQueue.shift();
+      try { resolve(await fn()); } catch (err) { reject(err); }
+    }
+    requestQueueRunning = false;
+  }
 
   try {
     const storedQueue = localStorage.getItem(SESSION_QUEUE_KEY);
     if (storedQueue) pendingScoreUpdates = JSON.parse(storedQueue) || [];
   } catch (err) { pendingScoreUpdates = []; }
-
   // ── DOM HELPERS ──────────────────────────────────────────────
   const $ = id => document.getElementById(id);
   const show = id => $(id) && $(id).classList.remove('hidden');
   const hide = id => $(id) && $(id).classList.add('hidden');
-
   function safeParseJson(value) {
     try { return JSON.parse(value); } catch (err) { return null; }
   }
-
   window.toggleMobileMenu = function() {
     const menu = $('mobile-menu');
     if (menu) menu.classList.toggle('hidden');
   };
-
-  async function fetchSheetRowsViaProxy(sheetName) {
-    const gvizUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-    const response = await fetch(proxiedAppScriptUrl(gvizUrl));
-    const text = await response.text();
-    if (!response.ok) throw new Error(text || `Request failed with status ${response.status}`);
-    const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
-    if (!match) throw new Error(`Unexpected sheet response: ${text.slice(0, 120)}`);
-    const json = safeParseJson(match[1]);
-    if (!json || !json.table) throw new Error('Unable to parse Google Sheet rows');
-    return json.table.rows || [];
-  }
-
-  function buildSheetPointLookup(rawRows) {
-    const lookup = new Map();
-    rawRows.forEach(row => {
-      const cells = row?.c || [];
-      const holeNumber = Number(cells[4]?.v ?? cells[4]?.value ?? 0);
-      if (!holeNumber) return;
-      const section = String(cells[3]?.v ?? cells[3]?.value ?? '').trim().toUpperCase();
-      const rawPoints = cells[12]?.v ?? cells[12]?.value ?? cells[12]?.f ?? '';
-      const parsedPoints = rawPoints === '' || rawPoints === null || rawPoints === undefined ? null : Number(rawPoints);
-      lookup.set(`${holeNumber}|${section}`, Number.isNaN(parsedPoints) ? null : parsedPoints);
-    });
-    return lookup;
-  }
-
-  function mergeSheetPointsIntoHoles(holes, rawRows) {
-    const lookup = buildSheetPointLookup(rawRows);
-    return (holes || []).map(hole => {
-      const section = hole.front ? 'FRONT' : 'BACK';
-      const sheetPoints = lookup.get(`${Number(hole.hole)}|${section}`);
-      if (sheetPoints !== null && sheetPoints !== undefined) { hole.points = sheetPoints; hole.sheetPoints = sheetPoints; }
-      return hole;
-    });
-  }
-
   function normalizeHoleRecord(hole) {
     if (!hole || typeof hole !== 'object') return hole;
     return hole;
   }
-
   // ── SESSION PERSISTENCE ──────────────────────────────────────
   function getSessionSnapshot() {
     return {
       version: 3, stage: sessionStage,
       selectedSheetNames: [...selectedSheetNames],
-      players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) }, holes: p.holes ? [...p.holes] : [] })),
+      players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) }, holes: p.holes ? [...p.holes] : [], sheetTotal: p.sheetTotal })),
       holeData: holeData ? [...holeData] : [],
       scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now()
     };
   }
-
   function saveLocalSession(snapshot) {
     try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot)); } catch (err) {}
   }
-
   function loadLocalSession() {
     try { const raw = localStorage.getItem(SESSION_STORAGE_KEY); return raw ? safeParseJson(raw) : null; } catch (err) { return null; }
   }
-
   function clearLocalSession() {
     try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (err) {}
   }
-
   function savePendingQueue() {
     try { localStorage.setItem(SESSION_QUEUE_KEY, JSON.stringify(pendingScoreUpdates)); } catch (err) {}
   }
-
   function isResumeEligibleSession(session) {
     if (!session) return false;
     if (session.stage !== 'active') return false;
@@ -191,11 +161,9 @@
     const playersWithScores = Array.isArray(session.players) ? session.players : [];
     return playersWithScores.some(p => Object.values(p?.scores || {}).some(s => s !== null && s !== undefined && s !== ''));
   }
-
   function sessionHasCachedHoles(snapshot) {
     return snapshot && Array.isArray(snapshot.holeData) && snapshot.holeData.length > 0;
   }
-
   function setResumeSessionCandidate(session) {
     resumeSessionCandidate = isResumeEligibleSession(session) ? session : null;
     const card = $('session-resume-card');
@@ -207,7 +175,6 @@
     meta.textContent = `${names}${names ? ' · ' : ''}In progress · Saved ${updated}`;
     card.classList.remove('hidden');
   }
-
   function persistScoringSession() {
     const snapshot = getSessionSnapshot();
     saveLocalSession(snapshot);
@@ -216,17 +183,14 @@
     clearTimeout(sessionSyncTimer);
     sessionSyncTimer = setTimeout(() => flushRemoteSession(snapshot), 300);
   }
-
   async function flushRemoteSession(snapshot = pendingRemoteSession) {
     if (!firebaseUid || !snapshot || !navigator.onLine) return;
     try { await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`), snapshot); pendingRemoteSession = null; } catch (err) {}
   }
-
   async function loadRemoteSession() {
     if (!firebaseUid) return null;
     try { const snap = await get(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); return snap.exists() ? snap.val() : null; } catch (err) { return null; }
   }
-
   async function refreshResumeCandidate() {
     if (!firebaseUid) { setResumeSessionCandidate(null); return null; }
     const localSession = loadLocalSession();
@@ -235,13 +199,76 @@
     setResumeSessionCandidate(chosen);
     return chosen;
   }
-
+  // ── LIVE SHEET LISTENERS (Firebase mirrors Sheets; Sheets stays source of truth) ──
+  // Architecture: Apps Script onEdit trigger writes the canonical edit to the Google Sheet,
+  // then mirrors that row into Firebase RTDB at liveSheets/{sheetName}/holes. This client
+  // NEVER treats Firebase as authoritative for writes — every score this client sends still
+  // goes through saveScore -> Apps Script -> the Sheet. Firebase is only a read-side push
+  // channel so we don't have to poll Apps Script every few seconds to notice changes made
+  // elsewhere (e.g. another scorer's device, or a manual edit in the Sheet itself).
+  function livePathForSheet(sheetName) {
+    return `liveSheets/${encodeFirebaseKey(sheetName)}`;
+  }
+  function encodeFirebaseKey(name) {
+    // Firebase keys can't contain . # $ [ ] /
+    return String(name).replace(/[.#$\[\]\/]/g, '_');
+  }
+  function attachLiveListenerForPlayer(player, pidx) {
+    const path = livePathForSheet(player.sheetName);
+    const handle = ref(firebaseDb, path);
+    const callback = (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.val();
+      applyLiveSheetUpdate(player, pidx, data);
+    };
+    onValue(handle, callback);
+    liveListenerUnsubs.push(() => off(handle, 'value', callback));
+  }
+  function detachAllLiveListeners() {
+    liveListenerUnsubs.forEach(fn => { try { fn(); } catch (_) {} });
+    liveListenerUnsubs = [];
+  }
+  function applyLiveSheetUpdate(player, pidx, data) {
+    let changed = false;
+    if (data.q2Total !== undefined && data.q2Total !== null && Number(data.q2Total) !== player.sheetTotal) {
+      player.sheetTotal = Number(data.q2Total);
+      changed = true;
+    }
+    if (Array.isArray(data.holes)) {
+      player.holes = data.holes.map(normalizeHoleRecord);
+      changed = true;
+      // Reconcile any score this client has queued/saved against what the Sheet now reports,
+      // so a manual edit in the Sheet or a save from another device updates this screen too.
+      player.holes.forEach(h => {
+        const rowIndex = h.rowIndex;
+        if (rowIndex === null || rowIndex === undefined) return;
+        const sheetScore = h.currentScore;
+        const isQueued = pendingScoreUpdates.some(u => u.sheetName === player.sheetName && u.rowIndex === rowIndex);
+        if (!isQueued && sheetScore !== null && sheetScore !== undefined && sheetScore !== '') {
+          player.scores[rowIndex] = sheetScore;
+        }
+      });
+      if (pidx === 0) {
+        holeData = player.holes;
+        roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+      }
+    }
+    if (changed) {
+      updatePlayerCardDom(pidx);
+      updateTotals();
+      persistScoringSession();
+    }
+  }
+  function attachLiveListenersForAllPlayers() {
+    detachAllLiveListeners();
+    players.forEach((p, idx) => attachLiveListenerForPlayer(p, idx));
+  }
   function restoreSessionSnapshot(snapshot) {
     if (!snapshot) return;
     sessionStage = snapshot.stage || 'draft';
     selectedSheetNames = Array.isArray(snapshot.selectedSheetNames) ? [...snapshot.selectedSheetNames] : [];
     players = Array.isArray(snapshot.players) && snapshot.players.length
-      ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: p.holes ? [...p.holes] : [], scores: { ...(p.scores || {}) } }))
+      ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: p.holes ? [...p.holes] : [], scores: { ...(p.scores || {}) }, sheetTotal: p.sheetTotal }))
       : selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
     scores = snapshot.scores || {};
     currentHoleIndex = Number(snapshot.currentHoleIndex || 0);
@@ -255,14 +282,12 @@
     renderSelectedList();
     renderSheetSearch('');
   }
-
   async function continueSavedSession(snapshot) {
     if (!snapshot) return;
     restoreSessionSnapshot(snapshot);
     hide('screen-login');
-
     if (sessionHasCachedHoles(snapshot)) {
-      // Instant resume — render immediately from cache, sync in background
+      // Instant resume — render immediately from cache, reconcile in background
       show('screen-scoring');
       hide('scorecard-loading');
       const rn = $('round-nav');
@@ -271,42 +296,44 @@
       else renderStartHolePicker();
       updateTotals();
       updateConnectionStatus();
-      startContinuousVerification();
+      attachLiveListenersForAllPlayers();
       flushPendingScoreUpdates().catch(() => {});
-      // Quietly refresh holes in background so points stay accurate
-      refreshHolesInBackground();
+      // One-shot reconciliation against Apps Script (covers staleness from time spent offline);
+      // ongoing updates after this come from the Firebase listeners above, not polling.
+      reconcileHolesOnceFromSheet();
     } else {
       show('screen-loading');
       await loadHoles();
     }
   }
-
-  async function refreshHolesInBackground() {
+  async function reconcileHolesOnceFromSheet() {
     if (!players.length || !navigator.onLine) return;
     try {
       const results = await Promise.all(players.map(async (p) => {
-        const resp = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
+        const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`));
         if (!resp.success) return null;
-        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord) };
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total };
       }));
-      results.forEach(r => { if (r) r.player.holes = r.holes; });
+      results.forEach((r, idx) => {
+        if (!r) return;
+        r.player.holes = r.holes;
+        if (r.q2Total !== undefined && r.q2Total !== null) r.player.sheetTotal = Number(r.q2Total);
+        updatePlayerCardDom(idx);
+      });
       if (results[0]) {
         holeData = results[0].holes;
         roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
-        renderCurrentHole();
+        updateTotals();
         persistScoringSession();
       }
     } catch (_) {}
-    fetchAndMergeGvizPoints(); // pick up sheet points in background
   }
-
   window.continueSavedScoringSession = async function() {
     if (!resumeSessionCandidate) return;
     await continueSavedSession(resumeSessionCandidate);
   };
-
   function resetCurrentSession(keepSavedSnapshot = false) {
-    stopContinuousVerification();
+    detachAllLiveListeners();
     selectedSheetNames = []; holeData = []; roundHoles = []; currentHoleIndex = 0;
     startHoleNumber = null; sessionStage = 'draft'; players = []; scores = {}; pendingRemoteSession = null;
     $('sheet-label').textContent = '';
@@ -319,7 +346,6 @@
     if (!keepSavedSnapshot) { clearLocalSession(); setResumeSessionCandidate(null); }
     else setResumeSessionCandidate(loadLocalSession());
   }
-
   async function queueScoreUpdate(player, rowIndex, score) {
     // Deduplicate: if same sheetName+rowIndex already queued, update it in place
     const existing = pendingScoreUpdates.findIndex(u => u.sheetName === player.sheetName && u.rowIndex === Number(rowIndex));
@@ -331,88 +357,54 @@
     savePendingQueue();
     updateConnectionStatus();
     if (!navigator.onLine) return;
-    if (!pendingFlushPromise) {
-      pendingFlushPromise = flushPendingScoreUpdates().finally(() => { pendingFlushPromise = null; updateConnectionStatus(); });
-    }
-    await pendingFlushPromise;
+    await flushPendingScoreUpdates();
   }
-
   async function postScoreViaProxy(sheetName, rowIndex, score) {
-    // The codetabs proxy is GET-only — POST bodies are stripped before reaching Apps Script.
-    // So we use the saveScore GET action instead, which Apps Script handles in doGet().
+    // saveScore is a GET action handled by Apps Script's doGet(). This call is the ONLY
+    // write path for scores — it writes directly to the Google Sheet, which remains the
+    // single source of truth. The onEdit trigger then mirrors the result into Firebase for
+    // other connected devices; this client never writes scores to Firebase directly.
     const url = `${APPS_SCRIPT_URL}?action=saveScore&sheet=${encodeURIComponent(sheetName)}&rowIndex=${encodeURIComponent(rowIndex)}&score=${encodeURIComponent(score)}`;
-    const resp = await fetchJsonViaProxy(url);
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(url));
     if (!resp || resp.success === false) {
       throw new Error((resp && resp.error) || 'saveScore returned failure');
     }
     return resp;
   }
-
+  let flushInFlight = false;
   async function flushPendingScoreUpdates() {
+    if (flushInFlight) return; // single-flight: a second caller just waits for the next tick
     if (!pendingScoreUpdates.length || !navigator.onLine) return;
+    flushInFlight = true;
+    updateConnectionStatus();
     const MAX_RETRIES = 3;
     const RETRY_DELAY_MS = 1200;
-    while (pendingScoreUpdates.length) {
-      const update = pendingScoreUpdates[0];
-      let lastErr = null;
-      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        try {
-          await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
-          lastErr = null;
-          break;
-        } catch (err) {
-          lastErr = err;
-          if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+    try {
+      while (pendingScoreUpdates.length) {
+        const update = pendingScoreUpdates[0];
+        let lastErr = null;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          try {
+            await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
+            lastErr = null;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          }
         }
+        if (lastErr) {
+          console.warn('Score save failed after retries, will retry when back online:', lastErr);
+          break;
+        }
+        pendingScoreUpdates.shift();
+        savePendingQueue();
       }
-      if (lastErr) {
-        console.warn('Score save failed after retries, will retry when back online:', lastErr);
-        break;
-      }
-      pendingScoreUpdates.shift();
-      savePendingQueue();
+    } finally {
+      flushInFlight = false;
+      updateConnectionStatus();
     }
   }
-
-  let verifyTimer = null;
-  async function startContinuousVerification() {
-    if (verifyTimer) clearInterval(verifyTimer);
-    // Verify sheet scores every 5 seconds
-    verifyTimer = setInterval(async () => { // 30s — gentle on spotty coverage
-      if (!players.length || !navigator.onLine) return;
-      try {
-        for (const player of players) {
-          const rawRows = await fetchSheetRowsViaProxy(player.sheetName);
-          rawRows.forEach(row => {
-            const cells = row?.c || [];
-            const rowIndex = cells[0]?.v ?? cells[0]?.value ?? null;
-            const sheetScore = cells[8]?.v ?? cells[8]?.value ?? null;
-            
-            if (rowIndex !== null) {
-              const localScore = player.scores[rowIndex];
-              if (localScore !== undefined && localScore !== null && sheetScore !== null) {
-                if (Number(localScore) !== Number(sheetScore)) {
-                  console.warn(`Score mismatch for ${player.name} row ${rowIndex}: local=${localScore}, sheet=${sheetScore}`);
-                  // If there's a mismatch, requeue the update
-                  if (!pendingScoreUpdates.some(u => u.sheetName === player.sheetName && u.rowIndex === rowIndex)) {
-                    queueScoreUpdate(player, rowIndex, localScore);
-                  }
-                }
-              }
-            }
-          });
-        }
-      } catch (err) {
-        console.warn('Verification check failed:', err);
-      }
-    }, 30000);
-  }
-
-  function stopContinuousVerification() {
-    if (verifyTimer) clearInterval(verifyTimer);
-    verifyTimer = null;
-  }
-
   // ── SHEET LOADING ─────────────────────────────────────────────
   async function loadSheetNames() {
     // Serve from cache immediately so search works without waiting for network
@@ -420,10 +412,9 @@
       const cached = localStorage.getItem(SHEET_NAMES_CACHE_KEY);
       if (cached) { allSheetNames = JSON.parse(cached) || []; renderSheetSearch($('input-sheet-search').value.trim()); }
     } catch (_) {}
-
     if (!navigator.onLine) return;
     try {
-      const data = await fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getSheetNames`);
+      const data = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getSheetNames`));
       if (!data.success) throw new Error(data.error || 'Unable to load sheet names');
       allSheetNames = data.sheets || [];
       try { localStorage.setItem(SHEET_NAMES_CACHE_KEY, JSON.stringify(allSheetNames)); } catch (_) {}
@@ -437,7 +428,6 @@
       if ($('login-error')) $('login-error').textContent = err.message;
     }
   }
-
   function isSelectableSheetName(name) {
     const lower = String(name || '').toLowerCase().trim();
     if (!lower) return false;
@@ -446,7 +436,6 @@
     if (/^sheet\s*\d+$/i.test(lower)) return false;
     return !lower.startsWith('_');
   }
-
   function getLastNameSortKey(name) {
     const value = String(name || '').trim();
     if (!value) return '';
@@ -454,12 +443,10 @@
     const parts = value.split(/\s+/).filter(Boolean);
     return (parts[parts.length - 1] || value).toLowerCase();
   }
-
   function compareByLastName(a, b) {
     const r = getLastNameSortKey(a).localeCompare(getLastNameSortKey(b), undefined, { sensitivity: 'base' });
     return r !== 0 ? r : String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
   }
-
   function renderSheetSearch(query) {
     const results = $('sheet-results');
     if (!results) return;
@@ -479,7 +466,6 @@
     });
     renderSelectedList();
   }
-
   function renderSelectedList() {
     const el = $('selected-list');
     if (!el) return;
@@ -487,11 +473,17 @@
     [...selectedSheetNames].sort(compareByLastName).forEach(name => {
       const chip = document.createElement('div');
       chip.className = 'player-chip';
-      chip.innerHTML = `<span>${name}</span><button onclick="toggleSelectSheet('${name}')" aria-label="Remove ${name}">×</button>`;
+      const span = document.createElement('span');
+      span.textContent = name;
+      const btn = document.createElement('button');
+      btn.setAttribute('aria-label', `Remove ${name}`);
+      btn.textContent = '×';
+      btn.onclick = () => toggleSelectSheet(name);
+      chip.appendChild(span);
+      chip.appendChild(btn);
       el.appendChild(chip);
     });
   }
-
   function toggleSelectSheet(name, btnEl) {
     const idx = selectedSheetNames.indexOf(name);
     if (idx >= 0) {
@@ -508,9 +500,7 @@
     renderSheetSearch($('input-sheet-search').value.trim());
     persistScoringSession();
   }
-
   function selectSheet(name) { toggleSelectSheet(name); }
-
   window.startScoring = function() {
     if (!selectedSheetNames.length) { $('login-error').textContent = 'Select at least one player to score.'; return; }
     players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
@@ -519,9 +509,7 @@
     hide('screen-login'); show('screen-loading');
     loadHoles();
   };
-
   window.searchSheets = function() { renderSheetSearch($('input-sheet-search').value.trim()); };
-
   window.openSelectedSheet = function() {
     const query = $('input-sheet-search').value.trim();
     if (!query) { $('login-error').textContent = 'Enter a sheet name'; return; }
@@ -531,89 +519,68 @@
     if (partial) { selectSheet(partial); return; }
     $('login-error').textContent = 'No sheet found with that name';
   };
-
   window.handleSignOut = async function() {
     persistScoringSession(); resetCurrentSession(true);
     await refreshResumeCandidate(); await loadSheetNames();
   };
-
   window.startNewScoringSession = async function() {
     clearLocalSession(); pendingScoreUpdates = []; savePendingQueue(); setResumeSessionCandidate(null);
     if (firebaseUid) { try { await remove(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); } catch (err) {} }
     resetCurrentSession(false); await loadSheetNames();
   };
-
   // ── SCORING SCREEN ────────────────────────────────────────────
-
   // Retry wrapper: one auto-retry after 1s — handles transient proxy blips
   async function fetchJsonWithRetry(url) {
-    try { return await fetchJsonViaProxy(url); }
+    try { return await enqueueRequest(() => fetchJsonViaProxy(url)); }
     catch (_) {
       await new Promise(r => setTimeout(r, 1000));
-      return fetchJsonViaProxy(url);
+      return enqueueRequest(() => fetchJsonViaProxy(url));
     }
   }
-
-  // Runs after loadHoles shows the UI — merges gviz sheet points in background
-  async function fetchAndMergeGvizPoints() {
-    if (!navigator.onLine || !players.length) return;
-    try {
-      await Promise.all(players.map(async (p, idx) => {
-        try {
-          const rawRows = await fetchSheetRowsViaProxy(p.sheetName);
-          p.holes = mergeSheetPointsIntoHoles(p.holes, rawRows);
-          if (idx === 0) holeData = mergeSheetPointsIntoHoles(holeData, rawRows);
-          // Pre-fill scores from sheet only for holes not yet scored locally
-          rawRows.forEach(row => {
-            const cells = row?.c || [];
-            const ri = cells[0]?.v ?? null;
-            const sheetScore = cells[8]?.v ?? null;
-            if (ri !== null && sheetScore !== null && p.scores[ri] == null) p.scores[ri] = sheetScore;
-          });
-        } catch (_) {}
-      }));
-      renderCurrentHole();
-      persistScoringSession();
-    } catch (_) {}
-  }
-
   async function loadHoles() {
     if (!players || !players.length) { hide('screen-loading'); show('screen-login'); return; }
     $('sheet-label').textContent = players.map(p => p.name).join(' · ');
     show('scorecard-loading'); hide('hole-view'); hide('round-nav');
     try {
-      // One parallel pass for all players — no separate template fetch for player[0]
       const results = await Promise.all(players.map(async (p) => {
         const resp = await fetchJsonWithRetry(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
         if (!resp.success) throw new Error(resp.error || `Failed to load holes for ${p.sheetName}`);
-        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord) };
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total };
       }));
-
-      results.forEach(({ player, holes }) => {
+      results.forEach(({ player, holes, q2Total }) => {
         player.holes = holes;
         player.scores = {};
+        if (q2Total !== undefined && q2Total !== null) player.sheetTotal = Number(q2Total);
         holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) player.scores[h.rowIndex] = h.currentScore; });
       });
       holeData = results[0].holes;
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
-
       hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
-      startContinuousVerification();
-
+      attachLiveListenersForAllPlayers();
       if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
       else renderStartHolePicker();
-
       persistScoringSession();
       flushPendingScoreUpdates().catch(() => {});
-      fetchAndMergeGvizPoints(); // background — doesn't block scoring
     } catch (err) {
       const el = $('scorecard-loading');
-      if (el) el.innerHTML = `<div style="color:var(--gold);margin-bottom:14px">⚠ ${err.message}</div><button onclick="window._retryLoadHoles()" style="background:var(--sky);border:none;border-radius:12px;color:#fff;padding:11px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px">Retry</button><button onclick="handleSignOut()" style="background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);padding:11px 18px;font-size:13px;cursor:pointer">← Back</button>`;
+      if (el) {
+        el.innerHTML = '';
+        const warn = document.createElement('div');
+        warn.style.color = 'var(--gold)'; warn.style.marginBottom = '14px';
+        warn.textContent = `⚠ ${err.message}`;
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = 'Retry';
+        retryBtn.style.cssText = 'background:var(--sky);border:none;border-radius:12px;color:#fff;padding:11px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px';
+        retryBtn.onclick = () => loadHoles();
+        const backBtn = document.createElement('button');
+        backBtn.textContent = '← Back';
+        backBtn.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);padding:11px 18px;font-size:13px;cursor:pointer';
+        backBtn.onclick = () => window.handleSignOut();
+        el.appendChild(warn); el.appendChild(retryBtn); el.appendChild(backBtn);
+      }
       hide('screen-loading'); show('screen-scoring');
     }
   }
-  window._retryLoadHoles = () => loadHoles();
-
   function renderStartHolePicker() {
     const overlay = $('start-hole-overlay');
     const grid = $('start-hole-grid');
@@ -631,7 +598,6 @@
     });
     overlay.classList.remove('hidden');
   }
-
   function startRoundAtHole(holeNumber) {
     startHoleNumber = Number(holeNumber);
     const startIndex = roundHoles.findIndex(h => Number(h.hole) === startHoleNumber);
@@ -642,25 +608,16 @@
     if (rn) { rn.classList.remove('hidden'); rn.style.display = 'flex'; }
     renderCurrentHole(); persistScoringSession();
   }
-
   function getCurrentHole() {
     if (!roundHoles.length) return null;
     return roundHoles[currentHoleIndex] || roundHoles[0];
   }
-
   function getPlayerScoreSummary(player) {
-    let frontPoints = 0, backPoints = 0;
-    holeData.forEach(h => {
-      const score = player.scores[h.rowIndex];
-      const pts = getStablefordPoints(h.par, score, h.points ?? h.sheetPoints);
-      if (score !== undefined && score !== null && score !== '') {
-        if (h.front) frontPoints += Number(pts ?? 0);
-        else backPoints += Number(pts ?? 0);
-      }
-    });
-    return { frontPoints, backPoints, totalPoints: frontPoints + backPoints };
+    const totalPoints = player.sheetTotal !== undefined && player.sheetTotal !== null
+      ? Number(player.sheetTotal)
+      : 0;
+    return { frontPoints: 0, backPoints: 0, totalPoints };
   }
-
   function getRelLabel(par, strokes) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
     const diff = Number(par) - Number(strokes);
@@ -671,40 +628,24 @@
     if (diff === -1) return { label: 'Bogey', cls: 'rel-bogey' };
     return { label: 'Double+', cls: 'rel-double' };
   }
-
-  function renderCurrentHole() {
-    const hole = getCurrentHole();
-    const view = $('hole-view');
-    if (!hole || !view) return;
-
-    const courseHole = getCourseHole(hole.hole);
-    const total = roundHoles.length;
-    const current = currentHoleIndex + 1;
-    const progressPct = Math.round((current / total) * 100);
-
-    // Prev/next hole numbers for nav labels
-    const prevHole = currentHoleIndex > 0 ? roundHoles[currentHoleIndex - 1] : null;
-    const nextHole = currentHoleIndex < roundHoles.length - 1 ? roundHoles[currentHoleIndex + 1] : null;
-
-    const playerCards = players.map((player, pidx) => {
-      const existing = player.scores[hole.rowIndex] ?? '';
-      const pts = getStablefordPoints(hole.par, existing, hole.points ?? hole.sheetPoints);
-      const summary = getPlayerScoreSummary(player);
-      const rel = getRelLabel(hole.par, existing);
-
-      const relHtml = rel
-        ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>`
-        : `<span class="rel-badge rel-empty">—</span>`;
-
-      return `
-        <div class="player-card" id="pcard-${pidx}">
+  function buildPlayerCardHtml(player, pidx, hole) {
+    const existing = player.scores[hole.rowIndex] ?? '';
+    const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null);
+    const summary = getPlayerScoreSummary(player);
+    const rel = getRelLabel(hole.par, existing);
+    const relHtml = rel
+      ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>`
+      : `<span class="rel-badge rel-empty">—</span>`;
+    return `
+        <div class="player-card" id="pcard-${pidx}" data-row="${hole.rowIndex}">
           <div class="player-card-top">
             <div class="player-info">
               <div class="player-name">${player.name}</div>
-              <div class="player-running">${summary.totalPoints} pts total</div>
+              <div class="player-running" id="prunning-${pidx}">${summary.totalPoints} pts total</div>
             </div>
             <div class="player-right">
-              ${relHtml}
+              <span id="prel-${pidx}">${relHtml}</span>
               <div class="player-pts" id="pts-${pidx}-${hole.rowIndex}">${pts !== null ? pts : '—'}</div>
             </div>
           </div>
@@ -716,14 +657,57 @@
             <button class="score-plus" onclick="adjustScoreForPlayer(${pidx}, ${hole.rowIndex}, 1)" aria-label="Increase">+</button>
           </div>
         </div>`;
-    }).join('');
-
-    // Course guide panel
+  }
+  // Surgical update for a single player's card — used on every score tap and every live
+  // Firebase update. Avoids re-stringifying/re-parsing the entire hole card (all player
+  // cards + guide panel + dots) just to change one number, which is what made every tap
+  // feel sluggish before. Falls back to a full renderCurrentHole() if the card for the
+  // current hole isn't in the DOM yet (e.g. right after a hole change).
+  function updatePlayerCardDom(pidx) {
+    const hole = getCurrentHole();
+    if (!hole) return;
+    const player = players[pidx];
+    if (!player) return;
+    const card = $(`pcard-${pidx}`);
+    if (!card || Number(card.dataset.row) !== Number(hole.rowIndex)) {
+      renderCurrentHole();
+      return;
+    }
+    const existing = player.scores[hole.rowIndex] ?? '';
+    const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null);
+    const summary = getPlayerScoreSummary(player);
+    const rel = getRelLabel(hole.par, existing);
+    const ptsEl = $(`pts-${pidx}-${hole.rowIndex}`);
+    if (ptsEl) ptsEl.textContent = pts !== null ? pts : '—';
+    const runningEl = $(`prunning-${pidx}`);
+    if (runningEl) runningEl.textContent = `${summary.totalPoints} pts total`;
+    const relEl = $(`prel-${pidx}`);
+    if (relEl) relEl.innerHTML = rel ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>` : `<span class="rel-badge rel-empty">—</span>`;
+    const scoreDisplay = $(`score-display-${pidx}-${hole.rowIndex}`);
+    if (scoreDisplay) {
+      const valEl = scoreDisplay.querySelector('.score-val');
+      if (valEl) valEl.textContent = existing !== '' ? existing : '—';
+    }
+  }
+  function renderCurrentHole() {
+    const hole = getCurrentHole();
+    const view = $('hole-view');
+    if (!hole || !view) return;
+    const courseHole = getCourseHole(hole.hole);
+    const total = roundHoles.length;
+    const current = currentHoleIndex + 1;
+    const progressPct = Math.round((current / total) * 100);
+    const prevHole = currentHoleIndex > 0 ? roundHoles[currentHoleIndex - 1] : null;
+    const nextHole = currentHoleIndex < roundHoles.length - 1 ? roundHoles[currentHoleIndex + 1] : null;
+    const playerCards = players.map((player, pidx) => buildPlayerCardHtml(player, pidx, hole)).join('');
+    // Course guide panel — video uses preload="none" and no src until expanded (see
+    // toggleCourseGuide), so switching holes never triggers 18 background video fetches.
     let courseGuideHtml = '';
     if (courseHole) {
       const videoUrl = COURSE_BASE_URL + courseHole.video;
       courseGuideHtml = `
-        <div class="course-guide-panel" id="course-guide-panel">
+        <div class="course-guide-panel" id="course-guide-panel" data-video-url="${videoUrl}">
           <button class="guide-toggle" id="guide-toggle-btn" onclick="toggleCourseGuide()" aria-expanded="${courseGuideOpen}">
             <span class="guide-toggle-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -734,8 +718,7 @@
           </button>
           <div class="guide-body ${courseGuideOpen ? 'open' : ''}" id="guide-body">
             <div class="guide-video-wrap">
-              <video class="guide-video" id="guide-video" preload="metadata" controls playsinline>
-                <source src="${videoUrl}#t=0.001" type="video/mp4">
+              <video class="guide-video" id="guide-video" preload="none" controls playsinline>
               </video>
               <div class="guide-video-label">Hole ${courseHole.num} Flyover</div>
             </div>
@@ -749,8 +732,6 @@
           </div>
         </div>`;
     }
-
-    // Dot progress
     const maxDots = Math.min(total, 18);
     const dotStart = Math.max(0, Math.min(currentHoleIndex - 4, total - maxDots));
     let dotsHtml = '';
@@ -759,7 +740,6 @@
       const isCurr = i === currentHoleIndex;
       dotsHtml += `<div class="progress-dot ${isDone ? 'done' : ''} ${isCurr ? 'curr' : ''}"></div>`;
     }
-
     view.innerHTML = `
       <div class="hole-card">
         <div class="hole-card-top">
@@ -775,55 +755,57 @@
             <div class="hole-progress-label">${current} / ${total}</div>
           </div>
         </div>
-
         <div class="hole-progress-track">
           <div class="hole-progress-fill" style="width:${progressPct}%"></div>
         </div>
         <div class="hole-dots">${dotsHtml}</div>
-
         <div class="hole-body">
           ${playerCards}
         </div>
-
         ${courseGuideHtml}
       </div>
     `;
-
-    // Nav labels
+    courseGuideOpen = false; // collapse on every hole change so the video never autoplays/loads
     const prevBtn = $('prev-hole-btn');
     const nextBtn = $('next-hole-btn');
     if (prevBtn) { prevBtn.disabled = currentHoleIndex === 0; prevBtn.textContent = prevHole ? `← Hole ${prevHole.hole}` : '← Prev'; }
     if (nextBtn) { nextBtn.disabled = currentHoleIndex === roundHoles.length - 1; nextBtn.textContent = nextHole ? `Hole ${nextHole.hole} →` : 'Next →'; }
-
     updateTotals();
   }
-
   window.toggleCourseGuide = function() {
     courseGuideOpen = !courseGuideOpen;
     const body = $('guide-body');
     const btn = $('guide-toggle-btn');
+    const panel = $('course-guide-panel');
     const chevron = btn?.querySelector('.guide-chevron');
     if (body) body.classList.toggle('open', courseGuideOpen);
     if (btn) btn.setAttribute('aria-expanded', courseGuideOpen);
     if (chevron) chevron.classList.toggle('open', courseGuideOpen);
+    // Lazy-load the video source only the first time the guide is actually opened.
+    if (courseGuideOpen && panel) {
+      const video = $('guide-video');
+      const videoUrl = panel.dataset.videoUrl;
+      if (video && videoUrl && !video.dataset.loaded) {
+        const source = document.createElement('source');
+        source.src = `${videoUrl}#t=0.001`;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        video.load();
+        video.dataset.loaded = '1';
+      }
+    }
   };
-
   window.focusScoreInput = function(playerIndex, rowIndex) {
     const val = prompt(`Score for ${players[playerIndex]?.name}:`, players[playerIndex]?.scores[rowIndex] ?? '');
     if (val !== null) setScoreForPlayer(playerIndex, rowIndex, val);
   };
-
   window.moveHole = function(delta) {
     if (!roundHoles.length) return;
     const next = currentHoleIndex + delta;
     if (next < 0 || next >= roundHoles.length) return;
     currentHoleIndex = next;
-    // Pause any guide video
-    const gv = $('guide-video');
-    if (gv) { gv.pause(); gv.currentTime = 0; }
     renderCurrentHole(); persistScoringSession();
   };
-
   function updateConnectionStatus() {
     const el = $('connection-status');
     if (!el) return;
@@ -839,24 +821,21 @@
       el.className = 'conn-status';
     }
   }
-
   function setSaveStatus(message, kind) {
     const status = $('save-status');
     if (!status) return;
     status.textContent = message || '';
     status.className = 'save-status' + (kind ? ` save-status-${kind}` : '');
   }
-
   window.setScoreForPlayer = async function(playerIndex, rowIndex, val) {
     const n = parseInt(val);
     const player = players[playerIndex];
     if (!player) return;
     if (!isNaN(n) && n >= 1 && n <= 9) player.scores[rowIndex] = n;
     else delete player.scores[rowIndex];
-    renderCurrentHole();
+    updatePlayerCardDom(playerIndex);
     debouncedAutosave(playerIndex, rowIndex);
   };
-
   window.adjustScoreForPlayer = async function(playerIndex, rowIndex, delta) {
     const player = players[playerIndex];
     if (!player) return;
@@ -864,17 +843,14 @@
     const current = player.scores[rowIndex] ?? hole?.par ?? 4;
     const next = Math.max(1, Math.min(9, current + delta));
     player.scores[rowIndex] = next;
-    renderCurrentHole();
+    updatePlayerCardDom(playerIndex);
     debouncedAutosave(playerIndex, rowIndex);
   };
-
   function debouncedAutosave(playerIndex, rowIndex) {
     const key = `${playerIndex}|${rowIndex}`;
-    // Cancel any pending save for this score
     if (scoreUpdateTimers.has(key)) {
       clearTimeout(scoreUpdateTimers.get(key));
     }
-    // Schedule a new save after 600ms of inactivity
     const timerId = setTimeout(() => {
       autosaveScoreForPlayer(playerIndex, rowIndex).then(() => {
         scoreUpdateTimers.delete(key);
@@ -882,45 +858,65 @@
     }, 600);
     scoreUpdateTimers.set(key, timerId);
   }
-
   async function autosaveScoreForPlayer(playerIndex, rowIndex) {
     const player = players[playerIndex];
     if (!player || !player.sheetName) return;
     const score = player.scores[rowIndex];
     setSaveStatus('Saving…', 'saving');
     try {
-      // queueScoreUpdate handles dedup, persistence, and flushing to Apps Script via proxy
+      // This is the canonical write: queueScoreUpdate -> Apps Script saveScore -> the Sheet.
+      // The Sheet is updated here, synchronously from this player's perspective. Other
+      // devices learn about it via the onEdit-trigger -> Firebase mirror, not from this call.
       await queueScoreUpdate(player, rowIndex, score);
-      // Store the saved value for verification
-      const key = `${playerIndex}|${rowIndex}`;
-      lastSavedScores.set(key, score);
       persistScoringSession();
-      renderCurrentHole();
+      updatePlayerCardDom(playerIndex);
       setSaveStatus('Saved ✓', 'saved');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => setSaveStatus(''), 2000);
+      // Pull this player's own recalculated points once, ~1s after the write, since the
+      // handicap-adjusted points formula in the Sheet needs a moment to recalculate and we
+      // want the saving player's own screen to reflect the real value quickly. Other
+      // players' screens get the same update via the Firebase listener once onEdit fires.
+      setTimeout(() => refreshOwnPointsAfterSave(playerIndex), 1000);
     } catch (err) {
       console.error('Autosave error:', err);
-      // Score is already in pendingScoreUpdates queue — it will retry when back online
       persistScoringSession();
       setSaveStatus('Queued — will retry', 'saving');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => setSaveStatus(''), 3000);
     }
   }
-
-  function getStablefordPoints(par, strokes, sheetPoints = null) {
-    if (strokes === '' || strokes === null || strokes === undefined) return null;
-    // If sheet points are provided (from column M), use them instead of calculating
-    if (sheetPoints !== null && sheetPoints !== undefined) {
-      const pointsValue = Number(sheetPoints);
-      if (!Number.isNaN(pointsValue)) return pointsValue;
-    }
-    // Fall back to scratch golfer stableford calculation
-    const diff = Number(par) - Number(strokes);
-    if (diff >= 2) return 4; if (diff === 1) return 3; if (diff === 0) return 2; if (diff === -1) return 1; return 0;
+  async function refreshOwnPointsAfterSave(playerIndex) {
+    const player = players[playerIndex];
+    if (!player || !navigator.onLine) return;
+    try {
+      const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`));
+      if (!resp || !resp.success) return;
+      if (resp.q2Total !== undefined && resp.q2Total !== null) player.sheetTotal = Number(resp.q2Total);
+      if (Array.isArray(resp.holes)) {
+        player.holes = resp.holes.map(normalizeHoleRecord);
+        if (playerIndex === 0) {
+          holeData = player.holes;
+          roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+        }
+      }
+      updatePlayerCardDom(playerIndex);
+      updateTotals();
+      persistScoringSession();
+    } catch (_) {}
   }
-
+  function getStablefordPoints(par, strokes, sheetPoints = null, sheetScore = null) {
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
+    const sheetIsUpToDate = sheetScore !== null && sheetScore !== undefined && sheetScore !== ''
+      && Number(sheetScore) === Number(strokes);
+    if (sheetIsUpToDate && sheetPoints !== null && sheetPoints !== undefined) {
+      return Number(sheetPoints);
+    }
+    if (sheetPoints !== null && sheetPoints !== undefined && Number(sheetPoints) !== 0) {
+      return Number(sheetPoints);
+    }
+    return null;
+  }
   function updateTotals() {
     const bar = $('player-summary-bar');
     if (!bar) return;
@@ -930,18 +926,31 @@
       const cell = document.createElement('div');
       cell.className = 'total-chip';
       const initials = player.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      cell.innerHTML = `<div class="chip-initials">${initials}</div><div class="chip-info"><div class="chip-name">${player.name}</div><div class="chip-pts">${totals.totalPoints} <span class="chip-pts-label">pts</span></div></div>`;
+      const initialsEl = document.createElement('div');
+      initialsEl.className = 'chip-initials';
+      initialsEl.textContent = initials;
+      const infoEl = document.createElement('div');
+      infoEl.className = 'chip-info';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'chip-name';
+      nameEl.textContent = player.name;
+      const ptsEl = document.createElement('div');
+      ptsEl.className = 'chip-pts';
+      ptsEl.textContent = `${totals.totalPoints} `;
+      const ptsLabel = document.createElement('span');
+      ptsLabel.className = 'chip-pts-label';
+      ptsLabel.textContent = 'pts';
+      ptsEl.appendChild(ptsLabel);
+      infoEl.appendChild(nameEl);
+      infoEl.appendChild(ptsEl);
+      cell.appendChild(initialsEl);
+      cell.appendChild(infoEl);
       bar.appendChild(cell);
     });
   }
-
   // ── INIT ─────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
-    if (window.lucide) window.lucide.createIcons();
     updateConnectionStatus();
-
-    // ── Instant resume: if we have a cached active session with hole data,
-    //    go straight to scoring without any network calls. ──────────────────
     const localSession = loadLocalSession();
     if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
       continueSavedSession(localSession);
@@ -949,13 +958,11 @@
       renderSheetSearch('');
       loadSheetNames();
     }
-
     // Auth runs in parallel — only needed for Firebase sync, not for scoring
     onAuthStateChanged(firebaseAuth, async (user) => {
       firebaseUid = user ? user.uid : null;
       if (firebaseUid) {
         pendingRemoteSession = loadLocalSession();
-        // Only show the resume card if we didn't already auto-resume
         if (sessionStage !== 'active') {
           const bestSession = await refreshResumeCandidate();
           if (bestSession && bestSession.stage === 'active' && !players.length) {
@@ -969,7 +976,6 @@
         setResumeSessionCandidate(null);
       }
     });
-
     window.addEventListener('online', () => {
       updateConnectionStatus();
       flushRemoteSession();
@@ -977,7 +983,6 @@
     });
     window.addEventListener('offline', () => { updateConnectionStatus(); });
     window.addEventListener('beforeunload', () => { persistScoringSession(); savePendingQueue(); });
-
     // Flush pending scores whenever the player returns to the tab/app
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
@@ -985,13 +990,11 @@
         if (navigator.onLine && pendingScoreUpdates.length) flushPendingScoreUpdates().catch(() => {});
       }
     });
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/scoring-sw.js').catch(() => {});
     }
   });
 </script>
-
 <style>
 /* ── TOKENS ─────────────────────────────────── */
 :root {
@@ -1012,9 +1015,7 @@
   --radius:    16px;
   --radius-lg: 22px;
 }
-
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-
 body{
   background:var(--bg);
   color:var(--text);
@@ -1025,9 +1026,7 @@ body{
   padding-top:64px;
   padding-bottom:80px;
 }
-
 .hidden{display:none!important}
-
 /* ── NAV ────────────────────────────────────── */
 .glass{
   background:rgba(11,17,32,0.85);
@@ -1035,7 +1034,6 @@ body{
   -webkit-backdrop-filter:blur(16px);
   border:1px solid var(--border);
 }
-
 /* ── SCREENS ────────────────────────────────── */
 .screen{
   min-height:calc(100dvh - 64px);
@@ -1045,7 +1043,6 @@ body{
   justify-content:center;
   padding:28px 20px;
 }
-
 /* ── LOGIN ──────────────────────────────────── */
 #screen-login{
   background:
@@ -1055,7 +1052,6 @@ body{
   justify-content:flex-start;
   padding-top:40px;
 }
-
 .login-logo{
   font-family:'Kanit',sans-serif;
   font-style:italic;
@@ -1065,7 +1061,6 @@ body{
   line-height:1;
   text-align:center;
 }
-
 .login-sub{
   font-size:10px;
   letter-spacing:3px;
@@ -1075,11 +1070,8 @@ body{
   margin-top:6px;
   margin-bottom:36px;
 }
-
 .login-box{width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
-
 .field label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-
 .field input{
   width:100%;
   background:rgba(20,31,53,0.8);
@@ -1093,7 +1085,6 @@ body{
   transition:border-color .2s;
 }
 .field input:focus{border-color:var(--sky)}
-
 .sheet-results-wrap{width:100%;max-width:360px;margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow-y:auto}
 .sheet-option{
   background:var(--surface);
@@ -1111,7 +1102,6 @@ body{
 .sheet-option:active,.sheet-option:hover{background:var(--surface2)}
 .sheet-option.selected{background:rgba(14,165,233,0.12);border-color:var(--sky);color:var(--light)}
 .sheet-empty{color:var(--muted);font-size:12px;text-align:center;padding:8px 0}
-
 #selected-list{display:flex;gap:6px;flex-wrap:wrap;min-height:0}
 .player-chip{
   display:inline-flex;align-items:center;gap:6px;
@@ -1122,10 +1112,8 @@ body{
   font-size:12px;color:var(--light);
 }
 .player-chip button{background:none;border:none;color:var(--light);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;opacity:.7}
-
 #login-error{font-size:12px;color:var(--red);min-height:16px;text-align:center}
 #login-helper{font-size:12px;color:var(--muted);text-align:center}
-
 .btn-primary{
   background:var(--sky);color:#fff;
   border:none;border-radius:var(--radius);
@@ -1141,7 +1129,6 @@ body{
   font-family:'Inter',sans-serif;font-size:13px;
   padding:10px 20px;cursor:pointer;
 }
-
 .resume-card{
   width:100%;max-width:360px;margin-top:20px;
   padding:18px;border-radius:20px;
@@ -1153,18 +1140,15 @@ body{
 .resume-meta{color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:14px}
 .resume-actions{display:flex;flex-direction:column;gap:8px}
 .action-row{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-
 /* ── LOADING ─────────────────────────────────── */
 #screen-loading{gap:16px;color:var(--light);font-size:12px;letter-spacing:2px}
 .spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--light);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 /* ── SCORING SCREEN ──────────────────────────── */
 #screen-scoring{
   align-items:stretch;justify-content:flex-start;
   padding:0;max-width:560px;margin:0 auto;width:100%;
 }
-
 .scoring-header{
   background:rgba(11,17,32,0.9);
   border-bottom:1px solid var(--border);
@@ -1185,7 +1169,6 @@ body{
 .conn-syncing{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
 .signout-btn{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:.5px;cursor:pointer;text-transform:uppercase;padding:4px 8px;border-radius:6px}
 .signout-btn:hover{color:var(--light)}
-
 /* totals bar */
 .totals-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .totals-bar::-webkit-scrollbar{display:none}
@@ -1210,11 +1193,9 @@ body{
 .chip-name{font-size:11px;color:var(--muted);white-space:nowrap}
 .chip-pts{font-size:17px;font-weight:700;color:var(--text);line-height:1}
 .chip-pts-label{font-size:10px;font-weight:400;color:var(--muted)}
-
 /* scorecard */
 .scorecard-wrap{overflow-y:auto;flex:1;padding:14px 14px 24px}
 #hole-view{width:100%}
-
 .hole-card{
   background:var(--card);
   border:1px solid var(--border);
@@ -1222,7 +1203,6 @@ body{
   padding:16px;
   box-shadow:0 12px 40px rgba(0,0,0,0.25);
 }
-
 .hole-card-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
 .hole-left{}
 .hole-eyebrow{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
@@ -1235,18 +1215,14 @@ body{
 .hole-par-label{font-size:11px;color:var(--muted)}
 .hole-par-val{font-size:32px;font-weight:700;color:var(--text);line-height:1}
 .hole-progress-label{font-size:10px;color:var(--muted);letter-spacing:1px}
-
 .hole-progress-track{height:2px;background:rgba(255,255,255,0.07);border-radius:99px;margin-bottom:6px}
 .hole-progress-fill{height:2px;background:var(--sky);border-radius:99px;transition:width .4s ease}
-
 .hole-dots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
 .progress-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12);transition:all .2s}
 .progress-dot.done{background:#1a4a2e;box-shadow:0 0 0 1px var(--green)}
 .progress-dot.curr{width:18px;border-radius:3px;background:var(--sky)}
-
 /* player cards */
 .hole-body{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
-
 .player-card{
   background:rgba(11,17,32,0.6);
   border:1px solid var(--border);
@@ -1254,14 +1230,12 @@ body{
   padding:12px 14px;
   transition:border-color .2s;
 }
-
 .player-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .player-info{display:flex;flex-direction:column;gap:2px}
 .player-name{font-size:15px;font-weight:600;color:var(--text)}
 .player-running{font-size:11px;color:var(--muted);letter-spacing:.5px}
 .player-right{display:flex;align-items:center;gap:10px}
 .player-pts{font-size:28px;font-weight:700;color:var(--text);line-height:1;min-width:28px;text-align:right}
-
 /* rel badges */
 .rel-badge{
   font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;letter-spacing:.3px;
@@ -1273,7 +1247,6 @@ body{
 .rel-bogey{background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.2)}
 .rel-double{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
 .rel-empty{background:transparent;color:var(--muted);border:1px solid transparent}
-
 /* score controls */
 .score-row{display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
 .score-minus,.score-plus{
@@ -1290,7 +1263,6 @@ body{
   cursor:pointer;min-height:58px;
 }
 .score-val{font-size:30px;font-weight:600;color:var(--text)}
-
 /* round nav */
 #round-nav{display:flex;gap:8px;padding:0 14px 14px}
 .hole-nav-btn{
@@ -1301,13 +1273,11 @@ body{
 }
 .hole-nav-btn:disabled{opacity:.3;cursor:not-allowed}
 .hole-nav-btn:not(:disabled):active{background:var(--surface2)}
-
 /* ── COURSE GUIDE PANEL ──────────────────────── */
 .course-guide-panel{
   border-top:1px solid var(--border);
   margin-top:2px;
 }
-
 .guide-toggle{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   width:100%;background:none;border:none;
@@ -1322,7 +1292,6 @@ body{
 .guide-toggle-meta{font-size:11px;color:var(--sky);flex-shrink:0}
 .guide-chevron{color:var(--muted);transition:transform .25s;flex-shrink:0}
 .guide-chevron.open{transform:rotate(180deg)}
-
 .guide-body{
   display:none;
   flex-direction:column;
@@ -1330,7 +1299,6 @@ body{
   padding-bottom:4px;
 }
 .guide-body.open{display:flex}
-
 .guide-video-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;background:#000}
 .guide-video{width:100%;aspect-ratio:16/9;display:block;border-radius:var(--radius-sm)}
 .guide-video-label{
@@ -1340,7 +1308,6 @@ body{
   background:rgba(0,0,0,0.5);padding:3px 8px;border-radius:6px;
   pointer-events:none;
 }
-
 .guide-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
 .guide-stat{
   background:var(--surface2);border:1px solid var(--border);
@@ -1350,13 +1317,11 @@ body{
 .gs-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
 .gs-val{font-size:16px;font-weight:700;color:var(--text);line-height:1}
 .gs-sub{font-size:10px;font-weight:400;color:var(--muted)}
-
 .guide-note{
   font-size:12px;line-height:1.65;color:rgba(148,163,184,0.85);
   border-left:2px solid var(--sky);
   padding-left:10px;
 }
-
 /* ── START HOLE OVERLAY ──────────────────────── */
 .start-hole-overlay{
   position:fixed;inset:0;z-index:30;
@@ -1367,7 +1332,6 @@ body{
   animation:fadeIn .25s ease-out;
 }
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-
 .start-hole-card{
   width:100%;max-width:400px;
   max-height:min(90dvh,720px);
@@ -1383,7 +1347,6 @@ body{
   font-size:26px;color:var(--light);margin-bottom:4px;
 }
 .start-hole-sub{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
-
 .start-hole-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -1404,9 +1367,7 @@ body{
 .start-hole-btn:active{background:rgba(14,165,233,0.2)}
 .shb-num{font-family:'Kanit',sans-serif;font-style:italic;font-size:24px;line-height:1;color:var(--text)}
 .shb-par{font-size:10px;color:var(--muted);letter-spacing:1px}
-
 #scorecard-loading{padding:40px 20px;text-align:center;color:var(--muted);font-size:12px;letter-spacing:2px}
-
 /* ── BOTTOM NAV ─────────────────────────────── */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
@@ -1417,7 +1378,6 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
 }
 @media(min-width:768px){.bottom-nav{display:none}body{padding-bottom:0}}
-
 @media(max-width:480px){
   .hole-number{font-size:48px}
   .score-minus,.score-plus{width:58px}
@@ -1427,14 +1387,20 @@ body{
 </style>
 </head>
 <body>
-
+<!--
+  ICONS: previously loaded from unpkg.com/lucide@latest (unpinned version, full ~1500-icon
+  set parsed client-side for the 5 icons actually used here). Inlined as raw SVG below —
+  same visual output (24x24 viewBox, stroke-based, 2px stroke), zero extra requests, zero
+  third-party dependency, and no risk of an upstream "latest" release changing icon shapes
+  under us. Source: lucide.dev icon set, used here under its ISC license terms.
+-->
 <!-- ── TOP NAV ──────────────────────────────────────────────── -->
 <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       <div class="flex-shrink-0 flex items-center gap-3">
         <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-slate-800">
-          <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain" width="32" height="32" loading="eager">
         </div>
         <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
       </div>
@@ -1450,7 +1416,7 @@ body{
       </div>
       <div class="md:hidden">
         <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10" aria-label="Open menu">
-          <i data-lucide="menu" class="w-6 h-6"></i>
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
         </button>
       </div>
     </div>
@@ -1468,12 +1434,10 @@ body{
     </div>
   </div>
 </nav>
-
 <!-- ── LOGIN ─────────────────────────────────────────────────── -->
 <div id="screen-login" class="screen">
   <div class="login-logo">HACKERS CUP</div>
   <div class="login-sub">Live Scoring · 2026</div>
-
   <div class="login-box">
     <div class="field">
       <label for="input-sheet-search">Search players</label>
@@ -1488,7 +1452,6 @@ body{
       <button class="btn-primary" onclick="startScoring()">START ROUND</button>
     </div>
   </div>
-
   <div id="session-resume-card" class="resume-card hidden">
     <div class="resume-title">Resume saved session</div>
     <div id="session-resume-meta" class="resume-meta"></div>
@@ -1497,19 +1460,15 @@ body{
       <button class="btn-ghost" onclick="startNewScoringSession()">Start new session</button>
     </div>
   </div>
-
   <div id="sheet-results" class="sheet-results-wrap"></div>
 </div>
-
 <!-- ── LOADING ────────────────────────────────────────────────── -->
 <div id="screen-loading" class="screen hidden">
   <div class="spinner"></div>
   <div style="font-size:11px;letter-spacing:3px;color:var(--light)">LOADING</div>
 </div>
-
 <!-- ── SCORING ────────────────────────────────────────────────── -->
 <div id="screen-scoring" class="screen hidden">
-
   <div class="scoring-header">
     <div class="header-row">
       <div>
@@ -1524,17 +1483,14 @@ body{
     </div>
     <div class="totals-bar" id="player-summary-bar"></div>
   </div>
-
   <div class="scorecard-wrap">
     <div id="scorecard-loading">LOADING HOLES…</div>
     <div id="hole-view" class="hidden"></div>
   </div>
-
   <div id="round-nav" class="hidden" style="display:none;gap:8px;padding:0 14px 14px">
     <button id="prev-hole-btn" class="hole-nav-btn" onclick="moveHole(-1)">← Prev</button>
     <button id="next-hole-btn" class="hole-nav-btn" onclick="moveHole(1)">Next →</button>
   </div>
-
   <div id="start-hole-overlay" class="start-hole-overlay hidden">
     <div class="start-hole-card">
       <div class="start-hole-title">Which hole?</div>
@@ -1542,44 +1498,34 @@ body{
       <div id="start-hole-grid" class="start-hole-grid"></div>
     </div>
   </div>
-
 </div>
-
 <!-- ── BOTTOM NAV ─────────────────────────────────────────────── -->
 <div class="bottom-nav md:hidden">
   <div class="flex justify-around items-center h-16">
     <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
-      <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span class="text-[10px] font-medium">Home</span>
     </a>
     <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
-      <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       <span class="text-[10px] font-medium">Payment</span>
     </a>
     <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
-      <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       <span class="text-[10px] font-medium">Podcast</span>
     </a>
     <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-sky-400">
-      <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
       <span class="text-[10px] font-medium">Score</span>
     </a>
   </div>
 </div>
-
 <script>
 // Fix round-nav display (hidden attr conflict with display:flex)
 document.addEventListener('DOMContentLoaded', () => {
   const rn = document.getElementById('round-nav');
   if (rn) { rn.style.display = ''; }
 });
-// Re-expose show/hide for round-nav with flex
-const _origShow = window.show;
-window._showRoundNav = function() {
-  const rn = document.getElementById('round-nav');
-  if (rn) { rn.classList.remove('hidden'); rn.style.display = 'flex'; }
-};
 </script>
-
 </body>
 </html>
