@@ -140,6 +140,13 @@
   <!-- ===================== EDIT PANEL OVERLAY ===================== -->
   <div id="editOverlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
+  <!-- ===================== ROOM MAP PANEL ===================== -->
+  <div id="roomMapPanel" class="hidden fixed top-0 left-0 bottom-0 opacity-0 pointer-events-none transition-opacity duration-300" style="right:32rem;z-index:40">
+    <div class="w-full h-full flex items-center justify-center p-10">
+      <img src="map.png" alt="Room map" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" />
+    </div>
+  </div>
+
   <!-- ===================== EDIT PANEL ===================== -->
   <div id="editPanel" class="fixed top-0 right-0 h-full w-full max-w-lg bg-s1 border-l border-brd z-40 transform translate-x-full transition-transform duration-300 ease-out overflow-y-auto shadow-2xl">
     <div class="sticky top-0 z-10 bg-s1/95 backdrop-blur-md border-b border-brd px-6 py-4 flex items-center justify-between">
@@ -2946,6 +2953,8 @@ async function downloadRoomsSpreadsheet() {
       document.body.style.overflow = "";
       currentEditUid = null;
       roommateDropdown.classList.add("hidden");
+      roomPickerDropdown.classList.add("hidden");
+      hideRoomMap();
     }
 
     function renderRoommateChips() {
@@ -3049,7 +3058,21 @@ async function downloadRoomsSpreadsheet() {
         roomDetailCard.classList.add("hidden");
       }
       roomPickerDropdown.classList.add("hidden");
+      hideRoomMap();
       lucide.createIcons({ nodes: [roomDetailCard] });
+    }
+
+    const roomMapPanel = $("#roomMapPanel");
+
+    function showRoomMap() {
+      if (window.innerWidth < 768) return;
+      roomMapPanel.classList.remove("hidden");
+      requestAnimationFrame(() => { roomMapPanel.style.opacity = "1"; roomMapPanel.style.pointerEvents = "none"; });
+    }
+
+    function hideRoomMap() {
+      roomMapPanel.style.opacity = "0";
+      setTimeout(() => roomMapPanel.classList.add("hidden"), 250);
     }
 
     function renderRoomSearchResults(query) {
@@ -3077,9 +3100,12 @@ async function downloadRoomsSpreadsheet() {
       const open = !roomPickerDropdown.classList.contains("hidden");
       roomPickerDropdown.classList.toggle("hidden", open);
       if (!open) {
+        showRoomMap();
         roomSearchInput.value = "";
         renderRoomSearchResults("");
         setTimeout(() => roomSearchInput.focus(), 50);
+      } else {
+        hideRoomMap();
       }
     });
 
@@ -3099,6 +3125,7 @@ async function downloadRoomsSpreadsheet() {
       }
       if (!e.target.closest("#roomPickerBtn") && !e.target.closest("#roomPickerDropdown")) {
         roomPickerDropdown.classList.add("hidden");
+        hideRoomMap();
       }
     });
 
