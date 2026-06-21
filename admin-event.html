@@ -318,6 +318,30 @@
 
         <div class="flex-1"></div>
 
+        <!-- Export dropdown -->
+        <div class="relative" id="exportMenuWrap">
+          <button id="exportMenuBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs hover:bg-s3 hover:text-white transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Export</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 opacity-60"></i>
+          </button>
+          <div id="exportMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-s2 border border-brd rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
+            <button id="exportComingCsvBtn" class="w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-s3 hover:text-white transition flex items-center gap-2.5">
+              <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Export coming CSV
+            </button>
+            <button id="exportFullCsvBtn" class="w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-s3 hover:text-white transition flex items-center gap-2.5">
+              <i data-lucide="table-2" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Export full CSV
+            </button>
+            <div class="mx-3 my-1 h-px bg-brd"></div>
+            <button id="exportAllMembersCsvBtn" class="w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-s3 hover:text-white transition flex items-center gap-2.5">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> All members CSV
+            </button>
+            <button id="exportRoomsBtn" class="w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-s3 hover:text-white transition flex items-center gap-2.5">
+              <i data-lucide="bed-double" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Fill rooms sheet
+            </button>
+          </div>
+        </div>
+
         <div id="dirtyIndicator" class="hidden items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-lg px-2.5 py-1.5">
           <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
           <span id="dirtyCount">0</span> unsaved
@@ -402,18 +426,6 @@
       </button>
       <button onclick="copyPlayerEmails('notcoming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
         Not coming
-      </button>
-      <button id="exportComingCsvBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
-        Export coming CSV
-      </button>
-      <button id="exportFullCsvBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
-        Export full CSV
-      </button>
-      <button id="exportAllMembersCsvBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
-        Export all members
-      </button>
-      <button id="exportRoomsBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
-        Fill rooms sheet
       </button>
     </div>
   </div>
@@ -1020,10 +1032,16 @@ function downloadFullComingSpreadsheetCsv() {
   showToast(`Exported ${rows.length} coming player${rows.length === 1 ? "" : "s"}`, "success");
 }
 
-exportComingCsvBtn?.addEventListener("click", downloadComingPlayersCsv);
-exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
-exportAllMembersCsvBtn?.addEventListener("click", downloadAllMembersCsv);
-exportRoomsBtn?.addEventListener("click", downloadRoomsSpreadsheet);
+exportComingCsvBtn?.addEventListener("click", () => { $("#exportMenu").classList.add("hidden"); downloadComingPlayersCsv(); });
+exportFullCsvBtn?.addEventListener("click", () => { $("#exportMenu").classList.add("hidden"); downloadFullComingSpreadsheetCsv(); });
+exportAllMembersCsvBtn?.addEventListener("click", () => { $("#exportMenu").classList.add("hidden"); downloadAllMembersCsv(); });
+exportRoomsBtn?.addEventListener("click", () => { $("#exportMenu").classList.add("hidden"); downloadRoomsSpreadsheet(); });
+
+// Export dropdown toggle
+const exportMenuBtn = $("#exportMenuBtn");
+const exportMenu = $("#exportMenu");
+exportMenuBtn?.addEventListener("click", e => { e.stopPropagation(); exportMenu.classList.toggle("hidden"); });
+document.addEventListener("click", () => exportMenu?.classList.add("hidden"));
 
 function downloadAllMembersCsv() {
   const rows = users
