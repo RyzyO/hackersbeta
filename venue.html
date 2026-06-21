@@ -224,19 +224,26 @@
           </h1>
           <p class="text-lg text-gray-300">Everything you need for the road trip: course details, hotel info, and your assigned room.</p>
         </div>
-        <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
-          <div class="flex items-center justify-between gap-6">
+        <!-- <div class="glass-card rounded-3xl p-6 md:p-8 animate-fade-in">
+          <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-10 h-10 shrink-0 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
                 <i data-lucide="hotel" class="w-5 h-5 text-hackers-gold"></i>
               </div>
               <div class="min-w-0">
                 <p class="text-xs uppercase tracking-[0.3em] text-gray-400">Your Room</p>
-                <p class="text-sm text-gray-400 mt-0.5 truncate">Shoalhaven Springs</p>
+                <p class="text-sm text-gray-400 mt-0.5">Shoalhaven Springs</p>
               </div>
             </div>
             <p id="room-number" class="text-5xl font-bold text-hackers-gold tabular-nums shrink-0">—</p>
-          </div>
+          </div> -->
+
+          <!-- Room detail — only shown when a room is assigned -->
+          <!-- <div id="room-details" class="hidden mt-5 pt-4 border-t border-white/10 space-y-1.5">
+            <p id="room-line-1" class="text-sm font-medium text-white/80"></p>
+            <p id="room-line-2" class="text-sm text-gray-400"></p>
+            <p id="room-line-3" class="hidden text-sm text-gray-400"></p>
+          </div> -->
         </div>
       </div>
     </div>
@@ -334,8 +341,9 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -351,17 +359,107 @@
     const app = initializeApp(firebaseConfig);
     getAnalytics(app);
     const database = getDatabase(app);
+    const firestore = getFirestore(app);
     const auth = getAuth(app);
+    const CURRENT_EVENT = "HC26";
 
-    function setRoomNumber(text) {
+    const ROOMS = {
+       1: { type:"DLX",  share:"Single",            view:"Golf", floor:"Downstairs", weekendRate:280, discount:20, maxOcc:1 },
+       2: { type:"DABL", share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+       3: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+       4: { type:"DABL", share:"Single / Twin",      view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+       5: { type:"PVQS", share:"Single / Twin / Triple", view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:3 },
+       6: { type:"DABL", share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+       7: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+       8: { type:"2QSP", share:"Twin",               view:"Pool", floor:"Downstairs", weekendRate:260, discount:20, maxOcc:2 },
+       9: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      10: { type:"SPA",  share:"Single",             view:"Golf", floor:"Downstairs", weekendRate:260, discount:20, maxOcc:1 },
+      11: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      12: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      13: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      14: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      15: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      16: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      17: { type:"SPA",  share:"Single",             view:"Golf", floor:"Downstairs", weekendRate:260, discount:20, maxOcc:2 },
+      18: { type:"2QSP", share:"Twin",               view:"Pool", floor:"Downstairs", weekendRate:260, discount:20, maxOcc:2 },
+      19: { type:"PVQS", share:"Single / Twin / Triple", view:"Pool", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:3 },
+      20: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      21: { type:"Q&S",  share:"Single / Twin",      view:"Golf", floor:"Downstairs", weekendRate:250, discount:20, maxOcc:2 },
+      22: { type:"DLX",  share:"Single",             view:"Golf", floor:"Downstairs", weekendRate:280, discount:20, maxOcc:2 },
+      24: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      26: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      28: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      31: { type:"2QSP", share:"Twin",               view:"Pool", floor:"Upstairs",   weekendRate:260, discount:20, maxOcc:2 },
+      32: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      33: { type:"2QSP", share:"Twin",               view:"Golf", floor:"Upstairs",   weekendRate:260, discount:20, maxOcc:2 },
+      34: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      35: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      36: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      37: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      38: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      39: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      40: { type:"SPA",  share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:260, discount:20, maxOcc:1 },
+      41: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      42: { type:"2QSP", share:"Twin",               view:"Pool", floor:"Upstairs",   weekendRate:260, discount:20, maxOcc:2 },
+      43: { type:"PVQS", share:"Single / Twin / Triple", view:"Pool", floor:"Upstairs", weekendRate:250, discount:-20, maxOcc:3 },
+      44: { type:"EXEC", share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:1 },
+      45: { type:"PVQS", share:"Single / Twin",      view:"Pool", floor:"Upstairs",   weekendRate:250, discount:20, maxOcc:2 },
+      46: { type:"DLX",  share:"Single",             view:"Golf", floor:"Upstairs",   weekendRate:280, discount:20, maxOcc:1 },
+    };
+
+    function setRoomNumber(roomNumber) {
       const roomEl = document.getElementById('room-number');
-      if (roomEl) roomEl.textContent = text;
+      const detailEl = document.getElementById('room-details');
+      if (!roomEl) return;
+
+      const num = parseInt(roomNumber);
+      const room = ROOMS[num];
+
+      roomEl.textContent = room ? String(num) : "—";
+
+      if (room) {
+        document.getElementById('room-line-1').textContent =
+          `${room.type}  ·  ${room.view} View  ·  ${room.floor}`;
+        document.getElementById('room-line-2').textContent =
+          `${room.share}  ·  Max ${room.maxOcc} ${room.maxOcc === 1 ? 'guest' : 'guests'}`;
+        detailEl.classList.remove('hidden');
+      } else {
+        detailEl.classList.add('hidden');
+      }
     }
 
-    function watchRoomNumber(user) {
+    let cachedRoommateNames = [];
+
+    async function resolveRoommateNames(uids) {
+      const names = await Promise.all(uids.map(async uid => {
+        const snap = await get(ref(database, `users/${uid}/displayName`));
+        return snap.val() || null;
+      }));
+      return names.filter(Boolean);
+    }
+
+    function updateRoommatesLine(names) {
+      const el = document.getElementById('room-line-3');
+      if (!el) return;
+      if (names.length === 0) {
+        el.classList.add('hidden');
+      } else {
+        el.textContent = `Sharing with  ${names.join('  &  ')}`;
+        el.classList.remove('hidden');
+      }
+    }
+
+    function watchUser(user) {
       onValue(ref(database, `users/${user.uid}/roomNumber`), (snap) => {
-        const roomNumber = snap.val();
-        setRoomNumber(roomNumber ? `${roomNumber}` : "—");
+        setRoomNumber(snap.val());
+        updateRoommatesLine(cachedRoommateNames);
+      });
+
+      onSnapshot(doc(firestore, "eventYears", CURRENT_EVENT, "players", user.uid), async (snap) => {
+        const data = snap.data() || {};
+        const uids = Array.isArray(data.roommates) ? data.roommates : [];
+        cachedRoommateNames = uids.length ? await resolveRoommateNames(uids) : [];
+        updateRoommatesLine(cachedRoommateNames);
       });
     }
 
@@ -369,7 +467,7 @@
       if (!user) {
         window.location.href = 'login.html';
       } else {
-        watchRoomNumber(user);
+        watchUser(user);
       }
     });
   </script>
