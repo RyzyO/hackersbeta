@@ -409,6 +409,12 @@
       <button id="exportFullCsvBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
         Export full CSV
       </button>
+      <button id="exportAllMembersCsvBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Export all members
+      </button>
+      <button id="exportRoomsBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Fill rooms sheet
+      </button>
     </div>
   </div>
   <div>
@@ -422,33 +428,53 @@
 </section>
 
       <!-- SEARCH + FILTERS -->
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="relative flex-1 min-w-[200px] max-w-md">
+      <div class="space-y-2.5">
+        <div class="relative">
           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
           <input id="searchInput" type="text" placeholder="Search name, UID, partner, room..."
             class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
         </div>
 
-        <div class="flex flex-wrap gap-1.5" id="filterBar">
-          <button class="filter-pill active" data-filter="all">All</button>
-          <button class="filter-pill" data-filter="coming">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Coming
-          </button>
-          <button class="filter-pill" data-filter="notcoming">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block"></span> Not Coming
-          </button>
-          <button class="filter-pill" data-filter="paid">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Paid
-          </button>
-          <button class="filter-pill" data-filter="partial">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> Partial
-          </button>
-          <button class="filter-pill" data-filter="pending">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block"></span> Pending
-          </button>
-          <button class="filter-pill" data-filter="dirty">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> Unsaved
-          </button>
+        <div id="filterBar" class="flex flex-wrap items-center gap-2">
+          <!-- Attendance -->
+          <div class="flex items-center gap-0.5 bg-s2 border border-brd rounded-lg p-0.5">
+            <button class="adv-pill" data-group="attendance" data-val="coming">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span> Coming
+            </button>
+            <button class="adv-pill" data-group="attendance" data-val="notcoming">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span> Not coming
+            </button>
+          </div>
+          <!-- Payment -->
+          <div class="flex items-center gap-0.5 bg-s2 border border-brd rounded-lg p-0.5">
+            <button class="adv-pill" data-group="payment" data-val="paid">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span> Paid
+            </button>
+            <button class="adv-pill" data-group="payment" data-val="partial">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span> Partial
+            </button>
+            <button class="adv-pill" data-group="payment" data-val="pending">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span> Pending
+            </button>
+          </div>
+          <!-- Skins -->
+          <div class="flex items-center gap-0.5 bg-s2 border border-brd rounded-lg p-0.5">
+            <button class="adv-pill" data-group="skins" data-val="skins">
+              <span class="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></span> Skins
+            </button>
+            <button class="adv-pill" data-group="skins" data-val="noskins">No skins</button>
+          </div>
+          <!-- Data gaps -->
+          <div class="flex items-center gap-0.5 bg-s2 border border-brd rounded-lg p-0.5">
+            <button class="adv-pill" data-group="gaps" data-val="nohandicap">No HC</button>
+            <button class="adv-pill" data-group="gaps" data-val="nopartner">No partner</button>
+            <button class="adv-pill" data-group="gaps" data-val="dirty">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span> Unsaved
+            </button>
+          </div>
+          <!-- Active indicator + clear -->
+          <span id="filterCountBadge" class="hidden px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-semibold"></span>
+          <button id="clearFiltersBtn" class="hidden text-xs text-slate-500 hover:text-red-400 transition px-1 py-1">✕ Clear</button>
         </div>
       </div>
 
@@ -765,7 +791,7 @@
     let adminLoaded = false;
     let currentEditUid = null;
     let editPanelExistingRoommates = [];
-    let activeFilter = "all";
+    let activeFilters = { attendance: null, payment: null, skins: null, gaps: null };
     let teeSheets = { friday: [], saturday: [], sunday: [] };
     let activeTeeDay = 'friday';
     let tsSelectedPlayers = [];
@@ -838,6 +864,8 @@
     const ambrosePreview = $("#ambrosePreview");
     const exportComingCsvBtn = $("#exportComingCsvBtn");
     const exportFullCsvBtn = $("#exportFullCsvBtn");
+    const exportAllMembersCsvBtn = $("#exportAllMembersCsvBtn");
+    const exportRoomsBtn = $("#exportRoomsBtn");
 
 window.copyPlayerEmails = function(mode) {
   // Pull emails from the users array and their event participation data
@@ -994,6 +1022,154 @@ function downloadFullComingSpreadsheetCsv() {
 
 exportComingCsvBtn?.addEventListener("click", downloadComingPlayersCsv);
 exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
+exportAllMembersCsvBtn?.addEventListener("click", downloadAllMembersCsv);
+exportRoomsBtn?.addEventListener("click", downloadRoomsSpreadsheet);
+
+function downloadAllMembersCsv() {
+  const rows = users
+    .filter(u => asString(u.displayName).trim())
+    .sort((a, b) => normalize(a.displayName).localeCompare(normalize(b.displayName)))
+    .map(user => {
+      const record = eventPlayers.get(user.uid) || {};
+      const partner = users.find(c => c.uid === record.ambrosePartnerUid);
+      const roommateNames = (record.roommates || [])
+        .map(uid => { const r = users.find(c => c.uid === uid); return r ? asString(r.displayName).trim() : ""; })
+        .filter(Boolean).join(", ");
+      return [
+        asString(user.displayName).trim(),
+        asString(user.hackerNumber).trim(),
+        asString(user.handicap).trim(),
+        asString(user.mobile).trim(),
+        asString(user.email).trim(),
+        asString(user.golfAustraliaNumber).trim(),
+        paidStatusFor(user).label,
+        asString(user.amtOutstanding).trim(),
+        record.coming ? "Yes" : "No",
+        record.skins ? "Yes" : "No",
+        asString(record.shirtSize).trim(),
+        asString(record.pantSize).trim(),
+        asString(record.roomNumber).trim(),
+        roommateNames,
+        partner ? asString(partner.displayName).trim() : "",
+        asString(record.handicap !== "" && record.handicap != null ? record.handicap : user.handicap).trim(),
+      ];
+    });
+
+  if (!rows.length) { showToast("No members to export", "warn"); return; }
+
+  const csv = [
+    ["Name","Hacker No.","Handicap","Mobile","Email","GA Number","Paid Status","Amt Outstanding","Coming","Skins","Shirt","Pants","Room No.","Roommates","Ambrose Partner","Event HC"].map(csvEscape).join(","),
+    ...rows.map(row => row.map(csvEscape).join(","))
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${sanitizeCsvFilename(currentEventId)}_all_members.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} members`, "success");
+}
+
+async function downloadRoomsSpreadsheet() {
+  if (typeof XLSX === 'undefined') {
+    showToast('SheetJS still loading — try again in a moment', 'warn');
+    return;
+  }
+
+  const btn = $("#exportRoomsBtn");
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+  try {
+    // Build roomNumber → [names...] map from portal data (all players, not just coming)
+    const roomMap = new Map();
+    users.forEach(user => {
+      const record = getEventRecord(user.uid);
+      const roomNum = parseInt(asString(record.roomNumber).trim());
+      const name = asString(user.displayName).trim();
+      if (!roomNum || !name) return;
+      if (!roomMap.has(roomNum)) roomMap.set(roomNum, []);
+      roomMap.get(roomNum).push(name);
+    });
+    roomMap.forEach(names => names.sort((a, b) => a.localeCompare(b)));
+
+    // Load the template — try fetch first (works on web server / GH Pages),
+    // fall back to a file-picker for local file:// access
+    let arrayBuffer;
+    try {
+      const resp = await fetch('HC26 Rooms (2).xlsx');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      arrayBuffer = await resp.arrayBuffer();
+    } catch {
+      showToast('Select the HC26 Rooms (2).xlsx template file', 'info');
+      arrayBuffer = await new Promise((resolve, reject) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx';
+        input.onchange = e => {
+          const file = e.target.files[0];
+          if (!file) { reject(new Error('No file selected')); return; }
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        };
+        input.click();
+      });
+    }
+
+    // Parse, preserving all existing styles/merges
+    const wb = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+
+    // Data rows 2-42 | col F = room number
+    // Name slots: X (col 24) = person 1, AA (col 27) = person 2, AD (col 30) = person 3
+    const nameSlots = ['X', 'AA', 'AD'];
+
+    for (let row = 2; row <= 42; row++) {
+      const roomCell = ws[`F${row}`];
+      if (!roomCell) continue;
+      const roomNum = parseInt(roomCell.v);
+      if (!roomNum) continue;
+      const names = roomMap.get(roomNum) || [];
+      nameSlots.forEach((col, i) => {
+        const addr = `${col}${row}`;
+        const name = names[i] || '';
+        if (ws[addr]) {
+          ws[addr].v = name;
+          ws[addr].w = name;
+          ws[addr].t = name ? 's' : ws[addr].t;
+        } else if (name) {
+          ws[addr] = { t: 's', v: name, w: name };
+        }
+      });
+    }
+
+    // Write and trigger download
+    const cfg = currentEventConfig();
+    const filename = `HC${cfg.year}_Rooms_Assigned.xlsx`;
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = filename;
+    document.body.appendChild(link); link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    const totalAssigned = Array.from(roomMap.values()).reduce((s, n) => s + n.length, 0);
+    showToast(`Rooms sheet downloaded — ${roomMap.size} rooms, ${totalAssigned} players placed`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Rooms export failed: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = origText; }
+  }
+}
 
     // === TOAST SYSTEM ===
     function showToast(message, type = "info") {
@@ -2345,16 +2521,19 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           record.coming ? "yes" : "no"
         ].some(v => normalize(v).includes(q));
 
-        // Filter pill
+        // Advanced filters (AND across groups)
         let filterMatch = true;
-        switch (activeFilter) {
-          case "coming": filterMatch = !!record.coming; break;
-          case "notcoming": filterMatch = !record.coming; break;
-          case "paid": filterMatch = paid.cls === "paid"; break;
-          case "partial": filterMatch = paid.cls === "partial"; break;
-          case "pending": filterMatch = paid.cls === "pending"; break;
-          case "dirty": filterMatch = dirty.has(user.uid); break;
-        }
+        const { attendance, payment, skins: skinsF, gaps } = activeFilters;
+        if (attendance === "coming")    filterMatch &&= !!record.coming;
+        if (attendance === "notcoming") filterMatch &&= !record.coming;
+        if (payment === "paid")    filterMatch &&= paid.cls === "paid";
+        if (payment === "partial") filterMatch &&= paid.cls === "partial";
+        if (payment === "pending") filterMatch &&= paid.cls === "pending";
+        if (skinsF === "skins")   filterMatch &&= !!record.skins;
+        if (skinsF === "noskins") filterMatch &&= !record.skins;
+        if (gaps === "nohandicap") filterMatch &&= numericHandicapFor(user.uid, record) === null;
+        if (gaps === "nopartner")  filterMatch &&= !record.ambrosePartnerUid;
+        if (gaps === "dirty")      filterMatch &&= dirty.has(user.uid);
 
         return textMatch && filterMatch;
       });
@@ -2520,7 +2699,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         else return;
 
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), {
-          ...targetRecord, ambrosePartnerUid: nextPartner, updatedAt: serverTimestamp()
+          ambrosePartnerUid: nextPartner, updatedAt: serverTimestamp()
         }, { merge: true }));
       });
 
@@ -2793,28 +2972,44 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     editCancelBtn.addEventListener("click", closeEditPanel);
     editOverlay.addEventListener("click", closeEditPanel);
 
-    // === FILTER PILLS ===
-    const filterPills = filterBar.querySelectorAll(".filter-pill");
-    // Style filter pills with Tailwind classes on init
-    filterPills.forEach(pill => {
-      pill.className = pill.classList.contains("active")
-        ? "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s4 border-accent/30 text-accent"
-        : "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s2 border-brd text-slate-400 hover:bg-s3 hover:text-slate-300";
-    });
+    // === ADVANCED FILTER PILLS ===
+    const PILL_ACTIVE = "adv-pill flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition bg-accent/15 border border-accent/25 text-accent";
+    const PILL_INACTIVE = "adv-pill flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition text-slate-400 hover:text-white hover:bg-s3";
 
-    filterBar.addEventListener("click", (e) => {
-      const pill = e.target.closest(".filter-pill");
-      if (!pill) return;
-      activeFilter = pill.dataset.filter;
-      filterPills.forEach(p => {
-        if (p === pill) {
-          p.className = "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s4 border-accent/30 text-accent";
-        } else {
-          p.className = "filter-pill px-3 py-1.5 rounded-lg text-xs font-medium transition border bg-s2 border-brd text-slate-400 hover:bg-s3 hover:text-slate-300";
-        }
+    function updateFilterUI() {
+      filterBar.querySelectorAll(".adv-pill").forEach(pill => {
+        const active = activeFilters[pill.dataset.group] === pill.dataset.val;
+        pill.className = active ? PILL_ACTIVE : PILL_INACTIVE;
       });
+      const activeCount = Object.values(activeFilters).filter(v => v !== null).length;
+      const badge = $("#filterCountBadge");
+      const clearBtn = $("#clearFiltersBtn");
+      if (activeCount > 0) {
+        badge.textContent = `${activeCount} filter${activeCount > 1 ? "s" : ""} active`;
+        badge.classList.remove("hidden");
+        clearBtn.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+        clearBtn.classList.add("hidden");
+      }
+    }
+
+    filterBar.addEventListener("click", e => {
+      const pill = e.target.closest(".adv-pill");
+      if (!pill) return;
+      const { group, val } = pill.dataset;
+      activeFilters[group] = activeFilters[group] === val ? null : val;
+      updateFilterUI();
       filterAndRender();
     });
+
+    $("#clearFiltersBtn").addEventListener("click", () => {
+      activeFilters = { attendance: null, payment: null, skins: null, gaps: null };
+      updateFilterUI();
+      filterAndRender();
+    });
+
+    updateFilterUI();
 
     // === EVENT LISTENERS ===
     searchInput.addEventListener("input", filterAndRender);
@@ -3158,6 +3353,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </body>
 </html>
