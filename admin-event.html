@@ -452,12 +452,27 @@
         </div>
       </div>
 
+      <!-- BULK ACTION BAR -->
+      <div id="bulkBar" class="hidden items-center gap-3 bg-accent/10 border border-accent/20 rounded-xl px-4 py-2.5 flex-wrap">
+        <span id="bulkCount" class="text-sm font-semibold text-accent"></span>
+        <div class="flex flex-wrap gap-2 ml-auto">
+          <button id="bulkComingBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/25 transition">✓ Mark Coming</button>
+          <button id="bulkNotComingBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">✕ Not Coming</button>
+          <button id="bulkSkinsOnBtn" class="px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/20 text-accent text-xs font-semibold hover:bg-accent/25 transition">Skins On</button>
+          <button id="bulkSkinsOffBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Skins Off</button>
+          <button id="bulkClearBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-400 text-xs hover:bg-s4 transition">Clear</button>
+        </div>
+      </div>
+
       <!-- TABLE (Desktop) -->
       <div class="desktop-table bg-s1 border border-brd rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-brd bg-s2/50">
+                <th class="w-10 px-3 py-3 text-center">
+                  <input type="checkbox" id="selectAllChk" class="w-4 h-4 rounded cursor-pointer accent-[#06d6a4]" />
+                </th>
                 <th class="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Name</th>
                 <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Coming</th>
                 <th class="text-center px-3 py-3 text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Paid</th>
@@ -518,6 +533,11 @@
             <p class="text-xs text-slate-600 mt-1">Auto-group per day — Friday uses skins players, Saturday groups all coming players (Stableford), Sunday respects Ambrose pairs (shotgun).</p>
           </div>
           <div class="flex gap-2">
+            <a href="tee-sheet.html" target="_blank"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 hover:text-white transition">
+              <i data-lucide="expand" class="w-3.5 h-3.5"></i>
+              Full screen
+            </a>
             <button id="tsLoadBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load</button>
             <button id="tsSaveBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Save</button>
           </div>
@@ -645,10 +665,10 @@
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Rego Name</th>
                 <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Matched Player</th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Coming</th>
-                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">GA Number</th>
-                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Mobile</th>
-                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Shirt</th>
-                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Skins</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">GA <span class="normal-case text-slate-600">(was→new)</span></th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Mobile <span class="normal-case text-slate-600">(was→new)</span></th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Shirt <span class="normal-case text-slate-600">(was→new)</span></th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Skins <span class="normal-case text-slate-600">(was→new)</span></th>
                 <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Action</th>
               </tr>
             </thead>
@@ -675,6 +695,17 @@
         </div>
         <div id="ambrosePreview" class="text-sm text-slate-400 p-4 bg-s2 rounded-lg border border-brd">
           No ambrose pairings created yet. Edit players and set their Ambrose Partner to create pairings.
+        </div>
+      </section>
+
+      <!-- ROOM ASSIGNMENTS -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div>
+          <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Room Assignments</h3>
+          <p class="text-xs text-slate-600 mt-1">Coming players grouped by room number. Click Edit to open a player's panel.</p>
+        </div>
+        <div id="roomViewContent" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div class="col-span-full text-slate-600 text-sm text-center py-4">Load players to see room assignments.</div>
         </div>
       </section>
     </main>
@@ -740,6 +771,7 @@
     let tsSelectedPlayers = [];
     let currentPage = 1;
     let recordsPerPage = 15;
+    let selectedUids = new Set();
 
     // === DOM REFS ===
     const $ = (sel) => document.querySelector(sel);
@@ -1061,9 +1093,12 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         eventPlayers.set(uid, {
           ...current,
           ...merged,
-          // Firestore is authoritative for eligibility — never let stale cache downgrade these
+          // Firestore is always authoritative for eligibility and room/partner relationships
           coming: current.coming,
           skins: current.skins,
+          roommates: current.roommates,
+          roomNumber: current.roomNumber,
+          ambrosePartnerUid: current.ambrosePartnerUid,
         });
       });
     }
@@ -1544,6 +1579,8 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       const origHtml = btn ? btn.innerHTML : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
 
+      const cfg = currentEventConfig();
+      const eventLabel = `Hackers Cup ${cfg.id.replace('HC', '')}`;
       const meta = {
         friday:   { label: 'Friday',   format: 'Shotgun Start · Skins',            shotgun: true  },
         saturday: { label: 'Saturday', format: 'Traditional Start · Stableford',     shotgun: false },
@@ -1636,7 +1673,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:28px 36px 22px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
               <div>
-                <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#3b82f6;font-weight:700;margin-bottom:6px;">Hackers Cup 26</div>
+                <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#3b82f6;font-weight:700;margin-bottom:6px;">${eventLabel}</div>
                 <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;line-height:1.15;">${meta.label} Tee Sheet</div>
                 <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${headerSub}</div>
               </div>
@@ -1656,7 +1693,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           </div>
           <!-- Footer -->
           <div style="background:#0f172a;padding:11px 36px;display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:9px;color:#475569;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">Hackers Cup 26 · ${meta.label} Tee Sheet</div>
+            <div style="font-size:9px;color:#475569;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">${eventLabel} · ${meta.label} Tee Sheet</div>
             <div style="font-size:9px;color:#475569;">Worrigee Links</div>
           </div>
         </div>`;
@@ -1704,7 +1741,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
         }
 
-        pdf.save(`hackerscup-2026-${day}-teesheet.pdf`);
+        pdf.save(`hackerscup-${cfg.year}-${day}-teesheet.pdf`);
         showToast(`${meta.label} tee sheet exported.`, 'success');
       } catch (err) {
         console.error(err);
@@ -1820,13 +1857,17 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
           regoSyncMatches.push({
             regoName, uid: user.uid, displayName: user.displayName,
-            coming:   comingNew,
-            gaNumber: gaNew    ? gaNumber  : null,
-            mobile:   mobileNew ? mobile    : null,
-            shirt:    shirtNew  ? shirt     : null,
-            skins:    skinsNew  ? skinsYes  : null,
-            score:    match.score,
-            skip:     false,
+            coming:        comingNew,
+            gaNumber:      gaNew     ? gaNumber : null,
+            mobile:        mobileNew ? mobile   : null,
+            shirt:         shirtNew  ? shirt    : null,
+            skins:         skinsNew  ? skinsYes : null,
+            score:         match.score,
+            skip:          false,
+            currentGA:     existingGA,
+            currentMobile: existingMobile,
+            currentShirt:  existingShirt,
+            currentSkins:  existingSkins,
           });
         });
 
@@ -1863,12 +1904,21 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       if (regoSyncMatches.length > 0) {
         preview.classList.remove("hidden");
         tbody.innerHTML = regoSyncMatches.map((m, i) => {
-          const skinsLabel = m.skins === null ? '<span class="text-slate-600">—</span>'
-            : m.skins
-              ? '<span class="text-emerald-400 text-[11px] font-semibold">YES</span>'
-              : '<span class="text-slate-500 text-[11px]">No</span>';
-
           const skipClass = m.skip ? "opacity-40 line-through" : "";
+
+          function diffCell(current, next, mono = false) {
+            if (next === null) return '<span class="text-slate-600">—</span>';
+            const monoClass = mono ? 'font-mono ' : '';
+            if (current) return `<span class="${monoClass}${skipClass}"><span class="text-slate-500">${escapeHtml(String(current))}</span><span class="text-slate-600 mx-0.5">→</span><span class="text-emerald-400">${escapeHtml(String(next))}</span></span>`;
+            return `<span class="${monoClass}text-emerald-400 ${skipClass}">${escapeHtml(String(next))}</span>`;
+          }
+
+          const skinsLabel = m.skins === null ? '<span class="text-slate-600">—</span>' : (() => {
+            const was = m.currentSkins ? 'YES' : 'No';
+            const now = m.skins ? 'YES' : 'No';
+            const nowColor = m.skins ? 'text-emerald-400 font-semibold' : 'text-slate-400';
+            return `<span class="${skipClass}"><span class="text-slate-500 text-[11px]">${was}</span><span class="text-slate-600 mx-0.5 text-[11px]">→</span><span class="${nowColor} text-[11px]">${now}</span></span>`;
+          })();
 
           return `
             <tr class="hover:bg-s2/40 transition ${m.skip ? 'opacity-40' : ''}">
@@ -1880,9 +1930,9 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
               <td class="px-3 py-2.5 text-center">
                 ${m.coming ? '<span class="text-emerald-400 text-[11px] font-semibold">✓ Yes</span>' : '<span class="text-slate-600 text-[11px]">Already set</span>'}
               </td>
-              <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.gaNumber ? escapeHtml(m.gaNumber) : '<span class="text-slate-600">—</span>'}</td>
-              <td class="px-3 py-2.5 text-center font-mono text-xs ${skipClass}">${m.mobile ? escapeHtml(m.mobile) : '<span class="text-slate-600">—</span>'}</td>
-              <td class="px-3 py-2.5 text-center text-xs ${skipClass}">${m.shirt ? escapeHtml(m.shirt) : '<span class="text-slate-600">—</span>'}</td>
+              <td class="px-3 py-2.5 text-center text-xs">${diffCell(m.currentGA, m.gaNumber, true)}</td>
+              <td class="px-3 py-2.5 text-center text-xs">${diffCell(m.currentMobile, m.mobile, true)}</td>
+              <td class="px-3 py-2.5 text-center text-xs">${diffCell(m.currentShirt, m.shirt)}</td>
               <td class="px-3 py-2.5 text-center">${skinsLabel}</td>
               <td class="px-3 py-2.5 text-center">
                 <button type="button" class="text-[10px] px-2 py-1 rounded-md border transition ${m.skip ? 'border-brd text-slate-500 hover:text-slate-300 hover:bg-s3' : 'border-red-500/20 text-red-400 hover:bg-red-500/10'}" data-rego-toggle="${i}">
@@ -1928,17 +1978,20 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
           if (m.gaNumber !== null) fsUpdate.golfAustraliaNumber = m.gaNumber;
           if (m.mobile   !== null) fsUpdate.mobile = m.mobile;
 
-          // Firestore eventYears player doc — coming + shirt + skins
-          const record = getEventRecord(m.uid);
-          const eventUpdate = { ...record, updatedAt: serverTimestamp() };
-          eventUpdate.coming = true; record.coming = true; // registered = coming
-          if (m.shirt  !== null) { eventUpdate.shirtSize = m.shirt; record.shirtSize = m.shirt; }
-          if (m.skins  !== null) { eventUpdate.skins = m.skins;     record.skins = m.skins; }
-
-          // Update local state immediately
+          // Update local state for only the fields being synced
           if (m.gaNumber !== null) user.golfAustraliaNumber = m.gaNumber;
           if (m.mobile   !== null) user.mobile = m.mobile;
+
+          const record = getEventRecord(m.uid);
+          record.coming = true;
+          if (m.shirt !== null) record.shirtSize = m.shirt;
+          if (m.skins !== null) record.skins = m.skins;
           eventPlayers.set(m.uid, record);
+
+          // Only write specific fields to Firestore — never touch roommates, room number, or Ambrose partner
+          const eventUpdate = { coming: true, updatedAt: serverTimestamp() };
+          if (m.shirt !== null) eventUpdate.shirtSize = m.shirt;
+          if (m.skins !== null) eventUpdate.skins = m.skins;
 
           writes.push(setDoc(doc(firestore, "users", m.uid), fsUpdate, { merge: true }));
           writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", m.uid), eventUpdate, { merge: true }));
@@ -2017,6 +2070,108 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       editPantSize.innerHTML = PANT_SIZES.map(s => `<option value="${s}">${s || "—"}</option>`).join("");
     }
 
+    // === BULK ACTIONS ===
+    function getPageUserUids() {
+      const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
+      const page = Math.max(1, Math.min(currentPage, totalPages || 1));
+      const start = (page - 1) * recordsPerPage;
+      return filteredUsers.slice(start, start + recordsPerPage).map(u => u.uid);
+    }
+
+    function renderBulkBar() {
+      const bar = document.getElementById('bulkBar');
+      const countEl = document.getElementById('bulkCount');
+      if (!bar) return;
+      if (selectedUids.size > 0) {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        if (countEl) countEl.textContent = `${selectedUids.size} selected`;
+      } else {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+      }
+      const selectAllChk = document.getElementById('selectAllChk');
+      if (selectAllChk) {
+        const pageUids = getPageUserUids();
+        const allChecked = pageUids.length > 0 && pageUids.every(uid => selectedUids.has(uid));
+        const someChecked = pageUids.some(uid => selectedUids.has(uid));
+        selectAllChk.checked = allChecked;
+        selectAllChk.indeterminate = !allChecked && someChecked;
+      }
+    }
+
+    async function applyBulkField(field, value, label) {
+      const uids = Array.from(selectedUids);
+      if (uids.length === 0) return;
+      try {
+        const writes = uids.map(uid => {
+          const record = getEventRecord(uid);
+          record[field] = value;
+          eventPlayers.set(uid, record);
+          return setDoc(doc(firestore, 'eventYears', currentEventId, 'players', uid),
+            { [field]: value, updatedAt: serverTimestamp() }, { merge: true });
+        });
+        await Promise.all(writes);
+        persistEventPlayersCache(currentEventId);
+        selectedUids.clear();
+        renderBulkBar();
+        filterAndRender();
+        showToast(`${uids.length} player${uids.length !== 1 ? 's' : ''}: ${label}`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Bulk update failed: ' + err.message, 'error');
+      }
+    }
+
+    // === ROOM VIEW ===
+    function renderRoomView() {
+      const content = document.getElementById('roomViewContent');
+      if (!content) return;
+
+      const rooms = new Map();
+      users.forEach(user => {
+        if (!user.displayName || !asString(user.displayName).trim()) return;
+        const record = getEventRecord(user.uid);
+        if (!record.coming) return;
+        const roomNum = asString(record.roomNumber).trim();
+        if (!rooms.has(roomNum)) rooms.set(roomNum, []);
+        rooms.get(roomNum).push(user);
+      });
+
+      if (rooms.size === 0) {
+        content.innerHTML = '<div class="col-span-full text-slate-600 text-sm text-center py-4">No coming players yet.</div>';
+        return;
+      }
+
+      const sortedRooms = [...rooms.entries()].sort(([a], [b]) => {
+        if (!a && !b) return 0;
+        if (!a) return 1;
+        if (!b) return -1;
+        const na = Number(a), nb = Number(b);
+        if (isFinite(na) && isFinite(nb)) return na - nb;
+        return a.localeCompare(b);
+      });
+
+      content.innerHTML = sortedRooms.map(([roomNum, players]) => {
+        const isUnassigned = !roomNum;
+        return `
+          <div class="bg-s2 border border-brd rounded-xl p-3">
+            <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-brd/50">
+              <span class="text-xl font-bold tabular-nums ${isUnassigned ? 'text-slate-500' : 'text-accent'}">${isUnassigned ? '—' : escapeHtml(roomNum)}</span>
+              <span class="text-[10px] text-slate-600 uppercase tracking-widest font-medium">${players.length} player${players.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="space-y-1.5">
+              ${players.map(user => `
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-sm text-slate-300 truncate">${escapeHtml(user.displayName || '(no name)')}</span>
+                  <button class="text-[10px] text-accent hover:underline shrink-0 room-edit-btn" data-uid="${user.uid}">Edit</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
     // === RENDER TABLE ===
     function badgeHtml(paid) {
       const styles = {
@@ -2042,6 +2197,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         tableEmpty.classList.remove("hidden");
         mobileCards.innerHTML = "";
         paginationContainer.classList.add("hidden");
+        renderBulkBar();
         return;
       }
       tableEmpty.classList.add("hidden");
@@ -2071,6 +2227,9 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         tr.dataset.uid = user.uid;
         tr.className = `border-b border-brd/50 hover:bg-s2/60 cursor-pointer transition-colors${isDirty ? " bg-amber-500/[0.06]" : ""}`;
         tr.innerHTML = `
+          <td class="w-10 px-3 py-3 text-center chk-cell">
+            <input type="checkbox" class="row-chk w-4 h-4 rounded cursor-pointer accent-[#06d6a4]" data-uid="${user.uid}" ${selectedUids.has(user.uid) ? 'checked' : ''} />
+          </td>
           <td class="px-4 py-3">
             <div class="font-medium text-white text-sm leading-tight">${escapeHtml(user.displayName || "(no name)")}</div>
             <div class="text-[11px] text-slate-600 font-mono mt-0.5">${escapeHtml(user.uid.slice(0, 12))}${user.hackerNumber ? ` · #${escapeHtml(user.hackerNumber)}` : ""}</div>
@@ -2097,9 +2256,9 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
             </button>
           </td>
         `;
-        // Click row (not on button) to open panel
+        // Click row (not on button or checkbox) to open panel
         tr.addEventListener("click", (e) => {
-          if (e.target.closest(".edit-row-btn")) return;
+          if (e.target.closest(".edit-row-btn") || e.target.closest(".chk-cell")) return;
           openEditPanel(user.uid);
         });
         tableBody.appendChild(tr);
@@ -2143,6 +2302,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
 
       // Update pagination info
       updatePaginationControls(list.length);
+      renderBulkBar();
 
       lucide.createIcons();
     }
@@ -2202,6 +2362,7 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
       currentPage = 1; // Reset to first page on filter change
       renderTable(filteredUsers);
       updateStats();
+      renderRoomView();
     }
 
     // === STATS ===
@@ -2682,16 +2843,23 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
     });
 
     eventSelect.addEventListener("change", async () => {
+      if (dirty.size > 0 && !confirm(`You have ${dirty.size} unsaved change${dirty.size !== 1 ? 's' : ''}. Switching events will discard them. Continue?`)) {
+        eventSelect.value = currentEventId;
+        return;
+      }
       currentEventId = eventSelect.value;
+      selectedUids.clear();
       dirty.clear();
       updateDirtyUI();
       await loadEventPlayers();
     });
 
     refreshBtn.addEventListener("click", async () => {
+      if (dirty.size > 0 && !confirm(`You have ${dirty.size} unsaved change${dirty.size !== 1 ? 's' : ''}. Refreshing will discard them. Continue?`)) return;
       refreshBtn.disabled = true;
       refreshBtn.querySelector("i")?.classList.add("animate-spin");
       try {
+        selectedUids.clear();
         await loadUsers();
         await loadEventPlayers();
       } finally {
@@ -2852,6 +3020,52 @@ exportFullCsvBtn?.addEventListener("click", downloadFullComingSpreadsheetCsv);
         e.preventDefault();
         saveAllBtn.click();
       }
+    });
+
+    // Unsaved-changes guard on page exit
+    window.addEventListener('beforeunload', (e) => {
+      if (dirty.size > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    // === BULK ACTION LISTENERS ===
+    document.getElementById('bulkComingBtn')?.addEventListener('click', () => applyBulkField('coming', true, 'marked coming'));
+    document.getElementById('bulkNotComingBtn')?.addEventListener('click', () => applyBulkField('coming', false, 'marked not coming'));
+    document.getElementById('bulkSkinsOnBtn')?.addEventListener('click', () => applyBulkField('skins', true, 'skins on'));
+    document.getElementById('bulkSkinsOffBtn')?.addEventListener('click', () => applyBulkField('skins', false, 'skins off'));
+    document.getElementById('bulkClearBtn')?.addEventListener('click', () => {
+      selectedUids.clear();
+      renderBulkBar();
+      renderTable(filteredUsers);
+    });
+
+    // Select-all checkbox
+    document.getElementById('selectAllChk')?.addEventListener('change', (e) => {
+      const pageUids = getPageUserUids();
+      if (e.target.checked) {
+        pageUids.forEach(uid => selectedUids.add(uid));
+      } else {
+        pageUids.forEach(uid => selectedUids.delete(uid));
+      }
+      renderBulkBar();
+      renderTable(filteredUsers);
+    });
+
+    // Row checkbox changes (delegated on tableBody)
+    tableBody.addEventListener('change', (e) => {
+      const chk = e.target.closest('.row-chk');
+      if (!chk) return;
+      const uid = chk.dataset.uid;
+      if (chk.checked) selectedUids.add(uid); else selectedUids.delete(uid);
+      renderBulkBar();
+    });
+
+    // Room view edit buttons (delegated)
+    document.getElementById('roomViewContent')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.room-edit-btn');
+      if (btn) openEditPanel(btn.dataset.uid);
     });
 
     // === AUTH ===

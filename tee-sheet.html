@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Tee Sheet Maker — Hackers Cup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911', s1: '#0c1019', s2: '#111725', s3: '#182030', s4: '#1f2a3e',
+            accent: '#06d6a4', 'accent-dim': 'rgba(6,214,164,0.12)', 'accent-glow': 'rgba(6,214,164,0.25)',
+            brd: '#1c2640',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a4a70; }
+
+    html, body { height: 100%; overflow: hidden; }
+    body { display: flex; flex-direction: column; background: #060911; }
+
+    .ts-day-tab { position: relative; }
+    .ts-day-tab::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: #06d6a4; transform: scaleX(0); transition: transform 0.2s;
+    }
+    .ts-day-tab.active { color: #ffffff; }
+    .ts-day-tab.active::after { transform: scaleX(1); }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0);    opacity: 1; }
+      to   { transform: translateX(100%); opacity: 0; }
+    }
+    .toast-in  { animation: slideInRight  0.3s ease-out; }
+    .toast-out { animation: slideOutRight 0.3s ease-in forwards; }
+  </style>
+</head>
+<body class="text-slate-200 font-sans antialiased">
+
+  <!-- Toast -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Sign-in overlay -->
+  <div id="signInOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-s0/90 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-s1 border border-brd rounded-2xl p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-dim mb-4">
+          <i data-lucide="shield-check" class="w-7 h-7 text-accent"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white">Hackers Cup Admin</h1>
+        <p class="text-slate-400 mt-1 text-sm">Sign in to access the tee sheet maker</p>
+      </div>
+      <div class="space-y-3">
+        <input id="signinEmail" type="email" placeholder="Email address" autocomplete="email"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password"
+          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+        <button id="signinBtn" class="w-full py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+          Sign in
+        </button>
+      </div>
+      <div id="signInStatus" class="mt-3 text-center text-sm min-h-[20px]"></div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm items-center justify-center p-4" style="display:none;">
+    <div class="w-full max-w-xs bg-s1 border border-brd rounded-2xl shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-brd">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="settings-2" class="w-4 h-4 text-accent"></i>
+          <h3 class="font-semibold text-white text-sm">Group Settings</h3>
+          <span id="tsFormatBadge" class="text-[9px] px-2 py-0.5 rounded-full bg-s3 text-slate-400 font-mono uppercase tracking-widest border border-brd"></span>
+        </div>
+        <button id="settingsCloseBtn" class="w-8 h-8 rounded-lg bg-s3 hover:bg-s4 flex items-center justify-center transition text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label id="tsStartTimeLabel" class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold block mb-2">Start Time</label>
+          <input id="tsStartTime" type="text" value="8:00 AM"
+            class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        </div>
+        <div id="tsIntervalWrap">
+          <label class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold block mb-2">Interval (min)</label>
+          <input id="tsInterval" type="number" value="8" min="1" max="30"
+            class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        </div>
+        <div>
+          <label id="tsStartHoleLabel" class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold block mb-2">Starting Hole</label>
+          <input id="tsStartHole" type="text" value="1" maxlength="3" placeholder="1 or 1A"
+            class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        </div>
+        <p class="text-[10px] text-slate-600">These settings apply when you click Auto-group.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth bar -->
+  <div id="authBar" class="hidden fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
+    <i data-lucide="user-check" class="w-3.5 h-3.5 text-accent"></i>
+    <span id="authEmail" class="text-slate-300"></span>
+    <button id="signOutBtn" class="ml-1 text-slate-500 hover:text-red-400 transition">
+      <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="shrink-0 flex items-center gap-3 px-4 h-14 bg-s1 border-b border-brd">
+    <a href="admin-event.html" class="flex items-center gap-1.5 text-slate-500 hover:text-white transition text-sm shrink-0 pr-3 border-r border-brd mr-1">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      <span class="hidden sm:inline text-xs">Admin</span>
+    </a>
+    <i data-lucide="calendar-days" class="w-4 h-4 text-accent shrink-0"></i>
+    <span class="font-bold text-white text-sm shrink-0">Tee Sheet Maker</span>
+    <select id="eventSelect"
+      class="ml-1 px-2.5 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs focus:outline-none focus:border-accent transition cursor-pointer">
+    </select>
+    <div class="ml-auto flex items-center gap-2">
+      <span id="tsStatus" class="text-[11px] text-slate-500 hidden sm:block max-w-[180px] truncate"></span>
+      <button id="settingsBtn"
+        class="w-8 h-8 rounded-lg bg-s2 border border-brd hover:bg-s3 flex items-center justify-center transition" title="Auto-group settings">
+        <i data-lucide="settings-2" class="w-4 h-4 text-slate-400"></i>
+      </button>
+      <button id="loadBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 hover:text-white hover:bg-s3 text-xs font-medium transition">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Reload</span>
+      </button>
+      <button id="saveBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 text-xs font-semibold transition">
+        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+        Save
+      </button>
+      <button id="exportPdfBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 hover:text-white hover:bg-s3 text-xs font-medium transition">
+        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ DAY TABS ═══ -->
+  <div class="shrink-0 flex bg-s1 border-b border-brd px-2 overflow-x-auto">
+    <button class="ts-day-tab active flex items-center gap-2 px-5 py-3 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="friday">
+      Friday
+      <span class="text-[10px] font-normal text-slate-600">Shotgun · Skins</span>
+      <span id="tab-badge-friday" class="hidden px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-mono border border-accent/20"></span>
+    </button>
+    <button class="ts-day-tab flex items-center gap-2 px-5 py-3 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="saturday">
+      Saturday
+      <span class="text-[10px] font-normal text-slate-600">Traditional · Stableford</span>
+      <span id="tab-badge-saturday" class="hidden px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-mono border border-accent/20"></span>
+    </button>
+    <button class="ts-day-tab flex items-center gap-2 px-5 py-3 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="sunday">
+      Sunday
+      <span class="text-[10px] font-normal text-slate-600">Shotgun · Ambrose</span>
+      <span id="tab-badge-sunday" class="hidden px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-mono border border-accent/20"></span>
+    </button>
+  </div>
+
+  <!-- ═══ ACTION BAR ═══ -->
+  <div class="shrink-0 flex items-center gap-3 px-4 py-2 bg-s2/80 border-b border-brd">
+    <div id="tsDayStats" class="flex items-center gap-3 text-xs flex-1 min-w-0 flex-wrap"></div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="autoGroupBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-s0 text-xs font-bold uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+        <i data-lucide="zap" class="w-3.5 h-3.5"></i> Auto-group
+      </button>
+      <button id="clearDayBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s3 border border-brd text-red-400 hover:bg-red-500/10 hover:border-red-500/30 text-xs font-medium transition">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Clear</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ BODY ═══ -->
+  <div id="mainContent" class="flex-1 flex overflow-hidden" style="opacity:0;transition:opacity 0.3s;">
+
+    <!-- ── Pool sidebar (desktop) ── -->
+    <aside class="w-72 shrink-0 border-r border-brd flex-col overflow-hidden hidden md:flex bg-s1">
+      <!-- Pool header -->
+      <div class="px-3 pt-3 pb-2 border-b border-brd space-y-2 shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Player Pool</span>
+          <span id="tsPoolCount" class="text-[10px] text-slate-600"></span>
+        </div>
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none"></i>
+          <input id="tsPoolSearch" type="text" placeholder="Search players…"
+            class="w-full pl-8 pr-3 py-2 rounded-lg bg-s2 border border-brd text-white text-xs placeholder-slate-600 focus:outline-none focus:border-accent transition" />
+        </div>
+      </div>
+      <!-- Pool list -->
+      <div id="tsPoolList" class="flex-1 overflow-y-auto"></div>
+      <!-- Staging area -->
+      <div id="stagingArea" class="shrink-0 border-t-2 border-accent/20 hidden">
+        <div class="px-3 pt-2.5 pb-1.5 flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-accent"></i>
+            <span class="text-[11px] uppercase tracking-widest text-accent font-semibold">Staging</span>
+          </div>
+          <button id="clearStagingBtn" class="text-[10px] text-slate-500 hover:text-red-400 transition px-1">Clear</button>
+        </div>
+        <div id="tsSelectedChips" class="flex flex-wrap gap-1 px-3 pb-2"></div>
+        <div class="grid grid-cols-2 gap-2 px-3 pb-2">
+          <div>
+            <label class="text-[10px] text-slate-500 block mb-1">Hole</label>
+            <input id="tsManualHole" type="text" maxlength="3" placeholder="1A"
+              class="w-full px-2.5 py-2 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition" />
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-500 block mb-1">Tee Time</label>
+            <input id="tsManualTime" type="text" placeholder="8:30 AM"
+              class="w-full px-2.5 py-2 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition" />
+          </div>
+        </div>
+        <div class="px-3 pb-3">
+          <button id="addGroupBtn"
+            class="w-full py-2 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-semibold hover:bg-accent/25 transition">
+            Add as Group
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Groups main area ── -->
+    <div id="mainScrollArea" class="flex-1 overflow-y-auto p-4">
+      <div id="tsUnassigned" class="hidden mb-3"></div>
+      <div id="tsGroupsDisplay"
+        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-content:start;">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+      signInWithEmailAndPassword, signOut
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const EVENT_OPTIONS = [
+      { id: "HC26", year: 2026 }, { id: "HC25", year: 2025 }, { id: "HC24", year: 2024 }, { id: "HC23", year: 2023 },
+      { id: "HC22", year: 2022 }, { id: "HC21", year: 2021 }, { id: "HC20", year: 2019 },
+      { id: "HC19", year: 2018 }, { id: "HC18", year: 2017 }, { id: "HC17", year: 2016 },
+      { id: "HC16", year: 2015 }, { id: "HC15", year: 2014 }, { id: "HC14", year: 2013 },
+      { id: "HC13", year: 2012 }, { id: "HC12", year: 2011 }, { id: "HC11", year: 2010 },
+      { id: "HC10", year: 2009 }, { id: "HC9", year: 2008 }, { id: "HC8", year: 2007 },
+      { id: "HC7", year: 2006 }
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const firestore = getFirestore(app);
+
+    // ── State ──
+    let currentEventId = EVENT_OPTIONS[0].id;
+    let users = [];
+    let eventPlayers = new Map();
+    let teeSheets = { friday: [], saturday: [], sunday: [] };
+    let activeTeeDay = 'friday';
+    let tsSelectedPlayers = [];
+    let dataLoaded = false;
+
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+
+    // ── Utilities ──
+    function normalize(v) { return String(v || '').toLowerCase(); }
+    function escapeHtml(v) {
+      return String(v || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    }
+    function asString(v) { return v == null ? '' : String(v); }
+    function uniqueSorted(arr) {
+      return Array.from(new Set((arr||[]).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+    }
+    function userLabel(u) {
+      const n = u.displayName || '(no name)';
+      return u.hackerNumber ? `${n} #${u.hackerNumber}` : n;
+    }
+    function currentEventConfig() { return EVENT_OPTIONS.find(e => e.id === currentEventId) || EVENT_OPTIONS[0]; }
+
+    // ── Toast ──
+    function showToast(message, type = 'info') {
+      const container = $('#toastContainer');
+      const colors = {
+        success: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+        error:   'bg-red-500/15 border-red-500/30 text-red-300',
+        warn:    'bg-amber-500/15 border-amber-500/30 text-amber-300',
+        info:    'bg-s2 border-brd text-slate-300',
+      };
+      const icons = { success:'check-circle-2', error:'alert-circle', warn:'alert-triangle', info:'info' };
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border text-sm shadow-xl backdrop-blur-md toast-in ${colors[type]||colors.info}`;
+      toast.innerHTML = `<i data-lucide="${icons[type]||'info'}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons({ nodes: [toast] });
+      setTimeout(() => {
+        toast.classList.replace('toast-in','toast-out');
+        toast.addEventListener('animationend', () => toast.remove());
+      }, 3500);
+    }
+
+    function setTsStatus(msg = '', type = '') {
+      const el = $('#tsStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'text-[11px] hidden sm:block max-w-[180px] truncate ' +
+        (type==='error' ? 'text-red-400' : type==='success' ? 'text-emerald-400' : type==='warn' ? 'text-amber-400' : 'text-slate-500');
+    }
+
+    // ── Data helpers ──
+    function normalizeEventRecord(uid, data = {}, fallbackUser = null) {
+      return {
+        ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        skins: !!data.skins,
+        coming: !!data.coming,
+        handicap: data.handicap != null
+          ? Number(data.handicap)
+          : (fallbackUser?.handicap != null ? Number(fallbackUser.handicap) : ''),
+      };
+    }
+
+    function getEventRecord(uid) {
+      return eventPlayers.get(uid) || { ambrosePartnerUid:'', skins:false, coming:false, handicap:'' };
+    }
+
+    function numericHandicapFor(uid, record) {
+      const u = users.find(x => x.uid === uid);
+      const raw = (record.handicap !== '' && record.handicap != null)
+        ? Number(record.handicap)
+        : (u?.handicap != null && u.handicap !== '' ? Number(u.handicap) : NaN);
+      return Number.isFinite(raw) ? raw : null;
+    }
+
+    // ── Tee sheet helpers ──
+    function tsGetHC(uid) {
+      const hc = numericHandicapFor(uid, getEventRecord(uid));
+      return hc !== null ? hc : 36;
+    }
+
+    function getEligibleForDay(day) {
+      return users.filter(u => {
+        const r = getEventRecord(u.uid);
+        return day === 'friday' ? (!!r.coming && !!r.skins) : !!r.coming;
+      });
+    }
+
+    function isShotgun(day) { return day !== 'saturday'; }
+
+    function parseTeeTime(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2}):?(\d{2})\s*(AM|PM)?$/);
+      if (!m) return 8 * 60;
+      let h = Number(m[1]), min = Number(m[2]);
+      if (m[3]==='PM' && h<12) h+=12;
+      if (m[3]==='AM' && h===12) h=0;
+      return h*60+min;
+    }
+
+    function formatTeeTime(totalMins) {
+      const h = Math.floor(totalMins/60)%24, m = totalMins%60;
+      const disp = h%12===0 ? 12 : h%12;
+      return `${disp}:${String(m).padStart(2,'0')} ${h<12?'AM':'PM'}`;
+    }
+
+    function parseHoleLabel(s) {
+      const m = String(s||'').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
+      return m ? { num: Math.min(18,Math.max(1,parseInt(m[1],10))), letter: m[2] } : { num:1, letter:'' };
+    }
+
+    function shotgunHoleLabel(startNum, startLetter, groupIndex, totalGroups) {
+      if (!startLetter) return (((startNum-1+groupIndex)%18)+1);
+      const groupsPerHole = Math.max(2, Math.ceil(totalGroups/18));
+      const absIdx = (startLetter.charCodeAt(0)-65)+groupIndex;
+      return `${(((startNum-1+Math.floor(absIdx/groupsPerHole))%18)+1)}${String.fromCharCode(65+absIdx%groupsPerHole)}`;
+    }
+
+    function tsAssignedSet() {
+      return new Set(teeSheets[activeTeeDay].flatMap(g => g.players||[]));
+    }
+
+    // ── Grouping algorithms ──
+    function formGroupsSnake(players) {
+      if (!players.length) return [];
+      const sorted = [...players].sort((a,b) => tsGetHC(a.uid)-tsGetHC(b.uid));
+      const groupCount = sorted.length<=4 ? 1 : Math.ceil(sorted.length/4);
+      const buckets = Array.from({length:groupCount}, ()=>[]);
+      let dir=1, g=0;
+      for (const p of sorted) {
+        buckets[g].push(p.uid);
+        g+=dir;
+        if (g>=groupCount) { g=groupCount-1; dir=-1; }
+        else if (g<0)      { g=0;            dir=1;  }
+      }
+      return buckets.filter(b=>b.length>0);
+    }
+
+    function formGroupsAmbrose(players) {
+      const paired = new Set();
+      const validPairs = [];
+      for (const u of players) {
+        if (paired.has(u.uid)) continue;
+        const rec = getEventRecord(u.uid);
+        const pid = rec.ambrosePartnerUid;
+        if (!pid) continue;
+        const pUser = players.find(p=>p.uid===pid);
+        if (!pUser) continue;
+        if (getEventRecord(pid).ambrosePartnerUid !== u.uid) continue;
+        validPairs.push([u.uid, pid]);
+        paired.add(u.uid); paired.add(pid);
+      }
+      validPairs.sort((a,b)=>(tsGetHC(a[0])+tsGetHC(a[1]))/2-(tsGetHC(b[0])+tsGetHC(b[1]))/2);
+      const groups = [];
+      let lo=0, hi=validPairs.length-1;
+      while (lo<=hi) {
+        if (lo===hi) { groups.push([...validPairs[lo]]); lo++; }
+        else { groups.push([...validPairs[lo],...validPairs[hi]]); lo++; hi--; }
+      }
+      const singles = players.filter(u=>!paired.has(u.uid))
+        .sort((a,b)=>tsGetHC(a.uid)-tsGetHC(b.uid)).map(u=>u.uid);
+      for (let i=0; i<groups.length && singles.length>0; i++)
+        while (groups[i].length<4 && singles.length>0) groups[i].push(singles.shift());
+      while (singles.length>0) {
+        const g=[];
+        while (g.length<4 && singles.length>0) g.push(singles.shift());
+        groups.push(g);
+      }
+      return groups;
+    }
+
+    // ── Render: stats bar ──
+    function renderTsDayStats() {
+      const el = $('#tsDayStats');
+      if (!el) return;
+      const eligible = getEligibleForDay(activeTeeDay);
+      const groups = teeSheets[activeTeeDay];
+      const assigned = groups.flatMap(g=>g.players||[]);
+      const unCount = eligible.filter(u=>!assigned.includes(u.uid)).length;
+      const dayHint = activeTeeDay==='friday' ? 'skins' : 'coming';
+      const dot = `<span class="text-slate-700 px-1">·</span>`;
+      el.innerHTML = `
+        <span class="text-slate-400"><span class="text-white font-semibold">${eligible.length}</span> eligible <span class="text-slate-600 text-[10px]">(${dayHint})</span></span>
+        ${dot}<span class="text-slate-400"><span class="text-white font-semibold">${groups.length}</span> groups</span>
+        ${dot}<span class="text-slate-400"><span class="text-white font-semibold">${assigned.length}</span> assigned</span>
+        ${unCount>0 ? dot+`<span class="text-amber-400 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i><span class="font-semibold">${unCount}</span> unassigned</span>` : ''}`;
+      lucide.createIcons({ nodes: [el] });
+    }
+
+    // ── Render: pool ──
+    function renderTsPool() {
+      const list = $('#tsPoolList');
+      const count = $('#tsPoolCount');
+      if (!list) return;
+      const q = normalize($('#tsPoolSearch')?.value||'');
+      const eligible = getEligibleForDay(activeTeeDay);
+      const assigned = tsAssignedSet();
+      const filtered = eligible.filter(u=>normalize(userLabel(u)).includes(q)||normalize(u.uid).includes(q));
+      if (count) count.textContent = `${eligible.length} eligible`;
+      if (!filtered.length) {
+        list.innerHTML = '<div class="p-4 text-xs text-slate-600 text-center">No players match.</div>';
+        return;
+      }
+      list.innerHTML = filtered.map(user => {
+        const isSel = tsSelectedPlayers.includes(user.uid);
+        const isAsgn = assigned.has(user.uid) && !isSel;
+        const rec = getEventRecord(user.uid);
+        const hc = numericHandicapFor(user.uid, rec);
+        const partner = rec.ambrosePartnerUid ? users.find(u=>u.uid===rec.ambrosePartnerUid) : null;
+        const pairOk = partner && getEventRecord(partner.uid).ambrosePartnerUid===user.uid;
+        return `
+          <button type="button" class="w-full flex items-center justify-between px-3 py-2.5 text-left border-b border-brd last:border-b-0 transition
+            ${isSel ? 'bg-accent/10' : isAsgn ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'}"
+            data-ts-pool="${escapeHtml(user.uid)}" ${isAsgn?'disabled':''}>
+            <div class="min-w-0">
+              <div class="text-xs font-medium text-white truncate">${escapeHtml(userLabel(user))}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                ${hc!==null ? `<span class="text-[10px] text-slate-500 font-mono">HC ${hc}</span>` : ''}
+                ${partner ? `<span class="text-[10px] ${pairOk?'text-accent':'text-amber-400'}">${pairOk?'⇄':'→'} ${escapeHtml(partner.displayName||'?')}</span>` : ''}
+                ${isAsgn ? '<span class="text-[10px] text-slate-600">In group</span>' : ''}
+              </div>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ml-2 ${isSel?'border-accent/30 text-accent bg-accent/10':isAsgn?'border-slate-700 text-slate-600':'border-brd text-slate-500'}">
+              ${isAsgn?'Placed':isSel?'Sel':'+'}
+            </span>
+          </button>`;
+      }).join('');
+    }
+
+    // ── Render: staging ──
+    function renderTsStaging() {
+      const area = $('#stagingArea');
+      const chips = $('#tsSelectedChips');
+      if (!area||!chips) return;
+      if (!tsSelectedPlayers.length) { area.classList.add('hidden'); return; }
+      area.classList.remove('hidden');
+      chips.innerHTML = tsSelectedPlayers.map((uid,i) => {
+        const u = users.find(x=>x.uid===uid);
+        const hc = numericHandicapFor(uid, getEventRecord(uid));
+        const name = u ? (u.displayName||'?').split(' ')[0] : uid.slice(0,6);
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/15 border border-accent/20 text-accent text-[10px] font-medium">
+          ${escapeHtml(name)}${hc!==null?` ${hc}`:''}
+          <button type="button" class="leading-none hover:text-white" data-ts-desel="${i}">×</button>
+        </span>`;
+      }).join('');
+    }
+
+    // ── Render: groups grid ──
+    function renderTsGroups() {
+      const display = $('#tsGroupsDisplay');
+      const unassigned = $('#tsUnassigned');
+      if (!display) return;
+
+      const groups = teeSheets[activeTeeDay];
+      const eligible = getEligibleForDay(activeTeeDay);
+      const assignedSet = tsAssignedSet();
+      const unassignedPlayers = eligible.filter(u=>!assignedSet.has(u.uid));
+
+      // Update tab badges
+      ['friday','saturday','sunday'].forEach(day => {
+        const badge = $(`#tab-badge-${day}`);
+        if (!badge) return;
+        const n = teeSheets[day].length;
+        badge.textContent = n;
+        badge.classList.toggle('hidden', n===0);
+      });
+
+      if (!groups.length) {
+        display.innerHTML = `
+          <div class="col-span-full flex flex-col items-center justify-center py-20 text-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-s2 border border-brd flex items-center justify-center">
+              <i data-lucide="layout-grid" class="w-7 h-7 text-slate-600"></i>
+            </div>
+            <div>
+              <div class="text-slate-400 text-sm font-medium">No groups yet</div>
+              <div class="text-slate-600 text-xs mt-1">Click Auto-group or select players from the sidebar</div>
+            </div>
+          </div>`;
+        lucide.createIcons({ nodes: [display] });
+      } else {
+        display.innerHTML = groups.map((group, gi) => {
+          const players = Array.isArray(group.players) ? group.players : [];
+          const hcVals = players.map(tsGetHC);
+          const avgHC = hcVals.length ? (hcVals.reduce((s,v)=>s+v,0)/hcVals.length).toFixed(1) : '—';
+          const cap = players.length;
+          const capCls = cap>=4 ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
+            : cap>=2 ? 'text-slate-300 bg-s3 border-brd' : 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+
+          let playersHtml = '';
+          if (activeTeeDay==='sunday') {
+            const done = new Set();
+            for (const uid of players) {
+              if (done.has(uid)) continue;
+              const rec = getEventRecord(uid);
+              const pid = rec.ambrosePartnerUid;
+              const prec = pid ? getEventRecord(pid) : null;
+              const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid===uid;
+              if (confirmed) {
+                done.add(uid); done.add(pid);
+                const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
+                const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
+                const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(1) : null;
+                const pi1=players.indexOf(uid), pi2=players.indexOf(pid);
+                playersHtml += `
+                  <div class="rounded-lg border border-blue-500/25 bg-blue-500/5 px-2.5 py-2 mb-1.5 last:mb-0">
+                    <div class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1.5">Pair${teamHc?' · Team HC '+teamHc:''}</div>
+                    <div class="flex items-center justify-between py-0.5">
+                      <div class="min-w-0 flex items-center gap-1.5">
+                        <span class="text-xs font-medium text-white truncate">${escapeHtml(u1?.displayName||'?')}</span>
+                        ${h1!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h1}</span>`:''}
+                      </div>
+                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi1}">✕</button>
+                    </div>
+                    <div class="flex items-center justify-between py-0.5">
+                      <div class="min-w-0 flex items-center gap-1.5">
+                        <span class="text-xs font-medium text-white truncate">${escapeHtml(u2?.displayName||'?')}</span>
+                        ${h2!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h2}</span>`:''}
+                      </div>
+                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi2}">✕</button>
+                    </div>
+                  </div>`;
+              } else {
+                done.add(uid);
+                const u=users.find(x=>x.uid===uid), hc=numericHandicapFor(uid,rec), pi=players.indexOf(uid);
+                playersHtml += `
+                  <div class="flex items-center justify-between py-1.5 border-b border-brd/40 last:border-b-0">
+                    <div class="min-w-0 flex items-center gap-1.5">
+                      <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName||uid.slice(0,8))}</span>
+                      ${hc!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${hc}</span>`:''}
+                      <span class="text-[10px] text-amber-400 shrink-0">no pair</span>
+                    </div>
+                    <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi}">✕</button>
+                  </div>`;
+              }
+            }
+          } else {
+            playersHtml = players.map((uid,pi) => {
+              const u=users.find(x=>x.uid===uid), rec=getEventRecord(uid), hc=numericHandicapFor(uid,rec);
+              return `
+                <div class="flex items-center justify-between py-1.5 border-b border-brd/40 last:border-b-0">
+                  <div class="min-w-0 flex items-center gap-1.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName||uid.slice(0,8))}</span>
+                    ${hc!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${hc}</span>`:''}
+                  </div>
+                  <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi}">✕</button>
+                </div>`;
+            }).join('');
+          }
+
+          return `
+            <div class="bg-s1 border border-brd rounded-xl overflow-hidden flex flex-col" data-ts-group="${gi}">
+              <div class="flex items-center justify-between px-3 pt-3 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-md bg-accent/15 border border-accent/20 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">${gi+1}</span>
+                  <span class="text-[11px] font-semibold text-slate-300">Group ${gi+1}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] px-1.5 py-0.5 rounded-full border font-mono ${capCls}">${cap}/4</span>
+                  <button type="button" data-ts-del-group="${gi}"
+                    class="w-5 h-5 rounded flex items-center justify-center text-[11px] text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition">✕</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 px-3 pb-2.5 border-b border-brd">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] text-slate-600 shrink-0">Hole</span>
+                  <input type="text" maxlength="3" value="${escapeHtml(asString(group.hole||1))}"
+                    class="w-14 px-2 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition ts-group-hole" data-gi="${gi}" />
+                </div>
+                <span class="text-slate-700 text-xs">·</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] text-slate-600 shrink-0">Time</span>
+                  <input type="text" value="${escapeHtml(asString(group.teeTime||''))}"
+                    class="w-[88px] px-2 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition ts-group-time" data-gi="${gi}" />
+                </div>
+              </div>
+              <div class="px-3 py-2 flex-1">
+                ${playersHtml||'<div class="text-xs text-slate-600 py-2">No players</div>'}
+              </div>
+              <div class="px-3 py-2 bg-s0/40 border-t border-brd/50 flex items-center justify-between">
+                <span class="text-[10px] text-slate-600">Avg HC ${avgHC}</span>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      // Unassigned bar
+      if (unassigned) {
+        if (unassignedPlayers.length>0) {
+          unassigned.className = 'flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-3';
+          unassigned.innerHTML = `
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-amber-400 mb-1.5">${unassignedPlayers.length} player${unassignedPlayers.length!==1?'s':''} not yet placed — click to stage</div>
+              <div class="flex flex-wrap gap-1.5">
+                ${unassignedPlayers.map(u=>`
+                  <button type="button" data-ts-stage="${escapeHtml(u.uid)}"
+                    class="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-300 hover:bg-amber-500/25 transition">
+                    ${escapeHtml(userLabel(u))}
+                  </button>`).join('')}
+              </div>
+            </div>`;
+          unassigned.classList.remove('hidden');
+          lucide.createIcons({ nodes: [unassigned] });
+        } else {
+          unassigned.className = 'hidden';
+          unassigned.innerHTML = '';
+        }
+      }
+    }
+
+    function renderTeeSheet() {
+      renderTsDayStats();
+      renderTsPool();
+      renderTsStaging();
+      renderTsGroups();
+    }
+
+    // ── Switch day ──
+    function switchTeeDay(day) {
+      activeTeeDay = day;
+      tsSelectedPlayers = [];
+      $$('.ts-day-tab').forEach(btn => {
+        const active = btn.dataset.tsDay === day;
+        btn.classList.toggle('active', active);
+      });
+      const shotgun = isShotgun(day);
+      const badge = $('#tsFormatBadge');
+      const intervalWrap = $('#tsIntervalWrap');
+      if (badge) badge.textContent = shotgun ? 'Shotgun' : 'Traditional';
+      if (intervalWrap) intervalWrap.style.display = shotgun ? 'none' : '';
+      const stl = $('#tsStartTimeLabel'), shl = $('#tsStartHoleLabel');
+      if (stl) stl.textContent = shotgun ? 'Shotgun Time' : 'First Tee Time';
+      if (shl) shl.textContent = shotgun ? 'Starting Hole' : 'Starting Hole';
+      renderTeeSheet();
+    }
+
+    // ── Auto-group ──
+    function autoGroupForDay() {
+      const players = getEligibleForDay(activeTeeDay);
+      if (!players.length) { setTsStatus('No eligible players for this day.','warn'); return; }
+      const startMins = parseTeeTime($('#tsStartTime')?.value);
+      const interval = Math.max(1, Number($('#tsInterval')?.value)||8);
+      const { num:startNum, letter:startLetter } = parseHoleLabel($('#tsStartHole')?.value);
+      const shotgun = isShotgun(activeTeeDay);
+      const groupUids = activeTeeDay==='sunday' ? formGroupsAmbrose(players) : formGroupsSnake(players);
+      teeSheets[activeTeeDay] = groupUids.map((uids,i)=>({
+        hole: shotgun ? shotgunHoleLabel(startNum,startLetter,i,groupUids.length) : startNum,
+        teeTime: shotgun ? formatTeeTime(startMins) : formatTeeTime(startMins+i*interval),
+        players: uids,
+      }));
+      tsSelectedPlayers = [];
+      renderTeeSheet();
+      const fmt = shotgun ? 'shotgun' : 'traditional';
+      setTsStatus(`${players.length} players → ${teeSheets[activeTeeDay].length} groups (${fmt}).`, 'success');
+      showToast(`Auto-grouped ${players.length} players into ${teeSheets[activeTeeDay].length} groups`, 'success');
+    }
+
+    // ── Manual group ──
+    function tsAddManualGroup() {
+      if (!tsSelectedPlayers.length) { showToast('Select at least one player.','warn'); return; }
+      if (tsSelectedPlayers.length>4) { showToast('Max 4 players per group.','warn'); return; }
+      const hole = $('#tsManualHole')?.value.trim()||'1';
+      const teeTime = $('#tsManualTime')?.value.trim()||'';
+      teeSheets[activeTeeDay].push({ hole, teeTime, players:[...tsSelectedPlayers] });
+      tsSelectedPlayers = [];
+      if ($('#tsManualHole')) $('#tsManualHole').value='';
+      if ($('#tsManualTime')) $('#tsManualTime').value='';
+      renderTeeSheet();
+      showToast('Group added.','success');
+    }
+
+    // ── Firebase: load/save ──
+    async function loadTeeSheets() {
+      try {
+        setTsStatus('Loading tee sheets…');
+        const snap = await getDoc(doc(firestore,'eventYears',currentEventId));
+        const saved = (snap.exists() ? snap.data()||{} : {}).teeSheets||{};
+        teeSheets = {
+          friday:   Array.isArray(saved.friday)   ? saved.friday   : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday:   Array.isArray(saved.sunday)   ? saved.sunday   : [],
+        };
+        renderTeeSheet();
+        const total = teeSheets.friday.length+teeSheets.saturday.length+teeSheets.sunday.length;
+        setTsStatus(total ? `Loaded — ${total} groups total.` : 'No tee sheets saved yet.', total?'success':'warn');
+      } catch (err) {
+        console.error(err);
+        setTsStatus('Load failed: '+err.message,'error');
+        showToast('Load failed','error');
+      }
+    }
+
+    async function saveTeeSheets() {
+      const btn = $('#saveBtn');
+      if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
+      try {
+        await setDoc(doc(firestore,'eventYears',currentEventId), {
+          eventId: currentEventId,
+          teeSheets: { friday:teeSheets.friday, saturday:teeSheets.saturday, sunday:teeSheets.sunday },
+          updatedAt: serverTimestamp(),
+        }, { merge:true });
+        setTsStatus('Saved.','success');
+        showToast('Tee sheets saved','success');
+      } catch (err) {
+        console.error(err);
+        setTsStatus('Save failed: '+err.message,'error');
+        showToast('Save failed','error');
+      } finally {
+        if (btn) { btn.disabled=false; btn.innerHTML='<i data-lucide="save" class="w-3.5 h-3.5"></i> Save'; lucide.createIcons({nodes:[btn]}); }
+      }
+    }
+
+    // ── PDF export ──
+    async function exportTeeSheetPdf(day) {
+      const groups = teeSheets[day];
+      if (!groups||!groups.length) { showToast(`No ${day} groups to export.`,'warn'); return; }
+      const btn = $('#exportPdfBtn');
+      const origHtml = btn?.innerHTML||'';
+      if (btn) { btn.disabled=true; btn.textContent='Generating…'; }
+      const cfg = currentEventConfig();
+      const eventLabel = `Hackers Cup ${cfg.id.replace('HC','')}`;
+      const meta = {
+        friday:   { label:'Friday',   format:'Shotgun Start · Skins',         shotgun:true  },
+        saturday: { label:'Saturday', format:'Traditional Start · Stableford', shotgun:false },
+        sunday:   { label:'Sunday',   format:'Shotgun Start · Ambrose Pairs',  shotgun:true  },
+      }[day];
+      const totalPlayers = groups.flatMap(g=>g.players||[]).length;
+      const shotgunTime = meta.shotgun&&groups[0]?.teeTime ? groups[0].teeTime : null;
+
+      function pRow(uid) {
+        const u=users.find(x=>x.uid===uid), rec=getEventRecord(uid), hc=numericHandicapFor(uid,rec);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;">
+          <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u?(u.displayName||'(no name)'):uid.slice(0,8))}</span>
+          <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${hc!==null?'HC '+hc:'—'}</span>
+        </div>`;
+      }
+
+      function groupCard(group, gi) {
+        const players = group.players||[];
+        let playersHtml = '';
+        if (day==='sunday') {
+          const done=new Set();
+          for (const uid of players) {
+            if (done.has(uid)) continue;
+            const rec=getEventRecord(uid), pid=rec.ambrosePartnerUid, prec=pid?getEventRecord(pid):null;
+            const confirmed = pid&&players.includes(pid)&&prec?.ambrosePartnerUid===uid;
+            if (confirmed) {
+              done.add(uid); done.add(pid);
+              const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
+              const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
+              const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(1) : null;
+              playersHtml += `
+                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
+                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc?' · Team HC '+teamHc:''}</div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName||'?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1!==null?'HC '+h1:'—'}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;">
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u2?.displayName||'?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h2!==null?'HC '+h2:'—'}</span>
+                  </div>
+                </div>`;
+            } else { done.add(uid); playersHtml+=pRow(uid); }
+          }
+        } else { playersHtml=players.map(pRow).join(''); }
+
+        const holeTag = group.hole ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:4px;">Hole ${group.hole}</span>` : '';
+        const timeTag = !meta.shotgun&&group.teeTime ? `<span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;">${escapeHtml(asString(group.teeTime))}</span>` : '';
+        return `
+          <div style="background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f3f4f6;">
+              <div>
+                <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3b82f6;margin-bottom:4px;">Group ${gi+1}</div>
+                <div>${holeTag}${timeTag}</div>
+              </div>
+            </div>
+            ${playersHtml}
+          </div>`;
+      }
+
+      const cols = groups.length<=4 ? 2 : 3;
+      const headerSub = meta.shotgun&&shotgunTime ? `${meta.format} — Shotgun ${shotgunTime}` : meta.format;
+      const dateStr = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const html = `
+        <div style="font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f8fafc;width:794px;">
+          <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:28px 36px 22px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#3b82f6;font-weight:700;margin-bottom:6px;">${eventLabel}</div>
+                <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.15;">${meta.label} Tee Sheet</div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${headerSub}</div>
+              </div>
+              <div style="text-align:right;padding-top:2px;">
+                <div style="font-size:13px;font-weight:700;color:#f1f5f9;">${groups.length} groups · ${totalPlayers} players</div>
+                <div style="font-size:11px;color:#64748b;margin-top:3px;">Worrigee Links</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">${dateStr}</div>
+              </div>
+            </div>
+            <div style="height:2px;background:linear-gradient(90deg,#3b82f6,#60a5fa,rgba(96,165,250,0));margin-top:20px;border-radius:1px;"></div>
+          </div>
+          <div style="padding:20px 36px 28px;">
+            <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px;">
+              ${groups.map((g,i)=>groupCard(g,i)).join('')}
+            </div>
+          </div>
+          <div style="background:#0f172a;padding:11px 36px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:9px;color:#475569;letter-spacing:.1em;text-transform:uppercase;font-weight:600;">${eventLabel} · ${meta.label} Tee Sheet</div>
+            <div style="font-size:9px;color:#475569;">Worrigee Links</div>
+          </div>
+        </div>`;
+
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;pointer-events:none;';
+      wrap.innerHTML = html;
+      document.body.appendChild(wrap);
+      try {
+        await document.fonts.ready;
+        const el = wrap.firstElementChild;
+        const canvas = await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#f8fafc',logging:false,width:794,height:el.scrollHeight,windowWidth:794});
+        const {jsPDF} = window.jspdf;
+        const pdf = new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+        const pdfW=pdf.internal.pageSize.getWidth(), pdfH=pdf.internal.pageSize.getHeight();
+        const pxPerPt=canvas.width/pdfW, pageHeightPx=Math.round(pdfH*pxPerPt);
+        const totalPages=Math.ceil(canvas.height/pageHeightPx);
+        for (let i=0;i<totalPages;i++) {
+          if (i>0) pdf.addPage();
+          const srcY=i*pageHeightPx, srcH=Math.min(pageHeightPx,canvas.height-srcY);
+          const pc=document.createElement('canvas');
+          pc.width=canvas.width; pc.height=pageHeightPx;
+          const ctx=pc.getContext('2d');
+          ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,pc.width,pc.height);
+          ctx.drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH);
+          pdf.addImage(pc.toDataURL('image/png'),'PNG',0,0,pdfW,pdfH);
+        }
+        pdf.save(`hackerscup-${cfg.year}-${day}-teesheet.pdf`);
+        showToast(`${meta.label} tee sheet exported.`,'success');
+      } catch (err) {
+        console.error(err); showToast('PDF export failed: '+err.message,'error');
+      } finally {
+        document.body.removeChild(wrap);
+        if (btn) { btn.disabled=false; btn.innerHTML=origHtml; lucide.createIcons({nodes:[btn]}); }
+      }
+    }
+
+    // ── Data loading ──
+    async function loadUsers() {
+      const [rtdbSnap, fsSnap] = await Promise.all([
+        get(ref(db,'users')),
+        getDocs(collection(firestore,'users')),
+      ]);
+      const rtdb = rtdbSnap.exists() ? rtdbSnap.val() : {};
+      const fsUsers = {};
+      fsSnap.forEach(d=>{ fsUsers[d.id]=d.data()||{}; });
+      users = Object.keys(rtdb).map(uid => {
+        const r=rtdb[uid]||{}, f=fsUsers[uid]||{};
+        return {
+          uid,
+          displayName: r.displayName||f.displayName||'',
+          hackerNumber: f.hackerNumber||r.hackerNumber||'',
+          handicap: r.handicap!=null ? Number(r.handicap) : '',
+        };
+      }).sort((a,b)=>normalize(a.displayName).localeCompare(normalize(b.displayName)));
+    }
+
+    async function loadEventPlayers() {
+      eventPlayers = new Map();
+      const snap = await getDocs(collection(firestore,'eventYears',currentEventId,'players'));
+      const byUid = {};
+      snap.forEach(d=>{ byUid[d.id]=d.data()||{}; });
+      users.forEach(u=>{ eventPlayers.set(u.uid, normalizeEventRecord(u.uid, byUid[u.uid]||{}, u)); });
+    }
+
+    async function initialLoad() {
+      try {
+        setTsStatus('Loading…');
+        await loadUsers();
+        await loadEventPlayers();
+        await loadTeeSheets();
+        switchTeeDay('friday');
+        $('#mainContent').style.opacity='1';
+      } catch (err) {
+        console.error(err);
+        setTsStatus('Load failed: '+err.message,'error');
+        showToast('Failed to load data','error');
+      }
+    }
+
+    // ── Event select ──
+    function renderEventSelect() {
+      const sel = $('#eventSelect');
+      if (!sel) return;
+      sel.innerHTML = EVENT_OPTIONS.map(e=>
+        `<option value="${e.id}" ${e.id===currentEventId?'selected':''}>${e.year} — ${e.id}</option>`
+      ).join('');
+    }
+
+    // ── Event listeners ──
+
+    // Pool click
+    $('#tsPoolList').addEventListener('click', e => {
+      const btn = e.target.closest('[data-ts-pool]');
+      if (!btn||btn.disabled) return;
+      const uid = btn.dataset.tsPool;
+      const idx = tsSelectedPlayers.indexOf(uid);
+      if (idx>=0) tsSelectedPlayers.splice(idx,1); else tsSelectedPlayers.push(uid);
+      renderTsPool(); renderTsStaging();
+    });
+
+    // Staging deselect chips
+    document.addEventListener('click', e => {
+      const desel = e.target.closest('[data-ts-desel]');
+      if (!desel) return;
+      tsSelectedPlayers.splice(Number(desel.dataset.tsDesel),1);
+      renderTsPool(); renderTsStaging();
+    });
+
+    // Unassigned stage buttons
+    document.addEventListener('click', e => {
+      const stageBtn = e.target.closest('[data-ts-stage]');
+      if (!stageBtn) return;
+      const uid = stageBtn.dataset.tsStage;
+      if (!tsSelectedPlayers.includes(uid)) tsSelectedPlayers.push(uid);
+      renderTsPool(); renderTsStaging();
+    });
+
+    // Groups: delete group / remove player
+    $('#tsGroupsDisplay').addEventListener('click', e => {
+      const delGrp = e.target.closest('[data-ts-del-group]');
+      if (delGrp) {
+        teeSheets[activeTeeDay].splice(Number(delGrp.dataset.tsDelGroup),1);
+        renderTeeSheet(); return;
+      }
+      const remPl = e.target.closest('[data-ts-rem-player]');
+      if (remPl) {
+        const [gi,pi] = remPl.dataset.tsRemPlayer.split(',').map(Number);
+        teeSheets[activeTeeDay][gi].players.splice(pi,1);
+        if (!teeSheets[activeTeeDay][gi].players.length) teeSheets[activeTeeDay].splice(gi,1);
+        renderTeeSheet(); return;
+      }
+    });
+
+    // Inline hole/time edits
+    document.addEventListener('change', e => {
+      if (e.target.classList.contains('ts-group-hole')) {
+        teeSheets[activeTeeDay][Number(e.target.dataset.gi)].hole = e.target.value.trim();
+      }
+      if (e.target.classList.contains('ts-group-time')) {
+        teeSheets[activeTeeDay][Number(e.target.dataset.gi)].teeTime = e.target.value.trim();
+      }
+    });
+
+    // Day tabs
+    $$('.ts-day-tab').forEach(btn => btn.addEventListener('click', ()=>switchTeeDay(btn.dataset.tsDay)));
+
+    // Header buttons
+    $('#autoGroupBtn').addEventListener('click', autoGroupForDay);
+    $('#clearDayBtn').addEventListener('click', ()=>{
+      if (!teeSheets[activeTeeDay].length) return;
+      if (!confirm(`Clear all ${teeSheets[activeTeeDay].length} groups for ${activeTeeDay}?`)) return;
+      teeSheets[activeTeeDay]=[]; tsSelectedPlayers=[];
+      renderTeeSheet(); setTsStatus('Day cleared.','warn');
+    });
+    $('#loadBtn').addEventListener('click', async ()=>{
+      await loadEventPlayers(); await loadTeeSheets();
+    });
+    $('#saveBtn').addEventListener('click', saveTeeSheets);
+    $('#exportPdfBtn').addEventListener('click', ()=>exportTeeSheetPdf(activeTeeDay));
+    $('#addGroupBtn').addEventListener('click', tsAddManualGroup);
+    $('#clearStagingBtn').addEventListener('click', ()=>{ tsSelectedPlayers=[]; renderTsPool(); renderTsStaging(); });
+    $('#tsPoolSearch').addEventListener('input', renderTsPool);
+
+    // Event select
+    $('#eventSelect').addEventListener('change', async e=>{
+      currentEventId = e.target.value;
+      teeSheets={friday:[],saturday:[],sunday:[]}; tsSelectedPlayers=[];
+      renderTeeSheet();
+      try { setTsStatus('Loading…'); await loadEventPlayers(); await loadTeeSheets(); }
+      catch(err){ setTsStatus('Load failed: '+err.message,'error'); }
+    });
+
+    // Settings modal
+    const settingsModal = $('#settingsModal');
+    $('#settingsBtn').addEventListener('click', ()=>{ settingsModal.style.display='flex'; });
+    $('#settingsCloseBtn').addEventListener('click', ()=>{ settingsModal.style.display='none'; });
+    settingsModal.addEventListener('click', e=>{ if(e.target===settingsModal) settingsModal.style.display='none'; });
+
+    // ── Auth ──
+    const signinBtn = $('#signinBtn');
+    const signinEmail = $('#signinEmail');
+    const signinPassword = $('#signinPassword');
+    const signInStatus = $('#signInStatus');
+    const signInOverlay = $('#signInOverlay');
+    const authBar = $('#authBar');
+    const authEmailSpan = $('#authEmail');
+
+    signinBtn.addEventListener('click', async ()=>{
+      const email=signinEmail.value.trim(), password=signinPassword.value;
+      if (!email||!password) { signInStatus.textContent='Enter email and password.'; return; }
+      signinBtn.disabled=true; signinBtn.textContent='Signing in…'; signInStatus.textContent='';
+      try { await signInWithEmailAndPassword(auth,email,password); }
+      catch(err) {
+        signInStatus.textContent=err.message||'Sign in failed.';
+        signInStatus.className='mt-3 text-center text-sm text-red-400';
+        signinBtn.disabled=false; signinBtn.textContent='Sign in';
+      }
+    });
+    signinPassword.addEventListener('keydown', e=>{ if(e.key==='Enter') signinBtn.click(); });
+    $('#signOutBtn').addEventListener('click', async ()=>{ try{await signOut(auth);}catch(e){console.error(e);} });
+
+    setPersistence(auth, browserLocalPersistence).catch(e=>console.warn('Auth persistence:',e));
+
+    async function verifyAdmin(user) {
+      const snap = await get(ref(db,`admins/${user.uid}`));
+      return !!snap.val();
+    }
+
+    // ── Boot ──
+    renderEventSelect();
+    switchTeeDay('friday');
+
+    onAuthStateChanged(auth, async user=>{
+      if (!user) {
+        signInOverlay.classList.remove('hidden');
+        signInOverlay.style.display='';
+        authBar.classList.add('hidden');
+        return;
+      }
+      try {
+        const allowed = await verifyAdmin(user);
+        if (!allowed) {
+          signInOverlay.classList.remove('hidden');
+          signInOverlay.style.display='';
+          signInStatus.textContent='Access denied — admin privileges required';
+          signInStatus.className='mt-3 text-center text-sm text-red-400';
+          authBar.classList.add('hidden');
+          return;
+        }
+      } catch(err) { console.error(err); showToast('Failed to verify admin access','error'); return; }
+
+      signInOverlay.style.display='none';
+      authBar.classList.remove('hidden');
+      authEmailSpan.textContent=user.email||user.uid;
+
+      if (!dataLoaded) { dataLoaded=true; await initialLoad(); }
+    });
+
+    lucide.createIcons();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</body>
+</html>
