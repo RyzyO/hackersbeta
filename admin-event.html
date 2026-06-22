@@ -143,7 +143,10 @@
   <!-- ===================== ROOM MAP PANEL ===================== -->
   <div id="roomMapPanel" class="hidden fixed top-0 left-0 bottom-0 opacity-0 pointer-events-none transition-opacity duration-300" style="right:32rem;z-index:40">
     <div class="w-full h-full flex items-center justify-center p-10">
-      <img src="map.png" alt="Room map" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" />
+      <div style="position:relative;display:inline-block;max-width:100%;max-height:100%;">
+        <img id="roomMapImg" src="map.png" alt="Room map" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" style="display:block;" />
+        <canvas id="roomMapCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:1rem;"></canvas>
+      </div>
     </div>
   </div>
 
@@ -3064,10 +3067,127 @@ async function downloadRoomsSpreadsheet() {
 
     const roomMapPanel = $("#roomMapPanel");
 
+    // [xFraction, yFraction, labelDir] — anchor points at the room number; labelDir pushes
+    // the name pill into the nearest empty band so it never covers the number.
+    //   First-floor outer  → 'up'   (top margin)
+    //   First-floor inner  → 'down' (top of inter-floor gap)
+    //   Ground-floor outer → 'up'   (bottom of inter-floor gap)
+    //   Ground-floor inner → 'down' (bottom margin)
+    const ROOM_MAP_COORDS = {
+      // First Floor — outer row (golf view) → labels go UP into the top margin
+      23:[.225,.217,'up'], 25:[.281,.186,'up'], 27:[.331,.175,'up'], 29:[.383,.167,'up'], 30:[.433,.158,'up'],
+      32:[.480,.156,'up'], 33:[.536,.168,'up'], 36:[.586,.172,'up'], 38:[.638,.172,'up'], 39:[.692,.178,'up'],
+      40:[.747,.202,'up'], 41:[.799,.222,'up'], 44:[.850,.245,'up'], 46:[.900,.269,'up'],
+      // First Floor — inner row (pool view) → labels go DOWN into the top of the inter-floor gap
+      24:[.285,.387,'down'], 26:[.336,.371,'down'], 28:[.386,.359,'down'], 31:[.464,.360,'down'],
+      34:[.516,.360,'down'], 35:[.567,.360,'down'], 37:[.619,.363,'down'],
+      42:[.735,.396,'down'], 43:[.786,.414,'down'], 45:[.838,.434,'down'],
+      // Ground Floor — outer row (golf view) → labels go UP into the bottom of the inter-floor gap
+       1:[.210,.727,'up'],  2:[.262,.706,'up'],  3:[.310,.694,'up'],  6:[.361,.682,'up'],
+       7:[.409,.674,'up'],  9:[.457,.670,'up'], 10:[.513,.688,'up'], 13:[.564,.692,'up'],
+      15:[.612,.690,'up'], 16:[.662,.694,'up'], 17:[.717,.716,'up'], 20:[.768,.745,'up'],
+      21:[.817,.765,'up'], 22:[.869,.786,'up'],
+      // Ground Floor — inner row (pool view) → labels go DOWN into the bottom margin
+       4:[.322,.875,'down'],  5:[.372,.867,'down'],  8:[.447,.867,'down'], 11:[.496,.871,'down'],
+      12:[.547,.871,'down'], 14:[.598,.871,'down'], 18:[.705,.901,'down'], 19:[.756,.920,'down'],
+    };
+
+    function updateRoomMapOverlay() {
+      const canvas = document.getElementById("roomMapCanvas");
+      const img = document.getElementById("roomMapImg");
+      if (!canvas || !img || !img.complete || !img.naturalWidth) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = img.offsetWidth;
+      const h = img.offsetHeight;
+      if (!w || !h) return;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      // Build occupancy: roomNumber(int) → [firstName, ...]
+      const occ = new Map();
+      eventPlayers.forEach((record, uid) => {
+        const rn = parseInt(asString(record.roomNumber).trim());
+        if (!rn) return;
+        const user = users.find(u => u.uid === uid);
+        const name = user ? asString(user.displayName).trim().split(" ")[0] : "";
+        if (!name) return;
+        if (!occ.has(rn)) occ.set(rn, []);
+        occ.get(rn).push(name);
+      });
+
+      if (occ.size === 0) return;
+
+      const fontSize = 7.5;
+      ctx.font = `600 ${fontSize}px system-ui,sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      // How far the label box edge sits from the room centre
+      const roomHalfH = h * 0.040; // ~half the room height in image-space
+      const gap = 2; // px gap between room edge and label
+
+      occ.forEach((names, rn) => {
+        const coords = ROOM_MAP_COORDS[rn];
+        if (!coords) return;
+        const cx = coords[0] * w;
+        const cy = coords[1] * h;
+        const dir = coords[2] || 'up';
+
+        const lineH = fontSize + 2;
+        const pad = 3;
+        const textW = Math.max(...names.map(n => ctx.measureText(n).width));
+        const bw = textW + pad * 2;
+        const bh = names.length * lineH + pad * 2;
+        const rad = 3;
+
+        // Position label box entirely outside the room
+        let y0;
+        if (dir === 'up') {
+          // Label sits above the room centre — bottom of box aligns to room top
+          y0 = cy - roomHalfH - gap - bh;
+        } else {
+          // Label sits below the room centre — top of box aligns to room bottom
+          y0 = cy + roomHalfH + gap;
+        }
+        const x0 = cx - bw / 2;
+
+        // Pill background
+        ctx.fillStyle = "rgba(4,22,18,0.88)";
+        ctx.beginPath();
+        ctx.moveTo(x0 + rad, y0);
+        ctx.lineTo(x0 + bw - rad, y0);
+        ctx.quadraticCurveTo(x0 + bw, y0, x0 + bw, y0 + rad);
+        ctx.lineTo(x0 + bw, y0 + bh - rad);
+        ctx.quadraticCurveTo(x0 + bw, y0 + bh, x0 + bw - rad, y0 + bh);
+        ctx.lineTo(x0 + rad, y0 + bh);
+        ctx.quadraticCurveTo(x0, y0 + bh, x0, y0 + bh - rad);
+        ctx.lineTo(x0, y0 + rad);
+        ctx.quadraticCurveTo(x0, y0, x0 + rad, y0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Text
+        ctx.fillStyle = "#06d6a4";
+        const midY = y0 + bh / 2;
+        names.forEach((name, i) => {
+          ctx.fillText(name, cx, midY - (names.length - 1) * lineH / 2 + i * lineH);
+        });
+      });
+    }
+
     function showRoomMap() {
       if (window.innerWidth < 768) return;
       roomMapPanel.classList.remove("hidden");
-      requestAnimationFrame(() => { roomMapPanel.style.opacity = "1"; roomMapPanel.style.pointerEvents = "none"; });
+      requestAnimationFrame(() => {
+        roomMapPanel.style.opacity = "1";
+        roomMapPanel.style.pointerEvents = "none";
+        updateRoomMapOverlay();
+      });
     }
 
     function hideRoomMap() {
@@ -3083,16 +3203,31 @@ async function downloadRoomsSpreadsheet() {
                r.view.toLowerCase().includes(q) || r.share.toLowerCase().includes(q) ||
                r.floor.toLowerCase().includes(q);
       });
-      roomSearchResults.innerHTML = entries.map(([num, r]) =>
-        `<button class="room-opt w-full text-left px-4 py-2.5 hover:bg-s3 transition flex items-center gap-3" data-rn="${num}">
-          <span class="text-xl font-bold text-white tabular-nums w-8 shrink-0">${num}</span>
+
+      // Build room occupancy map: room number string → display names of current occupants
+      const roomOccupants = new Map();
+      eventPlayers.forEach((record, uid) => {
+        const rn = asString(record.roomNumber).trim();
+        if (!rn) return;
+        const user = users.find(u => u.uid === uid);
+        const name = user ? asString(user.displayName).trim() : "";
+        if (!roomOccupants.has(rn)) roomOccupants.set(rn, []);
+        if (name) roomOccupants.get(rn).push(name);
+      });
+
+      roomSearchResults.innerHTML = entries.map(([num, r]) => {
+        const occupants = roomOccupants.get(num);
+        const occupied = occupants && occupants.length > 0;
+        return `<button class="room-opt w-full text-left px-4 py-2.5 hover:bg-s3 transition flex items-center gap-3${occupied ? " opacity-50" : ""}" data-rn="${num}">
+          <span class="text-xl font-bold ${occupied ? "text-slate-500" : "text-white"} tabular-nums w-8 shrink-0">${num}</span>
           <div class="flex-1 min-w-0">
-            <div class="text-xs font-semibold text-slate-200">${r.type} · ${r.view} · ${r.floor.replace("stairs","")}</div>
-            <div class="text-[11px] text-slate-500">${r.share} · Max ${r.maxOcc}${r.note ? ` · ${r.note}` : ""}</div>
+            <div class="text-xs font-semibold ${occupied ? "text-slate-400" : "text-slate-200"}">${r.type} · ${r.view} · ${r.floor.replace("stairs","")}</div>
+            <div class="text-[11px] ${occupied ? "text-slate-600" : "text-slate-500"}">${r.share} · Max ${r.maxOcc}${r.note ? ` · ${r.note}` : ""}</div>
+            ${occupied ? `<div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(occupants.join(", "))}</div>` : ""}
           </div>
-          <span class="text-xs font-bold text-accent shrink-0">$${roomRate(r)}/n</span>
-        </button>`
-      ).join("") || `<p class="text-xs text-slate-500 text-center py-4">No rooms found</p>`;
+          <span class="text-xs font-bold ${occupied ? "text-slate-600" : "text-accent"} shrink-0">$${roomRate(r)}/n</span>
+        </button>`;
+      }).join("") || `<p class="text-xs text-slate-500 text-center py-4">No rooms found</p>`;
     }
 
     roomPickerBtn.addEventListener("click", (e) => {
