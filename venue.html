@@ -326,6 +326,28 @@
     </div>
   </section>
 
+  <!-- Digital Membership Card Section -->
+  <section class="pb-10 md:pb-14 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+        <div class="w-14 h-14 shrink-0 rounded-2xl bg-hackers-sky/20 flex items-center justify-center">
+          <i data-lucide="wallet" class="w-7 h-7 text-hackers-sky"></i>
+        </div>
+        <div class="flex-1 text-center md:text-left">
+          <h2 class="text-2xl font-bold text-white">Digital Membership Card</h2>
+          <p class="text-sm text-gray-400 mt-1">Already a member? Add your Ex Servos membership card to your digital wallet in seconds.</p>
+        </div>
+        <button
+          onclick="openWalletModal()"
+          class="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-hackers-sky text-white font-semibold text-sm hover:bg-hackers-light active:scale-95 transition-all"
+        >
+          <i data-lucide="wallet" class="w-4 h-4"></i>
+          Get Digital Card
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- Membership Modal -->
   <div id="membership-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-label="Ex Servos Membership Application">
     <!-- Backdrop -->
