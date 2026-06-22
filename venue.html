@@ -1,4 +1,4 @@
-  <!-- Navigation -->
+<!-- Navigation -->
   <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -304,6 +304,65 @@
     </div>
   </section>
 
+  <!-- Join the Club Section -->
+  <section class="py-10 md:py-14 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+        <div class="w-14 h-14 shrink-0 rounded-2xl bg-hackers-gold/20 flex items-center justify-center">
+          <i data-lucide="star" class="w-7 h-7 text-hackers-gold"></i>
+        </div>
+        <div class="flex-1 text-center md:text-left">
+          <h2 class="text-2xl font-bold text-white">Join the Ex Servos Club</h2>
+          <p class="text-sm text-gray-400 mt-1">Become a member and enjoy exclusive benefits. Complete your membership application in just a few minutes.</p>
+        </div>
+        <button
+          onclick="openMembershipModal()"
+          class="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-hackers-gold text-hackers-dark font-semibold text-sm hover:bg-amber-400 active:scale-95 transition-all"
+        >
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          Join the Club
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Membership Modal -->
+  <div id="membership-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-label="Ex Servos Membership Application">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeMembershipModal()"></div>
+    <!-- Modal panel -->
+    <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center p-0 md:p-6">
+      <div class="relative w-full md:max-w-3xl md:max-h-[90vh] h-[92dvh] md:h-auto flex flex-col rounded-t-3xl md:rounded-3xl overflow-hidden glass border border-white/10">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-hackers-gold/20 flex items-center justify-center">
+              <i data-lucide="star" class="w-4 h-4 text-hackers-gold"></i>
+            </div>
+            <span class="font-semibold text-white text-sm">Ex Servos Membership Application</span>
+          </div>
+          <button onclick="closeMembershipModal()" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <!-- Loading state -->
+        <div id="modal-loading" class="flex flex-col items-center justify-center gap-3 py-12">
+          <div class="w-8 h-8 border-2 border-hackers-gold border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-sm text-gray-400">Loading application form…</p>
+        </div>
+        <!-- Iframe -->
+        <iframe
+          id="membership-iframe"
+          src=""
+          class="hidden flex-1 w-full border-0 bg-white"
+          style="min-height: 0;"
+          title="Ex Servos Membership Application"
+          onload="onIframeLoad()"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
   <div class="bottom-nav md:hidden">
     <div class="flex justify-around items-center h-16 pb-safe">
       <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
@@ -335,6 +394,50 @@
       if (window.lucide) {
         window.lucide.createIcons();
       }
+    });
+
+    const MEMBERSHIP_URL = "https://odma.cherryhub.com.au/?data=LzgxMDAwODQ1MzU4L2Zvcm1zLzgxMDAwODQ1MzU4LjAveG9XR01DNndaVE51UXBJRkFIVk03WW80T0lnRlNEang%3d";
+
+    function openMembershipModal() {
+      const modal = document.getElementById('membership-modal');
+      const iframe = document.getElementById('membership-iframe');
+      const loading = document.getElementById('modal-loading');
+
+      // Reset state
+      iframe.classList.add('hidden');
+      loading.classList.remove('hidden');
+
+      // Set src only when opening (lazy load)
+      if (iframe.src !== MEMBERSHIP_URL) {
+        iframe.src = MEMBERSHIP_URL;
+      } else {
+        // Already loaded — skip loading state
+        onIframeLoad();
+      }
+
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Re-render lucide icons inside the newly visible modal
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closeMembershipModal() {
+      const modal = document.getElementById('membership-modal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function onIframeLoad() {
+      const iframe = document.getElementById('membership-iframe');
+      const loading = document.getElementById('modal-loading');
+      loading.classList.add('hidden');
+      iframe.classList.remove('hidden');
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMembershipModal();
     });
   </script>
 

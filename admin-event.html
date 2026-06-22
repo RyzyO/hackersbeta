@@ -29,7 +29,7 @@
     };
   </script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Kanit:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -101,6 +101,9 @@
   </style>
 </head>
 <body class="text-slate-200 font-sans min-h-screen antialiased">
+
+  <!-- Force Kanit font to load so html2canvas can use it for label export -->
+  <span aria-hidden="true" style="font-family:'Kanit',sans-serif;position:absolute;opacity:0;pointer-events:none;width:0;overflow:hidden;">.</span>
 
   <!-- ===================== TOAST CONTAINER ===================== -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
@@ -703,6 +706,9 @@
                 <div id="tsStatus" class="text-xs text-slate-500 min-h-[16px]"></div>
                 <button id="tsExportBtn" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/20 text-accent text-[10px] font-medium hover:bg-accent/25 transition">
                   <i data-lucide="download" class="w-3 h-3"></i>Export PDF
+                </button>
+                <button id="tsLabelsBtn" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-s3 border border-brd text-slate-300 text-[10px] font-medium hover:bg-s4 hover:text-white transition">
+                  <i data-lucide="tag" class="w-3 h-3"></i>Print Labels
                 </button>
                 <button id="tsClearDayBtn" class="px-2.5 py-1 rounded-lg bg-s3 border border-brd text-slate-400 text-[10px] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 transition">Clear day</button>
               </div>
@@ -2042,6 +2048,217 @@ async function downloadRoomsSpreadsheet() {
       }
     }
 
+    // === SCORECARD LABELS PDF EXPORT — pure jsPDF, mm-accurate, no html2canvas ===
+    // Kanit fonts fetched as TTF from jsDelivr (Google Fonts GitHub mirror) and
+    // embedded directly into the PDF. Logo loaded via fetch + addImage.
+    // Every position is calculated in real mm — guaranteed no cut-off or drift.
+    async function exportLabelsPdf() {
+      const totalGroups = teeSheets.friday.length + teeSheets.saturday.length + teeSheets.sunday.length;
+      if (totalGroups === 0) { showToast('No tee sheet data — load tee sheets first.', 'warn'); return; }
+
+      const btn = document.getElementById('tsLabelsBtn');
+      const origHtml = btn ? btn.innerHTML : '';
+      const setBtn = t => { if (btn) btn.textContent = t; };
+      setBtn('Loading fonts…');
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const cfg = currentEventConfig();
+
+        // ── Avery J8157 (mm) ─────────────────────────────────────────────────
+        const LW = 64, LH = 24.3;           // label size
+        const ML = 7.2,  MT = 14.85;        // page margins
+        const CP = 65.8, RP = 24.3;         // col/row pitch
+        const COLS = 3,  ROWS = 11;
+        const PAD = 1.8;                     // internal label padding
+
+        // ── Load Kanit TTF fonts ──────────────────────────────────────────────
+        // Google Fonts open-source repo served via jsDelivr CDN (CORS: *)
+        const FONT_BASE = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/kanit/';
+        let kanitLoaded = false;
+
+        async function fetchFont(filename) {
+          const resp = await fetch(FONT_BASE + filename);
+          if (!resp.ok) throw new Error(`${filename} HTTP ${resp.status}`);
+          const buf = await resp.arrayBuffer();
+          const u8 = new Uint8Array(buf);
+          let b64 = '';
+          for (let i = 0; i < u8.length; i += 8192)
+            b64 += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+          return btoa(b64);
+        }
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+        try {
+          const [boldB64, regB64] = await Promise.all([
+            fetchFont('Kanit-Bold.ttf'),
+            fetchFont('Kanit-Regular.ttf'),
+          ]);
+          pdf.addFileToVFS('Kanit-Bold.ttf',    boldB64);
+          pdf.addFileToVFS('Kanit-Regular.ttf', regB64);
+          pdf.addFont('Kanit-Bold.ttf',    'Kanit', 'bold');
+          pdf.addFont('Kanit-Regular.ttf', 'Kanit', 'normal');
+          kanitLoaded = true;
+        } catch (e) {
+          console.warn('Kanit load failed — falling back to helvetica:', e);
+        }
+
+        const FONT  = kanitLoaded ? 'Kanit' : 'helvetica';
+
+        // ── Load logo ─────────────────────────────────────────────────────────
+        setBtn('Loading logo…');
+        let logoDataUrl = null, logoAspect = 4;
+        try {
+          const resp = await fetch('print.png');
+          if (resp.ok) {
+            const blob = await resp.blob();
+            logoDataUrl = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+            const img = new Image(); img.src = logoDataUrl;
+            await new Promise(r => { img.onload = r; img.onerror = r; });
+            if (img.naturalWidth && img.naturalHeight) logoAspect = img.naturalWidth / img.naturalHeight;
+          }
+        } catch (e) { console.warn('Logo not loaded:', e); }
+
+        // ── Build labels ──────────────────────────────────────────────────────
+        setBtn('Building labels…');
+        const labels = [];
+
+        function fmtHc(hc) {
+          if (hc == null) return '';
+          return Number.isInteger(hc) ? String(hc) : parseFloat(hc.toFixed(2)).toString();
+        }
+
+        // Friday — Skins
+        for (const g of (teeSheets.friday || [])) {
+          const teeInfo = g.hole ? `Skins: Tee-${g.hole}` : 'Skins';
+          for (const uid of (g.players || [])) {
+            const u = users.find(x => x.uid === uid);
+            const rec = getEventRecord(uid);
+            labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo, day: 'friday' });
+          }
+        }
+
+        // Saturday — Stableford
+        for (const g of (teeSheets.saturday || [])) {
+          for (const uid of (g.players || [])) {
+            const u = users.find(x => x.uid === uid);
+            const rec = getEventRecord(uid);
+            labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo: 'Stableford', day: 'saturday' });
+          }
+        }
+
+        // Sunday — Ambrose pairs
+        for (const g of (teeSheets.sunday || [])) {
+          const teeInfo = g.hole ? `Ambrose: Tee ${g.hole}` : 'Ambrose';
+          const players = g.players || [];
+          const done = new Set();
+          for (const uid of players) {
+            if (done.has(uid)) continue;
+            const rec = getEventRecord(uid);
+            const pid = rec.ambrosePartnerUid;
+            const prec = pid ? getEventRecord(pid) : null;
+            const paired = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
+            if (paired) {
+              done.add(uid); done.add(pid);
+              const u1 = users.find(x => x.uid === uid);
+              const u2 = users.find(x => x.uid === pid);
+              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
+              const teamHc = h1 != null && h2 != null ? (h1 + h2) / 4 : null;
+              const initSurname = u => { const p = (u?.displayName || '?').trim().split(/\s+/); return p.length >= 2 ? `${p[0][0]} ${p[p.length-1]}` : p[0]; };
+              labels.push({ name: `${initSurname(u1)} / ${initSurname(u2)}`, hc: teamHc, teeInfo, day: 'sunday' });
+            } else if (!done.has(uid)) {
+              done.add(uid);
+              const u = users.find(x => x.uid === uid);
+              labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo, day: 'sunday' });
+            }
+          }
+        }
+
+        if (!labels.length) { showToast('No players in tee sheets.', 'warn'); return; }
+
+        // ── Draw one label at (x, y) in mm — everything is a direct jsPDF call ──
+        const DAY_LABEL = { friday: 'FRIDAY', saturday: 'SATURDAY', sunday: 'SUNDAY' };
+        const NAVY = [26, 50, 99];
+
+        function ellipsis(pdf, text, maxW) {
+          while (pdf.getTextWidth(text) > maxW && text.length > 2)
+            text = text.slice(0, -2) + '…';
+          return text;
+        }
+
+        function drawLabel(x, y, label) {
+          const dayName  = DAY_LABEL[label.day] || label.day.toUpperCase();
+          const hcStr    = label.hc != null ? ` (${fmtHc(label.hc)})` : '';
+          const maxNameW = LW - 2 * PAD;
+
+          // ── Label border (light, helps visually separate labels in the PDF preview) ──
+          pdf.setDrawColor(210, 218, 228);
+          pdf.setLineWidth(0.18);
+          pdf.rect(x, y, LW, LH);
+
+          // ── Logo ─────────────────────────────────────────────────────────────
+          const logoH = 5.5;
+          const logoW = Math.min(logoH * logoAspect, 34);
+          const logoY = y + PAD + 0.3;               // 2.1mm from label top
+          if (logoDataUrl) {
+            pdf.addImage(logoDataUrl, x + PAD, logoY, logoW, logoH);
+          } else {
+            pdf.setFont(FONT, 'bold'); pdf.setFontSize(7); pdf.setTextColor(...NAVY);
+            pdf.text('HACKERS CUP', x + PAD, logoY + 3.5);
+          }
+
+          // ── Day name (top-right, bold navy) ──────────────────────────────────
+          pdf.setFont(FONT, 'bold');
+          pdf.setFontSize(8);
+          pdf.setTextColor(...NAVY);
+          // Baseline aligns roughly to logo centre
+          pdf.text(dayName, x + LW - PAD, logoY + 3, { align: 'right' });
+
+          // ── Tee info (smaller, grey, below day name) ──────────────────────────
+          pdf.setFont(FONT, 'normal');
+          pdf.setFontSize(6.5);
+          pdf.setTextColor(95, 95, 95);
+          pdf.text(label.teeInfo, x + LW - PAD, logoY + 6, { align: 'right' });
+
+          // ── Separator (snug below header content) ────────────────────────────
+          const sepY = logoY + logoH + 1.5;           // ~9.3mm from label top
+          pdf.setDrawColor(185, 198, 212);
+          pdf.setLineWidth(0.15);
+          pdf.line(x + PAD, sepY, x + LW - PAD, sepY);
+
+          // ── Player name — baseline immediately below separator ────────────────
+          // 11pt cap-height ≈ 2.8mm; baseline = sepY + 1 + 2.8 = sepY + 3.8
+          pdf.setFont(FONT, 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(12, 18, 35);
+          const nameStr = ellipsis(pdf, label.name + hcStr, maxNameW);
+          pdf.text(nameStr, x + PAD, sepY + 4.2);
+        }
+
+        // ── Paginate ──────────────────────────────────────────────────────────
+        const totalPages = Math.ceil(labels.length / (COLS * ROWS));
+        for (let p = 0; p < totalPages; p++) {
+          setBtn(`Generating ${p + 1}/${totalPages}…`);
+          if (p > 0) pdf.addPage();
+          const page = labels.slice(p * COLS * ROWS, (p + 1) * COLS * ROWS);
+          page.forEach((lbl, i) => {
+            drawLabel(ML + (i % COLS) * CP, MT + Math.floor(i / COLS) * RP, lbl);
+          });
+        }
+
+        pdf.save(`hackerscup-${cfg.year}-scorecard-labels.pdf`);
+        showToast(`${labels.length} labels exported across ${totalPages} page${totalPages > 1 ? 's' : ''}. Print at 100% — no scaling.`, 'success');
+
+      } catch (err) {
+        console.error(err);
+        showToast('Labels export failed: ' + err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = origHtml; lucide.createIcons({ nodes: [btn] }); }
+      }
+    }
+
+
     // === REGO SHEET SYNC ===
     const REGO_SHEET_ID = '1cVA4d2aqw6vean9nNv2DZfgxaF4SBNwSwCNzrcxon3Q';
     const REGO_GID = '846766573';
@@ -3320,6 +3537,7 @@ async function downloadRoomsSpreadsheet() {
     document.getElementById('tsLoadBtn')?.addEventListener('click', loadTeeSheets);
     document.getElementById('tsSaveBtn')?.addEventListener('click', saveTeeSheets);
     document.getElementById('tsExportBtn')?.addEventListener('click', () => exportTeeSheetPdf(activeTeeDay));
+    document.getElementById('tsLabelsBtn')?.addEventListener('click', exportLabelsPdf);
 
     // Auto-group
     document.getElementById('tsAutoGroupBtn')?.addEventListener('click', autoGroupForDay);
