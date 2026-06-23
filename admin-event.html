@@ -2999,6 +2999,7 @@ async function downloadRoomsSpreadsheet() {
       const writes = [];
       const eventPayload = { ...nextRecord };
       writes.push(set(ref(db, `users/${uid}/displayName`), asString(fieldValues.displayName).trim()));
+      writes.push(set(ref(db, `users/${uid}/hackerNumber`), asString(fieldValues.hackerNumber).trim() || null));
 
       // Room cascading updates
       const nextRoomNumber = asString(nextRecord.roomNumber).trim();
