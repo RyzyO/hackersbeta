@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Archived Leaderboards | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    /* View tabs */
+    .view-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .view-tab {
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .view-tab:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .view-tab.active {
+      background: rgba(14, 165, 233, 0.2);
+      border-color: rgba(14, 165, 233, 0.5);
+      color: #38bdf8;
+    }
+
+    /* Year group label */
+    .year-group {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.6);
+      margin-right: 2px;
+      align-self: center;
+    }
+
+    /* Performance Pulse */
+    .pulse-card {
+      background:
+        radial-gradient(140% 120% at 0% 0%, rgba(56,189,248,0.18), transparent 55%),
+        radial-gradient(140% 120% at 100% 0%, rgba(245,158,11,0.2), transparent 55%),
+        rgba(15,23,42,0.6);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      box-shadow: 0 18px 50px rgba(2,6,23,0.45);
+    }
+
+    .pulse-title {
+      font-size: 13px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: transparent;
+      background: linear-gradient(90deg, #38bdf8, #f59e0b);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .pulse-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .pulse-stat {
+      --tone: rgba(56,189,248,0.9);
+      position: relative;
+      background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.6));
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(2,6,23,0.35);
+    }
+
+    .pulse-stat::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--tone), transparent 80%);
+    }
+
+    .pulse-stat-label { font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(148,163,184,0.85); }
+    .pulse-stat-value { font-size: 22px; font-weight: 700; color: #fff; }
+    .pulse-stat.tone-sky   { --tone: rgba(56,189,248,0.9); }
+    .pulse-stat.tone-emerald { --tone: rgba(16,185,129,0.9); }
+    .pulse-stat.tone-gold  { --tone: rgba(245,158,11,0.9); }
+    .pulse-stat.tone-rose  { --tone: rgba(244,63,94,0.9); }
+    .pulse-stat.tone-amber { --tone: rgba(251,146,60,0.9); }
+    .pulse-stat.tone-violet { --tone: rgba(168,85,247,0.9); }
+
+    :root { --pulse-top: 0px; --pulse-bottom: 0px; }
+    @media (max-width: 767px) {
+      :root {
+        --pulse-top: 64px;
+        --pulse-bottom: calc(64px + env(safe-area-inset-bottom));
+      }
+    }
+
+    .pulse-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pulse-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px; height: 34px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #fff;
+    }
+
+    .pulse-overlay {
+      position: fixed;
+      top: var(--pulse-top); right: 0; bottom: var(--pulse-bottom); left: 0;
+      background: rgba(2,6,23,0.5);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 60;
+    }
+
+    .pulse-overlay.is-open { opacity: 1; pointer-events: auto; }
+
+    .pulse-drawer {
+      position: fixed;
+      top: var(--pulse-top); right: 0;
+      height: calc(100vh - var(--pulse-top) - var(--pulse-bottom));
+      width: min(94vw, 420px);
+      padding: 18px 16px 20px;
+      background: rgba(15,23,42,0.92);
+      border-left: 1px solid rgba(255,255,255,0.12);
+      box-shadow: -18px 0 30px rgba(2,6,23,0.28);
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 70;
+      overflow-y: auto;
+    }
+
+    .pulse-drawer.is-open { transform: translateX(0); }
+
+    @media (min-width: 768px) {
+      .pulse-toggle { display: none; }
+      .pulse-close  { display: none; }
+      .pulse-overlay { display: none; }
+      .pulse-drawer {
+        position: static;
+        transform: none;
+        width: auto; height: auto;
+        padding: 0;
+        background: transparent;
+        border: none;
+        overflow: visible;
+      }
+    }
+
+    /* Table */
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+      min-width: 520px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    #data-table thead tr {
+      background-color: rgba(30,41,59,0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    #data-table th, #data-table td {
+      padding: 12px 14px;
+      border: 1px solid rgba(148,163,184,0.2);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    #data-table tbody tr:nth-child(even) { background-color: rgba(30,41,59,0.45); }
+    #data-table tbody tr:nth-child(odd)  { background-color: rgba(15,23,42,0.6); }
+    #data-table tbody tr:hover { background-color: rgba(56,189,248,0.2); cursor: pointer; }
+    #data-table tbody tr.no-link:hover { cursor: default; }
+
+    /* Mobile cards */
+    .mobile-leaderboard { display: none; gap: 8px; }
+
+    .leaderboard-card {
+      background: rgba(15,23,42,0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .leaderboard-rank { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(148,163,184,0.9); }
+    .leaderboard-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .leaderboard-value { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; text-align: right; }
+
+    @media screen and (max-width: 767px) {
+      body { overflow-x: hidden; }
+      #data-table th, #data-table td { padding: 8px; font-size: 12px; }
+      .table-wrap { display: none; }
+      .mobile-leaderboard { display: grid; }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(15,23,42,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) { .bottom-nav { display: none; } }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Scorecard drawer */
+    #sc-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+    }
+    #sc-overlay.open { display: block; }
+
+    #sc-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(100vw, 720px);
+      z-index: 101;
+      background: #0f172a;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #sc-drawer.open { transform: translateX(0); }
+
+    #sc-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(15,23,42,0.98);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+
+    #sc-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    #sc-back:hover { background: rgba(255,255,255,0.13); }
+
+    #sc-player-name {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #sc-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #sc-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      color: rgba(148,163,184,0.7);
+      font-size: 14px;
+    }
+
+    .sc-table-wrap { overflow-x: auto; }
+
+    .sc-table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
+      font-size: 13px;
+      min-width: 400px;
+    }
+
+    .sc-table thead tr {
+      background: rgba(30,41,59,0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 11px;
+    }
+
+    .sc-table th, .sc-table td {
+      padding: 9px 8px;
+      text-align: center;
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+
+    .sc-table .row-label {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.75);
+      white-space: nowrap;
+      min-width: 52px;
+    }
+
+    .sc-table td.total-col { font-weight: 700; background: rgba(30,41,59,0.6); }
+
+    /* Stableford score colours on points row */
+    .pts-eagle  { background: #1d4ed8; color: #fff; font-weight: 700; }
+    .pts-birdie { background: #add8e6; color: #0f172a; font-weight: 700; }
+    .pts-par    { background: #fff;    color: #0f172a; }
+    .pts-bogey  { background: #f97316; color: #fff; }
+    .pts-double { background: #ef4444; color: #fff; }
+
+    /* Stroke score colours on score row */
+    .str-eagle  { background: #1d4ed8; color: #fff; font-weight: 700; }
+    .str-birdie { background: #add8e6; color: #0f172a; font-weight: 700; }
+    .str-par    { background: #fff;    color: #0f172a; }
+    .str-bogey  { background: #f97316; color: #fff; }
+    .str-double { background: #ef4444; color: #fff; }
+
+    /* Player history */
+    .ph-player-card {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      background: rgba(15,23,42,0.4);
+    }
+    .ph-player-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+    .ph-year-row {
+      display: grid;
+      grid-template-columns: 56px 1fr 1fr 80px;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px;
+    }
+    .ph-year-label {
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(148,163,184,0.7);
+      letter-spacing: 0.06em;
+    }
+    .ph-day-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ph-rank { font-weight: 700; color: #fff; font-size: 14px; }
+    .ph-sub  { font-size: 11px; color: rgba(148,163,184,0.7); }
+    .ph-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: rgba(148,163,184,0.9);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .ph-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .ph-overall-rank { font-size: 13px; font-weight: 600; color: rgba(148,163,184,0.8); text-align: right; }
+    @media (max-width: 520px) {
+      .ph-year-row { grid-template-columns: 44px 1fr 1fr; }
+      .ph-overall-rank { display: none; }
+    }
+    .ph-no-results { color: rgba(148,163,184,0.6); text-align: center; padding: 32px 0; font-size: 14px; }
+
+    .sc-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.7);
+      margin: 0 0 10px 0;
+      padding: 0;
+    }
+
+    .sc-totals {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .sc-total-card {
+      background: rgba(30,41,59,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .sc-total-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.8);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .sc-total-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html"  class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html"  class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+        </div>
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html"  class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html"  class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-5 animate-slide-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+          <i data-lucide="archive" class="w-4 h-4 text-hackers-sky"></i>
+          <span id="hero-badge" class="text-sm font-medium text-gray-300">Archived Results</span>
+        </div>
+        <h1 id="hero-title" class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+          Leaderboard <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Archive</span>
+        </h1>
+        <p id="hero-subtitle" class="text-lg text-gray-300">Select a year and round below.</p>
+
+        <!-- View switcher -->
+        <div class="pt-2">
+          <div class="flex flex-wrap gap-x-4 gap-y-3">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="year-group">2025</span>
+              <div class="view-tabs">
+                <button class="view-tab" data-view="saturday25">Saturday</button>
+                <button class="view-tab" data-view="sunday25">Sunday</button>
+                <button class="view-tab" data-view="overall25">Overall</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="year-group">2024</span>
+              <div class="view-tabs">
+                <button class="view-tab" data-view="saturday24">Saturday</button>
+                <button class="view-tab" data-view="sunday24">Sunday</button>
+                <button class="view-tab" data-view="overall24">Overall</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="year-group">2023</span>
+              <div class="view-tabs">
+                <button class="view-tab" data-view="saturday23">Saturday</button>
+                <button class="view-tab" data-view="sunday23">Sunday</button>
+                <button class="view-tab" data-view="overall23">Overall</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="view-tabs">
+                <button class="view-tab" data-view="player-search">
+                  <i data-lucide="user-search" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5"></i>Player History
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main content -->
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Performance Pulse toggle (mobile) -->
+      <div id="pulse-toggle-wrap" class="flex items-center justify-end md:hidden mb-4 hidden">
+        <button id="pulse-toggle" class="pulse-toggle" type="button">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          Performance Pulse
+        </button>
+      </div>
+
+      <div id="pulse-overlay" class="pulse-overlay"></div>
+
+      <!-- Pulse drawer (hidden by default; shown for non-overall views) -->
+      <div id="pulse-drawer" class="pulse-drawer hidden-pulse">
+        <div class="pulse-card mb-6">
+          <div class="flex items-center justify-between gap-3">
+            <div class="pulse-title">Performance Pulse</div>
+            <button id="pulse-close" class="pulse-close" type="button" aria-label="Close">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="pulse-grid">
+            <div class="pulse-stat tone-sky">
+              <div class="pulse-stat-label">Avg Score</div>
+              <div id="pulse-avg-score" class="pulse-stat-value">—</div>
+            </div>
+            <div class="pulse-stat tone-emerald">
+              <div class="pulse-stat-label">Avg Handicap</div>
+              <div id="pulse-avg-handicap" class="pulse-stat-value">—</div>
+            </div>
+            <div class="pulse-stat tone-gold">
+              <div class="pulse-stat-label">36+ Points</div>
+              <div id="pulse-played" class="pulse-stat-value">—</div>
+            </div>
+            <div class="pulse-stat tone-rose">
+              <div class="pulse-stat-label">Under 36</div>
+              <div id="pulse-not-played" class="pulse-stat-value">—</div>
+            </div>
+            <div class="pulse-stat tone-amber">
+              <div class="pulse-stat-label">40+ Scores</div>
+              <div id="pulse-40plus" class="pulse-stat-value">—</div>
+            </div>
+            <div class="pulse-stat tone-violet">
+              <div class="pulse-stat-label">Through 18</div>
+              <div id="pulse-through" class="pulse-stat-value">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard card -->
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+          <div>
+            <h2 id="table-title" class="text-xl font-semibold">Leaderboard</h2>
+            <p class="text-sm text-gray-400">Search by player name or rank.</p>
+          </div>
+          <div class="flex flex-nowrap items-center gap-2">
+            <div class="relative flex-1 min-w-[180px]" id="search-wrap">
+              <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input id="leaderboard-search" type="text" placeholder="Search players"
+                class="pl-9 pr-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50 w-full" />
+            </div>
+            <button class="inline-flex items-center justify-center rounded-full bg-white/5 border border-white/10 w-10 h-10 text-white shrink-0"
+              aria-label="Refresh" onclick="loadCurrentView()">
+              <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading skeleton -->
+        <div id="loading-state" class="space-y-3 py-4">
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+        </div>
+
+        <!-- Table (desktop) -->
+        <div class="table-wrap hidden">
+          <table id="data-table">
+            <thead><tr id="header-row"></tr></thead>
+            <tbody id="data-rows"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div id="mobile-cards" class="mobile-leaderboard"></div>
+      </div>
+
+      <!-- Player History panel -->
+      <div id="player-panel" class="glass-card rounded-3xl p-6 md:p-8 hidden">
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold mb-1">Player History</h2>
+          <p class="text-sm text-gray-400">Search for any player to see their scores, rankings, and scorecards across all years.</p>
+        </div>
+        <div class="relative mb-6">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input id="player-search-input" type="text" placeholder="Type a player name…"
+            class="pl-9 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50 w-full" />
+        </div>
+        <div id="player-search-loading" class="space-y-3 py-4 hidden">
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+          <div class="skeleton h-10 w-full"></div>
+        </div>
+        <div id="player-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scorecard overlay + drawer -->
+  <div id="sc-overlay" onclick="closeScorecardDrawer()"></div>
+  <div id="sc-drawer">
+    <div id="sc-header">
+      <button id="sc-back" onclick="closeScorecardDrawer()">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back
+      </button>
+      <span id="sc-player-name"></span>
+    </div>
+    <div id="sc-body">
+      <div id="sc-loading">Loading scorecard…</div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    }
+
+    // ── Scorecard drawer ──────────────────────────────────────────
+    function openScorecardDrawer(playerName, cfg, extra) {
+      document.getElementById('sc-player-name').textContent =
+        playerName.replace(/-/g, ' & ');
+      document.getElementById('sc-body').innerHTML =
+        '<div id="sc-loading">Loading scorecard…</div>';
+      document.getElementById('sc-drawer').classList.add('open');
+      document.getElementById('sc-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (window.lucide) window.lucide.createIcons();
+      fetchAndRenderScorecard(playerName, cfg, extra);
+    }
+
+    function closeScorecardDrawer() {
+      document.getElementById('sc-drawer').classList.remove('open');
+      document.getElementById('sc-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeScorecardDrawer();
+    });
+
+    // ── Scorecard fetch + render ──────────────────────────────────
+    function fetchScorecardData(playerName, sc) {
+      const url = `https://docs.google.com/spreadsheets/d/${sc.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+      return fetch(url).then(r => r.text()).then(text => {
+        const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
+        const rows = json.table.rows || [];
+        const holePars = {}, holeScores = {}, holePts = {};
+        let scOut = sc;
+        if (sc.byOrder) {
+          const orderedHoles = [];
+          rows.forEach(r => {
+            const h = r.c[4]?.v ? parseInt(r.c[4].v, 10) : 0;
+            if (h > 0) {
+              holePars[h]   = parseInt(r.c[5]?.v ?? 0, 10) || 0;
+              holeScores[h] = parseInt(r.c[8]?.v ?? 0, 10) || 0;
+              holePts[h]    = parseInt(r.c[12]?.v ?? 0, 10) || 0;
+              orderedHoles.push(h);
+            }
+          });
+          scOut = { ...sc, front: orderedHoles.slice(0, 9), back: orderedHoles.slice(9, 18) };
+        } else if (sc.byHoleNum) {
+          rows.forEach(r => {
+            const h = r.c[4]?.v ? parseInt(r.c[4].v, 10) : 0;
+            if (h > 0) {
+              holePars[h]   = parseInt(r.c[5]?.v ?? 0, 10) || 0;
+              holeScores[h] = parseInt(r.c[8]?.v ?? 0, 10) || 0;
+              holePts[h]    = parseInt(r.c[12]?.v ?? 0, 10) || 0;
+            }
+          });
+        } else {
+          const order = [...sc.front, ...sc.back];
+          order.forEach((h, i) => {
+            const r = rows[i];
+            holePars[h]   = r ? (parseInt(r.c[5]?.v ?? 0, 10) || 0) : 0;
+            holeScores[h] = r ? (parseInt(r.c[8]?.v ?? 0, 10) || 0) : 0;
+            holePts[h]    = 0;
+          });
+        }
+        return { sc: scOut, holePars, holeScores, holePts };
+      });
+    }
+
+    function buildScorecardHtml(sc, holePars, holeScores, holePts, extra) {
+      const sum = (holes, map) => holes.reduce((s, h) => s + (map[h] || 0), 0);
+
+      const strCls = (score, par) => {
+        if (!score || !par) return '';
+        const d = score - par;
+        if (d <= -2) return 'str-eagle';
+        if (d === -1) return 'str-birdie';
+        if (d === 0)  return 'str-par';
+        if (d === 1)  return 'str-bogey';
+        return 'str-double';
+      };
+
+      const buildTable = (holes, label) => {
+        const parSum  = sum(holes, holePars);
+        const scrSum  = sum(holes, holeScores);
+        const ptsSum  = sum(holes, holePts);
+        const headerCells = holes.map(h => `<th>${h}</th>`).join('') + `<th class="total-col">${label}</th>`;
+        const parCells    = holes.map(h => `<td>${holePars[h] || ''}</td>`).join('') + `<td class="total-col">${parSum || ''}</td>`;
+        const scoreCells  = holes.map(h => `<td class="${strCls(holeScores[h], holePars[h])}">${holeScores[h] || ''}</td>`).join('') + `<td class="total-col">${scrSum || ''}</td>`;
+        const ptsCells    = sc.showPoints
+          ? holes.map(h => `<td>${holePts[h] || ''}</td>`).join('') + `<td class="total-col">${ptsSum || ''}</td>`
+          : '';
+        return `
+          <div class="sc-table-wrap">
+            <table class="sc-table">
+              <thead><tr><th class="row-label"></th>${headerCells}</tr></thead>
+              <tbody>
+                <tr><td class="row-label">Par</td>${parCells}</tr>
+                <tr><td class="row-label">Score</td>${scoreCells}</tr>
+                ${sc.showPoints ? `<tr><td class="row-label">Points</td>${ptsCells}</tr>` : ''}
+              </tbody>
+            </table>
+          </div>`;
+      };
+
+      const frontTable = buildTable(sc.front, 'Out');
+      const backTable  = buildTable(sc.back, 'In');
+      const totalPar   = sum([...sc.front, ...sc.back], holePars);
+      const totalScore = sum([...sc.front, ...sc.back], holeScores);
+      const totalPts   = sum([...sc.front, ...sc.back], holePts);
+
+      const totalsHtml = sc.showPoints ? `
+        <div class="sc-totals">
+          <div class="sc-total-card"><span class="sc-total-label">Total Score</span><span class="sc-total-value">${totalScore}</span></div>
+          <div class="sc-total-card"><span class="sc-total-label">Total Points</span><span class="sc-total-value">${totalPts}</span></div>
+          <div class="sc-total-card"><span class="sc-total-label">Total Par</span><span class="sc-total-value">${totalPar}</span></div>
+        </div>` : `
+        <div class="sc-totals">
+          <div class="sc-total-card"><span class="sc-total-label">Gross</span><span class="sc-total-value">${totalScore}</span></div>
+          ${extra?.handicap != null ? `<div class="sc-total-card"><span class="sc-total-label">Handicap</span><span class="sc-total-value">${extra.handicap}</span></div>` : ''}
+          ${extra?.nett != null ? `<div class="sc-total-card"><span class="sc-total-label">Nett</span><span class="sc-total-value">${extra.nett}</span></div>` : ''}
+          ${extra?.frontNett != null ? `<div class="sc-total-card"><span class="sc-total-label">Front Nett</span><span class="sc-total-value">${extra.frontNett}</span></div>` : ''}
+          ${extra?.backNett != null ? `<div class="sc-total-card"><span class="sc-total-label">Back Nett</span><span class="sc-total-value">${extra.backNett}</span></div>` : ''}
+        </div>`;
+
+      return frontTable + backTable + totalsHtml;
+    }
+
+    function fetchAndRenderScorecard(playerName, cfg, extra) {
+      const sc = cfg.sc;
+      if (!sc) {
+        document.getElementById('sc-body').innerHTML =
+          '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">No scorecard data available.</p>';
+        return;
+      }
+      fetchScorecardData(playerName, sc).then(data => {
+        document.getElementById('sc-body').innerHTML = buildScorecardHtml(data.sc, data.holePars, data.holeScores, data.holePts, extra);
+      }).catch(() => {
+        document.getElementById('sc-body').innerHTML =
+          '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">Failed to load scorecard.</p>';
+      });
+    }
+
+    function openDualScorecardDrawer(playerName, satCfg, sunPairName, sunCfg, sunExtra) {
+      document.getElementById('sc-player-name').textContent = playerName;
+      document.getElementById('sc-body').innerHTML = '<div id="sc-loading">Loading scorecards…</div>';
+      document.getElementById('sc-drawer').classList.add('open');
+      document.getElementById('sc-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      const satFetch = satCfg?.sc ? fetchScorecardData(playerName, satCfg.sc) : Promise.resolve(null);
+      const sunFetch = sunCfg?.sc ? fetchScorecardData(sunPairName, sunCfg.sc) : Promise.resolve(null);
+
+      Promise.all([satFetch, sunFetch]).then(([satData, sunData]) => {
+        let html = '';
+        if (satData) {
+          html += `<p class="sc-section-title">Saturday</p>`;
+          html += buildScorecardHtml(satData.sc, satData.holePars, satData.holeScores, satData.holePts, null);
+        }
+        if (sunData) {
+          html += `<p class="sc-section-title" style="margin-top:20px">Sunday</p>`;
+          html += buildScorecardHtml(sunData.sc, sunData.holePars, sunData.holeScores, sunData.holePts, sunExtra);
+        }
+        document.getElementById('sc-body').innerHTML = html || '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">No scorecard data available.</p>';
+      }).catch(() => {
+        document.getElementById('sc-body').innerHTML =
+          '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">Failed to load scorecards.</p>';
+      });
+    }
+
+    // ── View config ──────────────────────────────────────────────
+    const VIEWS = {
+      saturday25: {
+        type: 'stableford',
+        badge: 'Stableford Format — Hackers Cup 25',
+        title: 'Saturday Leaderboard',
+        year: '2025',
+        subtitle: 'Archive standings for Saturday 2025.',
+        sheetId: '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I',
+        leaderboardGid: '1551828927',
+        handicapGid: '1849833306',
+        scorecardFile: 'scorecard.html',
+        scorecardParams: '',
+        sc: { sheetId: '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I', front: [1,2,3,4,5,6,7,8,24], back: [25,9,19,20,21,17,18,10,27], showPoints: true, byHoleNum: true },
+      },
+      sunday25: {
+        type: 'stroke',
+        badge: 'Ambrose Stroke — Hackers Cup 25',
+        title: 'Sunday Leaderboard',
+        year: '2025',
+        subtitle: 'Archive standings for Sunday 2025.',
+        sheetId: '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI',
+        leaderboardGid: '1198498112',
+        handicapGid: null,
+        scorecardFile: 'scorecardSun.html',
+        scorecardParams: '',
+        sc: { sheetId: '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI', front: [1,2,3,4,5,6,7,8,24], back: [25,9,19,20,21,17,18,10,27], showPoints: false, byHoleNum: false },
+      },
+      overall25: {
+        type: 'overall',
+        badge: 'Combined Results — Hackers Cup 25',
+        title: 'Overall Leaderboard',
+        year: '2025',
+        subtitle: 'Combined Saturday & Sunday standings for 2025.',
+        saturdaySheetId: '1DIsWVucIZPX6GhqGtMimjdMLpbWQ7-irCJs6zHBSy1I',
+        saturdayGid: '1551828927',
+        sundaySheetId: '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI',
+        sundayGid: '1198498112',
+        satKey: 'saturday25', sunKey: 'sunday25',
+      },
+      saturday24: {
+        type: 'stableford',
+        badge: 'Stableford Format — Hackers Cup 24',
+        title: 'Saturday Leaderboard',
+        year: '2024',
+        subtitle: 'Archive standings for Saturday 2024.',
+        sheetId: '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg',
+        leaderboardGid: '600147197',
+        handicapGid: '1441325450',
+        scorecardFile: 'scorecard24.html',
+        scorecardParams: '',
+        sc: { sheetId: '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: true, byHoleNum: true },
+      },
+      sunday24: {
+        type: 'stroke',
+        badge: 'Ambrose Stroke — Hackers Cup 24',
+        title: 'Sunday Leaderboard',
+        year: '2024',
+        subtitle: 'Archive standings for Sunday 2024.',
+        sheetId: '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA',
+        leaderboardGid: '869612853',
+        handicapGid: null,
+        scorecardFile: 'scorecardSun24.html',
+        scorecardParams: '',
+        sc: { sheetId: '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: false, byHoleNum: false },
+      },
+      overall24: {
+        type: 'overall',
+        badge: 'Combined Results — Hackers Cup 24',
+        title: 'Overall Leaderboard',
+        year: '2024',
+        subtitle: 'Combined Saturday & Sunday standings for 2024.',
+        saturdaySheetId: '1r9BoqxzH4PvahkPqF9yK0IoSDJsv4iOhUrQfm28k1qg',
+        saturdayGid: '600147197',
+        sundaySheetId: '1UO6apmozwiz10ut0zWrxh43NuDt3FxGBBfv6XpdXGaA',
+        sundayGid: '869612853',
+        satKey: 'saturday24', sunKey: 'sunday24',
+      },
+      saturday23: {
+        type: 'stableford',
+        badge: 'Stableford Format — Hackers Cup 23',
+        title: 'Saturday Leaderboard',
+        year: '2023',
+        subtitle: 'Archive standings for Saturday 2023.',
+        sheetId: '1sFk_zHqZ7rAwA1GQpo4ZsGWPYm9xtfcBPLxPz91NpxE',
+        leaderboardGid: '992817698',
+        handicapGid: '1441325450',
+        scorecardFile: 'scorecard23.html',
+        scorecardParams: '&holes=10-27',
+        sc: { sheetId: '1sFk_zHqZ7rAwA1GQpo4ZsGWPYm9xtfcBPLxPz91NpxE', showPoints: true, byOrder: true },
+      },
+      sunday23: {
+        type: 'stroke',
+        badge: 'Ambrose Stroke — Hackers Cup 23',
+        title: 'Sunday Leaderboard',
+        year: '2023',
+        subtitle: 'Archive standings for Sunday 2023.',
+        sheetId: '1U7KeTRMZfclehI8uD6LavbqbcNQENA9u2DgZnP4kWwk',
+        leaderboardGid: '1852754783',
+        handicapGid: null,
+        scorecardFile: 'scorecardSun23.html',
+        scorecardParams: '',
+        sc: { sheetId: '1U7KeTRMZfclehI8uD6LavbqbcNQENA9u2DgZnP4kWwk', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: false, byHoleNum: false },
+      },
+      overall23: {
+        type: 'overall',
+        badge: 'Combined Results — Hackers Cup 23',
+        title: 'Overall Leaderboard',
+        year: '2023',
+        subtitle: 'Combined Saturday & Sunday standings for 2023.',
+        saturdaySheetId: '1sFk_zHqZ7rAwA1GQpo4ZsGWPYm9xtfcBPLxPz91NpxE',
+        saturdayGid: '992817698',
+        sundaySheetId: '1U7KeTRMZfclehI8uD6LavbqbcNQENA9u2DgZnP4kWwk',
+        sundayGid: '1852754783',
+        satKey: 'saturday23', sunKey: 'sunday23',
+      },
+    };
+
+    let currentView = null;
+
+    function getViewFromUrl() {
+      return new URLSearchParams(window.location.search).get('view') || 'saturday24';
+    }
+
+    function setView(viewKey) {
+      if (viewKey !== 'player-search' && !VIEWS[viewKey]) viewKey = 'saturday24';
+      currentView = viewKey;
+
+      const url = new URL(window.location);
+      url.searchParams.set('view', viewKey);
+      history.replaceState({}, '', url);
+
+      document.querySelectorAll('.view-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === viewKey);
+      });
+
+      loadCurrentView();
+    }
+
+    function loadCurrentView() {
+      const isPlayerSearch = currentView === 'player-search';
+      document.getElementById('player-panel').classList.toggle('hidden', !isPlayerSearch);
+      // hide the leaderboard glass-card when in player search
+      const lbCard = document.querySelector('.glass-card:not(#player-panel)');
+      if (lbCard) lbCard.classList.toggle('hidden', isPlayerSearch);
+      document.getElementById('pulse-toggle-wrap').classList.toggle('hidden', true);
+      document.getElementById('pulse-drawer').classList.toggle('hidden', true);
+
+      if (isPlayerSearch) {
+        document.getElementById('hero-badge').textContent = 'Player Lookup';
+        document.getElementById('hero-title').innerHTML =
+          `Player <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">History</span>`;
+        document.getElementById('hero-subtitle').textContent = 'All scores, rankings and scorecards across every year.';
+        document.title = 'Player History | Hackers Cup';
+        activatePlayerSearch();
+        return;
+      }
+
+      const cfg = VIEWS[currentView];
+
+      document.getElementById('hero-badge').textContent = cfg.badge;
+      document.getElementById('hero-title').innerHTML =
+        `${cfg.title} <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${cfg.year}</span>`;
+      document.getElementById('hero-subtitle').textContent = cfg.subtitle;
+      document.getElementById('table-title').textContent = cfg.title;
+      document.title = `${cfg.title} ${cfg.year} | Hackers Cup`;
+
+      document.getElementById('header-row').innerHTML = '';
+      document.getElementById('data-rows').innerHTML = '';
+      document.getElementById('mobile-cards').innerHTML = '';
+      document.querySelector('.table-wrap').classList.add('hidden');
+      document.getElementById('loading-state').classList.remove('hidden');
+
+      const isPulse = cfg.type === 'stableford';
+      document.getElementById('pulse-toggle-wrap').classList.toggle('hidden', !isPulse);
+      document.getElementById('pulse-drawer').classList.toggle('hidden', !isPulse);
+
+      if (cfg.type === 'stableford') {
+        loadStableford(cfg);
+      } else if (cfg.type === 'stroke') {
+        loadStroke(cfg);
+      } else {
+        loadOverall(cfg);
+      }
+    }
+
+    // ── Player History ─────────────────────────────────────────────
+    let playerIndex = null;
+    let playerIndexLoading = false;
+
+    function normName(n) { return String(n).trim().toLowerCase().replace(/\s+/g, ' '); }
+
+    function buildPlayerIndex() {
+      if (playerIndex) return Promise.resolve(playerIndex);
+      if (playerIndexLoading) return new Promise(res => {
+        const wait = setInterval(() => { if (playerIndex) { clearInterval(wait); res(playerIndex); } }, 100);
+      });
+      playerIndexLoading = true;
+
+      const years = [
+        { year: '2025', satKey: 'saturday25', sunKey: 'sunday25', overallKey: 'overall25' },
+        { year: '2024', satKey: 'saturday24', sunKey: 'sunday24', overallKey: 'overall24' },
+        { year: '2023', satKey: 'saturday23', sunKey: 'sunday23', overallKey: 'overall23' },
+      ];
+
+      const fetches = years.flatMap(y => {
+        const sat = VIEWS[y.satKey];
+        const sun = VIEWS[y.sunKey];
+        return [
+          fetch(gvizUrl(sat.sheetId, sat.leaderboardGid)).then(r => r.text()),
+          fetch(gvizUrl(sun.sheetId, sun.leaderboardGid)).then(r => r.text()),
+        ];
+      });
+
+      return Promise.all(fetches).then(results => {
+        const idx = {};
+
+        years.forEach((y, i) => {
+          const satRows = parseGviz(results[i * 2]).table.rows;
+          const sunRows = parseGviz(results[i * 2 + 1]).table.rows;
+
+          // Saturday: countback sort
+          const satPlayed = satRows.filter(r => parseInt(r.c[1]?.v, 10) > 0);
+          satPlayed.sort((a, b) => {
+            const pts  = (parseFloat(b.c[3]?.v) || 0) - (parseFloat(a.c[3]?.v) || 0);
+            if (pts !== 0) return pts;
+            const back = (parseFloat(b.c[5]?.v) || 0) - (parseFloat(a.c[5]?.v) || 0);
+            if (back !== 0) return back;
+            return (parseFloat(b.c[4]?.v) || 0) - (parseFloat(a.c[4]?.v) || 0);
+          });
+
+          const satMap = {};
+          satPlayed.forEach((row, ri) => {
+            const name = row.c[2]?.v;
+            if (!name) return;
+            const points = parseFloat(row.c[3]?.v) || 0;
+            satMap[normName(name)] = { rank: ri + 1, points, rawName: String(name) };
+          });
+
+          // Sunday: nett asc sort
+          const sunPlayed = sunRows.filter(r => parseInt(r.c[1]?.v, 10) > 0);
+          sunPlayed.sort((a, b) => {
+            const nett = (parseFloat(a.c[6]?.v) || 999) - (parseFloat(b.c[6]?.v) || 999);
+            if (nett !== 0) return nett;
+            return (parseFloat(a.c[8]?.v) || 999) - (parseFloat(b.c[8]?.v) || 999);
+          });
+
+          const sunMap = {};
+          sunPlayed.forEach((row, ri) => {
+            const rawName = row.c[2]?.v;
+            if (!rawName) return;
+            const pairName  = String(rawName);
+            const display   = pairName.replace(/-/g, ' & ');
+            const handicap  = row.c[5]?.v ?? null;
+            const nett      = row.c[6]?.v ?? null;
+            const frontNett = row.c[7]?.v ?? null;
+            const backNett  = row.c[8]?.v ?? null;
+            pairName.split('-').forEach(part => {
+              const ind = normName(part);
+              if (ind) sunMap[ind] = { rank: ri + 1, pairName, display, extra: { handicap, nett, frontNett, backNett } };
+            });
+          });
+
+          // Merge into index
+          const allKeys = new Set([...Object.keys(satMap), ...Object.keys(sunMap)]);
+          allKeys.forEach(key => {
+            const sat = satMap[key];
+            const sun = sunMap[key];
+            const displayName = sat?.rawName || (sun?.pairName.split('-').find(p => normName(p) === key) ?? key);
+            if (!idx[key]) idx[key] = { displayName, years: {} };
+            const entry = idx[key];
+            entry.years[y.year] = {};
+            if (sat) entry.years[y.year].sat = { rank: sat.rank, points: sat.points, rawName: sat.rawName, satKey: y.satKey };
+            if (sun) entry.years[y.year].sun = { rank: sun.rank, pairName: sun.pairName, display: sun.display, extra: sun.extra, sunKey: y.sunKey };
+            // Overall rank
+            if (sat && sun) {
+              entry.years[y.year].overallTotal = sat.rank + sun.rank;
+              entry.years[y.year].overallSatRank = sat.rank;
+            }
+          });
+        });
+
+        // Compute overall ranks per year
+        ['2025', '2024', '2023'].forEach(yr => {
+          const entries = Object.values(idx).filter(e => e.years[yr]?.overallTotal != null);
+          entries.sort((a, b) => {
+            const t = a.years[yr].overallTotal - b.years[yr].overallTotal;
+            return t !== 0 ? t : a.years[yr].overallSatRank - b.years[yr].overallSatRank;
+          });
+          entries.forEach((e, ri) => { e.years[yr].overallRank = ri + 1; });
+        });
+
+        playerIndex = idx;
+        playerIndexLoading = false;
+        return idx;
+      });
+    }
+
+    function activatePlayerSearch() {
+      const input = document.getElementById('player-search-input');
+      const loadingEl = document.getElementById('player-search-loading');
+      const resultsEl = document.getElementById('player-results');
+
+      resultsEl.innerHTML = '';
+      loadingEl.classList.remove('hidden');
+
+      buildPlayerIndex().then(() => {
+        loadingEl.classList.add('hidden');
+        input.focus();
+        const query = input.value.trim();
+        if (query) renderPlayerResults(query);
+        else resultsEl.innerHTML = '<p class="ph-no-results">Start typing a name above to search.</p>';
+      }).catch(() => {
+        loadingEl.classList.add('hidden');
+        resultsEl.innerHTML = '<p class="ph-no-results">Failed to load player data.</p>';
+      });
+
+      input.oninput = () => renderPlayerResults(input.value.trim());
+    }
+
+    function renderPlayerResults(query) {
+      const resultsEl = document.getElementById('player-results');
+      if (!playerIndex) return;
+
+      const q = normName(query);
+      const matches = q.length < 2
+        ? []
+        : Object.entries(playerIndex).filter(([key]) => key.includes(q));
+
+      if (!q || q.length < 2) {
+        resultsEl.innerHTML = '<p class="ph-no-results">Start typing a name above to search.</p>';
+        return;
+      }
+      if (!matches.length) {
+        resultsEl.innerHTML = '<p class="ph-no-results">No players found matching that name.</p>';
+        return;
+      }
+
+      matches.sort(([,a], [,b]) => a.displayName.localeCompare(b.displayName));
+
+      resultsEl.innerHTML = matches.map(([, player]) => {
+        const yearRows = ['2025', '2024', '2023'].map(yr => {
+          const y = player.years[yr];
+          if (!y) return '';
+
+          const satHtml = y.sat
+            ? `<div class="ph-day-cell">
+                <span class="ph-rank">#${y.sat.rank}</span>
+                <span class="ph-sub">${y.sat.points} pts</span>
+                <button class="ph-btn" onclick="openScorecardDrawer('${y.sat.rawName.replace(/'/g,"\\'")}', VIEWS['${y.sat.satKey}'])">Scorecard</button>
+               </div>`
+            : `<div class="ph-day-cell"><span class="ph-sub" style="padding-top:4px">—</span></div>`;
+
+          const sunHtml = y.sun
+            ? `<div class="ph-day-cell">
+                <span class="ph-rank">#${y.sun.rank}</span>
+                <span class="ph-sub">${y.sun.display}</span>
+                <span class="ph-sub">Nett ${y.sun.extra.nett ?? '—'}</span>
+                <button class="ph-btn" onclick="openScorecardDrawer('${y.sun.pairName.replace(/'/g,"\\'")}', VIEWS['${y.sun.sunKey}'], ${JSON.stringify(y.sun.extra)})">Scorecard</button>
+               </div>`
+            : `<div class="ph-day-cell"><span class="ph-sub" style="padding-top:4px">—</span></div>`;
+
+          const overallHtml = y.overallRank != null
+            ? `<div class="ph-overall-rank">#${y.overallRank}<br><span style="font-size:10px;color:rgba(148,163,184,0.5)">Overall</span></div>`
+            : `<div class="ph-overall-rank" style="color:rgba(148,163,184,0.3)">—</div>`;
+
+          return `<div class="ph-year-row">
+            <span class="ph-year-label">${yr}</span>
+            ${satHtml}
+            ${sunHtml}
+            ${overallHtml}
+          </div>`;
+        }).join('');
+
+        return `<div class="ph-player-card">
+          <div class="ph-player-name">${player.displayName}</div>
+          <div style="display:grid;grid-template-columns:56px 1fr 1fr 80px;gap:8px;padding-bottom:6px">
+            <span></span>
+            <span style="font-size:11px;font-weight:600;color:rgba(148,163,184,0.5);letter-spacing:.06em;text-transform:uppercase">Saturday</span>
+            <span style="font-size:11px;font-weight:600;color:rgba(148,163,184,0.5);letter-spacing:.06em;text-transform:uppercase">Sunday</span>
+            <span></span>
+          </div>
+          ${yearRows}
+        </div>`;
+      }).join('');
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function gvizUrl(sheetId, gid) {
+      return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+    }
+
+    function parseGviz(text) {
+      return JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.querySelector('.table-wrap').classList.remove('hidden');
+    }
+
+    // ── Stableford loader ─────────────────────────────────────────
+    function loadStableford(cfg) {
+      const fetches = [fetch(gvizUrl(cfg.sheetId, cfg.leaderboardGid)).then(r => r.text())];
+      if (cfg.handicapGid) fetches.push(fetch(gvizUrl(cfg.sheetId, cfg.handicapGid)).then(r => r.text()));
+
+      Promise.all(fetches).then(([lbText, hcText]) => {
+        const lbJson = parseGviz(lbText);
+        const tableData = lbJson.table.rows;
+
+        const handicapMap = {};
+        if (hcText) {
+          parseGviz(hcText).table.rows.forEach(row => {
+            const name = row.c[0]?.v || '';
+            const hc   = row.c[1]?.v || '';
+            if (name) handicapMap[name] = hc;
+          });
+        }
+
+        const headers = ['Rank', 'Name', 'Points', 'Front', 'Back', 'Through'];
+        const headerRow = document.getElementById('header-row');
+        headers.forEach((h, i) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          th.classList.add(`column-${String.fromCharCode(98 + i)}`);
+          headerRow.appendChild(th);
+        });
+
+        // Filter out unplayed rows (rank 0 or no rank), then apply countback sort:
+        // 1. Points descending, 2. Back 9 descending, 3. Front 9 descending
+        const playedRows = tableData.filter(row => parseInt(row.c[1]?.v, 10) > 0);
+        playedRows.sort((a, b) => {
+          const pts  = (parseFloat(b.c[3]?.v) || 0) - (parseFloat(a.c[3]?.v) || 0);
+          if (pts !== 0) return pts;
+          const back = (parseFloat(b.c[5]?.v) || 0) - (parseFloat(a.c[5]?.v) || 0);
+          if (back !== 0) return back;
+          return (parseFloat(b.c[4]?.v) || 0) - (parseFloat(a.c[4]?.v) || 0);
+        });
+
+        const dataRows    = document.getElementById('data-rows');
+        const cardsEl     = document.getElementById('mobile-cards');
+        const searchInput = document.getElementById('leaderboard-search');
+
+        let totalPlayers = 0, totalPoints = 0, totalHandicap = 0, handicapCount = 0;
+        let played36 = 0, notPlayed36 = 0, scores40 = 0, through18 = 0;
+
+        playedRows.forEach((row, index) => {
+          const rankValue  = index + 1;
+          const playerName = row.c[2]?.v || `Player${index + 1}`;
+          const points     = parseFloat(row.c[3]?.v || 0) || 0;
+          const front      = row.c[4]?.v ?? '';
+          const back       = row.c[5]?.v ?? '';
+          const through    = parseInt(row.c[6]?.v || 0, 10) || 0;
+          const hcap       = handicapMap[playerName] || '';
+          const hcapNum    = parseFloat(hcap);
+          const nameDisplay = hcap !== '' ? `${playerName} (${hcap})` : playerName;
+
+          // Pulse stats
+          totalPlayers++;
+          totalPoints += points;
+          if (!isNaN(hcapNum)) { totalHandicap += hcapNum; handicapCount++; }
+          if (points >= 36) played36++; else notPlayed36++;
+          if (points >= 40) scores40++;
+          if (through >= 18) through18++;
+
+          // Desktop row
+          const tr = document.createElement('tr');
+          const cells = [rankValue, nameDisplay, points || '0', front || '0', back || '0', through || '0'];
+          cells.forEach((val, i) => {
+            const td = document.createElement('td');
+            td.textContent = val;
+            td.classList.add(`column-${String.fromCharCode(98 + i)}`);
+            tr.appendChild(td);
+          });
+          tr.addEventListener('click', () => {
+            openScorecardDrawer(playerName, cfg);
+          });
+          dataRows.appendChild(tr);
+
+          // Mobile card
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'leaderboard-card text-left';
+          card.addEventListener('click', () => {
+            openScorecardDrawer(playerName, cfg);
+          });
+          card.innerHTML = `
+            <div class="leaderboard-row">
+              <span class="leaderboard-rank">#${rankValue}</span>
+              <span class="leaderboard-name">${nameDisplay}</span>
+              <span class="leaderboard-value">${through !== 0 ? through : '--'}</span>
+              <span class="leaderboard-value">${points !== 0 ? points : '--'}</span>
+            </div>`;
+          cardsEl.appendChild(card);
+        });
+
+        // Pulse values
+        const setPulse = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setPulse('pulse-avg-score',    totalPlayers ? (totalPoints / totalPlayers).toFixed(1) : '0.0');
+        setPulse('pulse-avg-handicap', handicapCount ? (totalHandicap / handicapCount).toFixed(1) : '0.0');
+        setPulse('pulse-played',       played36);
+        setPulse('pulse-not-played',   notPlayed36);
+        setPulse('pulse-40plus',       scores40);
+        setPulse('pulse-through',      through18);
+
+        hideLoading();
+        applySearch();
+
+        if (searchInput) {
+          searchInput.oninput = applySearch;
+        }
+      }).catch(err => {
+        console.error('Error loading leaderboard:', err);
+        document.getElementById('loading-state').innerHTML =
+          '<p class="text-center text-gray-400 py-8">Failed to load data. Please refresh.</p>';
+      });
+    }
+
+    // ── Stroke (Sunday Ambrose) loader ───────────────────────────
+    // Columns: c[1]=Rank, c[2]=Player, c[3]=Score, c[4]=Through, c[5]=Handicap, c[6]=Nett, c[7]=Front Nett, c[8]=Back Nett
+    function loadStroke(cfg) {
+      fetch(gvizUrl(cfg.sheetId, cfg.leaderboardGid)).then(r => r.text()).then(text => {
+        const json = parseGviz(text);
+        const tableData = json.table.rows;
+
+        const headers = ['Rank', 'Player', 'Score', 'Through', 'Handicap', 'Nett', 'Front Nett', 'Back Nett'];
+        const headerRow = document.getElementById('header-row');
+        headers.forEach((h, i) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+
+        // Split into played (score > 0) and DNS/DNF (score = 0), sort played by Nett asc
+        const played   = tableData.filter(row => parseFloat(row.c[3]?.v) > 0);
+        const notPlayed = tableData.filter(row => !(parseFloat(row.c[3]?.v) > 0) && row.c[2]?.v);
+        played.sort((a, b) => {
+          const nett = (parseFloat(a.c[6]?.v) || 999) - (parseFloat(b.c[6]?.v) || 999);
+          if (nett !== 0) return nett;
+          return (parseFloat(a.c[8]?.v) || 999) - (parseFloat(b.c[8]?.v) || 999);
+        });
+
+        const dataRows    = document.getElementById('data-rows');
+        const cardsEl     = document.getElementById('mobile-cards');
+        const searchInput = document.getElementById('leaderboard-search');
+
+        const renderStrokeRow = (row, rank) => {
+          const rawName   = String(row.c[2]?.v || 'Unknown');
+          const display   = rawName.replace(/-/g, ' & ');
+          const score     = row.c[3]?.v ?? '—';
+          const through   = row.c[4]?.v ?? '—';
+          const handicap  = row.c[5]?.v ?? '—';
+          const nett      = row.c[6]?.v ?? '—';
+          const frontNett = row.c[7]?.v ?? '—';
+          const backNett  = row.c[8]?.v ?? '—';
+          const rankLabel = rank !== null ? rank : '—';
+
+          const tr = document.createElement('tr');
+          if (rank === null) tr.style.opacity = '0.45';
+          [rankLabel, display, score, through, handicap, nett, frontNett, backNett].forEach(val => {
+            const td = document.createElement('td');
+            td.textContent = val;
+            tr.appendChild(td);
+          });
+          if (rank !== null) {
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => openScorecardDrawer(rawName, cfg, { handicap, nett, frontNett, backNett }));
+          }
+          dataRows.appendChild(tr);
+
+          const card = document.createElement('div');
+          card.className = 'leaderboard-card';
+          if (rank === null) card.style.opacity = '0.45';
+          card.innerHTML = `
+            <div class="leaderboard-row">
+              <span class="leaderboard-rank">${rank !== null ? '#' + rank : '—'}</span>
+              <span class="leaderboard-name">${display}</span>
+              <span class="leaderboard-value" style="font-size:11px;color:rgba(148,163,184,0.8)">${through}</span>
+              <span class="leaderboard-value">${nett}</span>
+            </div>`;
+          if (rank !== null) {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => openScorecardDrawer(rawName, cfg, { handicap, nett, frontNett, backNett }));
+          }
+          cardsEl.appendChild(card);
+        };
+
+        played.forEach((row, index) => renderStrokeRow(row, index + 1));
+        notPlayed.forEach(row => renderStrokeRow(row, null));
+
+        hideLoading();
+        applySearch();
+        if (searchInput) searchInput.oninput = applySearch;
+      }).catch(err => {
+        console.error('Error loading stroke data:', err);
+        document.getElementById('loading-state').innerHTML =
+          '<p class="text-center text-gray-400 py-8">Failed to load data. Please refresh.</p>';
+      });
+    }
+
+    // ── Overall loader ────────────────────────────────────────────
+    function loadOverall(cfg) {
+      Promise.all([
+        fetch(gvizUrl(cfg.saturdaySheetId, cfg.saturdayGid)).then(r => r.text()),
+        fetch(gvizUrl(cfg.sundaySheetId,   cfg.sundayGid)).then(r => r.text()),
+      ]).then(([satText, sunText]) => {
+        const satRows = parseGviz(satText).table.rows;
+        const sunRows = parseGviz(sunText).table.rows;
+
+        function normalizeName(n) { return String(n).replace(/\s+/g, '').replace(/-/g, '&').toLowerCase(); }
+
+        // Build rank maps from each sheet
+        // Apply same countback sort as the Saturday leaderboard view
+        const satPlayed = satRows.filter(row => parseInt(row.c[1]?.v, 10) > 0);
+        satPlayed.sort((a, b) => {
+          const pts  = (parseFloat(b.c[3]?.v) || 0) - (parseFloat(a.c[3]?.v) || 0);
+          if (pts !== 0) return pts;
+          const back = (parseFloat(b.c[5]?.v) || 0) - (parseFloat(a.c[5]?.v) || 0);
+          if (back !== 0) return back;
+          return (parseFloat(b.c[4]?.v) || 0) - (parseFloat(a.c[4]?.v) || 0);
+        });
+
+        const satMap = {};
+        satPlayed.forEach((row, index) => {
+          const name = row.c[2]?.v;
+          if (name) satMap[normalizeName(name)] = { name, rank: index + 1 };
+        });
+
+        // Sunday is Ambrose stroke — re-rank by Nett asc, tiebreak Back Nett asc (same as loadStroke)
+        const sunPlayed = sunRows.filter(row => parseInt(row.c[1]?.v, 10) > 0);
+        sunPlayed.sort((a, b) => {
+          const nett = (parseFloat(a.c[6]?.v) || 999) - (parseFloat(b.c[6]?.v) || 999);
+          if (nett !== 0) return nett;
+          return (parseFloat(a.c[8]?.v) || 999) - (parseFloat(b.c[8]?.v) || 999);
+        });
+
+        // Expand pairs so each individual player maps to their pair's rank
+        const sunMap = {};
+        sunPlayed.forEach((row, index) => {
+          const rawName  = row.c[2]?.v;
+          if (!rawName) return;
+          const pairRank  = index + 1;
+          const pairName  = String(rawName);
+          const handicap  = row.c[5]?.v ?? null;
+          const nett      = row.c[6]?.v ?? null;
+          const frontNett = row.c[7]?.v ?? null;
+          const backNett  = row.c[8]?.v ?? null;
+          pairName.split('-').forEach(part => {
+            const individual = part.trim();
+            if (individual) sunMap[normalizeName(individual)] = { name: individual, rank: pairRank, pairName, handicap, nett, frontNett, backNett };
+          });
+        });
+
+        // Only include players who have both a saturday and sunday rank
+        const combined = [];
+        Object.keys(satMap).forEach(key => {
+          if (!sunMap[key]) return;
+          const sat = satMap[key];
+          const sun = sunMap[key];
+          combined.push({ name: sat.name, satRank: sat.rank, sunRank: sun.rank, total: sat.rank + sun.rank,
+            sunPairName: sun.pairName, sunExtra: { handicap: sun.handicap, nett: sun.nett, frontNett: sun.frontNett, backNett: sun.backNett } });
+        });
+
+        // Sort by total; break ties by saturday rank
+        combined.sort((a, b) => a.total !== b.total ? a.total - b.total : a.satRank - b.satRank);
+
+        // Header
+        const headerRow = document.getElementById('header-row');
+        ['Rank', 'Name', 'Saturday', 'Sunday', 'Total'].forEach(h => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          headerRow.appendChild(th);
+        });
+
+        const dataRows = document.getElementById('data-rows');
+        const cardsEl  = document.getElementById('mobile-cards');
+
+        combined.forEach((player, idx) => {
+          const rank = idx + 1;
+          const satDisplay = player.satRank !== null ? `#${player.satRank}` : '—';
+          const sunDisplay = player.sunRank !== null ? `#${player.sunRank}` : '—';
+
+          const satCfg = VIEWS[cfg.satKey];
+          const sunCfg = VIEWS[cfg.sunKey];
+
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          [rank, player.name, satDisplay, sunDisplay, player.total].forEach(val => {
+            const td = document.createElement('td');
+            td.textContent = val;
+            tr.appendChild(td);
+          });
+          tr.addEventListener('click', () => openDualScorecardDrawer(player.name, satCfg, player.sunPairName, sunCfg, player.sunExtra));
+          dataRows.appendChild(tr);
+
+          const card = document.createElement('div');
+          card.className = 'leaderboard-card';
+          card.style.cursor = 'pointer';
+          card.innerHTML = `
+            <div class="leaderboard-row">
+              <span class="leaderboard-rank">#${rank}</span>
+              <span class="leaderboard-name">${player.name}</span>
+              <span class="leaderboard-value" style="font-size:11px; color: rgba(148,163,184,0.8)">${satDisplay} / ${sunDisplay}</span>
+              <span class="leaderboard-value">${player.total}</span>
+            </div>`;
+          card.addEventListener('click', () => openDualScorecardDrawer(player.name, satCfg, player.sunPairName, sunCfg, player.sunExtra));
+          cardsEl.appendChild(card);
+        });
+
+        hideLoading();
+        applySearch();
+
+        const searchInput = document.getElementById('leaderboard-search');
+        if (searchInput) searchInput.oninput = applySearch;
+
+      }).catch(err => {
+        console.error('Error loading overall data:', err);
+        document.getElementById('loading-state').innerHTML =
+          '<p class="text-center text-gray-400 py-8">Failed to load data. Please refresh.</p>';
+      });
+    }
+
+    function applySearch() {
+      const q = (document.getElementById('leaderboard-search')?.value || '').toLowerCase().trim();
+      document.getElementById('data-rows').querySelectorAll('tr').forEach(row => {
+        row.classList.toggle('hidden', q !== '' && !row.textContent.toLowerCase().includes(q));
+      });
+      document.getElementById('mobile-cards').querySelectorAll('.leaderboard-card, button').forEach(card => {
+        card.classList.toggle('hidden', q !== '' && !card.textContent.toLowerCase().includes(q));
+      });
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      // Tab click handlers
+      document.querySelectorAll('.view-tab').forEach(btn => {
+        btn.addEventListener('click', () => setView(btn.dataset.view));
+      });
+
+      // Performance Pulse drawer
+      const pulseToggle  = document.getElementById('pulse-toggle');
+      const pulseDrawer  = document.getElementById('pulse-drawer');
+      const pulseOverlay = document.getElementById('pulse-overlay');
+      const pulseClose   = document.getElementById('pulse-close');
+
+      const closePulse = () => {
+        pulseDrawer?.classList.remove('is-open');
+        pulseOverlay?.classList.remove('is-open');
+        document.body.style.overflow = '';
+      };
+
+      pulseToggle?.addEventListener('click', () => {
+        pulseDrawer.classList.add('is-open');
+        pulseOverlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+      });
+      pulseOverlay?.addEventListener('click', closePulse);
+      pulseClose?.addEventListener('click', closePulse);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closePulse(); });
+
+      // Load initial view
+      setView(getViewFromUrl());
+    });
+  </script>
+</body>
+</html>
