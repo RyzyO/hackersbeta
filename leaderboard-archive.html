@@ -413,7 +413,6 @@
       border-collapse: collapse;
       color: #fff;
       font-size: 13px;
-      min-width: 400px;
     }
 
     .sc-table thead tr {
@@ -437,6 +436,11 @@
       color: rgba(148,163,184,0.75);
       white-space: nowrap;
       min-width: 52px;
+    }
+    @media (max-width: 520px) {
+      .sc-table .row-label { display: none; }
+      .sc-table { font-size: 11px; }
+      .sc-table th, .sc-table td { padding: 6px 4px; }
     }
 
     .sc-table td.total-col { font-weight: 700; background: rgba(30,41,59,0.6); }
@@ -906,8 +910,8 @@
           </div>`;
       };
 
-      const frontTable = buildTable(sc.front, 'Out');
-      const backTable  = buildTable(sc.back, 'In');
+      const frontTable = buildTable(sc.front, 'O');
+      const backTable  = buildTable(sc.back, 'I');
       const totalPar   = sum([...sc.front, ...sc.back], holePars);
       const totalScore = sum([...sc.front, ...sc.back], holeScores);
       const totalPts   = sum([...sc.front, ...sc.back], holePts);
