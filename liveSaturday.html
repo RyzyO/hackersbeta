@@ -478,6 +478,49 @@
     }
     #share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Player pulse (inside drawer) ───────────────── */
+    .player-pulse {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .pp-card {
+      background: rgba(30,41,59,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px 10px 8px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .pp-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: var(--pp-tone, rgba(56,189,248,0.8));
+    }
+    .pp-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.65);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .pp-value {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .pp-sub {
+      font-size: 10px;
+      color: rgba(148,163,184,0.5);
+      margin-top: 3px;
+    }
+
     /* ── Share button in drawer ──────────────────────── */
     #sat-sc-share {
       display: inline-flex; align-items: center; gap: 5px;
@@ -1343,17 +1386,56 @@
 
     // ── Scorecard drawer ──────────────────────────────────
 
-    function openScDrawer(playerName) {
+    function buildPlayerPulseHtml(stats) {
+      if (!stats) return '';
+      const { rankNum, isTie, pts, front, back, thruRaw, birdies, eagles, hcp } = stats;
+      const rankLabel = isTie ? `T${rankNum}` : `#${rankNum}`;
+      const thruN = parseInt(thruRaw, 10) || 0;
+      const thruDisplay = !thruN ? '—' : thruN >= 18 ? 'F' : String(thruN);
+      const beDisplay = eagles || birdies
+        ? `${eagles ? `🦅${eagles} ` : ''}${birdies ? `🐦${birdies}` : ''}`.trim()
+        : '—';
+      return `<div class="player-pulse">
+        <div class="pp-card" style="--pp-tone:rgba(245,158,11,0.8)">
+          <span class="pp-label">Rank</span>
+          <span class="pp-value">${rankLabel}</span>
+        </div>
+        <div class="pp-card" style="--pp-tone:rgba(56,189,248,0.8)">
+          <span class="pp-label">Points</span>
+          <span class="pp-value">${pts || '—'}</span>
+          <div class="pp-sub">${front || '—'} / ${back || '—'}</div>
+        </div>
+        <div class="pp-card" style="--pp-tone:rgba(16,185,129,0.8)">
+          <span class="pp-label">Thru</span>
+          <span class="pp-value">${thruDisplay}</span>
+        </div>
+        ${hcp !== '' ? `<div class="pp-card" style="--pp-tone:rgba(148,163,184,0.4)">
+          <span class="pp-label">Handicap</span>
+          <span class="pp-value">${hcp}</span>
+        </div>` : ''}
+        <div class="pp-card" style="--pp-tone:rgba(251,191,36,0.8)">
+          <span class="pp-label">Birds / Eagles</span>
+          <span class="pp-value" style="font-size:14px">${beDisplay}</span>
+        </div>
+      </div>`;
+    }
+
+    function openScDrawer(playerName, stats) {
       _currentDrawerPlayer = playerName;
       document.getElementById('sat-sc-name').textContent = playerName;
       document.getElementById('sat-sc-body').innerHTML = '<div class="sc-loading">Loading scorecard…</div>';
       document.getElementById('sat-sc-drawer').classList.add('open');
       document.getElementById('sat-sc-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
+      const pulseHtml = stats
+        ? `<p class="sc-section-title" style="margin-top:20px">Ryzy Performance Pulse</p>${buildPlayerPulseHtml(stats)}`
+        : '';
       fetchScData(playerName).then(data => {
-        document.getElementById('sat-sc-body').innerHTML = buildScHtml(data.holePars, data.holeScores, data.holePts);
+        document.getElementById('sat-sc-body').innerHTML =
+          buildScHtml(data.holePars, data.holeScores, data.holePts) + pulseHtml;
       }).catch(() => {
-        document.getElementById('sat-sc-body').innerHTML = '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">No scorecard available.</p>';
+        document.getElementById('sat-sc-body').innerHTML =
+          '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0 20px">No scorecard available.</p>' + pulseHtml;
       });
     }
 
@@ -1712,7 +1794,7 @@
 
         tr.addEventListener('click', () => {
           if (compareMode) { toggleComparePlayer(name, tr, null); return; }
-          openScDrawer(name);
+          openScDrawer(name, { rankNum, isTie, pts, front, back, thruRaw, birdies, eagles, hcp });
         });
         dataRows.appendChild(tr);
 
@@ -1764,7 +1846,7 @@
 
         card.addEventListener('click', () => {
           if (compareMode) { toggleComparePlayer(name, tr, card); return; }
-          openScDrawer(name);
+          openScDrawer(name, { rankNum, isTie, pts, front, back, thruRaw, birdies, eagles, hcp });
         });
         cardsContainer.appendChild(card);
       });
