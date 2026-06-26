@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="data22.js"></script>
 
   <script>
     tailwind.config = {
@@ -632,12 +633,22 @@
                 <button class="view-tab" data-view="overall24">Overall</button>
               </div>
             </div>
+            
             <div class="flex items-center gap-2 flex-wrap">
               <span class="year-group">2023</span>
               <div class="view-tabs">
                 <button class="view-tab" data-view="saturday23">Saturday</button>
                 <button class="view-tab" data-view="sunday23">Sunday</button>
                 <button class="view-tab" data-view="overall23">Overall</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="year-group">2022</span>
+              <div class="view-tabs">
+                <!-- <button class="view-tab" data-view="friday22">Friday</button> -->
+                <button class="view-tab" data-view="saturday22">Saturday</button>
+                <button class="view-tab" data-view="sunday22">Sunday</button>
+                <button class="view-tab" data-view="overall22">Overall</button>
               </div>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -834,6 +845,17 @@
 
     // ── Scorecard fetch + render ──────────────────────────────────
     function fetchScorecardData(playerName, sc) {
+      if (sc.staticData) {
+        const lookup = DATA22[sc.staticData] || {};
+        const data = lookup[playerName] || {};
+        const holePars = {}, holeScores = {}, holePts = {};
+        Object.entries(data).forEach(([h, d]) => {
+          const n = parseInt(h);
+          holePars[n] = d.par; holeScores[n] = d.score; holePts[n] = d.pts || 0;
+        });
+        return Promise.resolve({ sc, holePars, holeScores, holePts });
+      }
+
       const url = `https://docs.google.com/spreadsheets/d/${sc.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
       return fetch(url).then(r => r.text()).then(text => {
         const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
@@ -979,7 +1001,7 @@
     const VIEWS = {
       saturday25: {
         type: 'stableford',
-        badge: 'Stableford Format — Hackers Cup 25',
+        badge: 'Stableford — Hackers Cup 25',
         title: 'Saturday Leaderboard',
         year: '2025',
         subtitle: 'Archive standings for Saturday 2025.',
@@ -1017,7 +1039,7 @@
       },
       saturday24: {
         type: 'stableford',
-        badge: 'Stableford Format — Hackers Cup 24',
+        badge: 'Stableford — Hackers Cup 24',
         title: 'Saturday Leaderboard',
         year: '2024',
         subtitle: 'Archive standings for Saturday 2024.',
@@ -1055,7 +1077,7 @@
       },
       saturday23: {
         type: 'stableford',
-        badge: 'Stableford Format — Hackers Cup 23',
+        badge: 'Stableford — Hackers Cup 23',
         title: 'Saturday Leaderboard',
         year: '2023',
         subtitle: 'Archive standings for Saturday 2023.',
@@ -1078,6 +1100,38 @@
         scorecardFile: 'scorecardSun23.html',
         scorecardParams: '',
         sc: { sheetId: '1U7KeTRMZfclehI8uD6LavbqbcNQENA9u2DgZnP4kWwk', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: false, byHoleNum: false },
+      },
+      friday22: {
+        type: 'static22-fri',
+        badge: 'TP Skins — Hackers Cup 22',
+        title: 'Friday Leaderboard',
+        year: '2022',
+        subtitle: 'TP Skins standings for Friday 2022.',
+        sc: { staticData: 'friSC', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: false },
+      },
+      saturday22: {
+        type: 'static22-sat',
+        badge: 'Stableford — Hackers Cup 22',
+        title: 'Saturday Leaderboard',
+        year: '2022',
+        subtitle: 'Archive standings for Saturday 2022.',
+        sc: { staticData: 'satSC', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: true },
+      },
+      sunday22: {
+        type: 'static22-sun',
+        badge: 'Ambrose Stroke — Hackers Cup 22',
+        title: 'Sunday Leaderboard',
+        year: '2022',
+        subtitle: 'Ambrose stroke standings for Sunday 2022.',
+        sc: { staticData: 'sunSC', front: [1,2,3,4,5,6,7,8,9], back: [10,11,12,13,14,15,16,17,18], showPoints: false },
+      },
+      overall22: {
+        type: 'static22-overall',
+        badge: 'Combined Results — Hackers Cup 22',
+        title: 'Overall Leaderboard',
+        year: '2022',
+        subtitle: 'Combined Saturday & Sunday standings for 2022.',
+        satKey: 'saturday22', sunKey: 'sunday22',
       },
       overall23: {
         type: 'overall',
@@ -1156,6 +1210,14 @@
         loadStableford(cfg);
       } else if (cfg.type === 'stroke') {
         loadStroke(cfg);
+      } else if (cfg.type === 'static22-sat') {
+        load22Sat();
+      } else if (cfg.type === 'static22-sun') {
+        load22Sun();
+      } else if (cfg.type === 'static22-fri') {
+        load22Fri();
+      } else if (cfg.type === 'static22-overall') {
+        load22Overall(cfg);
       } else {
         loadOverall(cfg);
       }
@@ -1257,8 +1319,47 @@
           });
         });
 
+        // Add 2022 static data
+        const sat22 = DATA22.satLb.filter(r => r.thru > 0).slice().sort((a, b) => {
+          const pts = b.pts - a.pts; if (pts !== 0) return pts;
+          const back = b.back - a.back; if (back !== 0) return back;
+          return b.front - a.front;
+        });
+        const satMap22 = {};
+        sat22.forEach((r, i) => { satMap22[normName(r.name)] = { rank: i + 1, points: r.pts, rawName: r.name }; });
+
+        const sun22 = DATA22.sunLb.slice().sort((a, b) => {
+          const n = a.nett - b.nett; if (n !== 0) return n;
+          return a.backNett - b.backNett;
+        });
+        const sunMap22 = {};
+        sun22.forEach((r, i) => {
+          const pairName = r.name;
+          const display  = pairName.replace(/ - /g, ' & ');
+          const extra    = { handicap: r.hcp, nett: r.nett, frontNett: r.frontNett, backNett: r.backNett };
+          pairName.split('-').forEach(part => {
+            const ind = normName(part);
+            if (ind) sunMap22[ind] = { rank: i + 1, pairName, display, extra };
+          });
+        });
+
+        const allKeys22 = new Set([...Object.keys(satMap22), ...Object.keys(sunMap22)]);
+        allKeys22.forEach(key => {
+          const sat = satMap22[key];
+          const sun = sunMap22[key];
+          const displayName = sat?.rawName || (sun?.pairName.split('-').find(p => normName(p) === key)?.trim() ?? key);
+          if (!idx[key]) idx[key] = { displayName, years: {} };
+          idx[key].years['2022'] = {};
+          if (sat) idx[key].years['2022'].sat = { rank: sat.rank, points: sat.points, rawName: sat.rawName, satKey: 'saturday22' };
+          if (sun) idx[key].years['2022'].sun = { rank: sun.rank, pairName: sun.pairName, display: sun.display, extra: sun.extra, sunKey: 'sunday22' };
+          if (sat && sun) {
+            idx[key].years['2022'].overallTotal = sat.rank + sun.rank;
+            idx[key].years['2022'].overallSatRank = sat.rank;
+          }
+        });
+
         // Compute overall ranks per year
-        ['2025', '2024', '2023'].forEach(yr => {
+        ['2025', '2024', '2023', '2022'].forEach(yr => {
           const entries = Object.values(idx).filter(e => e.years[yr]?.overallTotal != null);
           entries.sort((a, b) => {
             const t = a.years[yr].overallTotal - b.years[yr].overallTotal;
@@ -1316,7 +1417,7 @@
       matches.sort(([,a], [,b]) => a.displayName.localeCompare(b.displayName));
 
       resultsEl.innerHTML = matches.map(([, player]) => {
-        const yearRows = ['2025', '2024', '2023'].map(yr => {
+        const yearRows = ['2025', '2024', '2023', '2022'].map(yr => {
           const y = player.years[yr];
           if (!y) return '';
 
@@ -1574,6 +1675,183 @@
         document.getElementById('loading-state').innerHTML =
           '<p class="text-center text-gray-400 py-8">Failed to load data. Please refresh.</p>';
       });
+    }
+
+    // ── 2022 static loaders ───────────────────────────────────────
+    function get22SC(scDataKey) {
+      return DATA22[scDataKey] || {};
+    }
+
+    function render22Rows(rows, columns, onClickFn) {
+      const headerRow = document.getElementById('header-row');
+      const dataRows  = document.getElementById('data-rows');
+      const cardsEl   = document.getElementById('mobile-cards');
+
+      columns.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        if (onClickFn) { tr.style.cursor = 'pointer'; tr.addEventListener('click', () => onClickFn(row)); }
+        row.cells.forEach(val => {
+          const td = document.createElement('td');
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        dataRows.appendChild(tr);
+
+        const card = document.createElement('div');
+        card.className = 'leaderboard-card';
+        if (onClickFn) { card.style.cursor = 'pointer'; card.addEventListener('click', () => onClickFn(row)); }
+        card.innerHTML = `<div class="leaderboard-row">
+          <span class="leaderboard-rank">${row.rank}</span>
+          <span class="leaderboard-name">${row.name}</span>
+          <span class="leaderboard-value">${row.primary}</span>
+        </div>`;
+        cardsEl.appendChild(card);
+      });
+
+      hideLoading();
+      applySearch();
+      const searchInput = document.getElementById('leaderboard-search');
+      if (searchInput) searchInput.oninput = applySearch;
+    }
+
+    function load22Sat() {
+      const cfg = VIEWS[currentView];
+      const sorted = DATA22.satLb.filter(r => r.thru > 0).slice().sort((a, b) => {
+        const pts = b.pts - a.pts; if (pts !== 0) return pts;
+        const back = b.back - a.back; if (back !== 0) return back;
+        return b.front - a.front;
+      });
+      const rows = sorted.map((r, i) => ({
+        rank: `#${i + 1}`, name: r.name, primary: `${r.pts} pts`,
+        cells: [i + 1, r.name, r.pts, r.front, r.back, r.thru],
+        raw: r,
+      }));
+      const notPlayed = DATA22.satLb.filter(r => r.thru === 0).map(r => ({
+        rank: '—', name: r.name, primary: '—',
+        cells: ['—', r.name, '—', '—', '—', 0],
+        raw: r,
+      }));
+      render22Rows([...rows, ...notPlayed],
+        ['Rank', 'Player', 'Points', 'Front', 'Back', 'Thru'],
+        row => row.raw.thru > 0 ? openScorecardDrawer(row.raw.name, cfg) : null
+      );
+    }
+
+    function load22Sun() {
+      const cfg = VIEWS[currentView];
+      const sorted = DATA22.sunLb.slice().sort((a, b) => {
+        const n = a.nett - b.nett; if (n !== 0) return n;
+        return a.backNett - b.backNett;
+      });
+      const rows = sorted.map((r, i) => ({
+        rank: `#${i + 1}`, name: r.name.replace(/ - /g, ' & '), primary: `Nett ${r.nett}`,
+        cells: [i + 1, r.name.replace(/ - /g, ' & '), r.score, r.thru, r.hcp, r.nett, r.frontNett, r.backNett],
+        raw: r,
+      }));
+      render22Rows(rows,
+        ['Rank', 'Player', 'Score', 'Thru', 'HCP', 'Nett', 'F.Nett', 'B.Nett'],
+        row => openScorecardDrawer(row.raw.name, cfg, { handicap: row.raw.hcp, nett: row.raw.nett, frontNett: row.raw.frontNett, backNett: row.raw.backNett })
+      );
+    }
+
+    function load22Fri() {
+      const cfg = VIEWS[currentView];
+      const played    = DATA22.friLb.filter(r => r.pts > 0).slice().sort((a, b) => b.pts - a.pts);
+      const notPlayed = DATA22.friLb.filter(r => r.pts === 0);
+      const rows = played.map((r, i) => ({
+        rank: `#${i + 1}`, name: r.name, primary: `${r.pts} pts`,
+        cells: [i + 1, r.name, r.pts],
+        raw: r,
+      }));
+      const npRows = notPlayed.map(r => ({
+        rank: '—', name: r.name, primary: '—',
+        cells: ['—', r.name, '—'],
+        raw: r,
+      }));
+      render22Rows([...rows, ...npRows],
+        ['Rank', 'Player', 'Points'],
+        row => row.raw.pts > 0 ? openScorecardDrawer(row.raw.name, cfg) : null
+      );
+    }
+
+    function load22Overall(cfg) {
+      const normalizeName = n => String(n).replace(/\s+/g, '').toLowerCase();
+
+      const satSorted = DATA22.satLb.filter(r => r.thru > 0).slice().sort((a, b) => {
+        const pts = b.pts - a.pts; if (pts !== 0) return pts;
+        const back = b.back - a.back; if (back !== 0) return back;
+        return b.front - a.front;
+      });
+      const satMap = {};
+      satSorted.forEach((r, i) => { satMap[normalizeName(r.name)] = { name: r.name, rank: i + 1 }; });
+
+      const sunSorted = DATA22.sunLb.slice().sort((a, b) => {
+        const n = a.nett - b.nett; if (n !== 0) return n;
+        return a.backNett - b.backNett;
+      });
+      const sunMap = {};
+      sunSorted.forEach((r, i) => {
+        const pairName = r.name;
+        const pairRank = i + 1;
+        const extra = { handicap: r.hcp, nett: r.nett, frontNett: r.frontNett, backNett: r.backNett };
+        pairName.split('-').forEach(part => {
+          const ind = normalizeName(part);
+          if (ind) sunMap[ind] = { name: part.trim(), pairName, rank: pairRank, extra };
+        });
+      });
+
+      const combined = [];
+      Object.keys(satMap).forEach(key => {
+        if (!sunMap[key]) return;
+        const sat = satMap[key]; const sun = sunMap[key];
+        combined.push({ name: sat.name, satRank: sat.rank, sunRank: sun.rank, total: sat.rank + sun.rank,
+          sunPairName: sun.pairName, sunExtra: sun.extra });
+      });
+      combined.sort((a, b) => a.total !== b.total ? a.total - b.total : a.satRank - b.satRank);
+
+      const headerRow = document.getElementById('header-row');
+      const dataRows  = document.getElementById('data-rows');
+      const cardsEl   = document.getElementById('mobile-cards');
+      ['Rank', 'Name', 'Saturday', 'Sunday', 'Total'].forEach(h => {
+        const th = document.createElement('th'); th.textContent = h; headerRow.appendChild(th);
+      });
+
+      const satCfg = VIEWS[cfg.satKey];
+      const sunCfg = VIEWS[cfg.sunKey];
+
+      combined.forEach((player, idx) => {
+        const rank = idx + 1;
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        [rank, player.name, `#${player.satRank}`, `#${player.sunRank}`, player.total].forEach(val => {
+          const td = document.createElement('td'); td.textContent = val; tr.appendChild(td);
+        });
+        tr.addEventListener('click', () => openDualScorecardDrawer(player.name, satCfg, player.sunPairName, sunCfg, player.sunExtra));
+        dataRows.appendChild(tr);
+
+        const card = document.createElement('div');
+        card.className = 'leaderboard-card';
+        card.style.cursor = 'pointer';
+        card.innerHTML = `<div class="leaderboard-row">
+          <span class="leaderboard-rank">#${rank}</span>
+          <span class="leaderboard-name">${player.name}</span>
+          <span class="leaderboard-value" style="font-size:11px;color:rgba(148,163,184,0.8)">#${player.satRank} / #${player.sunRank}</span>
+          <span class="leaderboard-value">${player.total}</span>
+        </div>`;
+        card.addEventListener('click', () => openDualScorecardDrawer(player.name, satCfg, player.sunPairName, sunCfg, player.sunExtra));
+        cardsEl.appendChild(card);
+      });
+
+      hideLoading();
+      applySearch();
+      const searchInput = document.getElementById('leaderboard-search');
+      if (searchInput) searchInput.oninput = applySearch;
     }
 
     // ── Overall loader ────────────────────────────────────────────
