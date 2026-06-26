@@ -989,6 +989,16 @@
           </div>
         </div>
 
+        <!-- Handicap filter pills -->
+        <div id="hcp-pills">
+          <button class="hcp-pill active" data-range="all">All</button>
+          <button class="hcp-pill fav-pill" data-range="fav">⭐ Favourites</button>
+          <button class="hcp-pill" data-range="0-9">HC 0–9</button>
+          <button class="hcp-pill" data-range="10-18">HC 10–18</button>
+          <button class="hcp-pill" data-range="19-27">HC 19–27</button>
+          <button class="hcp-pill" data-range="28+">HC 28+</button>
+        </div>
+
         <!-- Skeleton loader -->
         <div id="loading-skeleton">
           <div class="skeleton-row"></div>
@@ -1025,9 +1035,13 @@
     <div id="sat-sc-header">
       <button id="sat-sc-back" onclick="closeScDrawer()">← Back</button>
       <span id="sat-sc-name"></span>
+      <button id="sat-sc-share" onclick="sharePlayer()">🔗 Share</button>
     </div>
     <div id="sat-sc-body"></div>
   </div>
+
+  <!-- Share toast -->
+  <div id="share-toast">🔗 Link copied!</div>
 
   <!-- Compare bar -->
   <div id="compare-bar">
@@ -1103,7 +1117,9 @@
   <!-- Firebase: tee times -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, getDoc, getDocs, doc, collection }
+    import { getAuth, onAuthStateChanged }
+      from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, getDoc, getDocs, doc, collection, setDoc, arrayUnion, arrayRemove }
       from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
     const app = initializeApp({
@@ -1111,39 +1127,81 @@
       authDomain: "hackers-cup.firebaseapp.com",
       projectId: "hackers-cup",
     });
-    const db = getFirestore(app);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
 
+    // ── Tee sheet ─────────────────────────────────────────
     async function loadTeeSheet() {
       try {
-        // Load all users for uid → displayName mapping
         const usersSnap = await getDocs(collection(db, 'users'));
         const uidToName = {};
         usersSnap.forEach(d => {
           const n = d.data().displayName;
           if (n) uidToName[d.id] = n.trim();
         });
-
-        // Load tee sheet from this year's event doc
         const evSnap = await getDoc(doc(db, 'eventYears', 'HC25'));
         const satGroups = evSnap.data()?.teeSheets?.saturday || [];
-
         const teeMap = {};
         satGroups.forEach(g => {
           (g.players || []).forEach(uid => {
             const name = uidToName[uid];
-            if (name) teeMap[name.toLowerCase()] = {
-              teeTime: g.teeTime || '',
-              hole: g.hole || ''
-            };
+            if (name) teeMap[name.toLowerCase()] = { teeTime: g.teeTime || '', hole: g.hole || '' };
           });
         });
-
         window._teemap = teeMap;
       } catch (e) {
         console.warn('Tee sheet load failed:', e);
         window._teemap = {};
       }
     }
+
+    // ── Auth + favourites ─────────────────────────────────
+    window._authUser     = null;
+    window._satFavs      = new Set();
+
+    window._toggleFav = async function(playerName) {
+      const user = window._authUser;
+      if (!user) {
+        showShareToast('Log in to save favourites');
+        return;
+      }
+      const isFav = window._satFavs.has(playerName);
+      if (isFav) {
+        window._satFavs.delete(playerName);
+        await setDoc(doc(db, 'users', user.uid), { satFavourites: arrayRemove(playerName) }, { merge: true });
+      } else {
+        window._satFavs.add(playerName);
+        await setDoc(doc(db, 'users', user.uid), { satFavourites: arrayUnion(playerName) }, { merge: true });
+      }
+      // Refresh all star buttons for this player
+      document.querySelectorAll(`.star-btn[data-player="${CSS.escape(playerName)}"], .star-btn-card[data-player="${CSS.escape(playerName)}"]`)
+        .forEach(b => b.classList.toggle('starred', !isFav));
+    };
+
+    function showShareToast(msg) {
+      const t = document.getElementById('share-toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    onAuthStateChanged(auth, async user => {
+      window._authUser = user;
+      if (user) {
+        try {
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          const favs = snap.data()?.satFavourites || [];
+          window._satFavs = new Set(favs);
+        } catch { window._satFavs = new Set(); }
+      } else {
+        window._satFavs = new Set();
+      }
+      // Refresh any already-rendered star buttons
+      document.querySelectorAll('.star-btn, .star-btn-card').forEach(b => {
+        b.classList.toggle('starred', window._satFavs.has(b.dataset.player));
+      });
+    });
 
     loadTeeSheet();
   </script>
@@ -1170,6 +1228,66 @@
     let countdownInterval = null;
     let headersBuilt = false;
     let searchListenerAttached = false;
+
+    // ── Handicap filter pills ─────────────────────────────
+    let hcpFilter = 'all'; // 'all' | 'fav' | '0-9' | '10-18' | '19-27' | '28+'
+
+    document.querySelectorAll('.hcp-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        hcpFilter = pill.dataset.range;
+        document.querySelectorAll('.hcp-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        applyFilters();
+      });
+    });
+
+    function hcpInRange(hcp, range) {
+      if (range === 'all') return true;
+      if (range === 'fav') return (window._satFavs || new Set()).has(hcp); // hcp here is playerName
+      const n = parseFloat(hcp);
+      if (isNaN(n)) return false;
+      if (range === '0-9')   return n >= 0  && n <= 9;
+      if (range === '10-18') return n >= 10 && n <= 18;
+      if (range === '19-27') return n >= 19 && n <= 27;
+      if (range === '28+')   return n >= 28;
+      return true;
+    }
+
+    // Called after any filter/search change
+    function applyFilters() {
+      const q = (document.getElementById('leaderboard-search')?.value ?? '').toLowerCase().trim();
+      document.getElementById('data-rows')?.querySelectorAll('tr').forEach(r => {
+        if (r.classList.contains('cut-line-row')) return;
+        const name = r.dataset.player || '';
+        const hcp  = r.dataset.hcp  || '';
+        const matchSearch = !q || r.textContent.toLowerCase().includes(q);
+        const matchFilter = hcpFilter === 'fav'
+          ? (window._satFavs || new Set()).has(name)
+          : hcpInRange(hcp, hcpFilter);
+        r.classList.toggle('hidden', !matchSearch || !matchFilter);
+      });
+      document.getElementById('mobile-cards')?.querySelectorAll('.leaderboard-card').forEach(c => {
+        const name = c.dataset.player || '';
+        const hcp  = c.dataset.hcp  || '';
+        const matchSearch = !q || c.textContent.toLowerCase().includes(q);
+        const matchFilter = hcpFilter === 'fav'
+          ? (window._satFavs || new Set()).has(name)
+          : hcpInRange(hcp, hcpFilter);
+        c.classList.toggle('hidden', !matchSearch || !matchFilter);
+      });
+    }
+
+    // ── Share deep-link ───────────────────────────────────
+    let _currentDrawerPlayer = null;
+
+    function sharePlayer() {
+      const name = _currentDrawerPlayer;
+      if (!name) return;
+      const url = `${location.origin}${location.pathname}?player=${encodeURIComponent(name)}`;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      const t = document.getElementById('share-toast');
+      if (t) { t.textContent = '🔗 Link copied!'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+    }
 
     // ── Compare mode ──────────────────────────────────────
     let compareMode = false;
@@ -1226,6 +1344,7 @@
     // ── Scorecard drawer ──────────────────────────────────
 
     function openScDrawer(playerName) {
+      _currentDrawerPlayer = playerName;
       document.getElementById('sat-sc-name').textContent = playerName;
       document.getElementById('sat-sc-body').innerHTML = '<div class="sc-loading">Loading scorecard…</div>';
       document.getElementById('sat-sc-drawer').classList.add('open');
@@ -1540,6 +1659,8 @@
         // Desktop row
         const tr = document.createElement('tr');
         if (isLeader) tr.classList.add('leader-row');
+        tr.dataset.player = name;
+        tr.dataset.hcp    = hcp;
 
         const tdRank = document.createElement('td');
         tdRank.classList.add('column-b');
@@ -1550,12 +1671,16 @@
         tdName.classList.add('column-c');
         tdName.style.textAlign = 'left';
         const teeBadge = teeInfo?.teeTime ? `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>` : '';
-        tdName.innerHTML = `<div class="player-name-cell">
-          <span class="player-name">${name}</span>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-            ${hcp !== '' ? `<span class="player-hcp">HC ${hcp}</span>` : ''}
-            ${teeBadge}
+        const isStarred = (window._satFavs || new Set()).has(name);
+        tdName.innerHTML = `<div style="display:flex;align-items:flex-start;gap:6px">
+          <div class="player-name-cell" style="flex:1">
+            <span class="player-name">${name}</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+              ${hcp !== '' ? `<span class="player-hcp">HC ${hcp}</span>` : ''}
+              ${teeBadge}
+            </div>
           </div>
+          <button class="star-btn${isStarred ? ' starred' : ''}" data-player="${name}" onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
         </div>`;
         tr.appendChild(tdName);
 
@@ -1607,6 +1732,8 @@
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'leaderboard-card text-left';
+        card.dataset.player = name;
+        card.dataset.hcp    = hcp;
 
         const thruLabel = thru.done
           ? `<span class="thru-finished" style="font-size:11px">F</span>`
@@ -1616,7 +1743,10 @@
 
         const projNum = (() => { const n = parseInt(thruRaw, 10); return n > 0 && n < 18 ? Math.round(pts / n * 18) : null; })();
 
+        const isStarredCard = (window._satFavs || new Set()).has(name);
         card.innerHTML = `
+          <button class="star-btn-card${isStarredCard ? ' starred' : ''}" data-player="${name}"
+            onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
           <div class="leaderboard-row">
             <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${rankBadgeHtml(rankNum, isTie)}${mv}</div>
             <span class="leaderboard-name">${name}</span>
@@ -1655,28 +1785,21 @@
       mc.style.display = window.innerWidth < 768 ? 'grid' : '';
 
       const searchInput = document.getElementById('leaderboard-search');
-      const applySearch = () => {
-        const q = (searchInput?.value ?? '').toLowerCase().trim();
-        dataRows.querySelectorAll('tr').forEach(r => {
-          if (r.classList.contains('cut-line-row')) return;
-          r.classList.toggle('hidden', q !== '' && !r.textContent.toLowerCase().includes(q));
-        });
-        cardsContainer.querySelectorAll('.leaderboard-card').forEach(c => {
-          c.classList.toggle('hidden', q !== '' && !c.textContent.toLowerCase().includes(q));
-        });
-      };
       if (!searchListenerAttached && searchInput) {
-        searchInput.addEventListener('input', applySearch);
+        searchInput.addEventListener('input', applyFilters);
         searchListenerAttached = true;
       }
-      applySearch();
+      applyFilters();
 
       if (window.lucide) window.lucide.createIcons();
       startCountdown();
     }
 
     loadWeather();
-    loadData(false);
+    loadData(false).then(() => {
+      const urlPlayer = new URLSearchParams(location.search).get('player');
+      if (urlPlayer) openScDrawer(decodeURIComponent(urlPlayer));
+    });
   </script>
 </body>
 </html>
