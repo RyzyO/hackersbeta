@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Hackers Cup Spin Wheel</title>
+<title>Wheel of Death</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -40,6 +40,7 @@
     --font-display: 'Anton', 'Inter', sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --vh: 100vh;
+    --app-pad: 18px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,7 +76,7 @@
     to   { transform: translate3d(-3%, 2%, 0) scale(1.08); }
   }
 
-  .app { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: 18px 18px 40px; }
+  .app { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: var(--app-pad) var(--app-pad) 40px; }
 
   /* ===== Broadcast header ===== */
   .broadcast-bar {
@@ -247,7 +248,7 @@
     text-align: center; line-height: 1;
     color: var(--ink);
     font-family: var(--font-display);
-    font-size: clamp(13px, 2.6vw, 18px);
+    font-size: clamp(11px, 2.2vw, 15px);
     letter-spacing: 0.5px;
     box-shadow: 0 8px 22px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(255,255,255,0.35), inset 0 -6px 12px rgba(6,16,31,0.35);
     z-index: 3;
@@ -403,14 +404,31 @@
   .roster::-webkit-scrollbar-thumb:hover { background: rgba(125,211,252,0.32); }
   .roster .empty { text-align: center; color: var(--text-dim); padding: 24px 8px; font-size: 13px; }
 
-  /* ===== Kiosk ===== */
+  /* ===== Kiosk / fullscreen ===== */
   body.kiosk .broadcast-bar,
   body.kiosk .rail,
   body.kiosk .keyhint { display: none !important; }
-  body.kiosk .app { padding: 0; height: var(--vh); display: flex; align-items: center; }
-  body.kiosk .stage-grid { grid-template-columns: 1fr; width: 100%; }
-  body.kiosk .stage { gap: 26px; }
-  body.kiosk .wheel-stage { width: min(74vmin, 660px); }
+  body.kiosk .app {
+    padding: 0;
+    height: var(--vh);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  body.kiosk .stage-grid { grid-template-columns: 1fr; width: 100%; justify-items: center; }
+  body.kiosk .stage { gap: 20px; align-items: center; width: 100%; }
+  body.kiosk .wheel-stage {
+    width: min(72vmin, 640px);
+    flex-shrink: 0;
+  }
+  body.kiosk .reveal {
+    width: min(560px, 90vw);
+  }
+  body.kiosk .controls {
+    max-width: min(560px, 90vw);
+  }
   body.kiosk * { cursor: none !important; }
   body.kiosk .kiosk-hint { display: block; }
   .kiosk-hint {
@@ -486,19 +504,29 @@
 
   /* ===== Mobile ===== */
   @media (max-width: 640px) {
-    .app { padding: 14px 14px 32px; }
-    .broadcast-bar { gap: 10px; padding: 11px 13px; margin-bottom: 18px; }
+    :root { --app-pad: 12px; }
+    .app { padding: 12px 12px 28px; }
+    .broadcast-bar { gap: 8px; padding: 10px 12px; margin-bottom: 14px; flex-wrap: nowrap; }
     .brand .est { display: none; }
-    .stage-grid { gap: 20px; }
-    .stage { gap: 18px; }
+    .brand .mark { font-size: clamp(16px, 5.5vw, 22px); }
+    .stage-grid { gap: 16px; }
+    .stage { gap: 14px; }
+    .wheel-stage { width: clamp(260px, 90vw, 400px); }
     .controls { gap: 8px; }
-    .btn { padding: 13px 16px; }
-    .btn-primary { flex-basis: 100%; }
-    .roster { max-height: 260px; }
+    .btn { padding: 12px 14px; font-size: 12px; }
+    .btn-primary { flex: 1 1 100%; order: -1; font-size: 13px; }
+    .btn-ghost, .btn-toggle { flex: 1 1 calc(50% - 4px); min-width: 0; }
+    .reveal { max-width: 100%; }
+    .reveal .who { font-size: clamp(22px, 7vw, 36px); }
+    .reveal .actions { flex-direction: row; flex-wrap: wrap; }
+    .reveal .actions .btn { flex: 1 1 calc(50% - 4px); padding: 10px 10px; font-size: 11px; }
+    .roster { max-height: 240px; }
+    .keyhint { display: none; }
   }
-  @media (max-width: 380px) {
+  @media (max-width: 400px) {
     .reveal .actions { flex-direction: column; }
     .reveal .actions .btn { flex-basis: 100%; }
+    .btn-ghost, .btn-toggle { flex-basis: 100%; }
   }
   @media (max-width: 1023px) {
     .modal-card { width: calc(100vw - 32px); height: min(80vh, 760px); }
@@ -511,7 +539,7 @@
 <div class="app">
   <div class="broadcast-bar">
     <div class="brand">
-      <span class="mark">Hackers <b>Cup</b></span>
+      <span class="mark">Wheel of <b>Death</b></span>
       
     </div>
     <div class="bar-spacer"></div>
@@ -527,10 +555,10 @@
         <div class="wheel-glow"></div>
         <div class="wheel-bezel"></div>
         <div class="wheel-clip">
-          <canvas id="wheel" width="1100" height="1100" role="img" aria-label="Spin wheel of Hackers Cup members"></canvas>
+          <canvas id="wheel" width="1100" height="1100" role="img" aria-label="Wheel of Death spin wheel"></canvas>
         </div>
         <div class="flapper" id="flapper"><i></i><b></b></div>
-        <div class="hub"><span>HC</span></div>
+        <div class="hub"><span>WOD</span></div>
       </div>
 
       <div class="controls">
@@ -1069,6 +1097,11 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.body.classList.contains('kiosk')) setKiosk(false);
   if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); spin(filtered); }
 });
+
+/* ---------- --vh fix for mobile browser chrome ---------- */
+function updateVh() { document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`); }
+updateVh();
+addEventListener('resize', updateVh);
 
 /* ---------- init ---------- */
 sizeCanvas();
