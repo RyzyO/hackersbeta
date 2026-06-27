@@ -1812,20 +1812,6 @@
         if (pts >= 40) scores40plus++;
         if (parseInt(thruRaw, 10) >= 18) through18count++;
 
-        // Desktop cut line
-        if (!cutInserted && idx > 0) {
-          const prevPts = parseFloat(rows[idx-1].c[3]?.v) || 0;
-          if (prevPts >= 36 && pts < 36) {
-            const cutTr = document.createElement('tr');
-            cutTr.className = 'cut-line-row';
-            const cutTd = document.createElement('td');
-            cutTd.colSpan = 7;
-            cutTd.innerHTML = `<div class="cut-line-inner"><span class="cut-line-label">Cut — 36 pts</span></div>`;
-            cutTr.appendChild(cutTd);
-            dataRows.appendChild(cutTr);
-            cutInserted = true;
-          }
-        }
 
         // Desktop row
         const tr = document.createElement('tr');
@@ -1888,17 +1874,6 @@
         });
         dataRows.appendChild(tr);
 
-        // Mobile cut line
-        if (!mobileCutInserted && idx > 0) {
-          const prevPts = parseFloat(rows[idx-1].c[3]?.v) || 0;
-          if (prevPts >= 36 && pts < 36) {
-            const cutDiv = document.createElement('div');
-            cutDiv.className = 'mobile-cut-line';
-            cutDiv.innerHTML = '<span>Cut — 36 pts</span>';
-            cardsContainer.appendChild(cutDiv);
-            mobileCutInserted = true;
-          }
-        }
 
         // Mobile card
         const card = document.createElement('button');
