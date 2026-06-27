@@ -178,6 +178,14 @@
             <span class="text-sm text-slate-300">Skins</span>
             <label class="toggle"><input type="checkbox" id="editSkins" /><span class="slider"></span></label>
           </div>
+          <div class="flex items-center justify-between bg-s2 rounded-xl px-4 py-3 border border-brd">
+            <span class="text-sm text-slate-300">Saturday</span>
+            <label class="toggle"><input type="checkbox" id="editSaturdayAttendance" /><span class="slider"></span></label>
+          </div>
+          <div class="flex items-center justify-between bg-s2 rounded-xl px-4 py-3 border border-brd">
+            <span class="text-sm text-slate-300">Sunday</span>
+            <label class="toggle"><input type="checkbox" id="editSundayAttendance" /><span class="slider"></span></label>
+          </div>
         </div>
       </section>
 
@@ -935,6 +943,8 @@
     const editPlayerUid = $("#editPlayerUid");
     const editComing = $("#editComing");
     const editSkins = $("#editSkins");
+    const editSaturdayAttendance = $("#editSaturdayAttendance");
+    const editSundayAttendance = $("#editSundayAttendance");
     const editShirtSize = $("#editShirtSize");
     const editPantSize = $("#editPantSize");
     const editHandicap = $("#editHandicap");
@@ -1354,6 +1364,8 @@ async function downloadRoomsSpreadsheet() {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         skins: !!data.skins,
         coming: !!data.coming,
+        saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
+        sundayAttendance: data.sundayAttendance == null ? true : !!data.sundayAttendance,
         sponsorNotes: asString(data.sponsorNotes),
         handicap: data.handicap !== undefined && data.handicap !== null
           ? Number(data.handicap)
@@ -1395,6 +1407,8 @@ async function downloadRoomsSpreadsheet() {
           // Firestore is always authoritative for eligibility and room/partner relationships
           coming: current.coming,
           skins: current.skins,
+          saturdayAttendance: current.saturdayAttendance,
+          sundayAttendance: current.sundayAttendance,
           roommates: current.roommates,
           roomNumber: current.roomNumber,
           ambrosePartnerUid: current.ambrosePartnerUid,
@@ -1443,7 +1457,7 @@ async function downloadRoomsSpreadsheet() {
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, sponsorNotes: "", handicap: "" };
+      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, saturdayAttendance: true, sundayAttendance: true, sponsorNotes: "", handicap: "" };
     }
 
     function roomGroupMembers(uid, record) { return uniqueSorted([uid, ...(record.roommates || [])]); }
@@ -1503,6 +1517,8 @@ async function downloadRoomsSpreadsheet() {
       return users.filter(u => {
         const r = getEventRecord(u.uid);
         if (day === 'friday') return !!r.coming && !!r.skins;
+        if (day === 'saturday') return !!r.coming && !!r.saturdayAttendance;
+        if (day === 'sunday') return !!r.coming && !!r.sundayAttendance;
         return !!r.coming;
       });
     }
@@ -1677,6 +1693,7 @@ async function downloadRoomsSpreadsheet() {
       const groupCount = document.getElementById('tsGroupCount');
       const unassigned = document.getElementById('tsUnassigned');
       if (!display) return;
+      const isShotgunDay = isShotgun(activeTeeDay);
       const groups = teeSheets[activeTeeDay];
       const eligible = getEligibleForDay(activeTeeDay);
       const assignedSet = tsAssignedSet();
@@ -1706,8 +1723,10 @@ async function downloadRoomsSpreadsheet() {
                   </div>
                   <div class="flex items-center gap-1">
                     <span class="text-[10px] text-slate-500">Time</span>
-                    <input type="text" value="${escapeHtml(asString(group.teeTime || ''))}"
-                      class="w-20 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-time" data-gi="${gi}" />
+                    ${isShotgunDay
+                      ? `<span class="w-20 px-1.5 py-0.5 rounded bg-s2/40 border border-brd/40 text-slate-500 text-xs text-center font-mono select-none">${escapeHtml(asString(group.teeTime || ''))}</span>`
+                      : `<input type="text" value="${escapeHtml(asString(group.teeTime || ''))}" class="w-20 px-1.5 py-0.5 rounded bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent ts-group-time" data-gi="${gi}" />`
+                    }
                   </div>
                   <button type="button" class="text-[10px] text-red-400 hover:text-red-300 transition px-1" data-ts-del-group="${gi}">✕</button>
                 </div>
@@ -1759,6 +1778,13 @@ async function downloadRoomsSpreadsheet() {
 
     function isShotgun(day) { return day !== 'saturday'; }
 
+    function syncShotgunTimeInput() {
+      const input = document.getElementById('tsStartTime');
+      if (!input || !isShotgun(activeTeeDay)) return;
+      const first = teeSheets[activeTeeDay]?.[0];
+      if (first?.teeTime) input.value = first.teeTime;
+    }
+
     function parseHoleLabel(s) {
       const m = String(s || '').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
       return m ? { num: Math.min(18, Math.max(1, parseInt(m[1], 10))), letter: m[2] } : { num: 1, letter: '' };
@@ -1790,6 +1816,7 @@ async function downloadRoomsSpreadsheet() {
       if (intervalWrap) intervalWrap.style.display = shotgun ? 'none' : '';
       if (startTimeLabel) startTimeLabel.textContent = shotgun ? 'Shotgun Time' : 'First Tee Time';
       if (startHoleLabel) startHoleLabel.textContent = shotgun ? 'First Hole' : 'Starting Hole';
+      syncShotgunTimeInput();
       renderTeeSheet();
     }
 
@@ -1836,6 +1863,7 @@ async function downloadRoomsSpreadsheet() {
           saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
           sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
         };
+        syncShotgunTimeInput();
         renderTeeSheet();
         const total = teeSheets.friday.length + teeSheets.saturday.length + teeSheets.sunday.length;
         setTsStatus(total ? `Loaded (${total} groups total).` : 'No tee sheets saved yet.', total ? 'success' : 'warn');
@@ -3124,6 +3152,8 @@ async function downloadRoomsSpreadsheet() {
       // Populate fields
       editComing.checked = !!record.coming;
       editSkins.checked = !!record.skins;
+      editSaturdayAttendance.checked = record.saturdayAttendance !== false;
+      editSundayAttendance.checked = record.sundayAttendance !== false;
       editShirtSize.value = asString(record.shirtSize);
       editPantSize.value = asString(record.pantSize);
       editHandicap.value = record.handicap !== "" ? asString(record.handicap) : "";
@@ -3483,7 +3513,7 @@ async function downloadRoomsSpreadsheet() {
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
+    [editComing, editSkins, editSaturdayAttendance, editSundayAttendance, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -3500,6 +3530,8 @@ async function downloadRoomsSpreadsheet() {
           pantSize: editPantSize.value,
           coming: editComing.checked,
           skins: editSkins.checked,
+          saturdayAttendance: editSaturdayAttendance.checked,
+          sundayAttendance: editSundayAttendance.checked,
           handicap: editHandicap.value,
           ambrosePartnerUid: editPartner.value,
           roomNumber: editRoomNumber.value.trim(),
@@ -3759,6 +3791,12 @@ async function downloadRoomsSpreadsheet() {
       if (timeInput) {
         const gi = Number(timeInput.dataset.gi);
         if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].teeTime = timeInput.value;
+        return;
+      }
+      if (e.target.id === 'tsStartTime' && isShotgun(activeTeeDay)) {
+        const newTime = formatTeeTime(parseTeeTime(e.target.value));
+        teeSheets[activeTeeDay].forEach(g => { g.teeTime = newTime; });
+        renderTsGroups();
         return;
       }
     });

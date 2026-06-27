@@ -356,6 +356,8 @@
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         skins: !!data.skins,
         coming: !!data.coming,
+        saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
+        sundayAttendance: data.sundayAttendance == null ? true : !!data.sundayAttendance,
         handicap: data.handicap != null
           ? Number(data.handicap)
           : (fallbackUser?.handicap != null ? Number(fallbackUser.handicap) : ''),
@@ -383,11 +385,21 @@
     function getEligibleForDay(day) {
       return users.filter(u => {
         const r = getEventRecord(u.uid);
-        return day === 'friday' ? (!!r.coming && !!r.skins) : !!r.coming;
+        if (day === 'friday') return !!r.coming && !!r.skins;
+        if (day === 'saturday') return !!r.coming && !!r.saturdayAttendance;
+        if (day === 'sunday') return !!r.coming && !!r.sundayAttendance;
+        return !!r.coming;
       });
     }
 
     function isShotgun(day) { return day !== 'saturday'; }
+
+    function syncShotgunTimeInput() {
+      const input = $('#tsStartTime');
+      if (!input || !isShotgun(activeTeeDay)) return;
+      const first = teeSheets[activeTeeDay]?.[0];
+      if (first?.teeTime) input.value = first.teeTime;
+    }
 
     function parseTeeTime(s) {
       const str = String(s || '').trim().toUpperCase();
@@ -551,6 +563,7 @@
       const display = $('#tsGroupsDisplay');
       const unassigned = $('#tsUnassigned');
       if (!display) return;
+      const isShotgunDay = isShotgun(activeTeeDay);
 
       const groups = teeSheets[activeTeeDay];
       const eligible = getEligibleForDay(activeTeeDay);
@@ -670,8 +683,10 @@
                 <span class="text-slate-700 text-xs">·</span>
                 <div class="flex items-center gap-1.5">
                   <span class="text-[10px] text-slate-600 shrink-0">Time</span>
-                  <input type="text" value="${escapeHtml(asString(group.teeTime||''))}"
-                    class="w-[88px] px-2 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition ts-group-time" data-gi="${gi}" />
+                  ${isShotgunDay
+                    ? `<span class="w-[88px] px-2 py-1.5 rounded-lg bg-s2/40 border border-brd/40 text-slate-500 text-xs text-center font-mono select-none block">${escapeHtml(asString(group.teeTime||''))}</span>`
+                    : `<input type="text" value="${escapeHtml(asString(group.teeTime||''))}" class="w-[88px] px-2 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs text-center focus:outline-none focus:border-accent transition ts-group-time" data-gi="${gi}" />`
+                  }
                 </div>
               </div>
               <div class="px-3 py-2 flex-1">
@@ -732,6 +747,7 @@
       const stl = $('#tsStartTimeLabel'), shl = $('#tsStartHoleLabel');
       if (stl) stl.textContent = shotgun ? 'Shotgun Time' : 'First Tee Time';
       if (shl) shl.textContent = shotgun ? 'Starting Hole' : 'Starting Hole';
+      syncShotgunTimeInput();
       renderTeeSheet();
     }
 
@@ -781,6 +797,7 @@
           saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
           sunday:   Array.isArray(saved.sunday)   ? saved.sunday   : [],
         };
+        syncShotgunTimeInput();
         renderTeeSheet();
         const total = teeSheets.friday.length+teeSheets.saturday.length+teeSheets.sunday.length;
         setTsStatus(total ? `Loaded — ${total} groups total.` : 'No tee sheets saved yet.', total?'success':'warn');
@@ -1251,6 +1268,11 @@
       }
       if (e.target.classList.contains('ts-group-time')) {
         teeSheets[activeTeeDay][Number(e.target.dataset.gi)].teeTime = e.target.value.trim();
+      }
+      if (e.target.id === 'tsStartTime' && isShotgun(activeTeeDay)) {
+        const newTime = formatTeeTime(parseTeeTime(e.target.value));
+        teeSheets[activeTeeDay].forEach(g => { g.teeTime = newTime; });
+        renderTsGroups();
       }
     });
 
