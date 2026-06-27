@@ -543,6 +543,25 @@
       margin-top: 3px;
     }
 
+    /* ── Avatar in drawer header ────────────────────── */
+    #sat-sc-avatar {
+      width: 56px; height: 56px;
+      border-radius: 9999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid rgba(56,189,248,0.4);
+      box-shadow: 0 4px 14px rgba(2,6,23,0.5);
+    }
+
+    /* ── Small avatar in leaderboard rows ───────────── */
+    .row-avatar {
+      width: 28px; height: 28px;
+      border-radius: 9999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid rgba(56,189,248,0.25);
+    }
+
     /* ── Share button in drawer ──────────────────────── */
     #sat-sc-share {
       display: inline-flex; align-items: center; gap: 5px;
@@ -1098,6 +1117,7 @@
   <div id="sat-sc-drawer">
     <div id="sat-sc-header">
       <button id="sat-sc-back" onclick="closeScDrawer()">← Back</button>
+      <img id="sat-sc-avatar" class="hidden" alt="">
       <span id="sat-sc-name"></span>
       <button id="sat-sc-share" onclick="sharePlayer()">🔗 Share</button>
     </div>
@@ -1186,6 +1206,11 @@
     import { getFirestore, getDoc, getDocs, doc, collection, setDoc, arrayUnion, arrayRemove }
       from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+    function normalizeName(name) {
+      return (name || '').toString().toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    }
+    window.normalizePlayerName = normalizeName;
+
     const app = initializeApp({
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
       authDomain: "hackers-cup.firebaseapp.com",
@@ -1268,6 +1293,20 @@
     });
 
     loadTeeSheet();
+
+    window.avatarMapReady = (async () => {
+      const map = {};
+      try {
+        const snap = await getDocs(collection(db, 'attendeeProfiles'));
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.avatarUrl) map[normalizeName(docSnap.id)] = data.avatarUrl;
+        });
+      } catch (e) {
+        console.warn('Avatar lookup failed:', e);
+      }
+      return map;
+    })();
   </script>
 
   <script type="text/javascript">
@@ -1445,6 +1484,15 @@
       _currentDrawerPlayer = playerName;
       document.getElementById('sat-sc-name').textContent = playerName;
       document.getElementById('sat-sc-body').innerHTML = '<div class="sc-loading">Loading scorecard…</div>';
+      const avatarEl = document.getElementById('sat-sc-avatar');
+      if (avatarEl) { avatarEl.classList.add('hidden'); avatarEl.src = ''; }
+      if (window.avatarMapReady && avatarEl) {
+        window.avatarMapReady.then(map => {
+          const key = window.normalizePlayerName ? window.normalizePlayerName(playerName) : playerName.toLowerCase().trim();
+          const url = map[key];
+          if (url) { avatarEl.src = url; avatarEl.alt = playerName; avatarEl.classList.remove('hidden'); }
+        });
+      }
       document.getElementById('sat-sc-drawer').classList.add('open');
       document.getElementById('sat-sc-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -1627,6 +1675,23 @@
       return null;
     }
 
+    // ── Avatar population ─────────────────────────────────
+
+    function applyAvatars() {
+      if (!window.avatarMapReady) return;
+      window.avatarMapReady.then(map => {
+        document.querySelectorAll('[data-player]').forEach(el => {
+          const key = window.normalizePlayerName
+            ? window.normalizePlayerName(el.dataset.player)
+            : el.dataset.player.toLowerCase().trim();
+          const url = map[key];
+          el.querySelectorAll('.row-avatar').forEach(img => {
+            if (url) { img.src = url; img.alt = el.dataset.player; img.classList.remove('hidden'); }
+          });
+        });
+      });
+    }
+
     // ── Countdown ─────────────────────────────────────────
 
     function updateCountdown() {
@@ -1775,7 +1840,8 @@
         tdName.style.textAlign = 'left';
         const teeBadge = teeInfo?.teeTime ? `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>` : '';
         const isStarred = (window._satFavs || new Set()).has(name);
-        tdName.innerHTML = `<div style="display:flex;align-items:flex-start;gap:6px">
+        tdName.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+          <img class="row-avatar hidden" src="" alt="">
           <div class="player-name-cell" style="flex:1">
             <span class="player-name">${name}</span>
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
@@ -1852,7 +1918,10 @@
             onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
           <div class="leaderboard-row">
             <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${rankBadgeHtml(rankNum, isTie)}${mv}</div>
-            <span class="leaderboard-name">${name}</span>
+            <div style="display:flex;align-items:center;gap:7px">
+              <img class="row-avatar hidden" src="" alt="">
+              <span class="leaderboard-name">${name}</span>
+            </div>
             <div style="text-align:right">
               <div class="leaderboard-pts" style="line-height:1">${pts || '—'}</div>
               ${projNum ? `<div class="proj-label" style="text-align:right">proj. ${projNum}</div>` : ''}
@@ -1895,6 +1964,7 @@
       applyFilters();
 
       if (window.lucide) window.lucide.createIcons();
+      applyAvatars();
       startCountdown();
     }
 
