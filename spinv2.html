@@ -473,6 +473,11 @@
   }
   .modal-close:hover { background: rgba(125,211,252,0.1); color: var(--text-primary); }
   .modal-head { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .modal-avatar {
+    display: block; width: 72px; height: 72px; margin: 0 auto 10px;
+    border-radius: 9999px; object-fit: cover;
+    border: 2px solid rgba(56,189,248,0.4); box-shadow: var(--shadow-md);
+  }
   .modal-name { font-family: var(--font-display); font-size: 30px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--sky-300); margin-bottom: 4px; }
   .modal-num { font-size: 13px; color: var(--text-muted); }
   .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
@@ -617,6 +622,7 @@
   <div class="modal-card">
     <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">&times;</button>
     <div class="modal-head">
+      <img id="profileAvatar" class="modal-avatar" style="display:none;" alt="">
       <div class="modal-name" id="profileName">Loading...</div>
       <div class="modal-num" id="profileNumber"></div>
     </div>
@@ -665,6 +671,8 @@
   function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
   function showProfileModal(displayName, hackerNumber) {
     document.getElementById('profileModal').classList.add('active');
+    const avatarEl = document.getElementById('profileAvatar');
+    if (avatarEl) { avatarEl.style.display = 'none'; avatarEl.src = ''; }
     loadAndDisplayProfile(displayName, hackerNumber);
   }
   async function loadAndDisplayProfile(displayName, hackerNumber) {
@@ -680,6 +688,11 @@
   function renderProfileModal(profile, displayName, hackerNumber) {
     document.getElementById('profileName').textContent = displayName;
     document.getElementById('profileNumber').textContent = hackerNumber ? `Hacker #${hackerNumber}` : '';
+    const avatarEl = document.getElementById('profileAvatar');
+    if (avatarEl) {
+      if (profile.avatarUrl) { avatarEl.src = profile.avatarUrl; avatarEl.alt = displayName; avatarEl.style.display = ''; }
+      else { avatarEl.style.display = 'none'; avatarEl.src = ''; }
+    }
     document.getElementById('profileEventsAttended').textContent = profile.eventsAttended || '-';
     document.getElementById('profileLastAttended').textContent = profile.lastAttended ? `HC${profile.lastAttended}` : '-';
 
