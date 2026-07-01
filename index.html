@@ -617,12 +617,30 @@
     const messaging = getMessaging(app);
     const firestore = getFirestore(app);
     
+    // Links an already-subscribed OneSignal push subscriber (from before external_id
+    // tracking existed, or a login on a different device) to their Firebase UID, so
+    // future sends can target them by user instead of only anonymous device.
+    async function linkOneSignalToUser(uid) {
+      let attempts = 0;
+      while (!window.OneSignal && attempts < 40) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (!window.OneSignal) return;
+      try {
+        await window.OneSignal.login(uid);
+      } catch (e) {
+        console.warn('OneSignal login error:', e);
+      }
+    }
+
     // Auth State Management
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
       } else {
         loadUserData(user);
+        linkOneSignalToUser(user.uid);
       }
     });
 

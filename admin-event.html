@@ -1179,7 +1179,8 @@ function downloadFullComingSpreadsheetCsv() {
       partner ? asString(partner.displayName).trim() : "",
       record.coming ? "Yes" : "No",
       paidStatusFor(user).label,
-      record.skins ? "Yes" : "No"
+      record.skins ? "Yes" : "No",
+      user.uid
     ];
   });
 
@@ -1189,7 +1190,7 @@ function downloadFullComingSpreadsheetCsv() {
   }
 
   const csv = [
-    ["Name", "Handicap", "Mobile", "Email", "Hackers No.", "Shirt Siz", "Room", "Ambrose", "Coming", "Paid", "Skins"].map(csvEscape).join(","),
+    ["Name", "Handicap", "Mobile", "Email", "Hackers No.", "Shirt Siz", "Room", "Ambrose", "Coming", "Paid", "Skins", "UID"].map(csvEscape).join(","),
     ...rows.map(row => row.map(csvEscape).join(","))
   ].join("\n");
 
