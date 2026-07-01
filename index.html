@@ -14,7 +14,10 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  
+
+  <!-- Shared site navigation styling -->
+  <link rel="stylesheet" href="assets/css/site-nav.css">
+
   <!-- Tailwind Config -->
   <script>
     tailwind.config = {
@@ -70,14 +73,8 @@
       background: #475569;
     }
     
-    /* Glassmorphism Utilities */
-    .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
+    /* .glass / .liquid-glass now live in assets/css/site-nav.css */
+
     .glass-card {
       background: rgba(30, 41, 59, 0.6);
       backdrop-filter: blur(16px);
@@ -226,113 +223,9 @@
     </div>
   </div>
 
-  <!-- Navigation -->
-  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
-        <div class="flex-shrink-0 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
-            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
-          </div>
-            <span class="font-bold text-xl tracking-tight hackers-cup-heading">HACKERS CUP 26</span>
-        </div>
-        
-        <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-1">
-          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Home</a>
-          <div class="relative event-dropdown" onmouseenter="showEventDropdown()" onmouseleave="hideEventDropdown()">
-            <button id="eventDropdownBtn" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1">Event </button>
-            <div id="eventDropdownMenu" class="absolute left-0 mt-0 w-44 bg-hackers-navy text-white rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity z-50">
-              <a href="register.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Register</a>
-              <a href="venue.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Venue</a>
-              <a href="payment.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Payment</a>
-              <a href="schedule.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Schedule</a>
-              <a href="weather.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Weather</a>
-             
-            </div>
-          </div>
-            <script>
-              // Desktop Event Dropdown Hover Fix
-              function showEventDropdown() {
-                var menu = document.getElementById('eventDropdownMenu');
-                if (menu) {
-                  menu.classList.remove('opacity-0', 'pointer-events-none');
-                  menu.classList.add('opacity-100', 'pointer-events-auto');
-                }
-              }
-              function hideEventDropdown() {
-                var menu = document.getElementById('eventDropdownMenu');
-                if (menu) {
-                  menu.classList.add('opacity-0', 'pointer-events-none');
-                  menu.classList.remove('opacity-100', 'pointer-events-auto');
-                }
-              }
-            </script>
-          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
-          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
-          <a href="score.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Score</a>
-          <div class="relative group" id="profileMenuContainer">
-            <button id="profileMenuButton" class="w-10 h-10 rounded-full bg-hackers-navy text-hackers-sky font-bold flex items-center justify-center text-lg hover:ring-2 hover:ring-hackers-sky/60 transition-all overflow-hidden" onclick="window.location.href='profile.html'">
-              <span id="navbarHackerNumber">#</span>
-            </button>
-            <div class="absolute right-0 mt-0 w-44 bg-hackers-navy text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-opacity z-50" tabindex="0">
-              <a href="profile.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Profile</a>
-              <a href="notifications-center.html" class="block px-4 py-2 hover:bg-hackers-sky/20">Notifications</a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Mobile Menu Button -->
-        <div class="md:hidden">
-          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
-      <div class="px-4 pt-2 pb-3 space-y-1">
-        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Home</a>
-        <a href="profile.html" class="block px-3 py-2 rounded-md text-base font-medium text-grey hover:text-white hover:bg-white/10">Profile</a>
-        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
-        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
-        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
-        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
-        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
-        <a href="weather.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Weather</a>
-        <a href="score.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Score</a>
-        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
-        <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
-      </div>
-    </div>
-    <script>
-      // Set hacker number in mobile menu profile circle
-      function setMobileNavbarHackerNumber(hackerNumber) {
-        var el = document.getElementById('mobileNavbarHackerNumber');
-        if (el && hackerNumber) {
-          el.textContent = hackerNumber;
-        }
-      }
-      // Patch into user data loading
-      const origLoadUserData = window.loadUserData;
-      window.loadUserData = function(user) {
-        origLoadUserData(user);
-        // Also update mobile menu
-        const userId = user && user.uid;
-        if (userId && typeof getDatabase === 'function' && typeof ref === 'function' && typeof onValue === 'function') {
-          const db = getDatabase();
-          const hackerRef = ref(db, `users/${userId}/hackerNumber`);
-          onValue(hackerRef, (snapshot) => {
-            const hackerNumber = snapshot.val();
-            setMobileNavbarHackerNumber(hackerNumber);
-          });
-        }
-      }
-    </script>
-  </nav>
+  <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
+  <div id="site-nav-root"></div>
+  <script src="assets/js/site-nav.js"></script>
 
   <!-- Hero Section -->
   <section class="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden hero-gradient">
@@ -650,30 +543,12 @@
       }
     });
 
-    // Render a profile picture into the navbar circle, replacing the hacker-number
-    // text. If no avatar is set, the circle is left exactly as-is (number visible).
+    // Nav avatar/hacker-number rendering now lives in assets/js/site-nav.js.
     function applyNavbarAvatar(avatarUrl) {
-      const btn = document.getElementById('profileMenuButton');
-      const numberSpan = document.getElementById('navbarHackerNumber');
-      if (!btn) return;
-
-      let img = btn.querySelector('img.navbar-avatar-img');
-
-      if (avatarUrl) {
-        if (numberSpan) numberSpan.style.display = 'none';
-        if (!img) {
-          img = document.createElement('img');
-          img.className = 'navbar-avatar-img w-full h-full object-cover rounded-full';
-          img.alt = 'Profile picture';
-          btn.appendChild(img);
-        }
-        img.src = avatarUrl;
-      } else {
-        if (img) img.remove();
-        if (numberSpan) numberSpan.style.display = '';
-      }
+      window.SiteNav && window.SiteNav.setAvatar(avatarUrl);
     }
-    
+
+
     function loadUserData(user) {
       // Load Display Name
       const userRef = ref(database, `users/${user.uid}/displayName`);
@@ -719,11 +594,8 @@
         } else if (hackerElement) {
           hackerElement.textContent = "G'day, Hacker";
         }
-        // Update navbar circle
-        const navbarCircle = document.getElementById('navbarHackerNumber');
-        if (navbarCircle && hackerNumber) {
-          navbarCircle.textContent = hackerNumber;
-        }
+        // Update navbar circle (desktop + mobile menu profile row)
+        window.SiteNav && window.SiteNav.setHackerNumber(hackerNumber);
       });
 
       // Thursday (Ryder Cup) attendees see a countdown one day earlier, with a label
@@ -797,14 +669,7 @@
       setTimeout(hidePreloader, 3000);
     })();
     
-    // Mobile Menu Toggle
-    function toggleMobileMenu() {
-      const menu = document.getElementById('mobile-menu');
-      menu.classList.toggle('hidden');
-    }
-
-    // Expose to global scope for inline onclick
-    window.toggleMobileMenu = toggleMobileMenu;
+    // Mobile menu toggle/backdrop/Escape/active-link logic now lives in assets/js/site-nav.js
 
     // Install Prompt Handler
     let installPromptEvent = null;
@@ -845,16 +710,6 @@
       installPromptBanner.classList.add('hidden');
     }
 
-    // Auto-close mobile menu when a link inside it is clicked
-    document.getElementById('mobile-menu')?.addEventListener('click', (e) => {
-      const link = e.target.closest('a');
-      if (!link) return;
-      const menu = document.getElementById('mobile-menu');
-      if (menu && !menu.classList.contains('hidden')) {
-        menu.classList.add('hidden');
-      }
-    });
-    
     // Notifications
     async function initNotifications() {
       try {

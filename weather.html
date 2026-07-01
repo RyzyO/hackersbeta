@@ -13,6 +13,7 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="assets/css/site-nav.css">
   
   <!-- Tailwind Config -->
   <script>
@@ -74,13 +75,7 @@
       background: #475569;
     }
     
-    /* Glassmorphism Utilities */
-    .glass {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    /* .glass now lives in assets/css/site-nav.css */
     
     .glass-card {
       background: rgba(30, 41, 59, 0.6);
@@ -193,56 +188,9 @@
   </div>
 
   <!-- Navigation -->
-  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
-        <div class="flex-shrink-0 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
-            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
-          </div>
-          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
-        </div>
-        
-        <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-1">
-          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
-          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
-          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
-          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
-          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
-          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
-          <a href="weather.html" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">Weather</a>
-          <a href="score.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Score</a>
-          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
-          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
-        </div>
-        
-        <!-- Mobile Menu Button -->
-        <div class="md:hidden">
-          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
-      <div class="px-4 pt-2 pb-3 space-y-1">
-        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
-        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
-        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
-        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
-        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
-        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
-        <a href="weather.html" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-hackers-sky/30">Weather</a>
-        <a href="score.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Score</a>
-        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
-        <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
-      </div>
-    </div>
-  </nav>
+  <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
+  <div id="site-nav-root"></div>
+  <script src="assets/js/site-nav.js"></script>
 
   <!-- Main Content -->
   <main class="pt-20 px-4 pb-8 max-w-7xl mx-auto">
@@ -504,11 +452,7 @@
       }, 500);
     });
     
-    // Mobile menu toggle
-    function toggleMobileMenu() {
-      const menu = document.getElementById('mobile-menu');
-      menu.classList.toggle('hidden');
-    }
+    // Mobile menu toggle now lives in assets/js/site-nav.js
 
     // Weather Icons mapping based on WMO Weather codes
     function getWeatherIcon(weatherCode, isDay = true) {

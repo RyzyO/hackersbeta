@@ -1,0 +1,34 @@
+/* Shared site navigation + mobile menu styling.
+   Used alongside assets/js/site-nav.js — see that file for the injected markup. */
+
+.glass {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Liquid glass — denser, frosted panel with a soft top sheen and lifted shadow,
+   for surfaces (like the mobile menu) that need to read as opaque, not see-through. */
+.liquid-glass {
+  position: relative;
+  /* Near-opaque base so this reads as solid even where backdrop-filter isn't
+     supported/enabled — blur/saturate below are texture on top, not load-bearing. */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0) 100%),
+    rgba(8, 13, 25, 0.97);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.site-nav-logo-text {
+  font-family: 'Kanit', sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+}
