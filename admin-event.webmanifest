@@ -1,0 +1,31 @@
+{
+  "id": "/admin-event.html",
+  "name": "Hackers Cup Admin",
+  "short_name": "HC Admin",
+  "description": "Player and event management for Hackers Cup",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/admin-event.html",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/assets/images/admin-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/admin-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/admin-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
