@@ -180,6 +180,86 @@
         letter-spacing: 0.02em;
       }
 
+      .nickname-detail-cell {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.09), rgba(15, 23, 42, 0.5));
+        border-color: rgba(56, 189, 248, 0.16);
+      }
+      .nickname-view-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+      }
+      .nickname-row {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+      }
+      .nickname-value {
+        color: #f8fafc;
+        font-weight: 800;
+        font-size: 1rem;
+        line-height: 1.35;
+        word-break: break-word;
+      }
+      .nickname-placeholder {
+        color: #94a3b8;
+        font-weight: 600;
+      }
+      .nickname-input {
+        flex: 1 1 220px;
+        min-width: 0;
+        width: auto;
+        background: rgba(2, 6, 23, 0.65);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        color: #f8fafc;
+        border-radius: .65rem;
+        padding: .55rem .75rem;
+        font-weight: 700;
+        outline: none;
+      }
+      .nickname-input:focus {
+        border-color: rgba(56, 189, 248, 0.75);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+      }
+      .nickname-btn {
+        border-radius: .65rem;
+        padding: .5rem .75rem;
+        font-size: .8rem;
+        font-weight: 800;
+        transition: transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+        white-space: nowrap;
+      }
+      .nickname-btn:disabled { opacity: .55; cursor: not-allowed; }
+      .nickname-btn:hover:not(:disabled) { transform: translateY(-1px); }
+      .nickname-btn.primary {
+        background: #0ea5e9;
+        color: #04263b;
+      }
+      .nickname-btn.secondary {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #cbd5e1;
+      }
+      .nickname-btn.danger {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+        color: #fca5a5;
+      }
+      .nickname-status {
+        min-height: 1rem;
+        margin-top: .5rem;
+        font-size: .72rem;
+        color: #94a3b8;
+      }
+      .nickname-status.error { color: #fca5a5; }
+      .nickname-status.success { color: #6ee7b7; }
+      @media (max-width: 640px) {
+        .nickname-view-row { align-items: flex-start; }
+        .nickname-input { flex-basis: 100%; }
+      }
+
       /* Stat strip */
       .stat-grid {
         display: grid;
@@ -450,6 +530,8 @@
             <div class="flex flex-wrap items-center gap-2 justify-center sm:justify-start mb-3">
               <span class="hacker-tag" id="hackerNumber"><i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;&ndash;</span>
             </div>
+
+
             <div class="avatar-status" id="avatarStatus"></div>
           </div>
         </div>
@@ -483,6 +565,38 @@
       <div class="section-shell animate-slide-up">
         <div class="section-heading">
           <h4><span class="icon-chip"><i data-lucide="id-card" class="w-4 h-4 text-hackers-sky"></i></span>Personal Details</h4>
+        </div>
+        <div class="personal-detail-cell nickname-detail-cell mb-3">
+          <div id="nicknameView">
+            <div class="nickname-view-row">
+              <div class="min-w-0">
+                <div class="pd-label flex items-center gap-1.5">
+                  <i data-lucide="badge" class="w-3.5 h-3.5 text-hackers-sky"></i>Nickname
+                </div>
+                <div class="nickname-value" id="nicknameDisplay">Loading&hellip;</div>
+              </div>
+              <button type="button" class="nickname-btn secondary" id="nicknameEditBtn">Change</button>
+            </div>
+          </div>
+          <div id="nicknameEdit" class="hidden">
+            <div class="pd-label flex items-center gap-1.5 mb-2">
+              <i data-lucide="badge" class="w-3.5 h-3.5 text-hackers-sky"></i>Nickname
+            </div>
+            <div class="nickname-row">
+              <input
+                type="text"
+                class="nickname-input"
+                id="nicknameInput"
+                maxlength="24"
+                autocomplete="nickname"
+                placeholder="Enter a nickname"
+              >
+              <button type="button" class="nickname-btn primary" id="nicknameSaveBtn">Save</button>
+              <button type="button" class="nickname-btn secondary" id="nicknameCancelBtn">Cancel</button>
+              <button type="button" class="nickname-btn danger" id="nicknameClearBtn">Clear</button>
+            </div>
+          </div>
+          <div class="nickname-status" id="nicknameStatus"></div>
         </div>
         <div class="grid grid-cols-2 gap-3" id="personalDetailsGrid">
           <div class="personal-detail-cell skel" style="height:62px;"></div>
@@ -853,6 +967,115 @@
       ].join('');
     }
 
+    // ============================================
+    // Nickname editor
+    // Stored in Firestore at users/{uid}.nickname
+    // ============================================
+    window.currentUserDocRef = null;
+    window.currentNickname = '';
+
+    function cleanNickname(value) {
+      return (value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function setNicknameStatus(message, type) {
+      const el = document.getElementById('nicknameStatus');
+      if (!el) return;
+      el.textContent = message || '';
+      el.classList.remove('error', 'success');
+      if (type) el.classList.add(type);
+    }
+
+    function renderNickname(nickname) {
+      window.currentNickname = cleanNickname(nickname);
+      const display = document.getElementById('nicknameDisplay');
+      const input = document.getElementById('nicknameInput');
+      const editBtn = document.getElementById('nicknameEditBtn');
+
+      if (window.currentNickname) {
+        display.textContent = window.currentNickname;
+        display.classList.remove('nickname-placeholder');
+        editBtn.textContent = 'Change';
+      } else {
+        display.textContent = 'No nickname yet';
+        display.classList.add('nickname-placeholder');
+        editBtn.textContent = 'Add';
+      }
+
+      input.value = window.currentNickname;
+      setNicknameStatus('');
+      lucide.createIcons();
+    }
+
+    function setNicknameEditMode(isEditing) {
+      document.getElementById('nicknameView').classList.toggle('hidden', isEditing);
+      document.getElementById('nicknameEdit').classList.toggle('hidden', !isEditing);
+      setNicknameStatus('');
+      if (isEditing) {
+        const input = document.getElementById('nicknameInput');
+        input.value = window.currentNickname || '';
+        setTimeout(() => input.focus(), 0);
+      }
+    }
+
+    async function saveNickname(value) {
+      if (!window.currentUserDocRef) {
+        setNicknameStatus('Profile is still loading — try again.', 'error');
+        return;
+      }
+
+      const nickname = cleanNickname(value);
+      if (nickname.length > 24) {
+        setNicknameStatus('Nickname must be 24 characters or less.', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('nicknameSaveBtn');
+      const clearBtn = document.getElementById('nicknameClearBtn');
+      saveBtn.disabled = true;
+      clearBtn.disabled = true;
+      setNicknameStatus('Saving...');
+
+      try {
+        const update = {
+          nicknameUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (nickname) {
+          update.nickname = nickname;
+        } else {
+          update.nickname = firebase.firestore.FieldValue.delete();
+        }
+
+        await window.currentUserDocRef.set(update, { merge: true });
+        renderNickname(nickname);
+        setNicknameEditMode(false);
+        setNicknameStatus(nickname ? 'Nickname saved.' : 'Nickname cleared.', 'success');
+      } catch (err) {
+        console.error('Failed to save nickname:', err);
+        setNicknameStatus('Could not save nickname — try again.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+    }
+
+    document.getElementById('nicknameEditBtn').addEventListener('click', () => setNicknameEditMode(true));
+    document.getElementById('nicknameCancelBtn').addEventListener('click', () => {
+      renderNickname(window.currentNickname);
+      setNicknameEditMode(false);
+    });
+    document.getElementById('nicknameSaveBtn').addEventListener('click', () => {
+      saveNickname(document.getElementById('nicknameInput').value);
+    });
+    document.getElementById('nicknameClearBtn').addEventListener('click', () => saveNickname(''));
+    document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveNickname(e.target.value);
+      if (e.key === 'Escape') {
+        renderNickname(window.currentNickname);
+        setNicknameEditMode(false);
+      }
+    });
+
     firebase.auth().onAuthStateChanged(async function(user) {
       if (!user) {
         window.location.href = 'login.html';
@@ -886,13 +1109,23 @@
       const profileRef = db.collection('attendeeProfiles').doc(displayName);
       window.currentProfileRef = profileRef; // used by avatar upload to persist avatarUrl
 
-      // Fetch personal details from users doc and HC26 event record
-      db.collection('users').doc(user.uid).get().then(userDoc => {
-        const gaNumber = userDoc.exists ? (userDoc.data().golfAustraliaNumber || '') : '';
+      // Fetch personal details + nickname from the user's Firestore profile doc.
+      const userDocRef = db.collection('users').doc(user.uid);
+      window.currentUserDocRef = userDocRef;
+
+      userDocRef.onSnapshot(userDoc => {
+        const userData = userDoc.exists ? userDoc.data() : {};
+        renderNickname(userData.nickname || '');
+
+        const gaNumber = userData.golfAustraliaNumber || '';
         db.collection('eventYears').doc('HC26').collection('players').doc(user.uid).get().then(eventDoc => {
           const ep = eventDoc.exists ? eventDoc.data() : {};
           renderPersonalDetails(gaNumber, ep.shirtSize || '', !!ep.coming, !!ep.skins);
         });
+      }, err => {
+        console.error('Failed to load user profile:', err);
+        renderNickname('');
+        setNicknameStatus('Could not load nickname.', 'error');
       });
 
       profileRef.onSnapshot(doc => {

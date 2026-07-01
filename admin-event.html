@@ -7,7 +7,6 @@
 
   <!-- Installable as its own home-screen app, separate from the main Hackers Cup app -->
   <link rel="manifest" href="admin-event.webmanifest">
-  <link rel="icon" type="image/png" href="assets/images/admin-icon.png">
   <link rel="apple-touch-icon" href="assets/images/admin-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -105,6 +104,210 @@
     @media (min-width: 768px) {
       .desktop-table { display: block !important; }
       .mobile-cards { display: none !important; }
+    }
+
+    .award-pill.active {
+      background: rgba(6,214,164,0.15);
+      color: #06d6a4;
+      border-color: rgba(6,214,164,0.3);
+    }
+    .award-result-card {
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+    .award-result-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(6,214,164,0.28);
+    }
+    .award-result-card.active {
+      background: rgba(6,214,164,0.06);
+      border-color: rgba(6,214,164,0.35);
+    }
+    .award-section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.9fr);
+      gap: 1rem;
+    }
+    .award-section-grid .award-empty {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 1024px) {
+      .award-section-grid { grid-template-columns: 1fr; }
+    }
+    .admin-honours-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    .admin-honour-card {
+      background: rgba(17, 23, 37, 0.82);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.85rem;
+      border-radius: 0.9rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+    .admin-honour-card:hover {
+      border-color: rgba(245,158,11,0.35);
+      transform: translateY(-1px);
+      background: rgba(24, 32, 48, 0.9);
+    }
+    .admin-honour-card .icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 0.6rem;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245,158,11,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f59e0b;
+      flex-shrink: 0;
+    }
+    .admin-honour-card .meta {
+      color: #94a3b8;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+    .admin-honour-card .title {
+      color: #f8fafc;
+      font-weight: 700;
+      margin-top: 0.25rem;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+    .admin-honour-card .loc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.4rem;
+      color: #94a3b8;
+      font-size: 0.78rem;
+    }
+
+    /* Collapsible admin modules */
+    .admin-module {
+      position: relative;
+    }
+    .admin-module.module-hidden {
+      display: none !important;
+    }
+    .player-table-module {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .permanent-stats-module {
+      margin-bottom: 0.25rem;
+    }
+    .module-minimise-btn {
+      position: absolute;
+      top: -0.65rem;
+      right: -0.65rem;
+      z-index: 20;
+      width: 1.9rem;
+      height: 1.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid #1c2640;
+      background: #111725;
+      color: #94a3b8;
+      font-size: 1.1rem;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    }
+    .module-minimise-btn:hover {
+      background: #182030;
+      color: #ffffff;
+      border-color: rgba(6,214,164,0.35);
+      transform: translateY(-1px);
+    }
+    .module-open-menu {
+      display: none;
+    }
+    #moduleOpenMenuWrap:hover .module-open-menu,
+    .module-open-menu.is-open {
+      display: block;
+    }
+    .module-open-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      text-align: left;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+    .module-open-menu-item:hover {
+      background: #182030;
+      color: #ffffff;
+    }
+    .module-open-empty {
+      padding: 0.75rem 0.85rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .mobile-actions-menu {
+      display: none;
+    }
+    .mobile-actions-menu.is-open {
+      display: block;
+    }
+    .mobile-actions-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.7rem 0.85rem;
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      text-align: left;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+    .mobile-actions-item:hover {
+      background: #182030;
+      color: #ffffff;
+    }
+    .mobile-actions-heading {
+      padding: 0.7rem 0.85rem 0.35rem;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .mobile-actions-divider {
+      height: 1px;
+      background: #1c2640;
+      margin: 0.35rem 0.65rem;
+    }
+    @media (max-width: 639px) {
+      header .max-w-\[1680px\] {
+        gap: 0.55rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      #eventSelect {
+        min-width: 0;
+        max-width: calc(100vw - 7.5rem);
+      }
+      #dirtyIndicator {
+        display: none !important;
+      }
+      .module-minimise-btn {
+        top: -0.55rem;
+        right: -0.45rem;
+      }
     }
 
     body { background: #060911; }
@@ -373,7 +576,7 @@
 
     <!-- HEADER -->
     <header class="border-b border-brd bg-s1/80 backdrop-blur-md sticky top-0 z-30">
-      <div class="max-w-[1680px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
+      <div class="max-w-[1680px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-2 sm:gap-4">
         <div class="flex items-center gap-2.5 mr-2">
           <div class="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
             <i data-lucide="trophy" class="w-4 h-4 text-accent"></i>
@@ -381,14 +584,58 @@
           <span class="font-bold text-white text-[15px] tracking-tight hidden sm:inline">Hackers Cup</span>
         </div>
 
-        <div class="h-6 w-px bg-brd"></div>
+        <div class="hidden sm:block h-6 w-px bg-brd"></div>
 
-        <select id="eventSelect" class="px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer pr-8"></select>
+        <select id="eventSelect" class="flex-1 sm:flex-none min-w-0 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer pr-8"></select>
 
-        <div class="flex-1"></div>
+        <div class="hidden sm:block flex-1"></div>
+
+        <!-- Mobile actions dropdown -->
+        <div class="relative sm:hidden" id="mobileActionsWrap">
+          <button id="mobileActionsBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs hover:bg-s3 hover:text-white transition">
+            <i data-lucide="menu" class="w-3.5 h-3.5"></i>
+            <span>Menu</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 opacity-60"></i>
+          </button>
+          <div id="mobileActionsMenu" class="mobile-actions-menu absolute right-0 top-full mt-1.5 w-72 max-w-[calc(100vw-1.5rem)] bg-s2 border border-brd rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
+            <div class="mobile-actions-heading">Open modules</div>
+            <div id="mobileModuleOpenList"></div>
+            <div class="mobile-actions-divider"></div>
+            <div class="mobile-actions-heading">Export</div>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="exportComingCsvBtn">
+              <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Export coming CSV
+            </button>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="exportFullCsvBtn">
+              <i data-lucide="table-2" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Export full CSV
+            </button>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="exportAllMembersCsvBtn">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> All members CSV
+            </button>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="exportRoomsBtn">
+              <i data-lucide="bed-double" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Fill rooms sheet
+            </button>
+            <div class="mobile-actions-divider"></div>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="refreshBtn">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Refresh data
+            </button>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="saveAllBtn">
+              <i data-lucide="save" class="w-3.5 h-3.5 text-accent shrink-0"></i> Save all changes
+            </button>
+          </div>
+        </div>
+
+        <!-- Open/minimised modules dropdown -->
+        <div class="relative hidden sm:block" id="moduleOpenMenuWrap">
+          <button id="moduleOpenMenuBtn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs hover:bg-s3 hover:text-white transition">
+            <i data-lucide="panel-top-open" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Open</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 opacity-60"></i>
+          </button>
+          <div id="moduleOpenMenu" class="module-open-menu absolute right-0 top-full mt-1.5 w-64 bg-s2 border border-brd rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden"></div>
+        </div>
 
         <!-- Export dropdown -->
-        <div class="relative" id="exportMenuWrap">
+        <div class="relative hidden sm:block" id="exportMenuWrap">
           <button id="exportMenuBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs hover:bg-s3 hover:text-white transition">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Export</span>
@@ -420,7 +667,7 @@
           <i data-lucide="save" class="w-3.5 h-3.5"></i> Save All
         </button>
 
-        <button id="refreshBtn" class="w-9 h-9 rounded-lg bg-s2 border border-brd flex items-center justify-center hover:bg-s3 transition" title="Refresh data">
+        <button id="refreshBtn" class="hidden sm:flex w-9 h-9 rounded-lg bg-s2 border border-brd items-center justify-center hover:bg-s3 transition" title="Refresh data">
           <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400"></i>
         </button>
       </div>
@@ -429,6 +676,7 @@
     <!-- MAIN CONTENT -->
     <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
 
+      <div id="statsPermanent" class="permanent-stats-module">
       <!-- STATS ROW -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="statsGrid">
         <div class="bg-s1 border border-brd rounded-xl p-4">
@@ -474,40 +722,10 @@
           <div class="text-lg font-bold text-white truncate" id="statEvent">—</div>
         </div>
       </div>
-<!-- EMAIL COPY TOOL -->
-<section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
-    <div>
-      <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Copy Emails</h3>
-      <p class="text-xs text-slate-600 mt-1">Copy player emails to paste into your BCC field.</p>
-    </div>
-    <div class="flex flex-wrap gap-2">
-      <select id="emailFormat" class="px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
-        <option value="comma">Comma separated</option>
-        <option value="semicolon">Semicolon separated</option>
-        <option value="newline">One per line</option>
-      </select>
-      <button onclick="copyPlayerEmails('all')" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
-        Copy all
-      </button>
-      <button onclick="copyPlayerEmails('coming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
-        Coming only
-      </button>
-      <button onclick="copyPlayerEmails('notcoming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
-        Not coming
-      </button>
-    </div>
-  </div>
-  <div>
-    <div class="flex items-center justify-between mb-2">
-      <span id="emailCopyMeta" class="text-xs text-slate-500"></span>
-      <span id="emailCopiedFlash" class="text-xs text-accent opacity-0 transition-opacity duration-300">✓ Copied!</span>
-    </div>
-    <textarea id="emailCopyOutput" readonly rows="3" placeholder="Click a button above to load emails…"
-      class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white text-xs font-mono placeholder-slate-500 resize-y focus:outline-none focus:border-accent transition"></textarea>
-  </div>
-</section>
+      </div>
 
+      <div id="module-player-table" class="admin-module player-table-module" data-admin-module="player-table" data-module-title="Player Table">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Player Table" title="Minimise Player Table">−</button>
       <!-- SEARCH + FILTERS -->
       <div class="space-y-2.5">
         <div class="relative">
@@ -633,6 +851,117 @@
         Click any row to edit player details. Roommate and partner changes update both sides automatically. <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">Esc</kbd> to close panel, <kbd class="px-1 py-0.5 bg-s2 border border-brd rounded text-[10px]">/</kbd> to search.
       </p>
 
+      </div>
+      <div id="module-copy-emails" class="admin-module module-hidden" data-admin-module="copy-emails" data-module-title="Copy Emails">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Copy Emails" title="Minimise Copy Emails">−</button>
+<!-- EMAIL COPY TOOL -->
+<section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div>
+      <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Copy Emails</h3>
+      <p class="text-xs text-slate-600 mt-1">Copy player emails to paste into your BCC field.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <select id="emailFormat" class="px-3 py-1.5 rounded-lg bg-s2 border border-brd text-white text-xs focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+        <option value="comma">Comma separated</option>
+        <option value="semicolon">Semicolon separated</option>
+        <option value="newline">One per line</option>
+      </select>
+      <button onclick="copyPlayerEmails('all')" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+        Copy all
+      </button>
+      <button onclick="copyPlayerEmails('coming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Coming only
+      </button>
+      <button onclick="copyPlayerEmails('notcoming')" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+        Not coming
+      </button>
+    </div>
+  </div>
+  <div>
+    <div class="flex items-center justify-between mb-2">
+      <span id="emailCopyMeta" class="text-xs text-slate-500"></span>
+      <span id="emailCopiedFlash" class="text-xs text-accent opacity-0 transition-opacity duration-300">✓ Copied!</span>
+    </div>
+    <textarea id="emailCopyOutput" readonly rows="3" placeholder="Click a button above to load emails…"
+      class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white text-xs font-mono placeholder-slate-500 resize-y focus:outline-none focus:border-accent transition"></textarea>
+  </div>
+</section>
+
+      </div>
+      <div id="module-awards" class="admin-module module-hidden" data-admin-module="awards" data-module-title="Awards Lookup">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Awards Lookup" title="Minimise Awards Lookup">−</button>
+      <!-- AWARDS LOOKUP -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Awards Lookup</h3>
+            <p class="text-xs text-slate-600 mt-1">Find coming players with 4, 9, 14, 19, or 24 total cups, inspect their awards, and add another award to their profile.</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="awardComingToggle" class="award-pill active px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">Coming only</button>
+            <button data-award-milestone="all" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition active">All</button>
+            <button data-award-milestone="4" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">4 cups</button>
+            <button data-award-milestone="9" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">9 cups</button>
+            <button data-award-milestone="14" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">14 cups</button>
+            <button data-award-milestone="19" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">19 cups</button>
+            <button data-award-milestone="24" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">24 cups</button>
+          </div>
+        </div>
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
+          <input id="awardSearchInput" type="text" placeholder="Search attendee name..."
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent transition" />
+        </div>
+        <div class="award-section-grid">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span id="awardResultsMeta" class="text-xs text-slate-500"></span>
+              <button id="awardRefreshBtn" class="text-xs text-slate-400 hover:text-white transition">Refresh</button>
+            </div>
+            <div id="awardResults" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+          </div>
+          <div class="bg-s2 border border-brd rounded-xl p-4 space-y-3">
+            <div>
+              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Selected profile</div>
+              <div id="awardSelectedName" class="text-lg font-bold text-white mt-1">No attendee selected</div>
+              <div id="awardSelectedMeta" class="text-xs text-slate-500 mt-1">Pick a player from the list.</div>
+            </div>
+            <div class="border-t border-brd pt-3">
+              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Current awards</div>
+              <div id="awardSelectedAwards" class="admin-honours-list max-h-72 overflow-y-auto pr-1">
+                <div class="text-sm text-slate-600">No player selected.</div>
+              </div>
+            </div>
+            <div class="border-t border-brd pt-3 space-y-3">
+              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Add Award</div>
+              <form id="awardForm" class="space-y-3">
+                <input id="awardCategory" type="text" placeholder="Category, e.g. Stableford"
+                  class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                <input id="awardText" type="text" placeholder="Award text, e.g. Best Dress"
+                  class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="awardEventId" type="text" placeholder="HC26 or 26"
+                    class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                  <input id="awardYear" type="number" min="2000" max="2100" placeholder="Year"
+                    class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                </div>
+                <input id="awardLocation" type="text" placeholder="Location (optional)"
+                  class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                <div class="flex gap-2">
+                  <button id="awardSaveBtn" type="submit" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed">Add award</button>
+                  <button id="awardClearBtn" type="button" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Clear</button>
+                </div>
+                <div id="awardStatus" class="text-xs text-slate-500 min-h-[16px]"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      </div>
+      <div id="module-tee-sheet" class="admin-module module-hidden" data-admin-module="tee-sheet" data-module-title="Tee Sheet Maker">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Tee Sheet Maker" title="Minimise Tee Sheet Maker">−</button>
       <!-- TEE SHEET MAKER -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -750,6 +1079,9 @@
         </div>
       </section>
 
+      </div>
+      <div id="module-rego-sync" class="admin-module module-hidden" data-admin-module="rego-sync" data-module-title="Sync from Rego Sheet">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Sync from Rego Sheet" title="Minimise Sync from Rego Sheet">−</button>
       <!-- REGO SHEET SYNC -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -792,6 +1124,9 @@
         </div>
       </section>
 
+      </div>
+      <div id="module-social-handicaps" class="admin-module module-hidden" data-admin-module="social-handicaps" data-module-title="Get Social Handicaps">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Get Social Handicaps" title="Minimise Get Social Handicaps">−</button>
       <!-- SOCIAL HANDICAP SYNC -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -831,6 +1166,9 @@
         </div>
       </section>
 
+      </div>
+      <div id="module-ambrose-pairings" class="admin-module module-hidden" data-admin-module="ambrose-pairings" data-module-title="Ambrose Pairings">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Ambrose Pairings" title="Minimise Ambrose Pairings">−</button>
       <!-- AMBROSE PAIRINGS PDF -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -848,6 +1186,9 @@
         </div>
       </section>
 
+      </div>
+      <div id="module-room-assignments" class="admin-module module-hidden" data-admin-module="room-assignments" data-module-title="Room Assignments">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Room Assignments" title="Minimise Room Assignments">−</button>
       <!-- ROOM ASSIGNMENTS -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div>
@@ -858,6 +1199,7 @@
           <div class="col-span-full text-slate-600 text-sm text-center py-4">Load players to see room assignments.</div>
         </div>
       </section>
+      </div>
     </main>
   </div>
 
@@ -870,7 +1212,7 @@
     import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
    
     import {
-      getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp, arrayUnion
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // === FIREBASE CONFIG ===
@@ -970,6 +1312,12 @@
     let currentPage = 1;
     let recordsPerPage = 15;
     let selectedUids = new Set();
+    let awardProfilesCache = null;
+    let awardProfilesPromise = null;
+    let awardSelectedDocId = '';
+    let awardSearchValue = '';
+    let awardComingOnly = true;
+    let awardMilestone = 'all';
 
     // === DOM REFS ===
     const $ = (sel) => document.querySelector(sel);
@@ -1403,6 +1751,429 @@ async function downloadRoomsSpreadsheet() {
       return `${name}${hacker}`;
     }
     function currentEventConfig() { return EVENT_OPTIONS.find(e => e.id === currentEventId) || EVENT_OPTIONS[0]; }
+
+    function cleanAwardText(value) {
+      return asString(value).replace(/\s+/g, ' ').trim();
+    }
+
+    // Keep this in sync with profile.html so the admin module counts and displays
+    // the same awards the player profile shows.
+    function isAttendanceString(s) {
+      if (!s) return false;
+      const t = (s + '').trim();
+      if (/^\d+\s*(year|years|yrs|yr)?$/i.test(t)) return true;
+      if (/^\d+\s*consecutive$/i.test(t)) return true;
+      if (/consec/i.test(t) && /\d+/.test(t)) return true;
+      if (/[0-9]/.test(t) && (/year/i.test(t) || /yr\b/i.test(t) || /consec|consecutive/i.test(t))) return true;
+      return false;
+    }
+
+    function makeKey(catRaw, txtRaw) {
+      let cat = (catRaw || '').toString();
+      let txt = (txtRaw || '').toString();
+      if (cat === txt || !txt) {
+        const parts = cat.split(/[-–—:]\s*/);
+        if (parts.length >= 2) {
+          cat = parts[0];
+          txt = parts.slice(1).join(' - ');
+        } else {
+          txt = cat;
+          cat = '';
+        }
+      }
+      cat = cat.toLowerCase().replace(/\s+/g, ' ').trim();
+      txt = txt.toLowerCase().replace(/\s+/g, ' ').trim();
+      if (cat && txt.startsWith(cat)) {
+        txt = txt.slice(cat.length).trim();
+        txt = txt.replace(/^[-–—:\s]+/, '');
+      }
+      txt = txt.replace(/\bhc\s*\d+\b/i, '').trim();
+      return `${cat}|${txt}`;
+    }
+
+    function getAwardAttendanceNumbers(profile) {
+      const attendanceNumbers = new Set();
+      (profile?.totalBadges || []).concat(profile?.consecutiveBadges || []).forEach(b => {
+        const matches = (b + '').match(/(\d+)/g);
+        if (matches) matches.forEach(n => attendanceNumbers.add(n));
+      });
+      return attendanceNumbers;
+    }
+
+    function isAwardFilteredByAttendance(value, attendanceNumbers) {
+      const txt = asString(value);
+      if (isAttendanceString(txt)) return true;
+      for (const n of attendanceNumbers) {
+        if (new RegExp(`\\b${n}\\b`).test(txt)) return true;
+      }
+      return false;
+    }
+
+    function getAwardEntries(profile) {
+      const attendanceNumbers = getAwardAttendanceNumbers(profile);
+      const honours = Array.isArray(profile?.honours) ? profile.honours.slice() : [];
+      const otherAwards = Array.isArray(profile?.otherAwards) ? profile.otherAwards.slice() : [];
+
+      const filteredHonours = honours.filter(h => {
+        const txt = (h?.category || h?.text || '').toString();
+        return !isAwardFilteredByAttendance(txt, attendanceNumbers);
+      });
+      const filteredOtherAwards = otherAwards
+        .filter(a => !isAwardFilteredByAttendance(a, attendanceNumbers))
+        .map(a => ({ category: a, text: a }));
+
+      const dedupedMap = new Map();
+      filteredHonours.concat(filteredOtherAwards).forEach(entry => {
+        const key = makeKey(entry.category, entry.text);
+        if (dedupedMap.has(key)) {
+          const existing = dedupedMap.get(key);
+          ['eventId', 'year', 'location'].forEach(field => {
+            if (entry[field] && !existing[field]) existing[field] = entry[field];
+          });
+        } else {
+          dedupedMap.set(key, Object.assign({}, entry));
+        }
+      });
+
+      return Array.from(dedupedMap.values()).sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+    }
+
+    function formatAwardEventId(eventId) {
+      const raw = cleanAwardText(eventId);
+      if (!raw) return '';
+      const match = raw.match(/^(?:HC)?\s*(\d+)$/i);
+      if (match) return `HC${Number(match[1])}`;
+      return raw.toUpperCase().startsWith('HC') ? raw.toUpperCase() : raw;
+    }
+
+    function parseAwardEventIdInput(value) {
+      const raw = cleanAwardText(value);
+      if (!raw) return null;
+      const match = raw.match(/^(?:HC)?\s*(\d+)$/i);
+      return match ? Number(match[1]) : null;
+    }
+
+    function buildAwardSearchBlob(profile) {
+      const awardsText = getAwardEntries(profile).map(entry => [entry.category, entry.text, entry.eventId, entry.year, entry.location].join(' ')).join(' ');
+      return normalize([
+        profile.id,
+        profile.uid,
+        profile.displayName,
+        profile.nickname,
+        profile.hackerNumber,
+        profile.eventsAttended,
+        Array.isArray(profile.attendedYears) ? profile.attendedYears.join(' ') : '',
+        awardsText,
+      ].join(' '));
+    }
+
+    function getAwardEventsAttended(profile) {
+      const count = Number(profile?.eventsAttended);
+      if (Number.isFinite(count) && count >= 0) return count;
+      if (Array.isArray(profile?.attendedYears)) return profile.attendedYears.length;
+      return 0;
+    }
+
+    function findUserByDisplayName(displayName) {
+      const target = normalize(displayName);
+      return users.find(user => normalize(user.displayName) === target) || null;
+    }
+
+    function awardProfileMatchesFilters(profile, currentCount) {
+      if (awardComingOnly && !profile.coming) return false;
+      if (awardMilestone !== 'all' && currentCount !== Number(awardMilestone)) return false;
+      const q = normalize(awardSearchValue);
+      if (q && !normalize(profile.searchBlob || '').includes(q)) return false;
+      return true;
+    }
+
+    function setAwardStatus(message, type = '') {
+      const el = document.getElementById('awardStatus');
+      if (!el) return;
+      el.textContent = message || '';
+      el.classList.remove('text-emerald-400', 'text-red-400', 'text-slate-500');
+      el.classList.add(type === 'success' ? 'text-emerald-400' : type === 'error' ? 'text-red-400' : 'text-slate-500');
+    }
+
+    function renderSelectedAwards(profile) {
+      const nameEl = document.getElementById('awardSelectedName');
+      const metaEl = document.getElementById('awardSelectedMeta');
+      const awardsEl = document.getElementById('awardSelectedAwards');
+      if (!nameEl || !metaEl || !awardsEl) return;
+
+      if (!profile) {
+        nameEl.textContent = 'No attendee selected';
+        metaEl.textContent = 'Pick a player from the list.';
+        awardsEl.innerHTML = '<div class="text-sm text-slate-600">No player selected.</div>';
+        return;
+      }
+
+      const awardEntries = getAwardEntries(profile);
+      nameEl.textContent = profile.displayName || profile.nickname || 'Selected attendee';
+      metaEl.textContent = `${getAwardEventsAttended(profile)} cups attended · ${awardEntries.length} award${awardEntries.length === 1 ? '' : 's'} recorded`;
+      if (!awardEntries.length) {
+        awardsEl.innerHTML = '<div class="text-sm text-slate-500">No awards recorded yet.</div>';
+        return;
+      }
+      awardsEl.innerHTML = awardEntries.map(entry => {
+        const year = entry.year ? escapeHtml(entry.year) : '';
+        const eventId = formatAwardEventId(entry.eventId);
+        const category = entry.category || entry.text || 'Award';
+        const text = entry.text || category;
+        const location = entry.location
+          ? `<div class="loc-row"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i>${escapeHtml(entry.location)}</div>`
+          : '';
+        return `
+          <article class="admin-honour-card">
+            <div class="icon-box"><i data-lucide="award" class="w-5 h-5"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="meta">${[year, eventId].filter(Boolean).join(' · ')}</div>
+                <div class="meta">${escapeHtml(category)}</div>
+              </div>
+              <div class="title">${escapeHtml(text)}</div>
+              ${location}
+            </div>
+          </article>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderAwardResults() {
+      const resultsEl = document.getElementById('awardResults');
+      const metaEl = document.getElementById('awardResultsMeta');
+      if (!resultsEl || !metaEl) return;
+
+      if (!awardProfilesCache) {
+        metaEl.textContent = 'Loading awards profiles...';
+        resultsEl.innerHTML = '<div class="award-empty col-span-full text-sm text-slate-500 border border-dashed border-brd rounded-xl p-4">Loading attendee profiles...</div>';
+        return;
+      }
+
+      const rows = awardProfilesCache.map(entry => {
+        const user = findUserByDisplayName(entry.displayName) || findUserByDisplayName(entry.uid);
+        const currentRecord = user ? eventPlayers.get(user.uid) || {} : {};
+        const enriched = {
+          ...entry,
+          uid: user ? user.uid : entry.uid,
+          coming: !!currentRecord.coming,
+          awardsCount: getAwardEntries(entry).length,
+          attendedCount: getAwardEventsAttended(entry),
+        };
+        return { ...enriched, searchBlob: buildAwardSearchBlob(enriched) };
+      }).filter(entry => awardProfileMatchesFilters(entry, entry.attendedCount));
+
+      metaEl.textContent = `${rows.length} matching attendee${rows.length === 1 ? '' : 's'}${awardComingOnly ? ' coming' : ''}${awardMilestone !== 'all' ? ` with ${awardMilestone} cups` : ''}`;
+
+      if (!rows.length) {
+        resultsEl.innerHTML = '<div class="award-empty col-span-full text-sm text-slate-500 border border-dashed border-brd rounded-xl p-4">No attendees match the current filters.</div>';
+        return;
+      }
+
+      resultsEl.innerHTML = rows.map(entry => {
+        const active = entry.id === awardSelectedDocId ? 'active' : '';
+        const comingLabel = entry.coming ? 'Coming' : 'Not coming';
+        return `
+          <button type="button" class="award-result-card ${active} text-left bg-s2 border border-brd rounded-xl p-3 hover:bg-s3/70" data-award-id="${escapeHtml(entry.id)}">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-semibold text-white text-sm leading-tight">${escapeHtml(entry.displayName)}</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">${entry.attendedCount} cups · ${entry.awardsCount} awards</div>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${entry.coming ? 'border-emerald-500/25 text-emerald-300 bg-emerald-500/10' : 'border-slate-600/30 text-slate-500 bg-slate-500/10'}">${comingLabel}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectAwardProfile(profile, uid) {
+      awardSelectedDocId = uid || '';
+      const normalized = profile ? Object.assign({}, profile) : null;
+      renderSelectedAwards(normalized);
+      renderAwardResults();
+    }
+
+    async function loadAwardProfiles(force = false) {
+      if (!force && awardProfilesCache) return awardProfilesCache;
+      if (!force && awardProfilesPromise) return awardProfilesPromise;
+
+      awardProfilesPromise = (async () => {
+        const displayNames = Array.from(new Set(
+          users
+            .map(user => asString(user.displayName).trim())
+            .filter(Boolean)
+        ));
+
+        const snapshots = await Promise.allSettled(displayNames.map(async displayName => {
+          const snap = await getDoc(doc(firestore, 'attendeeProfiles', displayName));
+          return { displayName, snap };
+        }));
+
+        awardProfilesCache = snapshots
+          .filter(result => result.status === 'fulfilled' && result.value && result.value.snap.exists())
+          .map(result => {
+            const { displayName, snap } = result.value;
+            const data = snap.data() || {};
+            const matchedUser = findUserByDisplayName(displayName);
+            const profile = {
+              id: displayName,
+              uid: matchedUser ? matchedUser.uid : '',
+              displayName: data.displayName || displayName,
+              nickname: data.nickname || '',
+              hackerNumber: data.hackerNumber || '',
+              attendedYears: Array.isArray(data.attendedYears) ? data.attendedYears : [],
+              eventsAttended: data.eventsAttended,
+              totalBadges: Array.isArray(data.totalBadges) ? data.totalBadges : [],
+              consecutiveBadges: Array.isArray(data.consecutiveBadges) ? data.consecutiveBadges : [],
+              honours: Array.isArray(data.honours) ? data.honours : [],
+              otherAwards: Array.isArray(data.otherAwards) ? data.otherAwards : [],
+              coming: false,
+            };
+            return { ...profile, searchBlob: buildAwardSearchBlob(profile) };
+          });
+
+        return awardProfilesCache;
+      })().catch(err => {
+        console.error('Failed to load attendeeProfiles for awards lookup:', err);
+        awardProfilesCache = [];
+        return awardProfilesCache;
+      }).finally(() => {
+        awardProfilesPromise = null;
+        renderAwardResults();
+        if (awardSelectedDocId) {
+          const selected = awardProfilesCache.find(entry => entry.id === awardSelectedDocId);
+          renderSelectedAwards(selected || null);
+        }
+      });
+
+      return awardProfilesPromise;
+    }
+
+    function refreshAwardProfilesFromEvent() {
+      if (!awardProfilesCache) return renderAwardResults();
+      awardProfilesCache = awardProfilesCache.map(entry => {
+        const user = findUserByDisplayName(entry.displayName) || findUserByDisplayName(entry.id);
+        const uid = user ? user.uid : entry.uid;
+        const currentRecord = uid ? eventPlayers.get(uid) || {} : {};
+        const refreshed = { ...entry, uid, coming: !!currentRecord.coming };
+        return { ...refreshed, searchBlob: buildAwardSearchBlob(refreshed) };
+      });
+      renderAwardResults();
+      if (awardSelectedDocId) {
+        const selected = awardProfilesCache.find(entry => entry.id === awardSelectedDocId);
+        renderSelectedAwards(selected || null);
+      }
+    }
+
+    async function saveAwardToSelectedProfile() {
+      const saveBtn = document.getElementById('awardSaveBtn');
+      if (!awardSelectedDocId) {
+        setAwardStatus('Select a player first.', 'error');
+        return;
+      }
+
+      const category = cleanAwardText(document.getElementById('awardCategory')?.value) || 'Award';
+      const text = cleanAwardText(document.getElementById('awardText')?.value);
+      const eventIdRaw = cleanAwardText(document.getElementById('awardEventId')?.value);
+      const eventId = parseAwardEventIdInput(eventIdRaw);
+      const yearRaw = cleanAwardText(document.getElementById('awardYear')?.value);
+      const location = cleanAwardText(document.getElementById('awardLocation')?.value);
+      const year = yearRaw ? Number(yearRaw) : null;
+
+      if (!text) {
+        setAwardStatus('Enter an award label first.', 'error');
+        return;
+      }
+      if (eventIdRaw && eventId === null) {
+        setAwardStatus('Use an HC event number like HC26 or 26.', 'error');
+        return;
+      }
+      if (yearRaw && !Number.isFinite(year)) {
+        setAwardStatus('Year must be a valid number.', 'error');
+        return;
+      }
+
+      const awardDoc = awardProfilesCache && awardProfilesCache.find(entry => entry.id === awardSelectedDocId);
+      const profileId = awardDoc ? awardDoc.id : null;
+      if (!profileId) {
+        setAwardStatus('Could not resolve the selected attendee profile.', 'error');
+        return;
+      }
+
+      const awardLabel = category.toLowerCase() === 'award' ? text : `${category} - ${text}`;
+      const honour = { category, text };
+      if (eventId) honour.eventId = eventId;
+      if (Number.isFinite(year)) honour.year = year;
+      if (location) honour.location = location;
+
+      saveBtn.disabled = true;
+      setAwardStatus('Saving award...');
+
+      try {
+        await setDoc(doc(firestore, 'attendeeProfiles', profileId), {
+          otherAwards: arrayUnion(awardLabel),
+          honours: arrayUnion(honour),
+        }, { merge: true });
+        setAwardStatus('Award saved.', 'success');
+        document.getElementById('awardCategory').value = '';
+        document.getElementById('awardText').value = '';
+        document.getElementById('awardEventId').value = '';
+        document.getElementById('awardYear').value = '';
+        document.getElementById('awardLocation').value = '';
+        await loadAwardProfiles(true);
+      } catch (err) {
+        console.error('Failed to save award:', err);
+        setAwardStatus('Could not save award. Try again.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    document.getElementById('awardSearchInput')?.addEventListener('input', (e) => {
+      awardSearchValue = e.target.value || '';
+      renderAwardResults();
+    });
+
+    document.getElementById('awardComingToggle')?.addEventListener('click', () => {
+      awardComingOnly = !awardComingOnly;
+      document.getElementById('awardComingToggle').classList.toggle('active', awardComingOnly);
+      renderAwardResults();
+    });
+
+    document.getElementById('awardResults')?.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-award-id]');
+      if (!card) return;
+      const selected = awardProfilesCache?.find(entry => entry.id === card.dataset.awardId) || null;
+      selectAwardProfile(selected, card.dataset.awardId || '');
+    });
+
+    document.querySelectorAll('[data-award-milestone]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        awardMilestone = btn.dataset.awardMilestone || 'all';
+        document.querySelectorAll('[data-award-milestone]').forEach(other => other.classList.toggle('active', other === btn));
+        renderAwardResults();
+      });
+    });
+
+    document.getElementById('awardRefreshBtn')?.addEventListener('click', async () => {
+      await loadAwardProfiles(true);
+      refreshAwardProfilesFromEvent();
+    });
+
+    document.getElementById('awardForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveAwardToSelectedProfile();
+    });
+
+    document.getElementById('awardClearBtn')?.addEventListener('click', () => {
+      ['awardCategory', 'awardText', 'awardEventId', 'awardYear', 'awardLocation'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+      });
+      setAwardStatus('');
+    });
 
     const EVENT_PLAYERS_CACHE_PREFIX = "hackerscup.admin-event.eventPlayers.v1";
 
@@ -3220,6 +3991,7 @@ async function downloadRoomsSpreadsheet() {
 
       mergeEventPlayersCache(eventId);
       persistEventPlayersCache(eventId);
+      refreshAwardProfilesFromEvent();
 
       dirty.clear();
       updateDirtyUI();
@@ -4467,6 +5239,8 @@ async function downloadRoomsSpreadsheet() {
         try {
           await loadUsers();
           await loadEventPlayers();
+          await loadAwardProfiles();
+          refreshAwardProfilesFromEvent();
         } catch (err) {
           console.error(err);
           showToast("Failed to load data", "error");
@@ -4475,7 +5249,7 @@ async function downloadRoomsSpreadsheet() {
     });
 
     // Init Lucide
-    lucide.createIcons();
+    window.lucide?.createIcons?.();
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -4543,5 +5317,150 @@ async function downloadRoomsSpreadsheet() {
       </div>
     </div>
   </div>
+  <script>
+    (function initCollapsibleAdminModules() {
+      function ready(fn) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fn);
+        } else {
+          fn();
+        }
+      }
+
+      ready(function () {
+        const modules = Array.from(document.querySelectorAll('[data-admin-module]'));
+        const openBtn = document.getElementById('moduleOpenMenuBtn');
+        const openMenu = document.getElementById('moduleOpenMenu');
+        const openWrap = document.getElementById('moduleOpenMenuWrap');
+        const mobileActionsBtn = document.getElementById('mobileActionsBtn');
+        const mobileActionsMenu = document.getElementById('mobileActionsMenu');
+        const mobileActionsWrap = document.getElementById('mobileActionsWrap');
+        const mobileModuleOpenList = document.getElementById('mobileModuleOpenList');
+
+        if (!modules.length) return;
+
+        function getTitle(module) {
+          return module.getAttribute('data-module-title') || 'Module';
+        }
+
+        function setModuleOpen(module, shouldOpen) {
+          module.classList.toggle('module-hidden', !shouldOpen);
+          renderOpenMenu();
+        }
+
+        function openModuleById(id) {
+          const module = modules.find(item => item.getAttribute('data-admin-module') === id);
+          if (!module) return;
+          setModuleOpen(module, true);
+          openMenu?.classList.remove('is-open');
+          mobileActionsMenu?.classList.remove('is-open');
+          module.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderOpenMenu() {
+          const hiddenModules = modules.filter(module => module.classList.contains('module-hidden'));
+
+          if (openMenu) {
+            if (!hiddenModules.length) {
+              openMenu.innerHTML = '<div class="module-open-empty">All modules are currently open.</div>';
+            } else {
+              openMenu.innerHTML = hiddenModules.map(module => {
+                const id = module.getAttribute('data-admin-module');
+                const title = getTitle(module);
+                return `
+                  <button type="button" class="module-open-menu-item" data-module-open="${id}">
+                    <span>${title}</span>
+                    <span class="text-accent text-[10px] font-semibold uppercase tracking-wide">Open</span>
+                  </button>
+                `;
+              }).join('');
+            }
+
+            openMenu.querySelectorAll('[data-module-open]').forEach(button => {
+              button.addEventListener('click', () => openModuleById(button.getAttribute('data-module-open')));
+            });
+          }
+
+          if (mobileModuleOpenList) {
+            if (!hiddenModules.length) {
+              mobileModuleOpenList.innerHTML = '<div class="module-open-empty">All modules are currently open.</div>';
+            } else {
+              mobileModuleOpenList.innerHTML = hiddenModules.map(module => {
+                const id = module.getAttribute('data-admin-module');
+                const title = getTitle(module);
+                return `
+                  <button type="button" class="mobile-actions-item" data-module-open="${id}">
+                    <i data-lucide="panel-top-open" class="w-3.5 h-3.5 text-accent shrink-0"></i>
+                    <span>${title}</span>
+                  </button>
+                `;
+              }).join('');
+              window.lucide?.createIcons?.();
+            }
+
+            mobileModuleOpenList.querySelectorAll('[data-module-open]').forEach(button => {
+              button.addEventListener('click', () => openModuleById(button.getAttribute('data-module-open')));
+            });
+          }
+        }
+
+        modules.forEach(module => {
+          const minimiseBtn = module.querySelector('[data-module-minimise]');
+          if (!minimiseBtn) return;
+
+          minimiseBtn.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            setModuleOpen(module, false);
+          });
+        });
+
+        openBtn?.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openMenu?.classList.toggle('is-open');
+          renderOpenMenu();
+        });
+
+        openWrap?.addEventListener('mouseenter', renderOpenMenu);
+
+        mobileActionsBtn?.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          mobileActionsMenu?.classList.toggle('is-open');
+          renderOpenMenu();
+        });
+
+        mobileActionsMenu?.querySelectorAll('[data-mobile-click-target]').forEach(button => {
+          button.addEventListener('click', event => {
+            event.preventDefault();
+            const targetId = button.getAttribute('data-mobile-click-target');
+            document.getElementById(targetId)?.click();
+            mobileActionsMenu.classList.remove('is-open');
+          });
+        });
+
+        document.addEventListener('click', event => {
+          if (!openWrap?.contains(event.target)) {
+            openMenu?.classList.remove('is-open');
+          }
+          if (!mobileActionsWrap?.contains(event.target)) {
+            mobileActionsMenu?.classList.remove('is-open');
+          }
+        });
+
+        document.addEventListener('keydown', event => {
+          if (event.key === 'Escape') {
+            openMenu?.classList.remove('is-open');
+            mobileActionsMenu?.classList.remove('is-open');
+          }
+        });
+
+        renderOpenMenu();
+        window.lucide?.createIcons?.();
+      });
+    })();
+  </script>
+
 </body>
 </html>

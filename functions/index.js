@@ -1,14 +1,5 @@
-// ========================================
-// CLOUD FUNCTIONS DISABLED - 2026
-// ========================================
-// All Cloud Functions have been disabled to reduce costs.
-// Leaderboards are now calculated client-side.
-// Notifications are handled client-side using Firestore listeners.
-//
-// This change eliminates the 573M monthly invocations that were causing billing issues.
-// ========================================
-
-// Export a placeholder to keep Firebase Functions happy
+// Cloud Functions remain disabled in this repository.
+// Keep a placeholder export so the folder still deploys cleanly if needed.
 exports.placeholder = function() {
-  console.log("Cloud Functions disabled - using client-side processing instead");
+  console.log('Cloud Functions disabled - using client-side processing instead');
 };
