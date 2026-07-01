@@ -1,0 +1,9 @@
+name = "hackerscup-onesignal-proxy"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+ONESIGNAL_APP_ID = "6b6e57f8-1b0d-4441-ad62-14a1df3546cd"
+
+# ONESIGNAL_REST_API_KEY is a secret, not a var — set it with:
+#   npx wrangler secret put ONESIGNAL_REST_API_KEY

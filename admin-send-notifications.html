@@ -304,6 +304,9 @@
     import { getDatabase, ref, set, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // Deployed via cloudflare/onesignal-proxy — see that folder's README for deploy steps.
+    const ONESIGNAL_PROXY_URL = "https://hackerscup-onesignal-proxy.rileyoakes701.workers.dev";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
       authDomain: "hackers-cup.firebaseapp.com",
@@ -443,9 +446,10 @@
           await set(ref(database, `notifications/${userId}/${newNotifKey}`), notificationData);
         }
 
-        // 2. Send via OneSignal
+        // 2. Send via OneSignal — routed through a Cloudflare Worker proxy since
+        // OneSignal's REST API rejects direct browser calls (no CORS allow-origin),
+        // and the send key can't live in client-side code.
         let onesignalPayload = {
-          app_id: "6b6e57f8-1b0d-4441-ad62-14a1df3546cd",
           headings: { en: title },
           contents: { en: message },
         };
@@ -467,17 +471,19 @@
           onesignalPayload.url = actionUrl;
         }
 
-        const onesignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+        const idToken = await currentUser.getIdToken();
+        const onesignalResponse = await fetch(ONESIGNAL_PROXY_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': 'Basic NGEzOTY3ZmUtMzQ3ZC00ZWY3LWI2YWUtMzdjOGM2OTQ3NzQx',
+            'Authorization': `Bearer ${idToken}`,
           },
           body: JSON.stringify(onesignalPayload),
         });
 
         if (!onesignalResponse.ok) {
-          throw new Error('OneSignal API error: ' + onesignalResponse.statusText);
+          const errText = await onesignalResponse.text().catch(() => '');
+          throw new Error('OneSignal API error: ' + onesignalResponse.statusText + (errText ? ` — ${errText}` : ''));
         }
 
         window.showStatus('✓ Notification sent and logged successfully!', 'success');
