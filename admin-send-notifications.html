@@ -110,7 +110,7 @@
       <!-- Target Selection -->
       <div>
         <label class="block text-sm font-semibold text-white mb-3">Send To</label>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <button onclick="setTarget('all')" class="target-btn p-4 rounded-xl border-2 border-hackers-sky/30 bg-hackers-sky/10 text-white font-medium transition-all" data-target="all">
             <i data-lucide="users" class="w-5 h-5 mb-2 mx-auto"></i>
             <div>All Users</div>
@@ -122,6 +122,10 @@
           <button onclick="setTarget('segment')" class="target-btn p-4 rounded-xl border-2 border-white/10 hover:border-hackers-sky/30 text-white font-medium transition-all" data-target="segment">
             <i data-lucide="layers" class="w-5 h-5 mb-2 mx-auto"></i>
             <div>Segment</div>
+          </button>
+          <button onclick="setTarget('personalized')" class="target-btn p-4 rounded-xl border-2 border-white/10 hover:border-hackers-sky/30 text-white font-medium transition-all" data-target="personalized">
+            <i data-lucide="user-cog" class="w-5 h-5 mb-2 mx-auto"></i>
+            <div>Personalized</div>
           </button>
         </div>
       </div>
@@ -143,10 +147,43 @@
         <p class="text-xs text-gray-400 mt-1">OneSignal segment or tag to target</p>
       </div>
 
+      <!-- Personalized target: pick an event + recipients from admin-event's data -->
+      <div id="personalizedField" class="hidden space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-white mb-2">Event</label>
+            <select id="personalizedEventId" class="w-full px-4 py-2 rounded-lg"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-white mb-2">Tee Day <span class="font-normal text-gray-400">(for tee time/hole variables)</span></label>
+            <select id="personalizedTeeDay" class="w-full px-4 py-2 rounded-lg"></select>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <label class="block text-sm font-semibold text-white">Recipients</label>
+            <div class="flex items-center gap-2">
+              <span id="personalizedSelectedCount" class="text-xs text-gray-400">0 selected</span>
+              <button type="button" onclick="window.personalizedSelectAll()" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white">Select all</button>
+              <button type="button" onclick="window.personalizedSelectComing()" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white">Coming only</button>
+              <button type="button" onclick="window.personalizedClearSelection()" class="text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white">Clear</button>
+            </div>
+          </div>
+          <input type="text" id="personalizedSearch" placeholder="Filter by name…" autocomplete="off" class="w-full px-4 py-2 rounded-lg mb-2">
+          <div id="personalizedPlayerList" class="rounded-lg overflow-y-auto max-h-64 divide-y" style="background:#0f172a;border:1px solid rgba(255,255,255,0.12);"></div>
+          <p id="personalizedStatus" class="text-xs text-gray-500 mt-2">Loading players…</p>
+        </div>
+      </div>
+
       <!-- Notification Content -->
       <div class="pt-6 border-t border-white/10">
         <h3 class="text-lg font-semibold text-white mb-4">Notification Content</h3>
-        
+
+        <div id="personalizedVariables" class="hidden mb-4">
+          <p class="text-xs text-gray-400 mb-2">Click to insert into Title/Message — replaced per-recipient at send time:</p>
+          <div id="personalizedVariableChips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-semibold text-white mb-2">Title *</label>
@@ -175,7 +212,13 @@
 
       <!-- Preview -->
       <div class="pt-6 border-t border-white/10">
-        <h3 class="text-lg font-semibold text-white mb-4">Preview</h3>
+        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <h3 class="text-lg font-semibold text-white">Preview</h3>
+          <div id="personalizedPreviewPicker" class="hidden flex items-center gap-2">
+            <label class="text-xs text-gray-400">Preview as:</label>
+            <select id="personalizedPreviewUid" class="px-2 py-1 rounded-md text-xs"></select>
+          </div>
+        </div>
         <div class="bg-hackers-navy rounded-2xl p-4 space-y-3 max-w-sm">
           <div class="flex items-start gap-3">
             <div class="w-12 h-12 rounded-full bg-hackers-sky/20 flex items-center justify-center flex-shrink-0">
@@ -239,19 +282,34 @@
       // Show/hide conditional fields
       document.getElementById('specificUserField').classList.toggle('hidden', target !== 'specific');
       document.getElementById('segmentField').classList.toggle('hidden', target !== 'segment');
+      document.getElementById('personalizedField').classList.toggle('hidden', target !== 'personalized');
+      document.getElementById('personalizedVariables').classList.toggle('hidden', target !== 'personalized');
+      document.getElementById('personalizedPreviewPicker').classList.toggle('hidden', target !== 'personalized');
 
       if (target === 'specific' && window.loadUsersForSearch) window.loadUsersForSearch();
+      if (target === 'personalized' && window.loadPersonalizedTarget) window.loadPersonalizedTarget();
+      window.updatePreview();
     }
 
-    // Update preview
-    document.getElementById('title').addEventListener('input', (e) => {
-      document.getElementById('previewTitle').textContent = e.target.value || 'Notification title';
-    });
+    // Update preview — for personalized mode, resolves {{variables}} for the chosen preview recipient.
+    window.updatePreview = function() {
+      const rawTitle = document.getElementById('title').value;
+      const rawMessage = document.getElementById('message').value;
+      document.getElementById('charCount').textContent = rawMessage.length;
 
-    document.getElementById('message').addEventListener('input', (e) => {
-      document.getElementById('previewMessage').textContent = e.target.value || 'Your notification message will appear here';
-      document.getElementById('charCount').textContent = e.target.value.length;
-    });
+      if (window.selectedTarget === 'personalized' && window.personalizedResolvePreview) {
+        const resolved = window.personalizedResolvePreview(rawTitle, rawMessage);
+        document.getElementById('previewTitle').textContent = resolved.title || 'Notification title';
+        document.getElementById('previewMessage').textContent = resolved.message || 'Your notification message will appear here';
+        return;
+      }
+
+      document.getElementById('previewTitle').textContent = rawTitle || 'Notification title';
+      document.getElementById('previewMessage').textContent = rawMessage || 'Your notification message will appear here';
+    };
+
+    document.getElementById('title').addEventListener('input', window.updatePreview);
+    document.getElementById('message').addEventListener('input', window.updatePreview);
 
     document.getElementById('imageUrl').addEventListener('input', (e) => {
       const previewImage = document.getElementById('previewImage');
@@ -303,6 +361,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, set, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // Deployed via cloudflare/onesignal-proxy — see that folder's README for deploy steps.
     const ONESIGNAL_PROXY_URL = "https://hackerscup-onesignal-proxy.rileyoakes701.workers.dev";
@@ -321,6 +380,7 @@
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
     const auth = getAuth(app);
+    const firestore = getFirestore(app);
     let currentUser = null;
     let cachedUsers = null;
 
@@ -384,6 +444,417 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // === PERSONALIZED SEND ===
+    // Sends a separate API call per selected recipient, with {{variable}} placeholders
+    // resolved from that player's live admin-event data (Firestore users + eventYears/{id}/players).
+    const PERSONALIZED_EVENT_OPTIONS = [
+      { id: "HC26", year: 2026 }, { id: "HC25", year: 2025 }, { id: "HC24", year: 2024 }, { id: "HC23", year: 2023 },
+      { id: "HC22", year: 2022 }, { id: "HC21", year: 2021 }, { id: "HC20", year: 2019 },
+    ];
+
+    const PERSONALIZED_VARIABLES = [
+      { key: "displayName", label: "Name" },
+      { key: "firstName", label: "First name" },
+      { key: "hackerNumber", label: "Hacker No." },
+      { key: "handicap", label: "Handicap" },
+      { key: "golfAustraliaNumber", label: "GA Number" },
+      { key: "mobile", label: "Mobile" },
+      { key: "email", label: "Email" },
+      { key: "shirtSize", label: "Shirt size" },
+      { key: "pantSize", label: "Pant size" },
+      { key: "roomNumber", label: "Room" },
+      { key: "roommates", label: "Roommates" },
+      { key: "ambrosePartner", label: "Ambrose partner" },
+      { key: "teamHandicap", label: "Team handicap" },
+      { key: "coming", label: "Coming (Yes/No)" },
+      { key: "paidStatus", label: "Paid status" },
+      { key: "amtOutstanding", label: "Amount owed" },
+      { key: "skins", label: "Skins (Yes/No)" },
+      { key: "sponsorNotes", label: "Sponsor notes" },
+      { key: "financialStatus", label: "Financial status" },
+      { key: "teeDay", label: "Tee day" },
+      { key: "teeTime", label: "Tee time" },
+      { key: "startHole", label: "Starting hole" },
+      { key: "playingWith", label: "Playing with" },
+    ];
+
+    const PERSONALIZED_TEE_DAYS = [
+      { id: "friday", label: "Friday" },
+      { id: "saturday", label: "Saturday" },
+      { id: "sunday", label: "Sunday" },
+    ];
+
+    let personalizedPlayers = [];      // [{ uid, displayName, ...record fields, vars: {...} }]
+    let personalizedPlayersByUid = new Map();
+    let personalizedSelectedUids = new Set();
+    let personalizedLoadedEventId = null;
+    let personalizedLoading = false;
+    let personalizedTeeSheets = { friday: [], saturday: [], sunday: [] };
+    let personalizedTeeDay = "saturday";
+
+    // Find which tee group (if any) a player is in for the given day, and who else is in it.
+    function findPersonalizedTeeGroup(day, uid, usersByUid) {
+      const groups = personalizedTeeSheets[day] || [];
+      for (const group of groups) {
+        const players = group.players || [];
+        if (players.includes(uid)) {
+          const playingWith = players
+            .filter(pid => pid !== uid)
+            .map(pid => usersByUid.get(pid))
+            .filter(Boolean)
+            .map(u => asString(u.displayName).trim())
+            .join(", ");
+          return { teeTime: asString(group.teeTime), startHole: asString(group.hole), playingWith };
+        }
+      }
+      return { teeTime: "", startHole: "", playingWith: "" };
+    }
+
+    function asString(v) { return v === null || v === undefined ? "" : String(v); }
+
+    function personalizedPaidStatusLabel(user) {
+      const status = asString(user.financialStatus).toLowerCase();
+      const hasOutstanding = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined;
+      const outstanding = hasOutstanding ? Number(user.amtOutstanding) : null;
+      if (status.includes("partial")) return "Part";
+      if (status.includes("paid") && hasOutstanding && outstanding > 0) return "Part";
+      if (status.includes("paid")) return "Paid";
+      if (hasOutstanding && outstanding === 0) return "Paid";
+      if (status.includes("pending")) return "Pending";
+      if (hasOutstanding && outstanding > 0) return `$${outstanding} owed`;
+      if (user.financialStatus) return asString(user.financialStatus);
+      return "No data";
+    }
+
+    function personalizedFormatTeamHandicap(value) {
+      if (value === null || !Number.isFinite(value)) return "";
+      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+    }
+
+    let personalizedUsersByUid = new Map();
+
+    async function loadPersonalizedPlayers(eventId) {
+      const [usersSnap, playersSnap, eventDocSnap] = await Promise.all([
+        getDocs(collection(firestore, "users")),
+        getDocs(collection(firestore, "eventYears", eventId, "players")),
+        getDoc(doc(firestore, "eventYears", eventId)),
+      ]);
+
+      const users = [];
+      usersSnap.forEach(d => users.push({ uid: d.id, ...d.data() }));
+
+      const recordsByUid = new Map();
+      playersSnap.forEach(d => recordsByUid.set(d.id, d.data() || {}));
+
+      const usersByUid = new Map(users.map(u => [u.uid, u]));
+      personalizedUsersByUid = usersByUid;
+
+      const savedTeeSheets = eventDocSnap.exists() ? (eventDocSnap.data().teeSheets || {}) : {};
+      personalizedTeeSheets = {
+        friday: savedTeeSheets.friday || [],
+        saturday: savedTeeSheets.saturday || [],
+        sunday: savedTeeSheets.sunday || [],
+      };
+
+      const players = users
+        .filter(u => asString(u.displayName).trim())
+        .map(u => {
+          const record = recordsByUid.get(u.uid) || {};
+          const handicap = record.handicap !== undefined && record.handicap !== null && record.handicap !== ""
+            ? record.handicap
+            : (u.handicap !== undefined && u.handicap !== null ? u.handicap : "");
+          const roommateNames = (Array.isArray(record.roommates) ? record.roommates : [])
+            .map(rid => usersByUid.get(rid))
+            .filter(Boolean)
+            .map(r => asString(r.displayName).trim())
+            .join(", ");
+          const partner = record.ambrosePartnerUid ? usersByUid.get(record.ambrosePartnerUid) : null;
+          const partnerRecord = record.ambrosePartnerUid ? (recordsByUid.get(record.ambrosePartnerUid) || {}) : {};
+          const partnerHandicap = partner
+            ? Number(partnerRecord.handicap !== undefined && partnerRecord.handicap !== null && partnerRecord.handicap !== "" ? partnerRecord.handicap : partner.handicap)
+            : null;
+          const myHandicapNum = Number(handicap);
+          const teamHandicap = partner && Number.isFinite(myHandicapNum) && Number.isFinite(partnerHandicap)
+            ? personalizedFormatTeamHandicap((myHandicapNum + partnerHandicap) / 4)
+            : "";
+
+          const teeDayMeta = PERSONALIZED_TEE_DAYS.find(d => d.id === personalizedTeeDay);
+          const teeGroup = findPersonalizedTeeGroup(personalizedTeeDay, u.uid, usersByUid);
+
+          return {
+            uid: u.uid,
+            displayName: asString(u.displayName).trim(),
+            coming: !!record.coming,
+            vars: {
+              displayName: asString(u.displayName).trim(),
+              firstName: asString(u.displayName).trim().split(/\s+/)[0] || "",
+              hackerNumber: asString(u.hackerNumber),
+              handicap: asString(handicap),
+              golfAustraliaNumber: asString(u.golfAustraliaNumber),
+              mobile: asString(u.mobile),
+              email: asString(u.email),
+              shirtSize: asString(record.shirtSize),
+              pantSize: asString(record.pantSize),
+              roomNumber: asString(record.roomNumber),
+              roommates: roommateNames,
+              ambrosePartner: partner ? asString(partner.displayName).trim() : "",
+              teamHandicap,
+              coming: record.coming ? "Yes" : "No",
+              paidStatus: personalizedPaidStatusLabel(u),
+              amtOutstanding: asString(u.amtOutstanding),
+              skins: record.skins ? "Yes" : "No",
+              sponsorNotes: asString(record.sponsorNotes),
+              financialStatus: asString(u.financialStatus),
+              teeDay: teeDayMeta ? teeDayMeta.label : "",
+              teeTime: teeGroup.teeTime,
+              startHole: teeGroup.startHole,
+              playingWith: teeGroup.playingWith,
+            },
+          };
+        })
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+      return players;
+    }
+
+    // Recomputes only the tee-related vars (called when the Tee Day selector changes,
+    // without re-fetching users/players/tee sheets from Firestore).
+    function applyPersonalizedTeeVars() {
+      const teeDayMeta = PERSONALIZED_TEE_DAYS.find(d => d.id === personalizedTeeDay);
+      personalizedPlayers.forEach(p => {
+        const teeGroup = findPersonalizedTeeGroup(personalizedTeeDay, p.uid, personalizedUsersByUid);
+        p.vars.teeDay = teeDayMeta ? teeDayMeta.label : "";
+        p.vars.teeTime = teeGroup.teeTime;
+        p.vars.startHole = teeGroup.startHole;
+        p.vars.playingWith = teeGroup.playingWith;
+      });
+    }
+
+    // Warns when the selected Tee Day has no groups set yet, so blank {{teeTime}} etc.
+    // isn't mistaken for a bug.
+    function updatePersonalizedTeeDayHint() {
+      const statusEl = document.getElementById('personalizedStatus');
+      if (!statusEl) return;
+      const base = `${personalizedPlayers.length} players loaded for ${personalizedLoadedEventId}.`;
+      const groups = personalizedTeeSheets[personalizedTeeDay] || [];
+      if (groups.length === 0) {
+        const daysWithData = PERSONALIZED_TEE_DAYS.filter(d => (personalizedTeeSheets[d.id] || []).length > 0).map(d => d.label);
+        const hint = daysWithData.length
+          ? ` No tee groups set for ${PERSONALIZED_TEE_DAYS.find(d => d.id === personalizedTeeDay)?.label} yet — try ${daysWithData.join(' or ')}.`
+          : ` No tee groups set for any day yet.`;
+        statusEl.textContent = base + hint;
+      } else {
+        statusEl.textContent = base;
+      }
+    }
+
+    function resolvePersonalizedText(text, player) {
+      if (!player) return text;
+      return asString(text).replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
+        return Object.prototype.hasOwnProperty.call(player.vars, key) ? player.vars[key] : match;
+      });
+    }
+
+    function renderPersonalizedVariableChips() {
+      const container = document.getElementById('personalizedVariableChips');
+      if (!container) return;
+      container.innerHTML = PERSONALIZED_VARIABLES.map(v =>
+        `<button type="button" data-var="${v.key}" class="personalized-var-chip text-xs px-2 py-1 rounded-md bg-hackers-sky/15 border border-hackers-sky/30 text-hackers-sky hover:bg-hackers-sky/25 transition">${escapeHtml(v.label)}</button>`
+      ).join('');
+      container.querySelectorAll('[data-var]').forEach(btn => {
+        btn.addEventListener('click', () => insertAtCursor(`{{${btn.dataset.var}}}`));
+      });
+    }
+
+    function insertAtCursor(text) {
+      const active = document.activeElement;
+      const target = (active && (active.id === 'title' || active.id === 'message')) ? active : document.getElementById('message');
+      const start = target.selectionStart ?? target.value.length;
+      const end = target.selectionEnd ?? target.value.length;
+      target.value = target.value.slice(0, start) + text + target.value.slice(end);
+      target.selectionStart = target.selectionEnd = start + text.length;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.focus();
+    }
+
+    function updatePersonalizedSelectedCount() {
+      const el = document.getElementById('personalizedSelectedCount');
+      if (el) el.textContent = `${personalizedSelectedUids.size} selected`;
+      renderPersonalizedPreviewPicker();
+    }
+
+    function renderPersonalizedPreviewPicker() {
+      const select = document.getElementById('personalizedPreviewUid');
+      if (!select) return;
+      const selected = personalizedPlayers.filter(p => personalizedSelectedUids.has(p.uid));
+      const prev = select.value;
+      select.innerHTML = selected.length
+        ? selected.map(p => `<option value="${p.uid}">${escapeHtml(p.displayName)}</option>`).join('')
+        : `<option value="">No recipients selected</option>`;
+      if (selected.some(p => p.uid === prev)) select.value = prev;
+      window.updatePreview();
+    }
+
+    window.personalizedResolvePreview = function(rawTitle, rawMessage) {
+      const uid = document.getElementById('personalizedPreviewUid')?.value;
+      const player = personalizedPlayersByUid.get(uid);
+      if (!player) return { title: rawTitle, message: rawMessage };
+      return {
+        title: resolvePersonalizedText(rawTitle, player),
+        message: resolvePersonalizedText(rawMessage, player),
+      };
+    };
+
+    function renderPersonalizedPlayerList(filterText) {
+      const listEl = document.getElementById('personalizedPlayerList');
+      if (!listEl) return;
+      const q = asString(filterText).trim().toLowerCase();
+      const filtered = q
+        ? personalizedPlayers.filter(p => p.displayName.toLowerCase().includes(q))
+        : personalizedPlayers;
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="px-4 py-3 text-sm text-gray-500">No players match.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(p => `
+        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 cursor-pointer border-white/5">
+          <input type="checkbox" data-uid="${p.uid}" ${personalizedSelectedUids.has(p.uid) ? 'checked' : ''} class="personalized-player-checkbox w-4 h-4 rounded">
+          <span class="text-sm text-white flex-1">${escapeHtml(p.displayName)}</span>
+          ${p.coming ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-300 border border-green-500/30">Coming</span>' : ''}
+        </label>
+      `).join('');
+
+      listEl.querySelectorAll('.personalized-player-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) personalizedSelectedUids.add(cb.dataset.uid);
+          else personalizedSelectedUids.delete(cb.dataset.uid);
+          updatePersonalizedSelectedCount();
+        });
+      });
+    }
+
+    window.personalizedSelectAll = function() {
+      personalizedPlayers.forEach(p => personalizedSelectedUids.add(p.uid));
+      renderPersonalizedPlayerList(document.getElementById('personalizedSearch').value);
+      updatePersonalizedSelectedCount();
+    };
+
+    window.personalizedSelectComing = function() {
+      personalizedSelectedUids = new Set(personalizedPlayers.filter(p => p.coming).map(p => p.uid));
+      renderPersonalizedPlayerList(document.getElementById('personalizedSearch').value);
+      updatePersonalizedSelectedCount();
+    };
+
+    window.personalizedClearSelection = function() {
+      personalizedSelectedUids.clear();
+      renderPersonalizedPlayerList(document.getElementById('personalizedSearch').value);
+      updatePersonalizedSelectedCount();
+    };
+
+    window.loadPersonalizedTarget = async function() {
+      renderPersonalizedVariableChips();
+
+      const eventSelect = document.getElementById('personalizedEventId');
+      if (!eventSelect.options.length) {
+        eventSelect.innerHTML = PERSONALIZED_EVENT_OPTIONS.map(e => `<option value="${e.id}">${e.year} — ${e.id}</option>`).join('');
+        eventSelect.addEventListener('change', () => window.loadPersonalizedTarget());
+        const searchInput = document.getElementById('personalizedSearch');
+        searchInput.addEventListener('input', () => renderPersonalizedPlayerList(searchInput.value));
+        document.getElementById('personalizedPreviewUid').addEventListener('change', window.updatePreview);
+
+        const teeDaySelect = document.getElementById('personalizedTeeDay');
+        teeDaySelect.innerHTML = PERSONALIZED_TEE_DAYS.map(d => `<option value="${d.id}">${d.label}</option>`).join('');
+        teeDaySelect.value = personalizedTeeDay;
+        teeDaySelect.addEventListener('change', () => {
+          personalizedTeeDay = teeDaySelect.value;
+          applyPersonalizedTeeVars();
+          window.updatePreview();
+          updatePersonalizedTeeDayHint();
+        });
+      }
+
+      const eventId = eventSelect.value || PERSONALIZED_EVENT_OPTIONS[0].id;
+      if (eventId === personalizedLoadedEventId || personalizedLoading) return;
+      personalizedLoading = true;
+
+      const statusEl = document.getElementById('personalizedStatus');
+      statusEl.textContent = 'Loading players…';
+
+      try {
+        personalizedPlayers = await loadPersonalizedPlayers(eventId);
+        personalizedPlayersByUid = new Map(personalizedPlayers.map(p => [p.uid, p]));
+        personalizedSelectedUids = new Set([...personalizedSelectedUids].filter(uid => personalizedPlayersByUid.has(uid)));
+        personalizedLoadedEventId = eventId;
+        statusEl.textContent = `${personalizedPlayers.length} players loaded for ${eventId}.`;
+        renderPersonalizedPlayerList(document.getElementById('personalizedSearch').value);
+        updatePersonalizedSelectedCount();
+        updatePersonalizedTeeDayHint();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Failed to load players: ' + err.message;
+      } finally {
+        personalizedLoading = false;
+      }
+    };
+
+    async function sendPersonalizedNotifications(title, message, imageUrl, actionUrl, idToken) {
+      const recipients = personalizedPlayers.filter(p => personalizedSelectedUids.has(p.uid));
+      let sent = 0;
+      const failed = [];
+
+      for (const player of recipients) {
+        const resolvedTitle = resolvePersonalizedText(title, player);
+        const resolvedMessage = resolvePersonalizedText(message, player);
+
+        window.showStatus(`Sending ${sent + failed.length + 1}/${recipients.length}… (${player.displayName})`, 'success');
+
+        try {
+          const timestamp = Date.now();
+          const newNotifKey = push(ref(database, `notifications/${player.uid}`)).key;
+          await set(ref(database, `notifications/${player.uid}/${newNotifKey}`), {
+            title: resolvedTitle,
+            body: resolvedMessage,
+            sentAt: timestamp,
+            timestamp,
+            imageUrl: imageUrl || null,
+            actionUrl: actionUrl || null,
+            admin: currentUser.uid,
+          });
+
+          const payload = {
+            headings: { en: resolvedTitle },
+            contents: { en: resolvedMessage },
+            include_external_user_ids: [player.uid],
+            channel_for_external_user_ids: "push",
+          };
+          if (imageUrl) { payload.big_picture = imageUrl; payload.ios_attachments = { id: imageUrl }; }
+          if (actionUrl) payload.url = actionUrl;
+
+          const res = await fetch(ONESIGNAL_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8', 'Authorization': `Bearer ${idToken}` },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            throw new Error(errText || res.statusText);
+          }
+          sent++;
+        } catch (err) {
+          console.error(`Failed to send to ${player.displayName} (${player.uid}):`, err);
+          failed.push(player.displayName);
+        }
+
+        // Small delay between sends to stay well under any rate limits.
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      return { sent, failed };
+    }
+
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
@@ -407,6 +878,32 @@
       const sendBtn = document.getElementById('sendBtn');
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<div class="animate-spin"><i data-lucide="loader-circle" class="w-5 h-5"></i></div><span>Sending...</span>';
+
+      if (selectedTarget === 'personalized') {
+        if (personalizedSelectedUids.size === 0) {
+          window.showStatus('Select at least one recipient', 'error');
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i><span>Send Notification</span>';
+          return;
+        }
+        try {
+          const idToken = await currentUser.getIdToken();
+          const { sent, failed } = await sendPersonalizedNotifications(title, message, imageUrl, actionUrl, idToken);
+          if (failed.length === 0) {
+            window.showStatus(`✓ Sent ${sent} personalized notification${sent === 1 ? '' : 's'}!`, 'success');
+            window.clearForm();
+          } else {
+            window.showStatus(`Sent ${sent}, failed for: ${failed.join(', ')}`, 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          window.showStatus('Error: ' + err.message, 'error');
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i><span>Send Notification</span>';
+        }
+        return;
+      }
 
       try {
         const timestamp = Date.now();

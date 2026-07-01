@@ -568,6 +568,7 @@
           <button id="bulkNotComingBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">✕ Not Coming</button>
           <button id="bulkSkinsOnBtn" class="px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/20 text-accent text-xs font-semibold hover:bg-accent/25 transition">Skins On</button>
           <button id="bulkSkinsOffBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Skins Off</button>
+          <button id="bulkNotifyBtn" class="px-3 py-1.5 rounded-lg bg-sky-500/15 border border-sky-500/25 text-sky-300 text-xs font-semibold hover:bg-sky-500/25 transition">✉ Notify</button>
           <button id="bulkClearBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-400 text-xs hover:bg-s4 transition">Clear</button>
         </div>
       </div>
@@ -868,7 +869,7 @@
       getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
       signInWithEmailAndPassword, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
    
     import {
       getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp
@@ -899,6 +900,9 @@
 
     const SHIRT_SIZES = ["", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "Custom"];
     const PANT_SIZES = ["", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48", "50", "Custom"];
+
+    // Deployed via cloudflare/onesignal-proxy — see that folder's README for deploy steps.
+    const ONESIGNAL_PROXY_URL = "https://hackerscup-onesignal-proxy.rileyoakes701.workers.dev";
 
     // === FIREBASE INIT ===
     const app = initializeApp(firebaseConfig);
@@ -4134,6 +4138,263 @@ async function downloadRoomsSpreadsheet() {
       renderTable(filteredUsers);
     });
 
+    // === NOTIFY MODAL (send personalized push notifications to selected players) ===
+    const NOTIFY_VARIABLES = [
+      { key: "displayName", label: "Name" },
+      { key: "firstName", label: "First name" },
+      { key: "hackerNumber", label: "Hacker No." },
+      { key: "handicap", label: "Handicap" },
+      { key: "golfAustraliaNumber", label: "GA Number" },
+      { key: "mobile", label: "Mobile" },
+      { key: "email", label: "Email" },
+      { key: "shirtSize", label: "Shirt size" },
+      { key: "pantSize", label: "Pant size" },
+      { key: "roomNumber", label: "Room" },
+      { key: "roommates", label: "Roommates" },
+      { key: "ambrosePartner", label: "Ambrose partner" },
+      { key: "teamHandicap", label: "Team handicap" },
+      { key: "coming", label: "Coming (Yes/No)" },
+      { key: "paidStatus", label: "Paid status" },
+      { key: "amtOutstanding", label: "Amount owed" },
+      { key: "skins", label: "Skins (Yes/No)" },
+      { key: "sponsorNotes", label: "Sponsor notes" },
+      { key: "financialStatus", label: "Financial status" },
+      { key: "teeDay", label: "Tee day" },
+      { key: "teeTime", label: "Tee time" },
+      { key: "startHole", label: "Starting hole" },
+      { key: "playingWith", label: "Playing with" },
+    ];
+    const NOTIFY_TEE_DAY_LABELS = { friday: "Friday", saturday: "Saturday", sunday: "Sunday" };
+
+    const notifyOverlay = document.getElementById('notifyOverlay');
+    const notifyTitleInput = document.getElementById('notifyTitle');
+    const notifyMessageInput = document.getElementById('notifyMessage');
+    const notifyImageUrlInput = document.getElementById('notifyImageUrl');
+    const notifyActionUrlInput = document.getElementById('notifyActionUrl');
+    const notifyTeeDaySelect = document.getElementById('notifyTeeDay');
+    const notifyPreviewUidSelect = document.getElementById('notifyPreviewUid');
+    const notifyPreviewTitleEl = document.getElementById('notifyPreviewTitle');
+    const notifyPreviewMessageEl = document.getElementById('notifyPreviewMessage');
+    const notifyRecipientCountEl = document.getElementById('notifyRecipientCount');
+    const notifyStatusEl = document.getElementById('notifyStatus');
+    const notifySendBtn = document.getElementById('notifySendBtn');
+
+    function findNotifyTeeGroup(day, uid) {
+      const groups = teeSheets[day] || [];
+      for (const group of groups) {
+        const players = group.players || [];
+        if (players.includes(uid)) {
+          const playingWith = players
+            .filter(pid => pid !== uid)
+            .map(pid => users.find(u => u.uid === pid))
+            .filter(Boolean)
+            .map(u => asString(u.displayName).trim())
+            .join(", ");
+          return { teeTime: asString(group.teeTime), startHole: asString(group.hole), playingWith };
+        }
+      }
+      return { teeTime: "", startHole: "", playingWith: "" };
+    }
+
+    function buildNotifyVars(uid, teeDay) {
+      const user = users.find(u => u.uid === uid);
+      if (!user) return null;
+      const record = getEventRecord(uid);
+      const partner = record.ambrosePartnerUid ? users.find(u => u.uid === record.ambrosePartnerUid) : null;
+      const myHc = numericHandicapFor(uid, record);
+      const partnerHc = partner ? numericHandicapFor(partner.uid, getEventRecord(partner.uid)) : null;
+      const teamHandicap = partner && myHc !== null && partnerHc !== null
+        ? formatTeamHandicap((myHc + partnerHc) / 4)
+        : "";
+      const roommateNames = (record.roommates || [])
+        .map(rid => users.find(u => u.uid === rid))
+        .filter(Boolean)
+        .map(r => asString(r.displayName).trim())
+        .join(", ");
+      const teeGroup = findNotifyTeeGroup(teeDay, uid);
+
+      return {
+        displayName: asString(user.displayName).trim(),
+        firstName: asString(user.displayName).trim().split(/\s+/)[0] || "",
+        hackerNumber: asString(user.hackerNumber),
+        handicap: myHc !== null ? asString(myHc) : "",
+        golfAustraliaNumber: asString(user.golfAustraliaNumber),
+        mobile: asString(user.mobile),
+        email: asString(user.email),
+        shirtSize: asString(record.shirtSize),
+        pantSize: asString(record.pantSize),
+        roomNumber: asString(record.roomNumber),
+        roommates: roommateNames,
+        ambrosePartner: partner ? asString(partner.displayName).trim() : "",
+        teamHandicap,
+        coming: record.coming ? "Yes" : "No",
+        paidStatus: paidStatusFor(user).label,
+        amtOutstanding: asString(user.amtOutstanding),
+        skins: record.skins ? "Yes" : "No",
+        sponsorNotes: asString(record.sponsorNotes),
+        financialStatus: asString(user.financialStatus),
+        teeDay: NOTIFY_TEE_DAY_LABELS[teeDay] || "",
+        teeTime: teeGroup.teeTime,
+        startHole: teeGroup.startHole,
+        playingWith: teeGroup.playingWith,
+      };
+    }
+
+    function resolveNotifyText(text, vars) {
+      if (!vars) return text;
+      return asString(text).replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) =>
+        Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : match
+      );
+    }
+
+    function notifySetStatus(msg, type = "") {
+      notifyStatusEl.textContent = msg;
+      notifyStatusEl.className = "text-xs " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : "text-slate-500");
+      notifyStatusEl.classList.toggle("hidden", !msg);
+    }
+
+    function renderNotifyVariableChips() {
+      const container = document.getElementById('notifyVariableChips');
+      container.innerHTML = NOTIFY_VARIABLES.map(v =>
+        `<button type="button" data-var="${v.key}" class="notify-var-chip text-[10px] px-2 py-1 rounded-md bg-accent/15 border border-accent/25 text-accent hover:bg-accent/25 transition">${escapeHtml(v.label)}</button>`
+      ).join("");
+      container.querySelectorAll("[data-var]").forEach(btn => {
+        btn.addEventListener("click", () => insertAtNotifyCursor(`{{${btn.dataset.var}}}`));
+      });
+    }
+
+    function insertAtNotifyCursor(text) {
+      const active = document.activeElement;
+      const target = (active === notifyTitleInput || active === notifyMessageInput) ? active : notifyMessageInput;
+      const start = target.selectionStart ?? target.value.length;
+      const end = target.selectionEnd ?? target.value.length;
+      target.value = target.value.slice(0, start) + text + target.value.slice(end);
+      target.selectionStart = target.selectionEnd = start + text.length;
+      updateNotifyPreview();
+      target.focus();
+    }
+
+    function updateNotifyPreview() {
+      const uid = notifyPreviewUidSelect.value;
+      const vars = uid ? buildNotifyVars(uid, notifyTeeDaySelect.value) : null;
+      notifyPreviewTitleEl.textContent = resolveNotifyText(notifyTitleInput.value, vars) || "Notification title";
+      notifyPreviewMessageEl.textContent = resolveNotifyText(notifyMessageInput.value, vars) || "Your message will appear here";
+    }
+
+    function openNotifyModal() {
+      if (selectedUids.size === 0) return;
+      notifyTitleInput.value = "";
+      notifyMessageInput.value = "";
+      notifyImageUrlInput.value = "";
+      notifyActionUrlInput.value = "";
+      notifySetStatus("");
+      renderNotifyVariableChips();
+      notifyTeeDaySelect.value = teeSheets[activeTeeDay] ? activeTeeDay : "saturday";
+
+      const recipients = Array.from(selectedUids).map(uid => users.find(u => u.uid === uid)).filter(Boolean);
+      notifyRecipientCountEl.textContent = `${recipients.length} recipient${recipients.length !== 1 ? "s" : ""} selected`;
+      notifyPreviewUidSelect.innerHTML = recipients
+        .map(u => `<option value="${u.uid}">${escapeHtml(u.displayName)}</option>`)
+        .join("");
+
+      updateNotifyPreview();
+      notifyOverlay.classList.remove("hidden");
+      notifyOverlay.classList.add("flex");
+      lucide.createIcons();
+    }
+
+    function closeNotifyModal() {
+      notifyOverlay.classList.add("hidden");
+      notifyOverlay.classList.remove("flex");
+    }
+
+    async function sendNotifyToSelected() {
+      const uids = Array.from(selectedUids);
+      if (uids.length === 0) return;
+      const title = notifyTitleInput.value.trim();
+      const message = notifyMessageInput.value.trim();
+      if (!title || !message) { notifySetStatus("Title and message are required.", "error"); return; }
+
+      notifySendBtn.disabled = true;
+      notifySendBtn.textContent = "Sending…";
+
+      const teeDay = notifyTeeDaySelect.value;
+      const imageUrl = notifyImageUrlInput.value.trim();
+      const actionUrl = notifyActionUrlInput.value.trim();
+
+      let sent = 0;
+      const failed = [];
+
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+
+        for (const uid of uids) {
+          const vars = buildNotifyVars(uid, teeDay);
+          const resolvedTitle = resolveNotifyText(title, vars);
+          const resolvedMessage = resolveNotifyText(message, vars);
+          notifySetStatus(`Sending ${sent + failed.length + 1}/${uids.length}…`);
+
+          try {
+            const timestamp = Date.now();
+            const newKey = push(ref(db, `notifications/${uid}`)).key;
+            await set(ref(db, `notifications/${uid}/${newKey}`), {
+              title: resolvedTitle,
+              body: resolvedMessage,
+              sentAt: timestamp,
+              timestamp,
+              imageUrl: imageUrl || null,
+              actionUrl: actionUrl || null,
+              admin: auth.currentUser.uid,
+            });
+
+            const payload = {
+              headings: { en: resolvedTitle },
+              contents: { en: resolvedMessage },
+              include_external_user_ids: [uid],
+              channel_for_external_user_ids: "push",
+            };
+            if (imageUrl) { payload.big_picture = imageUrl; payload.ios_attachments = { id: imageUrl }; }
+            if (actionUrl) payload.url = actionUrl;
+
+            const res = await fetch(ONESIGNAL_PROXY_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json; charset=utf-8", "Authorization": `Bearer ${idToken}` },
+              body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+            sent++;
+          } catch (err) {
+            console.error(`Notify failed for ${uid}:`, err);
+            failed.push(vars?.displayName || uid);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        if (failed.length === 0) {
+          notifySetStatus(`Sent ${sent} notification${sent !== 1 ? "s" : ""}.`, "success");
+          showToast(`Sent ${sent} notification${sent !== 1 ? "s" : ""}`, "success");
+          setTimeout(closeNotifyModal, 900);
+        } else {
+          notifySetStatus(`Sent ${sent}, failed: ${failed.join(", ")}`, "error");
+        }
+      } catch (err) {
+        console.error(err);
+        notifySetStatus("Failed: " + err.message, "error");
+      } finally {
+        notifySendBtn.disabled = false;
+        notifySendBtn.textContent = "Send";
+      }
+    }
+
+    document.getElementById('bulkNotifyBtn')?.addEventListener('click', openNotifyModal);
+    document.getElementById('notifyCloseBtn')?.addEventListener('click', closeNotifyModal);
+    document.getElementById('notifyCancelBtn')?.addEventListener('click', closeNotifyModal);
+    notifySendBtn?.addEventListener('click', sendNotifyToSelected);
+    [notifyTitleInput, notifyMessageInput].forEach(el => el.addEventListener('input', updateNotifyPreview));
+    notifyTeeDaySelect.addEventListener('change', updateNotifyPreview);
+    notifyPreviewUidSelect.addEventListener('change', updateNotifyPreview);
+
     // Select-all checkbox
     document.getElementById('selectAllChk')?.addEventListener('change', (e) => {
       const pageUids = getPageUserUids();
@@ -4253,5 +4514,67 @@ async function downloadRoomsSpreadsheet() {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Notify Modal -->
+  <div id="notifyOverlay" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-s1 border border-brd rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Send Notification</h3>
+        <button id="notifyCloseBtn" class="text-slate-500 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <p id="notifyRecipientCount" class="text-sm text-slate-400">0 recipients selected</p>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Tee Day <span class="normal-case text-slate-600">(for tee time/hole variables)</span></label>
+        <select id="notifyTeeDay" class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+          <option value="friday">Friday</option>
+          <option value="saturday">Saturday</option>
+          <option value="sunday">Sunday</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Insert variable</label>
+        <div id="notifyVariableChips" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Title</label>
+        <input id="notifyTitle" type="text" placeholder="Notification title" class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Message</label>
+        <textarea id="notifyMessage" rows="4" placeholder="Notification message" class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm resize-none focus:outline-none focus:border-accent transition"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Image URL (optional)</label>
+          <input id="notifyImageUrl" type="url" placeholder="https://..." class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Action URL (optional)</label>
+          <input id="notifyActionUrl" type="url" placeholder="https://..." class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-brd bg-s2/70 p-4">
+        <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <span class="text-xs uppercase tracking-widest text-slate-500 font-semibold">Preview</span>
+          <select id="notifyPreviewUid" class="px-2 py-1 rounded-md bg-s1 border border-brd text-white text-xs focus:outline-none focus:border-accent transition"></select>
+        </div>
+        <p id="notifyPreviewTitle" class="text-sm font-semibold text-white">Notification title</p>
+        <p id="notifyPreviewMessage" class="text-sm text-slate-300 mt-1">Your message will appear here</p>
+      </div>
+
+      <div id="notifyStatus" class="text-xs hidden"></div>
+
+      <div class="flex gap-3 pt-2">
+        <button id="notifySendBtn" class="flex-1 px-4 py-2.5 rounded-lg bg-accent text-s0 font-semibold text-sm uppercase tracking-wide hover:brightness-110 transition">Send</button>
+        <button id="notifyCancelBtn" class="px-4 py-2.5 rounded-lg bg-s3 border border-brd text-slate-300 text-sm hover:bg-s4 transition">Cancel</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

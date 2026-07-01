@@ -8,6 +8,9 @@ const JWKS = createRemoteJWKSet(
 const ALLOWED_ORIGINS = new Set([
   "https://hackerscup.live",
   "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:5508",
+  "http://127.0.0.1:5508",
 ]);
 
 function corsHeaders(origin) {
@@ -65,11 +68,11 @@ export default {
     // app_id is fixed server-side so a caller can never redirect sends to a different app.
     payload.app_id = env.ONESIGNAL_APP_ID;
 
-    const onesignalRes = await fetch("https://onesignal.com/api/v1/notifications", {
+    const onesignalRes = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${env.ONESIGNAL_REST_API_KEY}`,
+        "Authorization": `Key ${env.ONESIGNAL_REST_API_KEY}`,
       },
       body: JSON.stringify(payload),
     });
