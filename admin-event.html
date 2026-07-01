@@ -5059,6 +5059,7 @@ async function downloadRoomsSpreadsheet() {
       notifyActionUrlInput.value = "";
       notifySetStatus("");
       renderNotifyVariableChips();
+      loadNotifyTemplates();
       notifyTeeDaySelect.value = teeSheets[activeTeeDay] ? activeTeeDay : "saturday";
 
       const recipients = Array.from(selectedUids).map(uid => users.find(u => u.uid === uid)).filter(Boolean);
@@ -5090,7 +5091,7 @@ async function downloadRoomsSpreadsheet() {
 
       const teeDay = notifyTeeDaySelect.value;
       const imageUrl = notifyImageUrlInput.value.trim();
-      const actionUrl = notifyActionUrlInput.value.trim();
+      const actionUrl = notifyActionUrlInput.value.trim() || 'https://hackerscup.live/notifications-center.html';
 
       let sent = 0;
       const failed = [];
@@ -5156,6 +5157,91 @@ async function downloadRoomsSpreadsheet() {
         notifySendBtn.textContent = "Send";
       }
     }
+
+    // === NOTIFY TEMPLATES (shared "notificationTemplates" node with admin-send-notifications.html) ===
+    let notifyTemplatesCache = {};
+
+    async function loadNotifyTemplates() {
+      const select = document.getElementById('notifyTemplateSelect');
+      const statusEl = document.getElementById('notifyTemplateStatus');
+      try {
+        const snap = await get(ref(db, 'notificationTemplates'));
+        notifyTemplatesCache = snap.exists() ? snap.val() : {};
+        const entries = Object.entries(notifyTemplatesCache).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+        select.innerHTML = '<option value="">Load a saved template…</option>' +
+          entries.map(([id, t]) => `<option value="${id}">${escapeHtml(t.name || 'Untitled')}</option>`).join('');
+        statusEl.textContent = entries.length ? `${entries.length} template${entries.length === 1 ? '' : 's'} saved.` : 'No templates saved yet.';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Failed to load templates: ' + err.message;
+      }
+    }
+
+    function applySelectedNotifyTemplate() {
+      const id = document.getElementById('notifyTemplateSelect').value;
+      const statusEl = document.getElementById('notifyTemplateStatus');
+      if (!id) { statusEl.textContent = 'Select a template first.'; return; }
+      const t = notifyTemplatesCache[id];
+      if (!t) { statusEl.textContent = 'Template not found.'; return; }
+      notifyTitleInput.value = t.title || '';
+      notifyMessageInput.value = t.message || '';
+      notifyImageUrlInput.value = t.imageUrl || '';
+      notifyActionUrlInput.value = t.actionUrl || '';
+      updateNotifyPreview();
+      statusEl.textContent = `Loaded "${t.name}".`;
+    }
+
+    async function saveNotifyTemplate() {
+      const statusEl = document.getElementById('notifyTemplateStatus');
+      const title = notifyTitleInput.value.trim();
+      const message = notifyMessageInput.value.trim();
+      if (!title || !message) { statusEl.textContent = 'Fill in title and message before saving a template.'; return; }
+      const name = window.prompt('Template name:');
+      if (!name || !name.trim()) return;
+
+      const imageUrl = notifyImageUrlInput.value.trim();
+      const actionUrl = notifyActionUrlInput.value.trim();
+
+      try {
+        const newKey = push(ref(db, 'notificationTemplates')).key;
+        await set(ref(db, `notificationTemplates/${newKey}`), {
+          name: name.trim(),
+          title,
+          message,
+          imageUrl: imageUrl || null,
+          actionUrl: actionUrl || null,
+          createdAt: Date.now(),
+          admin: auth.currentUser.uid,
+        });
+        statusEl.textContent = `Saved template "${name.trim()}".`;
+        await loadNotifyTemplates();
+        document.getElementById('notifyTemplateSelect').value = newKey;
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Failed to save template: ' + err.message;
+      }
+    }
+
+    async function deleteSelectedNotifyTemplate() {
+      const select = document.getElementById('notifyTemplateSelect');
+      const statusEl = document.getElementById('notifyTemplateStatus');
+      const id = select.value;
+      if (!id) { statusEl.textContent = 'Select a template first.'; return; }
+      const t = notifyTemplatesCache[id];
+      if (!window.confirm(`Delete template "${t?.name || 'Untitled'}"?`)) return;
+      try {
+        await set(ref(db, `notificationTemplates/${id}`), null);
+        statusEl.textContent = 'Template deleted.';
+        await loadNotifyTemplates();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Failed to delete template: ' + err.message;
+      }
+    }
+
+    document.getElementById('notifyTemplateLoadBtn')?.addEventListener('click', applySelectedNotifyTemplate);
+    document.getElementById('notifyTemplateSaveBtn')?.addEventListener('click', saveNotifyTemplate);
+    document.getElementById('notifyTemplateDeleteBtn')?.addEventListener('click', deleteSelectedNotifyTemplate);
 
     document.getElementById('bulkNotifyBtn')?.addEventListener('click', openNotifyModal);
     document.getElementById('notifyCloseBtn')?.addEventListener('click', closeNotifyModal);
@@ -5266,6 +5352,19 @@ async function downloadRoomsSpreadsheet() {
       <p id="notifyRecipientCount" class="text-sm text-slate-400">0 recipients selected</p>
 
       <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Templates</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="notifyTemplateSelect" class="flex-1 min-w-[140px] px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+            <option value="">Load a saved template…</option>
+          </select>
+          <button type="button" id="notifyTemplateLoadBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Load</button>
+          <button type="button" id="notifyTemplateSaveBtn" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Save as Template</button>
+          <button type="button" id="notifyTemplateDeleteBtn" class="px-3 py-2 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 text-xs hover:bg-red-500/25 transition">Delete</button>
+        </div>
+        <p id="notifyTemplateStatus" class="text-xs text-slate-500 mt-2"></p>
+      </div>
+
+      <div>
         <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Tee Day <span class="normal-case text-slate-600">(for tee time/hole variables)</span></label>
         <select id="notifyTeeDay" class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
           <option value="friday">Friday</option>
@@ -5296,7 +5395,7 @@ async function downloadRoomsSpreadsheet() {
         </div>
         <div>
           <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Action URL (optional)</label>
-          <input id="notifyActionUrl" type="url" placeholder="https://..." class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+          <input id="notifyActionUrl" type="url" placeholder="Defaults to hackerscup.live/notifications-center.html" class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
         </div>
       </div>
 
