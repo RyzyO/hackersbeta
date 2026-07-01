@@ -8,9 +8,17 @@
  *   <script src="assets/js/site-nav.js"></script>
  *
  * Each page's own Firebase/auth code should call:
+ *   window.SiteNav.setDisplayName(displayName)
  *   window.SiteNav.setHackerNumber(hackerNumber)
  *   window.SiteNav.setAvatar(avatarUrl)   // pass null/falsy to clear
  * once it has that data — this file has no Firebase dependency itself.
+ *
+ * All three write through to a localStorage cache (shared across every page, and
+ * across days) so repeat page loads paint the last-known name/number/avatar
+ * instantly instead of waiting on Firebase. Call window.SiteNav.getCachedProfile()
+ * to read it back — e.g. to paint a hero "Welcome, {name}" before Firebase responds.
+ * Firebase's real-time listeners still run as normal afterwards and refresh both
+ * the DOM and the cache once fresh data arrives.
  *
  * Icons are inlined as raw SVG (Lucide icon set, ISC license) rather than pulled
  * from a CDN — same reasoning as scoring.html: zero extra requests, no risk of an
@@ -206,6 +214,29 @@
     });
   }
 
+  // Local profile cache — shows last-known name/hacker number/avatar instantly on
+  // every page load (and across days), instead of waiting on Firebase every time.
+  // Firebase's real-time listeners still run as normal and refresh both the DOM
+  // and this cache once fresh data arrives; the cache just removes the initial wait.
+  const CACHE_KEY = 'hc_profile_cache_v1';
+
+  function readCache() {
+    try {
+      return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeCache(partial) {
+    try {
+      const current = readCache();
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ...current, ...partial }));
+    } catch (err) {
+      // Storage full/unavailable (private browsing etc.) — cache is a nice-to-have, skip silently.
+    }
+  }
+
   function applyAvatar(wrapId, numberSpanId, avatarUrl) {
     const wrap = document.getElementById(wrapId);
     const numberSpan = document.getElementById(numberSpanId);
@@ -228,18 +259,35 @@
   }
 
   window.SiteNav = {
+    // Returns the last-known profile ({ displayName, hackerNumber, avatarUrl }) so a
+    // page can paint instantly before Firebase responds. Fields are omitted if never cached.
+    getCachedProfile() {
+      return readCache();
+    },
+    setDisplayName(displayName) {
+      if (!displayName) return;
+      writeCache({ displayName });
+    },
     setHackerNumber(hackerNumber) {
       if (!hackerNumber) return;
       const desktop = document.getElementById('navbarHackerNumber');
       const mobile = document.getElementById('mobileNavbarHackerNumber');
       if (desktop) desktop.textContent = hackerNumber;
       if (mobile) mobile.textContent = hackerNumber;
+      writeCache({ hackerNumber });
     },
     setAvatar(avatarUrl) {
       applyAvatar('profileMenuButton', 'navbarHackerNumber', avatarUrl);
       applyAvatar('mobileProfileAvatarWrap', 'mobileNavbarHackerNumber', avatarUrl);
+      writeCache({ avatarUrl: avatarUrl || '' });
     },
   };
+
+  function applyCachedProfile() {
+    const cached = readCache();
+    if (cached.hackerNumber) window.SiteNav.setHackerNumber(cached.hackerNumber);
+    if (cached.avatarUrl) window.SiteNav.setAvatar(cached.avatarUrl);
+  }
 
   function init() {
     const root = document.getElementById('site-nav-root');
@@ -248,6 +296,7 @@
     highlightActiveLinks();
     wireEventDropdown();
     wireMobileMenu();
+    applyCachedProfile();
   }
 
   if (document.readyState === 'loading') {

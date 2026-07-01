@@ -183,10 +183,16 @@
 
       const userName = document.querySelector('#user-name');
       if (userName) {
+        // Paint the last-known name instantly (see assets/js/site-nav.js) instead of
+        // showing "Loading your profile..." on every visit while Firebase responds.
+        const cached = window.SiteNav && window.SiteNav.getCachedProfile();
+        if (cached && cached.displayName) userName.textContent = cached.displayName;
+
         const userRef = ref(database, `users/${user.uid}/displayName`);
         onValue(userRef, (snapshot) => {
           const displayName = snapshot.val();
           userName.textContent = displayName ? displayName : 'Welcome, Hacker';
+          if (displayName) window.SiteNav && window.SiteNav.setDisplayName(displayName);
         });
       }
     });

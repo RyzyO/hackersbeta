@@ -577,11 +577,17 @@
     }
 
     function getDisplayName(user) {
+      // Paint the last-known name instantly (see assets/js/site-nav.js) instead of
+      // showing "Welcome back, Loading..." on every visit while Firebase responds.
+      const cached = window.SiteNav && window.SiteNav.getCachedProfile();
+      if (cached && cached.displayName) setDisplayNameUI(cached.displayName);
+
       const userRef = ref(database, `users/${user.uid}/displayName`);
       onValue(userRef, (snapshot) => {
         const displayName = snapshot.val();
         if (displayName) {
           setDisplayNameUI(displayName);
+          window.SiteNav && window.SiteNav.setDisplayName(displayName);
         } else {
           setDisplayNameUI('');
         }

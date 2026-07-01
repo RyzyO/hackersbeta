@@ -549,6 +549,31 @@
     }
 
 
+    // Paint the last-known name/hacker number instantly from the shared cache (see
+    // site-nav.js), before Firebase has even responded — the listeners below still
+    // run as normal afterwards and correct anything that's changed.
+    function applyCachedHeroText() {
+      if (!window.SiteNav) return;
+      const cached = window.SiteNav.getCachedProfile();
+      const nameElement = document.getElementById('user-name');
+      const hackerElement = document.getElementById('hacker-number');
+
+      if (cached.displayName) {
+        if (nameElement) {
+          nameElement.innerHTML = `Welcome,<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${cached.displayName}</span>`;
+        }
+        const eternalGloryNames = ['andrew murray', 'riley oakes'];
+        isEternalGloryUser = eternalGloryNames.includes(String(cached.displayName).trim().toLowerCase());
+        const eternalGloryEl = document.getElementById('eternalGlory');
+        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        updateCountdown();
+      }
+      if (cached.hackerNumber && hackerElement) {
+        hackerElement.textContent = `G'day, Hacker No. ${cached.hackerNumber}`;
+      }
+    }
+    applyCachedHeroText();
+
     function loadUserData(user) {
       // Load Display Name
       const userRef = ref(database, `users/${user.uid}/displayName`);
@@ -561,6 +586,8 @@
         const eternalGloryEl = document.getElementById('eternalGlory');
         if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
         updateCountdown();
+
+        if (displayName) window.SiteNav && window.SiteNav.setDisplayName(displayName);
 
         if (displayName && nameElement) {
           nameElement.innerHTML = `Welcome,<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${displayName}</span>`;

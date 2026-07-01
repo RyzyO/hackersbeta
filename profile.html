@@ -615,6 +615,12 @@
       lastEl.textContent = profile.lastAttended ? `HC${profile.lastAttended}` : '—';
       lastEl.classList.remove('skel');
 
+      // Keep the shared nav cache (assets/js/site-nav.js) fresh so other pages —
+      // and this page next time — can paint instantly instead of waiting on Firebase.
+      if (displayName) window.SiteNav && window.SiteNav.setDisplayName(displayName);
+      if (hackerNumber) window.SiteNav && window.SiteNav.setHackerNumber(hackerNumber);
+      window.SiteNav && window.SiteNav.setAvatar(profile.avatarUrl || null);
+
       window.profileData = profile; // Store for modal lookup
       renderAnniversaryBadges(profile.totalBadges || []);
       renderBadges(profile.totalBadges || [], profile.consecutiveBadges || []);
@@ -852,12 +858,31 @@
         window.location.href = 'login.html';
         return;
       }
+      // Paint the last-known name/hacker number/avatar instantly (see
+      // assets/js/site-nav.js) instead of sitting on skeleton loaders on every visit.
+      const cachedProfile = window.SiteNav && window.SiteNav.getCachedProfile();
+      if (cachedProfile && cachedProfile.displayName) {
+        const nameEl = document.getElementById('displayName');
+        nameEl.textContent = cachedProfile.displayName;
+        nameEl.classList.remove('skel');
+      }
+      if (cachedProfile && cachedProfile.hackerNumber) {
+        document.getElementById('hackerNumber').innerHTML = `<i data-lucide="hash" class="w-3.5 h-3.5"></i>&nbsp;${cachedProfile.hackerNumber}`;
+      }
+      if (cachedProfile && cachedProfile.avatarUrl) {
+        document.getElementById('avatarInitial').innerHTML = `<img src="${cachedProfile.avatarUrl}" alt="${cachedProfile.displayName || 'Hacker'}">`;
+      }
+
       const userRef = database.ref(`users/${user.uid}/displayName`);
       const hackerRef = database.ref(`users/${user.uid}/hackerNumber`);
       let displayName = 'Hacker';
       let hackerNumber = '';
-      await userRef.once('value').then(snap => { if (snap.exists()) displayName = snap.val(); });
-      await hackerRef.once('value').then(snap => { if (snap.exists()) hackerNumber = snap.val(); });
+      // Run in parallel instead of sequential awaits — halves the wait before we
+      // even know which attendeeProfiles doc to look up.
+      await Promise.all([
+        userRef.once('value').then(snap => { if (snap.exists()) displayName = snap.val(); }),
+        hackerRef.once('value').then(snap => { if (snap.exists()) hackerNumber = snap.val(); }),
+      ]);
       const profileRef = db.collection('attendeeProfiles').doc(displayName);
       window.currentProfileRef = profileRef; // used by avatar upload to persist avatarUrl
 
