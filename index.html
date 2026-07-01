@@ -392,6 +392,7 @@
               </div>
             </div>
             <div id="untilRyderCup" class="hidden text-center text-hackers-sky text-xs font-semibold uppercase tracking-wider mt-3">Until Ryder Cup</div>
+            <div id="eternalGlory" class="hidden text-center text-hackers-sky text-xs font-semibold mt-2">YOU ARE <span id="eternalGloryDays">0</span> DAYS AWAY FROM ETERNAL GLORY</div>
           </div>
         </div>
         
@@ -620,6 +621,7 @@
 
     const CURRENT_EVENT_ID = "HC26";
     let isThursdayPlayer = false;
+    let isEternalGloryUser = false;
 
     // Links an already-subscribed OneSignal push subscriber (from before external_id
     // tracking existed, or a login on a different device) to their Firebase UID, so
@@ -678,6 +680,13 @@
       onValue(userRef, (snapshot) => {
         const displayName = snapshot.val();
         const nameElement = document.getElementById('user-name');
+
+        const eternalGloryNames = ['andrew murray', 'riley oakes'];
+        isEternalGloryUser = eternalGloryNames.includes(String(displayName || '').trim().toLowerCase());
+        const eternalGloryEl = document.getElementById('eternalGlory');
+        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        updateCountdown();
+
         if (displayName && nameElement) {
           nameElement.innerHTML = `Welcome,<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${displayName}</span>`;
         } else if (nameElement) {
@@ -740,18 +749,20 @@
         document.getElementById('hours').textContent = '00';
         document.getElementById('minutes').textContent = '00';
         document.getElementById('seconds').textContent = '00';
+        if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = '0';
         return;
       }
-      
+
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
+
       document.getElementById('days').textContent = days.toString().padStart(2, '0');
       document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
       document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
       document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+      if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = days;
     }
     
     setInterval(updateCountdown, 1000);
