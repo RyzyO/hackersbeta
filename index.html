@@ -391,6 +391,7 @@
                 <div class="text-xs text-gray-400 uppercase tracking-wider">Secs</div>
               </div>
             </div>
+            <div id="untilRyderCup" class="hidden text-center text-hackers-sky text-xs font-semibold uppercase tracking-wider mt-3">Until Ryder Cup</div>
           </div>
         </div>
         
@@ -616,7 +617,10 @@
     const auth = getAuth(app);
     const messaging = getMessaging(app);
     const firestore = getFirestore(app);
-    
+
+    const CURRENT_EVENT_ID = "HC26";
+    let isThursdayPlayer = false;
+
     // Links an already-subscribed OneSignal push subscriber (from before external_id
     // tracking existed, or a login on a different device) to their Firebase UID, so
     // future sends can target them by user instead of only anonymous device.
@@ -712,11 +716,22 @@
           navbarCircle.textContent = hackerNumber;
         }
       });
+
+      // Thursday (Ryder Cup) attendees see a countdown one day earlier, with a label
+      // clarifying it's counting to their Thursday arrival rather than the main event.
+      const thursdayDocRef = doc(firestore, 'eventYears', CURRENT_EVENT_ID, 'players', user.uid);
+      onSnapshot(thursdayDocRef, (snap) => {
+        isThursdayPlayer = snap.exists() && !!snap.data().thursday;
+        const label = document.getElementById('untilRyderCup');
+        if (label) label.classList.toggle('hidden', !isThursdayPlayer);
+        updateCountdown();
+      });
     }
-    
+
     // Countdown Timer
     function updateCountdown() {
       const targetDate = new Date("August 20, 2026 11:30:00 GMT+1000");
+      if (isThursdayPlayer) targetDate.setDate(targetDate.getDate() - 1);
       const currentDate = new Date();
       const diff = targetDate - currentDate;
       

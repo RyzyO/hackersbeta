@@ -196,6 +196,10 @@
             <span class="text-sm text-slate-300">Sunday</span>
             <label class="toggle"><input type="checkbox" id="editSundayAttendance" /><span class="slider"></span></label>
           </div>
+          <div class="flex items-center justify-between bg-s2 rounded-xl px-4 py-3 border border-brd">
+            <span class="text-sm text-slate-300">Thursday <span class="text-[10px] text-slate-500">(Ryder Cup)</span></span>
+            <label class="toggle"><input type="checkbox" id="editThursday" /><span class="slider"></span></label>
+          </div>
         </div>
       </section>
 
@@ -1018,6 +1022,7 @@
     const editSkins = $("#editSkins");
     const editSaturdayAttendance = $("#editSaturdayAttendance");
     const editSundayAttendance = $("#editSundayAttendance");
+    const editThursday = $("#editThursday");
     const editShirtSize = $("#editShirtSize");
     const editPantSize = $("#editPantSize");
     const editHandicap = $("#editHandicap");
@@ -1440,6 +1445,7 @@ async function downloadRoomsSpreadsheet() {
         coming: !!data.coming,
         saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
         sundayAttendance: data.sundayAttendance == null ? true : !!data.sundayAttendance,
+        thursday: !!data.thursday,
         sponsorNotes: asString(data.sponsorNotes),
         handicap: data.handicap !== undefined && data.handicap !== null
           ? Number(data.handicap)
@@ -1531,7 +1537,7 @@ async function downloadRoomsSpreadsheet() {
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, saturdayAttendance: true, sundayAttendance: true, sponsorNotes: "", handicap: "" };
+      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, saturdayAttendance: true, sundayAttendance: true, thursday: false, sponsorNotes: "", handicap: "" };
     }
 
     function roomGroupMembers(uid, record) { return uniqueSorted([uid, ...(record.roommates || [])]); }
@@ -3419,6 +3425,7 @@ async function downloadRoomsSpreadsheet() {
       editSkins.checked = !!record.skins;
       editSaturdayAttendance.checked = record.saturdayAttendance !== false;
       editSundayAttendance.checked = record.sundayAttendance !== false;
+      editThursday.checked = !!record.thursday;
       editShirtSize.value = asString(record.shirtSize);
       editPantSize.value = asString(record.pantSize);
       editHandicap.value = record.handicap !== "" ? asString(record.handicap) : "";
@@ -3780,7 +3787,7 @@ async function downloadRoomsSpreadsheet() {
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editSaturdayAttendance, editSundayAttendance, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
+    [editComing, editSkins, editSaturdayAttendance, editSundayAttendance, editThursday, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -3845,6 +3852,7 @@ async function downloadRoomsSpreadsheet() {
           skins: editSkins.checked,
           saturdayAttendance: editSaturdayAttendance.checked,
           sundayAttendance: editSundayAttendance.checked,
+          thursday: editThursday.checked,
           handicap: editHandicap.value,
           ambrosePartnerUid: editPartner.value,
           roomNumber: editRoomNumber.value.trim(),
