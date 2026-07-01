@@ -113,6 +113,28 @@
         display: none;
       }
     }
+
+    .notif-card {
+      position: relative;
+    }
+    .notif-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+    }
+    .notif-broadcast::before {
+      background: linear-gradient(180deg, #0ea5e9, #38bdf8);
+    }
+    .notif-personal::before {
+      background: linear-gradient(180deg, #f59e0b, #fbbf24);
+    }
+    .notif-card:hover {
+      transform: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
   </style>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
@@ -338,6 +360,25 @@
       return date.toLocaleString('en-AU');
     }
 
+    function relativeTime(value) {
+      if (!value) return '--';
+      const diff = Date.now() - new Date(value).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d ago`;
+      return new Date(value).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
     function renderNotifications(items) {
       container.innerHTML = '';
 
@@ -352,24 +393,28 @@
       latestEl.textContent = formatTimestamp(items[0].sentAt || items[0].timestamp);
 
       items.forEach((item) => {
+        const isBroadcast = item.audience === 'all';
+        const ts = item.sentAt || item.timestamp;
         const card = document.createElement('div');
-        card.className = 'glass-card rounded-2xl p-6';
-        const audienceLabel = item.audience === 'all' ? 'Sent to everyone' : 'Sent to you';
-        const audienceClass = item.audience === 'all' ? 'bg-hackers-sky/15 text-hackers-sky border-hackers-sky/40' : 'bg-white/10 text-gray-200 border-white/10';
+        card.className = 'notif-card glass-card rounded-2xl overflow-hidden' + (isBroadcast ? ' notif-broadcast' : ' notif-personal');
         card.innerHTML = `
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-semibold text-white">${item.title || 'Notification'}</p>
-                <span class="text-xs uppercase tracking-[0.2em] px-2 py-1 rounded-full border ${audienceClass}">${audienceLabel}</span>
-              </div>
-              <p class="text-sm text-gray-300 mt-2">${item.body || ''}</p>
+          <div class="flex gap-4 p-5">
+            <div class="notif-icon flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isBroadcast ? 'bg-hackers-sky/15 text-hackers-sky' : 'bg-hackers-gold/15 text-hackers-gold'}">
+              <i data-lucide="${isBroadcast ? 'megaphone' : 'bell'}" class="w-5 h-5"></i>
             </div>
-            <div class="text-xs text-gray-400 whitespace-nowrap">${formatTimestamp(item.sentAt || item.timestamp)}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="font-semibold text-white truncate">${escapeHtml(item.title || 'Notification')}</p>
+                <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0" title="${formatTimestamp(ts)}">${relativeTime(ts)}</span>
+              </div>
+              <p class="text-sm text-gray-300 mt-1 leading-relaxed">${escapeHtml(item.body || '')}</p>
+              <span class="inline-block mt-3 text-[11px] font-medium ${isBroadcast ? 'text-hackers-sky' : 'text-hackers-gold'}">${isBroadcast ? 'Announcement · Everyone' : 'Just for you'}</span>
+            </div>
           </div>
         `;
         container.appendChild(card);
       });
+      if (window.lucide) window.lucide.createIcons();
     }
 
     async function linkOneSignalToUser(uid) {
