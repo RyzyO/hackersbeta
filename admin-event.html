@@ -248,7 +248,7 @@
         <div class="mt-3 rounded-xl border border-brd bg-s2/70 p-3">
           <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Daily Handicap Calculator</div>
-            <div class="text-[10px] text-slate-600">Worrigee Links · Blue, Men · CR 66 · Slope 119 · Par 70</div>
+            <div class="text-[10px] text-slate-600">Worrigee Links · Black, Men · CR 68 · Slope 120 · Par 70</div>
           </div>
           <div class="flex items-end gap-2">
             <div class="flex-1">
@@ -3770,8 +3770,8 @@ async function downloadRoomsSpreadsheet() {
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
 
-    // === GA HANDICAP CALCULATOR (Worrigee Links, Blue, Men) ===
-    const WORRIGEE_BLUE_MEN = { rating: 66, slope: 119, par: 70 };
+    // === GA HANDICAP CALCULATOR (Worrigee Links, Black, Men) ===
+    const WORRIGEE_BLACK_MEN = { rating: 68, slope: 120, par: 70 };
     // WHS-recommended allowance for individual stroke play / Stableford — Golf Australia's
     // displayed "Daily Handicap" is the Course Handicap with this allowance already applied.
     const HC_ALLOWANCE = 0.95;
@@ -3800,7 +3800,7 @@ async function downloadRoomsSpreadsheet() {
         delete hcCalcApplyBtn.dataset.value;
         return;
       }
-      const courseHandicap = courseHandicapFor(index, WORRIGEE_BLUE_MEN);
+      const courseHandicap = courseHandicapFor(index, WORRIGEE_BLACK_MEN);
       const dailyHandicap = Math.round(courseHandicap * HC_ALLOWANCE);
       hcCalcResult.innerHTML = `Course handicap: ${formatHandicapDisplay(courseHandicap)} &middot; <span class="text-emerald-400 font-medium">Daily handicap (95%): ${formatHandicapDisplay(dailyHandicap)}</span>`;
       hcCalcResult.className = "text-xs text-slate-500 mt-2";
