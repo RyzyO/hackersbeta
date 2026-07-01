@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Sign In — Hackers Cup Admin</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911',
+            s1: '#0c1019',
+            s2: '#111725',
+            accent: '#06d6a4',
+            'accent-dim': 'rgba(6,214,164,0.12)',
+            brd: '#1c2640',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { background: #060911; }
+  </style>
+</head>
+<body class="text-slate-200 font-sans min-h-screen antialiased flex items-center justify-center p-4">
+
+  <div id="loginCard" class="w-full max-w-md bg-s1 border border-brd rounded-2xl p-8 shadow-2xl">
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-dim mb-4">
+        <i data-lucide="shield-check" class="w-7 h-7 text-accent"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Hackers Cup Admin</h1>
+      <p class="text-slate-400 mt-1 text-sm">Sign in with your admin account to continue</p>
+    </div>
+
+    <div id="formFields" class="space-y-3">
+      <input id="signinEmail" type="email" placeholder="Email address" autocomplete="email"
+        class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+      <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password"
+        class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
+      <button id="signinBtn" class="w-full py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
+        Sign in
+      </button>
+    </div>
+
+    <div id="deniedActions" class="hidden">
+      <button id="signOutBtn" class="w-full py-3 rounded-xl bg-s2 border border-brd text-slate-300 font-semibold text-sm hover:bg-s3 transition">
+        Sign out
+      </button>
+    </div>
+
+    <div id="signInStatus" class="mt-3 text-center text-sm min-h-[20px]"></div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+      signInWithEmailAndPassword, signOut
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const redirectTarget = new URLSearchParams(window.location.search).get('redirect') || 'admin-event.html';
+
+    const signinEmailInput = document.getElementById('signinEmail');
+    const signinPasswordInput = document.getElementById('signinPassword');
+    const signinBtn = document.getElementById('signinBtn');
+    const signInStatus = document.getElementById('signInStatus');
+    const formFields = document.getElementById('formFields');
+    const deniedActions = document.getElementById('deniedActions');
+    const signOutBtn = document.getElementById('signOutBtn');
+
+    function setStatus(msg, type = '') {
+      signInStatus.textContent = msg;
+      signInStatus.className = 'mt-3 text-center text-sm min-h-[20px] ' + (type === 'error' ? 'text-red-400' : 'text-slate-400');
+    }
+
+    async function verifyAdmin(user) {
+      const adminSnap = await get(ref(db, `admins/${user.uid}`));
+      return !!adminSnap.val();
+    }
+
+    signinBtn.addEventListener('click', async () => {
+      const email = signinEmailInput.value.trim();
+      const password = signinPasswordInput.value;
+      if (!email || !password) { setStatus('Enter email and password', 'error'); return; }
+
+      signinBtn.disabled = true;
+      signinBtn.textContent = 'Signing in…';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        signinPasswordInput.value = '';
+        // onAuthStateChanged below handles the admin check + redirect.
+      } catch (err) {
+        console.error(err);
+        setStatus('Sign-in failed. Check your credentials.', 'error');
+        signinBtn.disabled = false;
+        signinBtn.textContent = 'Sign in';
+      }
+    });
+
+    signOutBtn.addEventListener('click', async () => {
+      try { await signOut(auth); } catch (err) { console.error(err); }
+    });
+
+    setPersistence(auth, browserLocalPersistence).catch(err => console.warn('Auth persistence error:', err));
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        formFields.classList.remove('hidden');
+        deniedActions.classList.add('hidden');
+        setStatus('');
+        signinBtn.disabled = false;
+        signinBtn.textContent = 'Sign in';
+        return;
+      }
+
+      let allowed = false;
+      try {
+        allowed = await verifyAdmin(user);
+      } catch (err) {
+        console.error(err);
+        setStatus('Failed to verify admin access.', 'error');
+        return;
+      }
+
+      if (!allowed) {
+        formFields.classList.add('hidden');
+        deniedActions.classList.remove('hidden');
+        setStatus('Access denied — admin privileges required.', 'error');
+        return;
+      }
+
+      window.location.href = redirectTarget;
+    });
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

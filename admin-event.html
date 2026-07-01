@@ -118,27 +118,12 @@
   <!-- ===================== TOAST CONTAINER ===================== -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- ===================== SIGN IN OVERLAY ===================== -->
-  <div id="signInOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-s0/90 backdrop-blur-sm p-4">
-    <div class="w-full max-w-md bg-s1 border border-brd rounded-2xl p-8 shadow-2xl">
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-dim mb-4">
-          <i data-lucide="shield-check" class="w-7 h-7 text-accent"></i>
-        </div>
-        <h1 class="text-2xl font-bold text-white">Hackers Cup Admin</h1>
-        <p class="text-slate-400 mt-1 text-sm">Sign in with your admin account to continue</p>
-      </div>
-      <div class="space-y-3">
-        <input id="signinEmail" type="email" placeholder="Email address" autocomplete="email"
-          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
-        <input id="signinPassword" type="password" placeholder="Password" autocomplete="current-password"
-          class="w-full px-4 py-3 rounded-xl bg-s2 border border-brd text-white placeholder-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition" />
-        <button id="signinBtn" class="w-full py-3 rounded-xl bg-accent text-s0 font-bold text-sm uppercase tracking-wide hover:brightness-110 active:scale-[0.98] transition">
-          Sign in
-        </button>
-      </div>
-      <div id="signInStatus" class="mt-3 text-center text-sm min-h-[20px]"></div>
-    </div>
+  <!-- ===================== AUTH LOADING SCREEN ===================== -->
+  <!-- Shown only while checking the existing session — no login form here anymore,
+       so refreshing while already signed in doesn't flash a login card. Unauthenticated
+       or non-admin visitors get redirected to admin-login.html instead. -->
+  <div id="authLoadingScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-s0">
+    <i data-lucide="loader-2" class="w-8 h-8 text-accent animate-spin"></i>
   </div>
 
   <!-- ===================== AUTH STATUS BAR (hidden until signed in) ===================== -->
@@ -880,8 +865,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
-      signInWithEmailAndPassword, signOut
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
    
@@ -991,11 +975,7 @@
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
 
-    const signInOverlay = $("#signInOverlay");
-    const signinEmailInput = $("#signinEmail");
-    const signinPasswordInput = $("#signinPassword");
-    const signinBtn = $("#signinBtn");
-    const signInStatus = $("#signInStatus");
+    const authLoadingScreen = $("#authLoadingScreen");
     const authBar = $("#authBar");
     const authEmailSpan = $("#authEmail");
     const signOutBtn = $("#signOutBtn");
@@ -4441,29 +4421,8 @@ async function downloadRoomsSpreadsheet() {
     });
 
     // === AUTH ===
-    signinBtn.addEventListener("click", async () => {
-      const email = signinEmailInput.value.trim();
-      const password = signinPasswordInput.value;
-      if (!email || !password) {
-        signInStatus.textContent = "Enter email and password";
-        signInStatus.className = "mt-3 text-center text-sm text-red-400";
-        return;
-      }
-      signinBtn.disabled = true;
-      signinBtn.textContent = "Signing in...";
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        signinPasswordInput.value = "";
-      } catch (err) {
-        console.error(err);
-        signInStatus.textContent = "Sign-in failed. Check your credentials.";
-        signInStatus.className = "mt-3 text-center text-sm text-red-400";
-      } finally {
-        signinBtn.disabled = false;
-        signinBtn.textContent = "Sign in";
-      }
-    });
-
+    // No login form on this page anymore — unauthenticated or non-admin visitors are
+    // sent to admin-login.html, which redirects back here once signed in as an admin.
     signOutBtn.addEventListener("click", async () => {
       try { await signOut(auth); } catch (err) { console.error(err); }
     });
@@ -4475,32 +4434,22 @@ async function downloadRoomsSpreadsheet() {
       return !!adminSnap.val();
     }
 
+    function goToLogin() {
+      window.location.href = "admin-login.html?redirect=" + encodeURIComponent("admin-event.html");
+    }
+
     // === BOOT ===
     renderEventSelect();
     populateEditSelects();
     switchTeeDay('friday');
 
     onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        signInOverlay.classList.remove("hidden");
-        signInOverlay.style.display = "";
-        authBar.classList.add("hidden");
-        mainLayout.style.opacity = "0";
-        return;
-      }
+      if (!user) { goToLogin(); return; }
 
       // Check admin status
       try {
         const allowed = await verifyAdmin(user);
-        if (!allowed) {
-          signInOverlay.classList.remove("hidden");
-          signInOverlay.style.display = "";
-          signInStatus.textContent = "Access denied — admin privileges required";
-          signInStatus.className = "mt-3 text-center text-sm text-red-400";
-          authBar.classList.add("hidden");
-          mainLayout.style.opacity = "0";
-          return;
-        }
+        if (!allowed) { goToLogin(); return; }
       } catch (err) {
         console.error(err);
         showToast("Failed to verify admin access", "error");
@@ -4508,7 +4457,7 @@ async function downloadRoomsSpreadsheet() {
       }
 
       // Authenticated and authorized
-      signInOverlay.style.display = "none";
+      authLoadingScreen.style.display = "none";
       authBar.classList.remove("hidden");
       authEmailSpan.textContent = user.email || user.uid;
       mainLayout.style.opacity = "1";
