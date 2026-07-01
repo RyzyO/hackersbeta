@@ -772,6 +772,45 @@
         </div>
       </section>
 
+      <!-- SOCIAL HANDICAP SYNC -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Get Social Handicaps</h3>
+            <p class="text-xs text-slate-600 mt-1">Fetch handicaps for "Social" entrants from the rego sheet (columns O/P) and match names to players.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="socialHcSyncBtn" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">
+              <i data-lucide="download-cloud" style="width:13px;height:13px;display:inline;margin-right:5px;"></i>
+              Fetch &amp; Preview
+            </button>
+            <button id="socialHcApplyBtn" class="hidden px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">
+              Apply Matches
+            </button>
+          </div>
+        </div>
+        <div id="socialHcSyncStatus" class="text-xs text-slate-500 hidden"></div>
+        <!-- Preview table -->
+        <div id="socialHcSyncPreview" class="hidden overflow-x-auto border border-brd rounded-xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-s2/60 border-b border-brd">
+                <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Sheet Name</th>
+                <th class="text-left px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Matched Player</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Handicap <span class="normal-case text-slate-600">(was→new)</span></th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Col</th>
+                <th class="text-center px-3 py-2 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody id="socialHcTableBody" class="divide-y divide-brd/50"></tbody>
+          </table>
+        </div>
+        <div id="socialHcNoMatch" class="hidden">
+          <p class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold mb-2">No match found</p>
+          <div id="socialHcNoMatchList" class="flex flex-wrap gap-2"></div>
+        </div>
+      </section>
+
       <!-- AMBROSE PAIRINGS PDF -->
       <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -1111,7 +1150,7 @@ function downloadFullComingSpreadsheetCsv() {
 
     return [
       asString(user.displayName).trim(),
-      asString(user.handicap).trim(),
+      asString(record.handicap !== "" && record.handicap != null ? record.handicap : user.handicap).trim(),
       asString(user.mobile).trim(),
       asString(user.email).trim(),
       asString(user.hackerNumber).trim(),
@@ -2567,6 +2606,197 @@ async function downloadRoomsSpreadsheet() {
       if (regoSyncMatches[i]) {
         regoSyncMatches[i].skip = !regoSyncMatches[i].skip;
         renderRegoSyncPreview([]); // re-render without re-fetching no-match list
+      }
+    });
+
+    // === SOCIAL HANDICAP SYNC ===
+    // Same rego sheet — "Social" entrants get their handicap in col O or P (never both).
+    const SOCIAL_HC_COL = { name: 1, type: 4, hcO: 14, hcP: 15 };
+
+    let socialHcMatches = [];
+
+    function socialHcSetStatus(msg, type = "") {
+      const el = $("#socialHcSyncStatus");
+      el.textContent = msg;
+      el.className = "text-xs " + (type === "error" ? "text-red-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-500");
+      el.classList.remove("hidden");
+    }
+
+    async function runSocialHcSync() {
+      const btn = $("#socialHcSyncBtn");
+      const applyBtn = $("#socialHcApplyBtn");
+      btn.disabled = true;
+      btn.textContent = "Fetching…";
+      socialHcSetStatus("Fetching registration sheet…");
+
+      try {
+        const rows = await fetchRegoSheet();
+        socialHcMatches = [];
+        const noMatch = [];
+
+        rows.forEach(row => {
+          const type = regoCell(row, SOCIAL_HC_COL.type);
+          if (!/^social/i.test(type)) return; // only "Social" entrants have a handicap to sync
+
+          const sheetName = regoCell(row, SOCIAL_HC_COL.name);
+          if (!sheetName) return;
+
+          const oVal = regoCell(row, SOCIAL_HC_COL.hcO);
+          const pVal = regoCell(row, SOCIAL_HC_COL.hcP);
+          const rawValue = oVal || pVal;
+          if (!rawValue) return; // no handicap entered either side
+          const sourceCol = oVal ? "O" : "P";
+
+          const check = validateHandicap(rawValue);
+          if (!check.ok) return;
+
+          const match = findBestUserMatch(sheetName);
+          if (!match) { noMatch.push(sheetName); return; }
+
+          const user = match.user;
+          const record = getEventRecord(user.uid);
+          const currentHandicap = record.handicap;
+          const newHandicap = check.value;
+
+          if (asString(currentHandicap) === asString(newHandicap)) return; // nothing to update
+
+          socialHcMatches.push({
+            sheetName, uid: user.uid, displayName: user.displayName,
+            handicap: newHandicap,
+            currentHandicap,
+            sourceCol,
+            score: match.score,
+            skip: false,
+          });
+        });
+
+        renderSocialHcPreview(noMatch);
+        socialHcSetStatus(
+          `${socialHcMatches.length} update${socialHcMatches.length !== 1 ? "s" : ""} found · ${noMatch.length} unmatched`,
+          socialHcMatches.length > 0 ? "success" : "warn"
+        );
+        if (socialHcMatches.length > 0) {
+          applyBtn.classList.remove("hidden");
+        }
+      } catch (err) {
+        console.error(err);
+        socialHcSetStatus("Fetch failed: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="download-cloud" style="width:13px;height:13px;display:inline;margin-right:5px;"></i>Fetch &amp; Preview';
+        lucide.createIcons({ nodes: [btn] });
+      }
+    }
+
+    function renderSocialHcPreview(noMatch = []) {
+      const preview = $("#socialHcSyncPreview");
+      const tbody   = $("#socialHcTableBody");
+      const noMatchDiv  = $("#socialHcNoMatch");
+      const noMatchList = $("#socialHcNoMatchList");
+
+      if (socialHcMatches.length === 0 && noMatch.length === 0) {
+        preview.classList.add("hidden");
+        noMatchDiv.classList.add("hidden");
+        return;
+      }
+
+      if (socialHcMatches.length > 0) {
+        preview.classList.remove("hidden");
+        tbody.innerHTML = socialHcMatches.map((m, i) => {
+          const skipClass = m.skip ? "opacity-40 line-through" : "";
+          const was = (m.currentHandicap !== "" && m.currentHandicap != null)
+            ? escapeHtml(asString(m.currentHandicap))
+            : '<span class="text-slate-600">—</span>';
+
+          return `
+            <tr class="hover:bg-s2/40 transition ${m.skip ? 'opacity-40' : ''}">
+              <td class="px-3 py-2.5 text-sm text-slate-300 ${skipClass}">${escapeHtml(m.sheetName)}</td>
+              <td class="px-3 py-2.5">
+                <span class="text-sm font-medium text-white ${skipClass}">${escapeHtml(m.displayName)}</span>
+                <span class="ml-1 text-[10px] text-slate-600">(${m.score}%)</span>
+              </td>
+              <td class="px-3 py-2.5 text-center text-xs font-mono">
+                <span class="${skipClass}">${was}<span class="text-slate-600 mx-0.5">→</span><span class="text-emerald-400">${escapeHtml(asString(m.handicap))}</span></span>
+              </td>
+              <td class="px-3 py-2.5 text-center text-[11px] text-slate-500">${m.sourceCol}</td>
+              <td class="px-3 py-2.5 text-center">
+                <button type="button" class="text-[10px] px-2 py-1 rounded-md border transition ${m.skip ? 'border-brd text-slate-500 hover:text-slate-300 hover:bg-s3' : 'border-red-500/20 text-red-400 hover:bg-red-500/10'}" data-social-hc-toggle="${i}">
+                  ${m.skip ? "Include" : "Skip"}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+        lucide.createIcons();
+      } else {
+        preview.classList.add("hidden");
+      }
+
+      if (noMatch.length > 0) {
+        noMatchDiv.classList.remove("hidden");
+        noMatchList.innerHTML = noMatch.map(n =>
+          `<span class="inline-flex px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">${escapeHtml(n)}</span>`
+        ).join("");
+      } else {
+        noMatchDiv.classList.add("hidden");
+      }
+    }
+
+    async function applySocialHc() {
+      const toApply = socialHcMatches.filter(m => !m.skip);
+      if (toApply.length === 0) { socialHcSetStatus("Nothing to apply.", "warn"); return; }
+
+      const applyBtn = $("#socialHcApplyBtn");
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Applying…";
+      socialHcSetStatus("Saving…");
+
+      try {
+        const writes = [];
+
+        for (const m of toApply) {
+          const user = users.find(u => u.uid === m.uid);
+          if (!user) continue;
+
+          const record = getEventRecord(m.uid);
+          record.handicap = m.handicap;
+          eventPlayers.set(m.uid, record);
+
+          writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", m.uid), { handicap: m.handicap, updatedAt: serverTimestamp() }, { merge: true }));
+        }
+
+        await Promise.all(writes);
+        persistEventPlayersCache(currentEventId);
+        filterAndRender();
+        renderTeeSheet();
+
+        socialHcSetStatus(`Applied ${toApply.length} update${toApply.length !== 1 ? "s" : ""} successfully.`, "success");
+        showToast(`Social handicap sync: ${toApply.length} players updated`, "success");
+        applyBtn.classList.add("hidden");
+        socialHcMatches = [];
+        renderSocialHcPreview([]);
+      } catch (err) {
+        console.error(err);
+        socialHcSetStatus("Apply failed: " + err.message, "error");
+        showToast("Social handicap sync failed", "error");
+      } finally {
+        applyBtn.disabled = false;
+        applyBtn.textContent = "Apply Matches";
+      }
+    }
+
+    // Social handicap sync button listeners
+    $("#socialHcSyncBtn") && $("#socialHcSyncBtn").addEventListener("click", runSocialHcSync);
+    $("#socialHcApplyBtn") && $("#socialHcApplyBtn").addEventListener("click", applySocialHc);
+
+    // Toggle skip on preview rows (delegated)
+    document.addEventListener("click", e => {
+      const btn = e.target.closest("[data-social-hc-toggle]");
+      if (!btn) return;
+      const i = Number(btn.dataset.socialHcToggle);
+      if (socialHcMatches[i]) {
+        socialHcMatches[i].skip = !socialHcMatches[i].skip;
+        renderSocialHcPreview([]); // re-render without re-fetching no-match list
       }
     });
 
