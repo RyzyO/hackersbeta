@@ -572,37 +572,68 @@
     /* ── Avatar(s) in drawer header ───────────────────── */
     #sun-sc-avatars {
       display: flex;
+      gap: 8px;
       flex-shrink: 0;
     }
-    #sun-sc-avatars img {
+    .sun-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+    #sun-sc-avatars .sun-avatar-wrap img {
       width: 56px; height: 56px;
       border-radius: 9999px;
       object-fit: cover;
-      flex-shrink: 0;
       border: 2px solid rgba(56,189,248,0.4);
       box-shadow: 0 4px 14px rgba(2,6,23,0.5);
       background: #0f172a;
+      display: block;
     }
-    /* When two avatars are shown, overlap them slightly */
-    #sun-sc-avatars img + img {
-      margin-left: -18px;
+    .sun-avatar-initials {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 2px;
+      border-radius: 9999px;
+      background: #1e293b;
+      border: 1.5px solid rgba(15,23,42,0.95);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* ── Small avatar(s) in leaderboard rows ──────────── */
     .row-avatar-group {
       display: flex;
+      gap: 4px;
       flex-shrink: 0;
     }
-    .row-avatar {
+    .row-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+    .row-avatar-wrap .row-avatar {
       width: 28px; height: 28px;
       border-radius: 9999px;
       object-fit: cover;
-      flex-shrink: 0;
       border: 1px solid rgba(56,189,248,0.25);
       background: #0f172a;
+      display: block;
     }
-    .row-avatar-group .row-avatar + .row-avatar {
-      margin-left: -10px;
+    .row-avatar-wrap .sun-avatar-initials {
+      min-width: 12px;
+      height: 12px;
+      font-size: 6px;
+      bottom: -1px;
+      right: -1px;
+      border-width: 1px;
     }
 
     /* ── Share button in drawer ──────────────────────── */
@@ -1474,6 +1505,13 @@
       </div>`;
     }
 
+    function initials(name) {
+      const words = String(name).trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return '';
+      if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+
     function openScDrawer(playerName, stats) {
       _currentDrawerPlayer = playerName;
       const displayName = playerName.replace(/-/g, ' & ');
@@ -1492,7 +1530,11 @@
             })
             .filter(m => m.url);
           if (urls.length) {
-            avatarGroupEl.innerHTML = urls.map(m => `<img src="${m.url}" alt="${m.name}">`).join('');
+            avatarGroupEl.innerHTML = urls.map(m => `
+              <span class="sun-avatar-wrap">
+                <img src="${m.url}" alt="${m.name}">
+                <span class="sun-avatar-initials">${initials(m.name)}</span>
+              </span>`).join('');
             avatarGroupEl.classList.remove('hidden');
           }
         });
@@ -1793,7 +1835,11 @@
             .filter(m => m.url);
           if (!urls.length) return;
           el.querySelectorAll('.row-avatar-group').forEach(group => {
-            group.innerHTML = urls.map(m => `<img class="row-avatar" src="${m.url}" alt="${m.name}">`).join('');
+            group.innerHTML = urls.map(m => `
+              <span class="row-avatar-wrap">
+                <img class="row-avatar" src="${m.url}" alt="${m.name}">
+                <span class="sun-avatar-initials">${initials(m.name)}</span>
+              </span>`).join('');
             group.classList.remove('hidden');
           });
         });
