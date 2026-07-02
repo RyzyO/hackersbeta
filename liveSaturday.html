@@ -328,6 +328,80 @@
       letter-spacing: 0.04em;
     }
 
+    /* ── Hole flyover (inline) ────────────────────────── */
+    .hole-clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .hole-clickable:hover {
+      background-color: rgba(56, 189, 248, 0.25);
+    }
+    .sc-hole-detail {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .sc-hole-detail.hidden { display: none; }
+    .sc-hole-detail-video-wrap { background: #000; }
+    .sc-hole-detail-video-wrap video { width: 100%; aspect-ratio: 16/9; display: block; }
+    .sc-hole-detail-info { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .sc-hole-detail-title { display: flex; align-items: center; justify-content: space-between; }
+    .sc-hole-detail-title h4 { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+    .sc-hole-detail-close {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+      color: #fff; cursor: pointer;
+    }
+    .sc-hole-detail-badges {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 420px) {
+      .sc-hole-detail-badges { grid-template-columns: repeat(2, 1fr); }
+    }
+    .sc-hole-detail-badges .sc-hole-stat {
+      background: rgba(30,41,59,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 8px 8px 7px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .sc-hole-detail-badges .sc-hole-stat::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: var(--sc-tone, rgba(148,163,184,0.5));
+    }
+    .sc-hole-stat-label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.65);
+      margin-bottom: 4px;
+    }
+    .sc-hole-stat-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .sc-hole-stat-sub {
+      font-size: 10px;
+      color: rgba(148,163,184,0.5);
+      margin-top: 2px;
+    }
+    .sc-hole-stat-par { --sc-tone: rgba(56,189,248,0.8); }
+    .sc-hole-stat-par .sc-hole-stat-value { color: #38bdf8; }
+    .sc-hole-stat-score { --sc-tone: rgba(245,158,11,0.8); }
+    .sc-hole-detail-note { font-size: 13px; line-height: 1.5; color: rgba(226,232,240,0.85); }
+
     /* ── Scorecard drawer ─────────────────────────────── */
     #sat-sc-overlay {
       position: fixed; inset: 0;
@@ -375,6 +449,8 @@
       flex: 1; overflow-y: auto; padding: 20px 16px 32px;
       display: flex; flex-direction: column; gap: 16px;
     }
+    /* Children must not shrink to fit — let the body scroll instead. */
+    #sat-sc-body > * { flex-shrink: 0; }
     .sc-loading { display: flex; align-items: center; justify-content: center; height: 120px; color: rgba(148,163,184,0.7); font-size: 14px; }
     .sc-tbl-wrap { overflow-x: hidden; }
     .sc-tbl { width: 100%; border-collapse: collapse; color: #fff; font-size: 13px; }
@@ -1505,7 +1581,10 @@
       });
     }
 
+    let _scDetailSeq = 0;
+
     function buildScHtml(holePars, holeScores, holePts) {
+      const detailId = `sc-hole-detail-${++_scDetailSeq}`;
       const sum = (holes, map) => holes.reduce((s, h) => s + (map[h] || 0), 0);
       const strCls = (score, par) => {
         if (!score || !par) return '';
@@ -1515,10 +1594,10 @@
       const buildTable = (holes, label) => {
         const parSum = sum(holes, holePars), scrSum = sum(holes, holeScores), ptsSum = sum(holes, holePts);
         return `<div class="sc-tbl-wrap"><table class="sc-tbl">
-          <thead><tr><th class="row-lbl"></th>${holes.map(h => `<th>${h}</th>`).join('')}<th class="tot">${label}</th></tr></thead>
+          <thead><tr><th class="row-lbl"></th>${holes.map(h => `<th class="hole-clickable" onclick="showHoleDetail(${h}, ${holeScores[h] || 0}, ${holePars[h] || 0}, ${holePts[h] || 0}, '${detailId}')">${h}</th>`).join('')}<th class="tot">${label}</th></tr></thead>
           <tbody>
             <tr><td class="row-lbl">Par</td>${holes.map(h => `<td>${holePars[h] || ''}</td>`).join('')}<td class="tot">${parSum || ''}</td></tr>
-            <tr><td class="row-lbl">Score</td>${holes.map(h => `<td class="${strCls(holeScores[h], holePars[h])}">${holeScores[h] || ''}</td>`).join('')}<td class="tot">${scrSum || ''}</td></tr>
+            <tr><td class="row-lbl">Score</td>${holes.map(h => `<td class="hole-clickable ${strCls(holeScores[h], holePars[h])}" onclick="showHoleDetail(${h}, ${holeScores[h] || 0}, ${holePars[h] || 0}, ${holePts[h] || 0}, '${detailId}')">${holeScores[h] || ''}</td>`).join('')}<td class="tot">${scrSum || ''}</td></tr>
             <tr><td class="row-lbl">Pts</td>${holes.map(h => `<td>${holePts[h] || ''}</td>`).join('')}<td class="tot">${ptsSum || ''}</td></tr>
           </tbody>
         </table></div>`;
@@ -1530,7 +1609,103 @@
         <div class="sc-totals">
           <div class="sc-total-card"><span class="sc-total-label">Score</span><span class="sc-total-value">${totalScr}</span></div>
           <div class="sc-total-card"><span class="sc-total-label">Points</span><span class="sc-total-value">${totalPts}</span></div>
+        </div>
+        <div id="${detailId}" class="sc-hole-detail hidden"></div>`;
+    }
+
+    /****************************************************
+     * Hole flyover modal — click a hole in the scorecard
+     ****************************************************/
+    const holeVideoBase = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
+    const holeDetails = {
+      1: { par: 5, dist: 468, yards: 473, index1: 10, index2: 23, video: 'hole_1-1080p.mp4',
+        note: "The opening hole at Worrigee Links is a relatively short par 5 with little trouble and a good opportunity to start with a birdie. A straight drive to the right of the fairway bunkers will set up an approachable second shot. Like most holes at Worrigee Links, the best place to miss is short of the green for an easy chip to a long, flat, narrow putting surface. Avoid missing pin-high due to rough lies and little green to work with." },
+      2: { par: 3, dist: 202, yards: 210, index1: 1, index2: 26, video: 'hole_2-1080p.mp4',
+        note: "The second hole is a long par 3 and rated the hardest hole on the course for good reason. Avoid the water hazard down the left side. The ideal tee shot here, if you miss the green, is just short, which leaves an easy chip to an uphill sloping green. Par on this hole is always a great score." },
+      3: { par: 4, dist: 324, yards: 330, index1: 12, index2: 29, video: 'hole_3-1080p.mp4',
+        note: "The third hole is a slight dogleg left, a strong par 4. A good drive right of the fairway bunker will leave a shorter approach. Two bunkers sit left of the green, but otherwise a reasonably straightaway hole with a long, undulating green." },
+      4: { par: 4, dist: 279, yards: 292, index1: 16, index2: 32, video: 'hole_4-1080p-1.mp4' },
+      5: { par: 4, dist: 370, yards: 360, index1: 3, index2: 21, video: 'hole_5-1080p.mp4',
+        note: "The fifth is a long par 4 and the key here is a good straight drive. Avoid the out of bounds all down the left side and the cluster of trees down the right side. A mid-to-short iron second shot should find a large green with bunkers left and right." },
+      6: { par: 3, dist: 162, yards: 165, index1: 15, index2: 36, video: 'hole_6-1080p.mp4',
+        note: "The sixth hole is a tough par 3, with out of bounds to the left and right. Three bunkers surround a large green, one short left and two on the right. The tee shot can be deceiving. Most come up just short, which is desirable and leaves an easy chip." },
+      7: { par: 5, dist: 478, yards: 497, index1: 6, index2: 19, video: 'hole_7-1080p.mp4',
+        note: "Par 5, the seventh is the signature hole at Worrigee Links. The tee shot from the tee presents a spectacular view on this dogleg left hole with out of bounds all the way down the left side. Aim for the bunkers in the distance, where a nice straight drive over the water will set you up well for your second shot. Always keep left with your approach into a long, narrow green." },
+      8: { par: 3, dist: 157, yards: 160, index1: 8, index2: 31, video: 'hole_8-1080p.mp4',
+        note: "The par 3 eighth hole is guarded by greenside bunkers. If you miss the green, short is the most desirable position for an easy chip to a very large, narrow green. Avoid missing pin-high either side as you will have very little green to work with." },
+      9: { par: 4, dist: 346, yards: 350, index1: 4, index2: 20, video: 'hole_9-1080p.mp4',
+        note: "The par 4 ninth requires a layup short of the water hazard for the long hitters, 250 meters to the water from the tee. The water hazard continues up the right side, but otherwise a straightforward approach shot to an uphill sloping green with bunkers left and right." },
+      10: { par: 4, dist: 335, yards: 335, index1: 7, index2: 22, video: 'hole_10-1080p.mp4',
+        note: "The 10th hole is a dogleg right par 4. Aim for the pine trees on the left side with your tee shot, avoiding the right-hand fairway bunkers. This will leave you with a nice approach shot to a very long, narrow green with one bunker on the left side." },
+      11: { par: 5, dist: 444, yards: 444, index1: 11, index2: 30, video: 'hole_11-1080p.mp4',
+        note: "The par 5 11th hole presents itself as a very real birdie opportunity. With little trouble off the tee, the longer hitters will reach the green in two. Avoid missing the green right as you will face a tough downhill chip shot." },
+      12: { par: 3, dist: 185, yards: 185, index1: 2, index2: 27, video: 'hole_12-1080p.mp4',
+        note: "The 12th hole is a long par 3 with out of bounds all down the left side. There is a bunker short right and another long left. The best place to miss this green is just short for an easy chip shot to a long, narrow, undulating green." },
+      13: { par: 4, dist: 280, yards: 280, index1: 17, index2: 33, video: 'hole_13-1080p-1.mp4' },
+      14: { par: 3, dist: 175, yards: 175, index1: 5, index2: 25, video: 'hole_14-1080p.mp4',
+        note: "The 14th hole looks straightforward, but there is a water hazard lurking down the right side and out of bounds to the left. The ideal tee shot, if you miss the green, is just short, leaving a simple chip to a long flat green." },
+      15: { par: 4, dist: 242, yards: 242, index1: 18, index2: 34, video: 'hole_15-1080p.mp4',
+        note: "The short, powerful 15th hole is rated the easiest hole on the course. The long hitters will drive the green if they can fly the two well-positioned bunkers. Massive green and a good birdie opportunity." },
+      16: { par: 4, dist: 350, yards: 350, index1: 9, index2: 24, video: 'hole_16-1080p.mp4',
+        note: "The 16th is a long dogleg left, powerful hole. No real problems other than keeping your drive to the right of the fairway bunker, for a good approach shot into a big flat green with two bunkers to the left and one to the right." },
+      17: { par: 3, dist: 132, yards: 132, index1: 13, index2: 35, video: 'hole_17-1080p.mp4',
+        note: "The 17th hole is a short par 3 with a palm tree to the left and bunkers surrounding the green. Out of bounds right, but should be a relatively easy tee shot. The wind can be a factor with club selection." },
+      18: { par: 5, dist: 445, yards: 445, index1: 14, index2: 28, video: 'hole_18-1080p.mp4',
+        note: "The 18th is a good par 5 finishing hole. Not much trouble other than a few fairway bunkers on the left, but otherwise fine. The long, narrow green is best approached by landing just short for an easy chip and a great opportunity to finish your round well." }
+    };
+
+    function showHoleDetail(holeNumber, score, par, pts, detailId) {
+      const container = document.getElementById(detailId);
+      if (!container) return;
+      const hole = holeDetails[holeNumber];
+
+      const diff = score && par ? score - par : null;
+      const diffLabel = diff === null ? '' : diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`;
+      const scoreValue = score ? `${score}${diffLabel ? ` (${diffLabel})` : ''}` : '--';
+
+      const stat = (cls, label, value, sub) => `
+        <div class="sc-hole-stat ${cls}">
+          <span class="sc-hole-stat-label">${label}</span>
+          <span class="sc-hole-stat-value">${value}</span>
+          ${sub ? `<div class="sc-hole-stat-sub">${sub}</div>` : ''}
         </div>`;
+
+      const videoHtml = hole && hole.video
+        ? `<div class="sc-hole-detail-video-wrap">
+             <video controls autoplay muted playsinline>
+               <source src="${holeVideoBase + hole.video}" type="video/mp4">
+             </video>
+           </div>`
+        : '';
+
+      container.innerHTML = `
+        ${videoHtml}
+        <div class="sc-hole-detail-info">
+          <div class="sc-hole-detail-title">
+            <h4>Hole ${holeNumber}</h4>
+            <button type="button" class="sc-hole-detail-close" onclick="closeHoleDetail('${detailId}')">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="sc-hole-detail-badges">
+            ${stat('sc-hole-stat-par', 'Par', hole && hole.par ? hole.par : '-')}
+            ${stat('', 'Distance', hole && hole.dist ? `${hole.dist}m`: '--', hole && hole.yards ? `${hole.yards} yd` : '')}
+            ${stat('', 'Index', hole ? `${hole.index1 ?? '--'} / ${hole.index2 ?? '--'}` : '--')}
+            ${stat('sc-hole-stat-score', 'Score', scoreValue, score ? `${pts || 0} pts` : '')}
+          </div>
+          <p class="sc-hole-detail-note">${hole && hole.note ? hole.note : (hole && hole.video ? '' : 'Flyover coming soon.')}</p>
+        </div>`;
+
+      container.classList.remove('hidden');
+      if (window.lucide) window.lucide.createIcons();
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function closeHoleDetail(detailId) {
+      const container = document.getElementById(detailId);
+      if (!container) return;
+      container.classList.add('hidden');
+      container.innerHTML = '';
     }
 
     // ── Weather strip ─────────────────────────────────────
