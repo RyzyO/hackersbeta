@@ -343,9 +343,71 @@
       overflow: hidden;
     }
     .sc-hole-detail.hidden { display: none; }
-    .sc-hole-detail-video-wrap { background: #000; }
-    .sc-hole-detail-video-wrap video { width: 100%; aspect-ratio: 16/9; display: block; }
-    .sc-hole-detail-info { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Two-column on wider drawers: media beside details; stacked on mobile. */
+    .sc-hole-detail-inner { display: flex; flex-direction: column; }
+    @media (min-width: 600px) {
+      .sc-hole-detail-inner { flex-direction: row; align-items: stretch; }
+    }
+
+    /* Media panel — soft course-green matting so the map reads as "on the course". */
+    .sc-hole-media {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background:
+        radial-gradient(120% 85% at 50% 12%, rgba(34,120,78,0.55), rgba(11,32,21,0.92) 72%),
+        #0b1f16;
+    }
+    @media (min-width: 600px) {
+      .sc-hole-media {
+        flex: 0 0 44%;
+        max-width: 300px;
+        border-right: 1px solid rgba(255,255,255,0.08);
+      }
+    }
+
+    /* Hole map presented as a crisp yardage-book paper card. */
+    .sc-hole-map {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.35);
+    }
+    @media (min-width: 600px) { .sc-hole-map { max-height: 460px; } }
+
+    /* Flyover shares the media panel — swapped in via the layer toggle. */
+    .sc-hole-video { display: none; width: 100%; }
+    .sc-hole-video video {
+      width: 100%; aspect-ratio: 16/9; display: block;
+      border-radius: 10px; background: #000;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.5);
+    }
+    .sc-hole-media.show-video .sc-hole-map { display: none; }
+    .sc-hole-media.show-video .sc-hole-video { display: block; }
+
+    /* Map / Flyover layer toggle — a floating chip, like a map app's layer switch. */
+    .sc-hole-layer-toggle {
+      position: absolute;
+      top: 12px; right: 12px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(15,23,42,0.82);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      transition: background .15s, border-color .15s;
+    }
+    .sc-hole-layer-toggle:hover { background: rgba(56,189,248,0.25); border-color: rgba(56,189,248,0.5); }
+
+    .sc-hole-detail-info { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
     .sc-hole-detail-title { display: flex; align-items: center; justify-content: space-between; }
     .sc-hole-detail-title h4 { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
     .sc-hole-detail-close {
@@ -356,11 +418,8 @@
     }
     .sc-hole-detail-badges {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
       gap: 8px;
-    }
-    @media (max-width: 420px) {
-      .sc-hole-detail-badges { grid-template-columns: repeat(2, 1fr); }
     }
     .sc-hole-detail-badges .sc-hole-stat {
       background: rgba(30,41,59,0.7);
@@ -1628,7 +1687,7 @@
      ****************************************************/
     const holeVideoBase = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
     const holeDetails = {
-      1: { par: 5, dist: 468, yards: 473, index1: 10, index2: 23, video: 'hole_1-1080p.mp4',
+      1: { par: 5, dist: 468, yards: 473, index1: 10, index2: 23, video: 'hole_1-1080p.mp4', diagram: 'assets/images/holes/1.png',
         note: "The opening hole at Worrigee Links is a relatively short par 5 with little trouble and a good opportunity to start with a birdie. A straight drive to the right of the fairway bunkers will set up an approachable second shot. Like most holes at Worrigee Links, the best place to miss is short of the green for an easy chip to a long, flat, narrow putting surface. Avoid missing pin-high due to rough lies and little green to work with." },
       2: { par: 3, dist: 202, yards: 210, index1: 1, index2: 26, video: 'hole_2-1080p.mp4',
         note: "The second hole is a long par 3 and rated the hardest hole on the course for good reason. Avoid the water hazard down the left side. The ideal tee shot here, if you miss the green, is just short, which leaves an easy chip to an uphill sloping green. Par on this hole is always a great score." },
@@ -1680,34 +1739,71 @@
           ${sub ? `<div class="sc-hole-stat-sub">${sub}</div>` : ''}
         </div>`;
 
-      const videoHtml = hole && hole.video
-        ? `<div class="sc-hole-detail-video-wrap">
-             <video controls autoplay muted playsinline>
+      const hasVideo = !!(hole && hole.video);
+      const hasDiagram = !!(hole && hole.diagram);
+
+      // The map is the default hero (instant, glanceable). The flyover is swapped in
+      // via a floating layer toggle — no persistent tab bar competing with the content.
+      let mediaHtml = '';
+      if (hasVideo || hasDiagram) {
+        const startWithVideo = hasVideo && !hasDiagram;
+        const mapImg = hasDiagram
+          ? `<img class="sc-hole-map" src="${hole.diagram}" alt="Hole ${holeNumber} course map">`
+          : '';
+        const videoEl = hasVideo
+          ? `<div class="sc-hole-video"><video controls muted playsinline preload="metadata">
                <source src="${holeVideoBase + hole.video}" type="video/mp4">
-             </video>
-           </div>`
-        : '';
+             </video></div>`
+          : '';
+        const toggle = (hasVideo && hasDiagram)
+          ? `<button type="button" class="sc-hole-layer-toggle">
+               <i data-lucide="play" class="w-3.5 h-3.5"></i> Flyover
+             </button>`
+          : '';
+        mediaHtml = `<div class="sc-hole-media${startWithVideo ? ' show-video' : ''}">${mapImg}${videoEl}${toggle}</div>`;
+      }
 
       container.innerHTML = `
-        ${videoHtml}
-        <div class="sc-hole-detail-info">
-          <div class="sc-hole-detail-title">
-            <h4>Hole ${holeNumber}</h4>
-            <button type="button" class="sc-hole-detail-close" onclick="closeHoleDetail('${detailId}')">
-              <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
+        <div class="sc-hole-detail-inner">
+          ${mediaHtml}
+          <div class="sc-hole-detail-info">
+            <div class="sc-hole-detail-title">
+              <h4>Hole ${holeNumber}</h4>
+              <button type="button" class="sc-hole-detail-close" onclick="closeHoleDetail('${detailId}')">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="sc-hole-detail-badges">
+              ${stat('sc-hole-stat-par', 'Par', hole && hole.par ? hole.par : '-')}
+              ${stat('', 'Distance', hole && hole.dist ? `${hole.dist}m`: '--', hole && hole.yards ? `${hole.yards} yd` : '')}
+              ${stat('', 'Index', hole ? `${hole.index1 ?? '--'} / ${hole.index2 ?? '--'}` : '--')}
+              ${stat('sc-hole-stat-score', 'Score', scoreValue, score ? `${pts || 0} pts` : '')}
+            </div>
+            <p class="sc-hole-detail-note">${hole && hole.note ? hole.note : (hasVideo || hasDiagram ? '' : 'Flyover coming soon.')}</p>
           </div>
-          <div class="sc-hole-detail-badges">
-            ${stat('sc-hole-stat-par', 'Par', hole && hole.par ? hole.par : '-')}
-            ${stat('', 'Distance', hole && hole.dist ? `${hole.dist}m`: '--', hole && hole.yards ? `${hole.yards} yd` : '')}
-            ${stat('', 'Index', hole ? `${hole.index1 ?? '--'} / ${hole.index2 ?? '--'}` : '--')}
-            ${stat('sc-hole-stat-score', 'Score', scoreValue, score ? `${pts || 0} pts` : '')}
-          </div>
-          <p class="sc-hole-detail-note">${hole && hole.note ? hole.note : (hole && hole.video ? '' : 'Flyover coming soon.')}</p>
         </div>`;
 
       container.classList.remove('hidden');
       if (window.lucide) window.lucide.createIcons();
+
+      // Layer toggle: swap map ↔ flyover in place, pausing the video when it's hidden.
+      const toggleBtn = container.querySelector('.sc-hole-layer-toggle');
+      if (toggleBtn) {
+        const media = container.querySelector('.sc-hole-media');
+        const video = media.querySelector('video');
+        toggleBtn.addEventListener('click', () => {
+          const showingVideo = media.classList.toggle('show-video');
+          if (showingVideo) {
+            video && video.play().catch(() => {});
+            toggleBtn.innerHTML = '<i data-lucide="map" class="w-3.5 h-3.5"></i> Map';
+          } else {
+            video && video.pause();
+            toggleBtn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5"></i> Flyover';
+          }
+          if (window.lucide) window.lucide.createIcons();
+        });
+      }
+
       container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
