@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
@@ -48,20 +47,10 @@
   </script>
 
   <style>
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
     /* .glass now lives in assets/css/site-nav.css */
 
@@ -70,6 +59,582 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── Skeleton loader ─────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position:  600px 0; }
+    }
+    .skeleton-row {
+      height: 52px;
+      border-radius: 10px;
+      background: linear-gradient(90deg,
+        rgba(30,41,59,0.6) 25%,
+        rgba(51,65,85,0.6) 50%,
+        rgba(30,41,59,0.6) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      margin-bottom: 8px;
+    }
+
+    /* ── Rank badges ─────────────────────────────────── */
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 24px;
+      padding: 0 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .rank-1    { background: linear-gradient(135deg,#b45309,#f59e0b); color: #fff; }
+    .rank-2    { background: linear-gradient(135deg,#475569,#94a3b8); color: #fff; }
+    .rank-3    { background: linear-gradient(135deg,#92400e,#d97706); color: #fff; }
+    .rank-tie  { background: rgba(56,189,248,0.15); color: #38bdf8; }
+    .rank-norm { background: rgba(255,255,255,0.07); color: rgba(148,163,184,0.9); }
+
+    /* ── Leader row highlight ────────────────────────── */
+    #data-table tbody tr.leader-row td:first-child {
+      border-left: 3px solid #f59e0b;
+    }
+    #data-table tbody tr.leader-row .player-name { font-size: 15px; font-weight: 800; }
+
+    /* ── Player name cell ────────────────────────────── */
+    .player-name-cell { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+    .player-name { font-size: 14px; font-weight: 600; color: #fff; }
+    .player-hcp  {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: rgba(148,163,184,0.7);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      padding: 1px 5px;
+      width: fit-content;
+    }
+
+    /* ── To-par badge ─────────────────────────────────── */
+    .topar-under { color: #22c55e; font-weight: 800; }
+    .topar-over  { color: #ef4444; font-weight: 800; }
+    .topar-even  { color: rgba(148,163,184,0.8); font-weight: 700; }
+
+    /* ── Cut line ────────────────────────────────────── */
+    .cut-line-row td {
+      padding: 0 !important;
+      border: none !important;
+      background: none !important;
+    }
+    .cut-line-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+    }
+    .cut-line-inner::before, .cut-line-inner::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(239,68,68,0.4);
+    }
+    .cut-line-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(239,68,68,0.7);
+      white-space: nowrap;
+    }
+
+    /* ── Error state ─────────────────────────────────── */
+    #error-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(148,163,184,0.7);
+    }
+    #error-state .error-icon { font-size: 32px; margin-bottom: 12px; }
+    #error-state p { font-size: 14px; margin-bottom: 16px; }
+    #error-retry {
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Unified control buttons ─────────────────────── */
+    .ctrl-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 34px;
+      min-width: 34px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(148,163,184,0.85);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s, color .15s;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    #compare-toggle.active { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #c084fc; }
+
+    /* ── Movement indicators ─────────────────────────── */
+    .mv-up   { font-size: 10px; font-weight: 800; color: #22c55e; white-space: nowrap; }
+    .mv-down { font-size: 10px; font-weight: 800; color: #ef4444; white-space: nowrap; }
+
+    /* ── Thru finished ───────────────────────────────── */
+    .thru-finished {
+      color: #22c55e;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* ── Auto-refresh countdown ──────────────────────── */
+    .refresh-countdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(148,163,184,0.6);
+      white-space: nowrap;
+      transition: color .3s;
+    }
+    .refresh-countdown.pulsing {
+      color: #38bdf8;
+      border-color: rgba(56,189,248,0.3);
+    }
+    .refresh-countdown svg { width: 11px; height: 11px; }
+
+    /* ── Weather strip ───────────────────────────────── */
+    #weather-strip {
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: rgba(148,163,184,0.9);
+      min-height: 42px;
+    }
+    .wx-icon { font-size: 20px; line-height: 1; }
+    .wx-temp { font-size: 20px; font-weight: 800; color: #fff; }
+    .wx-feels { font-size: 11px; color: rgba(148,163,184,0.6); }
+    .wx-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); }
+    .wx-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .wx-stat-val { font-weight: 700; color: #fff; font-size: 13px; }
+    .wx-stat-lbl { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(148,163,184,0.5); }
+    .wx-shimmer {
+      height: 20px; width: 200px; border-radius: 6px;
+      background: linear-gradient(90deg,rgba(30,41,59,.6) 25%,rgba(51,65,85,.6) 50%,rgba(30,41,59,.6) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
+    /* ── Tee time badge ───────────────────────────────── */
+    .tee-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(56,189,248,0.12);
+      border: 1px solid rgba(56,189,248,0.25);
+      color: #38bdf8;
+      white-space: nowrap;
+    }
+    .tee-badge-mobile {
+      font-size: 9px; font-weight: 700; color: #38bdf8;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Hole flyover (inline) ────────────────────────── */
+    .hole-clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .hole-clickable:hover {
+      background-color: rgba(56, 189, 248, 0.25);
+    }
+    .sc-hole-detail {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .sc-hole-detail.hidden { display: none; }
+    .sc-hole-detail-video-wrap { background: #000; }
+    .sc-hole-detail-video-wrap video { width: 100%; aspect-ratio: 16/9; display: block; }
+    .sc-hole-detail-info { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .sc-hole-detail-title { display: flex; align-items: center; justify-content: space-between; }
+    .sc-hole-detail-title h4 { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+    .sc-hole-detail-close {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+      color: #fff; cursor: pointer;
+    }
+    .sc-hole-detail-badges {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 420px) {
+      .sc-hole-detail-badges { grid-template-columns: repeat(2, 1fr); }
+    }
+    .sc-hole-detail-badges .sc-hole-stat {
+      background: rgba(30,41,59,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 8px 8px 7px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .sc-hole-detail-badges .sc-hole-stat::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: var(--sc-tone, rgba(148,163,184,0.5));
+    }
+    .sc-hole-stat-label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.65);
+      margin-bottom: 4px;
+    }
+    .sc-hole-stat-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .sc-hole-stat-sub {
+      font-size: 10px;
+      color: rgba(148,163,184,0.5);
+      margin-top: 2px;
+    }
+    .sc-hole-stat-par { --sc-tone: rgba(56,189,248,0.8); }
+    .sc-hole-stat-par .sc-hole-stat-value { color: #38bdf8; }
+    .sc-hole-stat-score { --sc-tone: rgba(245,158,11,0.8); }
+    .sc-hole-detail-note { font-size: 13px; line-height: 1.5; color: rgba(226,232,240,0.85); }
+
+    /* ── Scorecard drawer ─────────────────────────────── */
+    #sun-sc-overlay {
+      position: fixed; inset: 0;
+      background: rgba(2,6,23,0.6);
+      z-index: 90;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    #sun-sc-overlay.open { opacity: 1; pointer-events: auto; }
+
+    #sun-sc-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(100vw, 720px);
+      z-index: 91;
+      background: #0f172a;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #sun-sc-drawer.open { transform: translateX(0); }
+    #sun-sc-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: rgba(15,23,42,0.98);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    #sun-sc-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+      color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    #sun-sc-back:hover { background: rgba(255,255,255,0.13); }
+    #sun-sc-name {
+      flex: 1; font-size: 15px; font-weight: 700; color: #fff;
+      overflow: hidden; text-overflow: ellipsis;
+      min-width: 0;
+    }
+    #sun-sc-name-mobile {
+      display: none;
+      font-size: 20px; font-weight: 800; color: #fff;
+    }
+    @media (max-width: 640px) {
+      #sun-sc-name { display: none; }
+      #sun-sc-name-mobile { display: block; }
+    }
+    #sun-sc-body {
+      flex: 1; overflow-y: auto; padding: 20px 16px 32px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    /* Children must not shrink to fit — let the body scroll instead. */
+    #sun-sc-body > * { flex-shrink: 0; }
+    .sc-loading { display: flex; align-items: center; justify-content: center; height: 120px; color: rgba(148,163,184,0.7); font-size: 14px; }
+    .sc-tbl-wrap { overflow-x: hidden; }
+    .sc-tbl { width: 100%; border-collapse: collapse; color: #fff; font-size: 13px; }
+    .sc-tbl thead tr { background: rgba(30,41,59,0.9); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+    .sc-tbl th, .sc-tbl td { padding: 9px 8px; text-align: center; border: 1px solid rgba(148,163,184,0.15); }
+    .sc-tbl .row-lbl { text-align: left; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(148,163,184,0.75); white-space: nowrap; min-width: 52px; }
+    .sc-tbl td.tot { font-weight: 700; background: rgba(30,41,59,0.6); }
+    .str-eagle  { background: #1d4ed8; color: #fff; font-weight: 700; }
+    .str-birdie { background: #add8e6; color: #0f172a; font-weight: 700; }
+    .str-par    { background: #fff; color: #0f172a; }
+    .str-bogey  { background: #f97316; color: #fff; }
+    .str-double { background: #ef4444; color: #fff; }
+    .sc-totals { display: grid; grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); gap: 10px; }
+    .sc-total-card { background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; text-align: center; }
+    .sc-total-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(148,163,184,0.8); display: block; margin-bottom: 4px; }
+    .sc-total-value { font-size: 18px; font-weight: 700; color: #fff; }
+    .sc-section-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.7); margin: 0 0 10px 0; }
+    @media (max-width: 520px) {
+      .sc-tbl .row-lbl { display: none; }
+      .sc-tbl { font-size: 11px; }
+      .sc-tbl th, .sc-tbl td { padding: 6px 4px; }
+    }
+
+    /* ── Compare mode ─────────────────────────────────── */
+    .compare-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(148,163,184,0.8); font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .compare-btn.active { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.5); color: #c084fc; }
+    tr.compare-selected { outline: 2px solid rgba(168,85,247,0.6); outline-offset: -2px; }
+    .leaderboard-card.compare-selected { border-color: rgba(168,85,247,0.6); }
+    #compare-bar {
+      position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: rgba(15,23,42,0.95); border: 1px solid rgba(168,85,247,0.4);
+      border-radius: 999px; padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      z-index: 80; box-shadow: 0 8px 30px rgba(2,6,23,0.5);
+      transition: transform .3s cubic-bezier(0.34,1.56,0.64,1);
+      white-space: nowrap;
+    }
+    #compare-bar.visible { transform: translateX(-50%) translateY(0); }
+    .compare-bar-names { font-size: 12px; color: rgba(148,163,184,0.9); }
+    .compare-bar-names strong { color: #fff; }
+    #compare-go {
+      padding: 6px 16px; border-radius: 999px;
+      background: linear-gradient(135deg,#7c3aed,#a855f7);
+      color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+      border: none;
+    }
+    #compare-clear {
+      padding: 4px 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(148,163,184,0.8); font-size: 11px; cursor: pointer;
+    }
+
+    /* ── Star / favourite ────────────────────────────── */
+    .star-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 2px 4px;
+      color: rgba(148,163,184,0.3);
+      transition: color .15s, transform .15s;
+      flex-shrink: 0;
+    }
+    .star-btn:hover { color: #f59e0b; transform: scale(1.2); }
+    .star-btn.starred { color: #f59e0b; }
+    .star-btn-card {
+      position: absolute; top: 8px; right: 8px;
+      background: none; border: none; cursor: pointer;
+      font-size: 15px; line-height: 1;
+      color: rgba(148,163,184,0.25);
+      transition: color .15s;
+    }
+    .star-btn-card.starred { color: #f59e0b; }
+    .leaderboard-card { position: relative; }
+
+    /* ── Handicap filter pills ───────────────────────── */
+    #hcp-pills {
+      display: flex; gap: 6px;
+      overflow-x: auto; padding-bottom: 2px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+    #hcp-pills::-webkit-scrollbar { display: none; }
+    .hcp-pill {
+      flex-shrink: 0;
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(148,163,184,0.8);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .hcp-pill:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .hcp-pill.active {
+      background: rgba(56,189,248,0.15);
+      border-color: rgba(56,189,248,0.4);
+      color: #38bdf8;
+    }
+    .hcp-pill.fav-pill.active {
+      background: rgba(245,158,11,0.15);
+      border-color: rgba(245,158,11,0.4);
+      color: #f59e0b;
+    }
+
+    /* ── Share toast ─────────────────────────────────── */
+    #share-toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(56,189,248,0.3);
+      color: #38bdf8; font-size: 12px; font-weight: 700;
+      padding: 8px 18px; border-radius: 999px;
+      z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+    }
+    #share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Player pulse (inside drawer) ───────────────── */
+    .player-pulse {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .pp-card {
+      background: rgba(30,41,59,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px 10px 8px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .pp-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: var(--pp-tone, rgba(56,189,248,0.8));
+    }
+    .pp-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.65);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .pp-value {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .pp-sub {
+      font-size: 10px;
+      color: rgba(148,163,184,0.5);
+      margin-top: 3px;
+    }
+
+    /* ── Avatar(s) in drawer header ───────────────────── */
+    #sun-sc-avatars {
+      display: flex;
+      flex-shrink: 0;
+    }
+    #sun-sc-avatars img {
+      width: 56px; height: 56px;
+      border-radius: 9999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid rgba(56,189,248,0.4);
+      box-shadow: 0 4px 14px rgba(2,6,23,0.5);
+      background: #0f172a;
+    }
+    /* When two avatars are shown, overlap them slightly */
+    #sun-sc-avatars img + img {
+      margin-left: -18px;
+    }
+
+    /* ── Small avatar(s) in leaderboard rows ──────────── */
+    .row-avatar-group {
+      display: flex;
+      flex-shrink: 0;
+    }
+    .row-avatar {
+      width: 28px; height: 28px;
+      border-radius: 9999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid rgba(56,189,248,0.25);
+      background: #0f172a;
+    }
+    .row-avatar-group .row-avatar + .row-avatar {
+      margin-left: -10px;
+    }
+
+    /* ── Share button in drawer ──────────────────────── */
+    #sun-sc-share {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(148,163,184,0.8); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background .15s; flex-shrink: 0;
+    }
+    #sun-sc-share:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    @media print {
+      nav, .bottom-nav, .pulse-drawer, .pulse-toggle, .pulse-overlay,
+      #pulse-overlay, #leaderboard-search, .print-btn,
+      button[aria-label="Refresh"], .mobile-leaderboard,
+      #compare-bar, #weather-strip, #hcp-pills, .star-btn, .star-btn-card { display: none !important; }
+      body { background: #fff; color: #000; padding: 0; }
+      .hero-gradient { background: none !important; padding: 8px 0 !important; }
+      .hero-gradient h1 { color: #000 !important; font-size: 22px !important; }
+      .hero-gradient p, .hero-gradient .glass { display: none !important; }
+      .glass-card { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+      .table-wrap { display: block !important; overflow: visible !important; }
+      #data-table { color: #000; border-collapse: collapse; font-size: 12px; }
+      #data-table th, #data-table td { border: 1px solid #ccc; padding: 6px 8px; }
+      #data-table thead tr { background: #f1f5f9 !important; }
+      #data-table tbody tr:nth-child(even) { background: #f8fafc !important; }
+      #data-table tbody tr:nth-child(odd) { background: #fff !important; }
+      .rank-badge { background: none !important; color: #000 !important; font-weight: 700; }
+      .player-hcp { background: none !important; border: none !important; color: #666 !important; }
+      .cut-line-label { color: #e11d48 !important; }
+      .cut-line-inner::before, .cut-line-inner::after { background: #e11d48 !important; }
     }
 
     .pulse-card {
@@ -165,6 +730,7 @@
         --pulse-bottom: calc(64px + env(safe-area-inset-bottom));
       }
     }
+
     .pulse-toggle {
       display: inline-flex;
       align-items: center;
@@ -229,18 +795,9 @@
     }
 
     @media (min-width: 768px) {
-      .pulse-toggle {
-        display: none;
-      }
-
-      .pulse-close {
-        display: none;
-      }
-
-      .pulse-overlay {
-        display: none;
-      }
-
+      .pulse-toggle { display: none; }
+      .pulse-close { display: none; }
+      .pulse-overlay { display: none; }
       .pulse-drawer {
         position: static;
         transform: none;
@@ -285,49 +842,51 @@
       gap: 6px;
     }
 
+    /* Mobile card top row: rank | name | nett */
     .leaderboard-row {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) 48px 56px;
-      gap: 10px;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
       align-items: center;
     }
-
-    .leaderboard-rank {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.9);
+    /* Sub-row: hcp | spacer | thru */
+    .leaderboard-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 36px; /* indent under name */
+      margin-top: 3px;
     }
 
     .leaderboard-name {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      word-break: break-word;
+      line-height: 1.2;
     }
 
     .leaderboard-mini {
       font-size: 11px;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.85);
+      color: rgba(148, 163, 184, 0.7);
       white-space: nowrap;
     }
 
-    .leaderboard-value {
-      font-size: 13px;
-      font-weight: 600;
+    .leaderboard-pts {
+      font-size: 16px;
+      font-weight: 800;
       color: #ffffff;
       white-space: nowrap;
       text-align: right;
+      min-width: 32px;
     }
 
     .leaderboard-mobile-head {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) 48px 56px;
-      gap: 10px;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
       align-items: center;
       padding: 6px 10px;
       margin-bottom: 6px;
@@ -368,16 +927,18 @@
         overflow-x: hidden;
       }
 
-      #data-table th,
-      #data-table td {
+      .column-e, .column-f {
         display: none;
       }
-      #data-table th:nth-child(1),
-      #data-table td:nth-child(1),
-      #data-table th:nth-child(2),
-      #data-table td:nth-child(2),
-      #data-table th:nth-child(5),
-      #data-table td:nth-child(5),
+      .column-c, .column-a, .column-b, .column-d, .column-g {
+        font-size: 0.8em;
+      }
+
+      #data-table th,
+      #data-table td {
+        padding: 8px 8px;
+        font-size: 12px;
+      }
 
       .table-wrap {
         display: none;
@@ -385,13 +946,6 @@
 
       .mobile-leaderboard {
         display: grid;
-      }
-      #data-table th:nth-child(6),
-      #data-table td:nth-child(6) {
-        display: table-cell;
-      }
-      .column-c, .column-a, .column-b, .column-d, .column-g {
-        font-size: 0.8em;
       }
     }
 
@@ -416,7 +970,6 @@
 <link rel="manifest" href="site.webmanifest">
 </head>
 <body class="bg-hackers-dark text-white font-sans antialiased pb-24">
-
   <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
   <div id="site-nav-root"></div>
   <script src="assets/js/site-nav.js"></script>
@@ -436,6 +989,11 @@
       </div>
     </div>
   </section>
+
+  <!-- Weather strip -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 relative z-10">
+    <div id="weather-strip"><div class="wx-shimmer"></div></div>
+  </div>
 
   <section class="py-10 md:py-14 -mt-8 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -486,30 +1044,93 @@
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <div>
             <h2 class="text-xl font-semibold">Leaderboard</h2>
-            <p class="text-sm text-gray-400">Search by player name or rank.</p>
+            <p class="text-sm text-gray-400">Search by team or player name.</p>
           </div>
-          <div class="flex flex-nowrap items-center gap-2">
-            <div class="relative flex-1 min-w-[180px]">
+          <div class="flex flex-col gap-2 w-full md:w-auto">
+            <!-- Search row -->
+            <div class="relative w-full md:w-56">
               <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-              <input id="leaderboard-search" type="text" placeholder="Search players" class="pl-9 pr-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" />
+              <input id="leaderboard-search" type="text" placeholder="Search players" class="w-full pl-9 pr-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" />
             </div>
-            <button class="inline-flex items-center justify-center rounded-full bg-white/5 border border-white/10 w-10 h-10 text-white" aria-label="Refresh" onclick="location.reload();">
-              <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
-            </button>
+            <!-- Button row -->
+            <div class="flex items-center gap-2">
+              <button class="ctrl-btn" onclick="window.print()">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+              </button>
+              <button id="compare-toggle" class="ctrl-btn" onclick="toggleCompareMode()" title="Compare two teams">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M12 20V4"/></svg>
+              </button>
+              <span id="refresh-countdown" class="ctrl-btn refresh-countdown" title="Refresh now" onclick="clearInterval(countdownInterval);loadData(true)" style="cursor:pointer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span id="countdown-val">60s</span>
+              </span>
+            </div>
           </div>
         </div>
-        <div class="table-wrap">
-          <table id="data-table" class="data-table">
+
+        <!-- Handicap filter pills -->
+        <div id="hcp-pills">
+          <button class="hcp-pill active" data-range="all">All</button>
+          <button class="hcp-pill fav-pill" data-range="fav">⭐ Favourites</button>
+          <button class="hcp-pill" data-range="0-9">HC 0–9</button>
+          <button class="hcp-pill" data-range="10-18">HC 10–18</button>
+          <button class="hcp-pill" data-range="19-27">HC 19–27</button>
+          <button class="hcp-pill" data-range="28+">HC 28+</button>
+        </div>
+
+        <!-- Skeleton loader -->
+        <div id="loading-skeleton">
+          <div class="skeleton-row"></div>
+          <div class="skeleton-row" style="opacity:.85"></div>
+          <div class="skeleton-row" style="opacity:.7"></div>
+          <div class="skeleton-row" style="opacity:.55"></div>
+          <div class="skeleton-row" style="opacity:.4"></div>
+          <div class="skeleton-row" style="opacity:.3"></div>
+        </div>
+
+        <!-- Error state -->
+        <div id="error-state" class="hidden">
+          <div class="error-icon">⛳</div>
+          <p>Couldn't load the leaderboard.<br>Check your connection and try again.</p>
+          <button id="error-retry" onclick="location.reload()">Try again</button>
+        </div>
+
+        <div class="table-wrap hidden" id="table-wrap-el">
+          <table id="data-table">
             <thead>
               <tr id="header-row"></tr>
             </thead>
             <tbody id="data-rows"></tbody>
           </table>
         </div>
-        <div id="mobile-cards" class="mobile-leaderboard"></div>
+        <div id="mobile-cards" class="mobile-leaderboard" style="display:none"></div>
       </div>
     </div>
   </section>
+
+  <!-- Scorecard drawer -->
+  <div id="sun-sc-overlay" onclick="closeScDrawer()"></div>
+  <div id="sun-sc-drawer">
+    <div id="sun-sc-header">
+      <button id="sun-sc-back" onclick="closeScDrawer()">← Back</button>
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <div id="sun-sc-avatars" class="hidden"></div>
+        <span id="sun-sc-name"></span>
+      </div>
+      <button id="sun-sc-share" onclick="sharePlayer()">🔗 Share</button>
+    </div>
+    <div id="sun-sc-body"></div>
+  </div>
+
+  <!-- Share toast -->
+  <div id="share-toast">🔗 Link copied!</div>
+
+  <!-- Compare bar -->
+  <div id="compare-bar">
+    <span class="compare-bar-names" id="compare-bar-names">Select a team</span>
+    <button id="compare-clear" onclick="clearCompare()">✕</button>
+    <button id="compare-go" onclick="runCompare()" style="display:none">Compare →</button>
+  </div>
 
   <div class="bottom-nav md:hidden">
     <div class="flex justify-around items-center h-16 pb-safe">
@@ -571,206 +1192,873 @@
 
   <div id="pulse-overlay" class="pulse-overlay"></div>
 
+  <!-- Firebase: tee times, favourites, avatars -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged }
+      from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, getDoc, getDocs, doc, collection, setDoc, arrayUnion, arrayRemove }
+      from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    function normalizeName(name) {
+      return (name || '').toString().toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    }
+    window.normalizePlayerName = normalizeName;
+
+    const app = initializeApp({
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      projectId: "hackers-cup",
+    });
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ── Tee sheet (Sunday shotgun groups) ──────────────────
+    async function loadTeeSheet() {
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const uidToName = {};
+        usersSnap.forEach(d => {
+          const n = d.data().displayName;
+          if (n) uidToName[d.id] = n.trim();
+        });
+        const evSnap = await getDoc(doc(db, 'eventYears', 'HC25'));
+        const sunGroups = evSnap.data()?.teeSheets?.sunday || [];
+        const teeMap = {};
+        sunGroups.forEach(g => {
+          (g.players || []).forEach(uid => {
+            const name = uidToName[uid];
+            if (name) teeMap[name.toLowerCase()] = { teeTime: g.teeTime || '', hole: g.hole || '' };
+          });
+        });
+        window._teemap = teeMap;
+      } catch (e) {
+        console.warn('Tee sheet load failed:', e);
+        window._teemap = {};
+      }
+    }
+
+    // ── Auth + favourites ─────────────────────────────────
+    window._authUser     = null;
+    window._sunFavs       = new Set();
+
+    window._toggleFav = async function(playerName) {
+      const user = window._authUser;
+      if (!user) {
+        showShareToast('Log in to save favourites');
+        return;
+      }
+      const isFav = window._sunFavs.has(playerName);
+      if (isFav) {
+        window._sunFavs.delete(playerName);
+        await setDoc(doc(db, 'users', user.uid), { sunFavourites: arrayRemove(playerName) }, { merge: true });
+      } else {
+        window._sunFavs.add(playerName);
+        await setDoc(doc(db, 'users', user.uid), { sunFavourites: arrayUnion(playerName) }, { merge: true });
+      }
+      // Refresh all star buttons for this player
+      document.querySelectorAll(`.star-btn[data-player="${CSS.escape(playerName)}"], .star-btn-card[data-player="${CSS.escape(playerName)}"]`)
+        .forEach(b => b.classList.toggle('starred', !isFav));
+    };
+
+    function showShareToast(msg) {
+      const t = document.getElementById('share-toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    onAuthStateChanged(auth, async user => {
+      window._authUser = user;
+      if (user) {
+        try {
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          const favs = snap.data()?.sunFavourites || [];
+          window._sunFavs = new Set(favs);
+        } catch { window._sunFavs = new Set(); }
+      } else {
+        window._sunFavs = new Set();
+      }
+      // Refresh any already-rendered star buttons
+      document.querySelectorAll('.star-btn, .star-btn-card').forEach(b => {
+        b.classList.toggle('starred', window._sunFavs.has(b.dataset.player));
+      });
+    });
+
+    loadTeeSheet();
+
+    window.avatarMapReady = (async () => {
+      const map = {};
+      try {
+        const snap = await getDocs(collection(db, 'attendeeProfiles'));
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data && data.avatarUrl) map[normalizeName(docSnap.id)] = data.avatarUrl;
+        });
+      } catch (e) {
+        console.warn('Avatar lookup failed:', e);
+      }
+      return map;
+    })();
+  </script>
+
   <script type="text/javascript">
-    // Use the Sunday sheet ID and GID from the old file
-    const sheetId = '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI';
-    const leaderboardGid = '1198498112'; // Sunday Ambrose sheet
+    const sheetId        = '13shk7MzhCOUCoIFy7OabZBI5X36TpYMr7c_LwEk22BI';
+    const leaderboardGid = '1198498112'; // Sunday Ambrose sheet — Rank, Team, Nett, Handicap, Thru, Par
+    const REFRESH_SEC    = 60;
 
     const leaderboardUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${leaderboardGid}`;
 
-    fetch(leaderboardUrl)
-      .then(response => response.text())
-      .then(leaderboardData => {
-        // Parse leaderboard JSON
-        const leaderboardJson = JSON.parse(leaderboardData.match(/google\.visualization\.Query\.setResponse\((.*)\);/)[1]);
-        const tableData = leaderboardJson.table.rows;
+    // Per-team scorecard sheets use the same hole ordering as scorecardSun.html
+    const SUN_SC = {
+      sheetId,
+      displayOrder: [1, 2, 3, 4, 5, 6, 7, 8, 24, 25, 9, 19, 20, 21, 17, 18, 10, 27],
+    };
+    SUN_SC.front = SUN_SC.displayOrder.slice(0, 9);
+    SUN_SC.back  = SUN_SC.displayOrder.slice(9);
 
-        // Set headers: use columns B to I (index 1 to 8), rename B to 'Rank'
-        const headers = leaderboardJson.table.cols.slice(1, 9).map((col, index) => {
-          if (index === 0) return 'Rank';
-          return col.label || 'Unknown';
+    const parseGviz = txt => JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
+
+    let prevRankMap  = {};
+    let countdownVal = REFRESH_SEC;
+    let countdownInterval = null;
+    let headersBuilt = false;
+    let searchListenerAttached = false;
+
+    // ── Handicap filter pills ─────────────────────────────
+    let hcpFilter = 'all'; // 'all' | 'fav' | '0-9' | '10-18' | '19-27' | '28+'
+
+    document.querySelectorAll('.hcp-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        hcpFilter = pill.dataset.range;
+        document.querySelectorAll('.hcp-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        applyFilters();
+      });
+    });
+
+    function hcpInRange(hcp, range) {
+      if (range === 'all') return true;
+      if (range === 'fav') return (window._sunFavs || new Set()).has(hcp); // hcp here is playerName
+      const n = parseFloat(hcp);
+      if (isNaN(n)) return false;
+      if (range === '0-9')   return n >= 0  && n <= 9;
+      if (range === '10-18') return n >= 10 && n <= 18;
+      if (range === '19-27') return n >= 19 && n <= 27;
+      if (range === '28+')   return n >= 28;
+      return true;
+    }
+
+    // Called after any filter/search change
+    function applyFilters() {
+      const q = (document.getElementById('leaderboard-search')?.value ?? '').toLowerCase().trim();
+      document.getElementById('data-rows')?.querySelectorAll('tr').forEach(r => {
+        if (r.classList.contains('cut-line-row')) return;
+        const name = r.dataset.player || '';
+        const hcp  = r.dataset.hcp  || '';
+        const matchSearch = !q || r.textContent.toLowerCase().includes(q);
+        const matchFilter = hcpFilter === 'fav'
+          ? (window._sunFavs || new Set()).has(name)
+          : hcpInRange(hcp, hcpFilter);
+        r.classList.toggle('hidden', !matchSearch || !matchFilter);
+      });
+      document.getElementById('mobile-cards')?.querySelectorAll('.leaderboard-card').forEach(c => {
+        const name = c.dataset.player || '';
+        const hcp  = c.dataset.hcp  || '';
+        const matchSearch = !q || c.textContent.toLowerCase().includes(q);
+        const matchFilter = hcpFilter === 'fav'
+          ? (window._sunFavs || new Set()).has(name)
+          : hcpInRange(hcp, hcpFilter);
+        c.classList.toggle('hidden', !matchSearch || !matchFilter);
+      });
+    }
+
+    // ── Share deep-link ───────────────────────────────────
+    let _currentDrawerPlayer = null;
+
+    function sharePlayer() {
+      const name = _currentDrawerPlayer;
+      if (!name) return;
+      const url = `${location.origin}${location.pathname}?player=${encodeURIComponent(name)}`;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      const t = document.getElementById('share-toast');
+      if (t) { t.textContent = '🔗 Link copied!'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+    }
+
+    // ── Compare mode ──────────────────────────────────────
+    let compareMode = false;
+    const compareSet = new Set(); // max 2 team names
+
+    function toggleCompareMode() {
+      compareMode = !compareMode;
+      document.getElementById('compare-toggle').classList.toggle('active', compareMode);
+      if (!compareMode) {
+        clearCompare();
+        document.getElementById('compare-bar').classList.remove('visible');
+      }
+    }
+
+    function clearCompare() {
+      compareSet.clear();
+      updateCompareBar();
+      document.querySelectorAll('.compare-selected').forEach(el => el.classList.remove('compare-selected'));
+    }
+
+    function updateCompareBar() {
+      const bar   = document.getElementById('compare-bar');
+      const names = document.getElementById('compare-bar-names');
+      const go    = document.getElementById('compare-go');
+      const arr   = [...compareSet];
+      if (arr.length === 0) {
+        bar.classList.remove('visible');
+        return;
+      }
+      bar.classList.add('visible');
+      names.innerHTML = arr.map(n => `<strong>${n}</strong>`).join(' <span style="opacity:.4">vs</span> ');
+      go.style.display = arr.length === 2 ? '' : 'none';
+    }
+
+    function toggleComparePlayer(name, tr, card) {
+      if (compareSet.has(name)) {
+        compareSet.delete(name);
+        tr?.classList.remove('compare-selected');
+        card?.classList.remove('compare-selected');
+      } else {
+        if (compareSet.size >= 2) return;
+        compareSet.add(name);
+        tr?.classList.add('compare-selected');
+        card?.classList.add('compare-selected');
+      }
+      updateCompareBar();
+    }
+
+    function runCompare() {
+      const [p1, p2] = [...compareSet];
+      openScDrawerCompare(p1, p2);
+    }
+
+    // ── Scorecard drawer ──────────────────────────────────
+
+    function buildPlayerPulseHtml(stats) {
+      if (!stats) return '';
+      const { rankNum, isTie, nett, hcp, thruRaw, par } = stats;
+      const rankLabel = isTie ? `T${rankNum}` : `#${rankNum}`;
+      const thruN = parseInt(thruRaw, 10) || 0;
+      const thruDisplay = !thruN ? '—' : thruN >= 18 ? 'F' : String(thruN);
+      const parNum = parseFloat(par);
+      const nettNum = parseFloat(nett);
+      let toParLabel = '—';
+      if (!isNaN(nettNum) && !isNaN(parNum)) {
+        const diff = nettNum - parNum;
+        toParLabel = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`;
+      }
+      return `<div class="player-pulse">
+        <div class="pp-card" style="--pp-tone:rgba(245,158,11,0.8)">
+          <span class="pp-label">Rank</span>
+          <span class="pp-value">${rankLabel}</span>
+        </div>
+        <div class="pp-card" style="--pp-tone:rgba(56,189,248,0.8)">
+          <span class="pp-label">Nett</span>
+          <span class="pp-value">${nett !== '' && nett != null ? nett : '—'}</span>
+          <div class="pp-sub">To par: ${toParLabel}</div>
+        </div>
+        <div class="pp-card" style="--pp-tone:rgba(16,185,129,0.8)">
+          <span class="pp-label">Thru</span>
+          <span class="pp-value">${thruDisplay}</span>
+        </div>
+        ${hcp !== '' ? `<div class="pp-card" style="--pp-tone:rgba(148,163,184,0.4)">
+          <span class="pp-label">Handicap</span>
+          <span class="pp-value">${hcp}</span>
+        </div>` : ''}
+      </div>`;
+    }
+
+    function openScDrawer(playerName, stats) {
+      _currentDrawerPlayer = playerName;
+      const displayName = playerName.replace(/-/g, ' & ');
+      document.getElementById('sun-sc-name').textContent = displayName;
+      const nameHtml = `<h3 id="sun-sc-name-mobile">${displayName}</h3>`;
+      document.getElementById('sun-sc-body').innerHTML = nameHtml + '<div class="sc-loading">Loading scorecard…</div>';
+      const avatarGroupEl = document.getElementById('sun-sc-avatars');
+      if (avatarGroupEl) { avatarGroupEl.classList.add('hidden'); avatarGroupEl.innerHTML = ''; }
+      if (window.avatarMapReady && avatarGroupEl) {
+        window.avatarMapReady.then(map => {
+          const members = playerName.split('-').map(p => p.trim()).filter(Boolean);
+          const urls = members
+            .map(name => {
+              const key = window.normalizePlayerName ? window.normalizePlayerName(name) : name.toLowerCase().trim();
+              return { name, url: map[key] };
+            })
+            .filter(m => m.url);
+          if (urls.length) {
+            avatarGroupEl.innerHTML = urls.map(m => `<img src="${m.url}" alt="${m.name}">`).join('');
+            avatarGroupEl.classList.remove('hidden');
+          }
         });
+      }
+      document.getElementById('sun-sc-drawer').classList.add('open');
+      document.getElementById('sun-sc-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      const pulseHtml = stats
+        ? `<p class="sc-section-title" style="margin-top:20px">Ryzy Performance Pulse</p>${buildPlayerPulseHtml(stats)}`
+        : '';
+      fetchScData(playerName).then(data => {
+        document.getElementById('sun-sc-body').innerHTML =
+          nameHtml + buildScHtml(data.holePars, data.holeScores) + pulseHtml;
+      }).catch(() => {
+        document.getElementById('sun-sc-body').innerHTML =
+          nameHtml + '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0 20px">No scorecard available.</p>' + pulseHtml;
+      });
+    }
 
-        const headerLabels = leaderboardJson.table.cols.map(col => (col && col.label ? col.label.toString().toLowerCase() : ''));
-        const sliceOffset = 1;
-        const displayedLabels = headerLabels.slice(sliceOffset, sliceOffset + 8);
-        const findDisplayedIndex = candidates => {
-          const lowerCandidates = candidates.map(c => c.toLowerCase());
-          return displayedLabels.findIndex(label => lowerCandidates.some(c => label.includes(c)));
-        };
+    function openScDrawerCompare(p1, p2) {
+      const compareDisplayName = `${p1.replace(/-/g, ' & ')} vs ${p2.replace(/-/g, ' & ')}`;
+      document.getElementById('sun-sc-name').textContent = compareDisplayName;
+      const nameHtml = `<h3 id="sun-sc-name-mobile">${compareDisplayName}</h3>`;
+      document.getElementById('sun-sc-body').innerHTML = nameHtml + '<div class="sc-loading">Loading scorecards…</div>';
+      document.getElementById('sun-sc-drawer').classList.add('open');
+      document.getElementById('sun-sc-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      Promise.all([fetchScData(p1), fetchScData(p2)]).then(([d1, d2]) => {
+        let html = `<p class="sc-section-title">${p1.replace(/-/g, ' & ')}</p>` + buildScHtml(d1.holePars, d1.holeScores);
+        html    += `<p class="sc-section-title" style="margin-top:20px">${p2.replace(/-/g, ' & ')}</p>` + buildScHtml(d2.holePars, d2.holeScores);
+        document.getElementById('sun-sc-body').innerHTML = nameHtml + html;
+      }).catch(() => {
+        document.getElementById('sun-sc-body').innerHTML = nameHtml + '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px">Failed to load scorecards.</p>';
+      });
+    }
 
-        const nettIdx = findDisplayedIndex(['nett', 'net', 'score']);
-        const handicapIdx = findDisplayedIndex(['handicap', 'hcp']);
-        const throughIdx = findDisplayedIndex(['through']);
-        const parIdx = findDisplayedIndex(['par']);
+    function closeScDrawer() {
+      document.getElementById('sun-sc-drawer').classList.remove('open');
+      document.getElementById('sun-sc-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
 
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeScDrawer(); });
+
+    // Per-team sheet — rows are in the same order as SUN_SC.displayOrder,
+    // score in column I (index 8), par in column F (index 5). No stableford points on Sunday.
+    function fetchScData(playerName) {
+      const url = `https://docs.google.com/spreadsheets/d/${SUN_SC.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+      return fetch(url).then(r => r.text()).then(txt => {
+        const json = parseGviz(txt);
+        const rows = json.table.rows || [];
+        const holePars = {}, holeScores = {};
+        SUN_SC.displayOrder.forEach((holeNumber, i) => {
+          const row = rows[i] && rows[i].c ? rows[i].c : [];
+          holeScores[holeNumber] = row[8] && row[8].v != null ? parseInt(row[8].v, 10) : 0;
+          holePars[holeNumber]   = row[5] && row[5].v != null ? parseInt(row[5].v, 10) : 0;
+        });
+        return { holePars, holeScores };
+      });
+    }
+
+    let _scDetailSeq = 0;
+
+    function buildScHtml(holePars, holeScores) {
+      const detailId = `sc-hole-detail-${++_scDetailSeq}`;
+      const sum = (holes, map) => holes.reduce((s, h) => s + (map[h] || 0), 0);
+      const strCls = (score, par) => {
+        if (!score || !par) return '';
+        const d = score - par;
+        return d <= -2 ? 'str-eagle' : d === -1 ? 'str-birdie' : d === 0 ? 'str-par' : d === 1 ? 'str-bogey' : 'str-double';
+      };
+      const buildTable = (holes, label) => {
+        const parSum = sum(holes, holePars), scrSum = sum(holes, holeScores);
+        return `<div class="sc-tbl-wrap"><table class="sc-tbl">
+          <thead><tr><th class="row-lbl"></th>${holes.map(h => `<th class="hole-clickable" onclick="showHoleDetail(${h}, ${holeScores[h] || 0}, ${holePars[h] || 0}, '${detailId}')">${h}</th>`).join('')}<th class="tot">${label}</th></tr></thead>
+          <tbody>
+            <tr><td class="row-lbl">Par</td>${holes.map(h => `<td>${holePars[h] || ''}</td>`).join('')}<td class="tot">${parSum || ''}</td></tr>
+            <tr><td class="row-lbl">Score</td>${holes.map(h => `<td class="hole-clickable ${strCls(holeScores[h], holePars[h])}" onclick="showHoleDetail(${h}, ${holeScores[h] || 0}, ${holePars[h] || 0}, '${detailId}')">${holeScores[h] || ''}</td>`).join('')}<td class="tot">${scrSum || ''}</td></tr>
+          </tbody>
+        </table></div>`;
+      };
+      const front = SUN_SC.front, back = SUN_SC.back;
+      const totalScr = sum([...front, ...back], holeScores);
+      const totalPar = sum([...front, ...back], holePars);
+      const toPar = totalScr && totalPar ? totalScr - totalPar : null;
+      const toParLabel = toPar === null ? '—' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : `${toPar}`;
+      return buildTable(front, 'Out') + buildTable(back, 'In') + `
+        <div class="sc-totals">
+          <div class="sc-total-card"><span class="sc-total-label">Score</span><span class="sc-total-value">${totalScr || ''}</span></div>
+          <div class="sc-total-card"><span class="sc-total-label">To Par</span><span class="sc-total-value">${toParLabel}</span></div>
+        </div>
+        <div id="${detailId}" class="sc-hole-detail hidden"></div>`;
+    }
+
+    /****************************************************
+     * Hole flyover — click a hole in the scorecard
+     ****************************************************/
+    const holeVideoBase = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
+    const holeDetails = {
+      1: { par: 5, dist: 468, yards: 473, index1: 10, index2: 23, video: 'hole_1-1080p.mp4',
+        note: "The opening hole at Worrigee Links is a relatively short par 5 with little trouble and a good opportunity to start with a birdie. A straight drive to the right of the fairway bunkers will set up an approachable second shot. Like most holes at Worrigee Links, the best place to miss is short of the green for an easy chip to a long, flat, narrow putting surface. Avoid missing pin-high due to rough lies and little green to work with." },
+      2: { par: 3, dist: 202, yards: 210, index1: 1, index2: 26, video: 'hole_2-1080p.mp4',
+        note: "The second hole is a long par 3 and rated the hardest hole on the course for good reason. Avoid the water hazard down the left side. The ideal tee shot here, if you miss the green, is just short, which leaves an easy chip to an uphill sloping green. Par on this hole is always a great score." },
+      3: { par: 4, dist: 324, yards: 330, index1: 12, index2: 29, video: 'hole_3-1080p.mp4',
+        note: "The third hole is a slight dogleg left, a strong par 4. A good drive right of the fairway bunker will leave a shorter approach. Two bunkers sit left of the green, but otherwise a reasonably straightaway hole with a long, undulating green." },
+      4: { par: 4, dist: 279, yards: 292, index1: 16, index2: 32, video: 'hole_4-1080p-1.mp4' },
+      5: { par: 4, dist: 370, yards: 360, index1: 3, index2: 21, video: 'hole_5-1080p.mp4',
+        note: "The fifth is a long par 4 and the key here is a good straight drive. Avoid the out of bounds all down the left side and the cluster of trees down the right side. A mid-to-short iron second shot should find a large green with bunkers left and right." },
+      6: { par: 3, dist: 162, yards: 165, index1: 15, index2: 36, video: 'hole_6-1080p.mp4',
+        note: "The sixth hole is a tough par 3, with out of bounds to the left and right. Three bunkers surround a large green, one short left and two on the right. The tee shot can be deceiving. Most come up just short, which is desirable and leaves an easy chip." },
+      7: { par: 5, dist: 478, yards: 497, index1: 6, index2: 19, video: 'hole_7-1080p.mp4',
+        note: "Par 5, the seventh is the signature hole at Worrigee Links. The tee shot from the tee presents a spectacular view on this dogleg left hole with out of bounds all the way down the left side. Aim for the bunkers in the distance, where a nice straight drive over the water will set you up well for your second shot. Always keep left with your approach into a long, narrow green." },
+      8: { par: 3, dist: 157, yards: 160, index1: 8, index2: 31, video: 'hole_8-1080p.mp4',
+        note: "The par 3 eighth hole is guarded by greenside bunkers. If you miss the green, short is the most desirable position for an easy chip to a very large, narrow green. Avoid missing pin-high either side as you will have very little green to work with." },
+      9: { par: 4, dist: 346, yards: 350, index1: 4, index2: 20, video: 'hole_9-1080p.mp4',
+        note: "The par 4 ninth requires a layup short of the water hazard for the long hitters, 250 meters to the water from the tee. The water hazard continues up the right side, but otherwise a straightforward approach shot to an uphill sloping green with bunkers left and right." },
+      10: { par: 4, dist: 335, yards: 335, index1: 7, index2: 22, video: 'hole_10-1080p.mp4',
+        note: "The 10th hole is a dogleg right par 4. Aim for the pine trees on the left side with your tee shot, avoiding the right-hand fairway bunkers. This will leave you with a nice approach shot to a very long, narrow green with one bunker on the left side." },
+      11: { par: 5, dist: 444, yards: 444, index1: 11, index2: 30, video: 'hole_11-1080p.mp4',
+        note: "The par 5 11th hole presents itself as a very real birdie opportunity. With little trouble off the tee, the longer hitters will reach the green in two. Avoid missing the green right as you will face a tough downhill chip shot." },
+      12: { par: 3, dist: 185, yards: 185, index1: 2, index2: 27, video: 'hole_12-1080p.mp4',
+        note: "The 12th hole is a long par 3 with out of bounds all down the left side. There is a bunker short right and another long left. The best place to miss this green is just short for an easy chip shot to a long, narrow, undulating green." },
+      13: { par: 4, dist: 280, yards: 280, index1: 17, index2: 33, video: 'hole_13-1080p-1.mp4' },
+      14: { par: 3, dist: 175, yards: 175, index1: 5, index2: 25, video: 'hole_14-1080p.mp4',
+        note: "The 14th hole looks straightforward, but there is a water hazard lurking down the right side and out of bounds to the left. The ideal tee shot, if you miss the green, is just short, leaving a simple chip to a long flat green." },
+      15: { par: 4, dist: 242, yards: 242, index1: 18, index2: 34, video: 'hole_15-1080p.mp4',
+        note: "The short, powerful 15th hole is rated the easiest hole on the course. The long hitters will drive the green if they can fly the two well-positioned bunkers. Massive green and a good birdie opportunity." },
+      16: { par: 4, dist: 350, yards: 350, index1: 9, index2: 24, video: 'hole_16-1080p.mp4',
+        note: "The 16th is a long dogleg left, powerful hole. No real problems other than keeping your drive to the right of the fairway bunker, for a good approach shot into a big flat green with two bunkers to the left and one to the right." },
+      17: { par: 3, dist: 132, yards: 132, index1: 13, index2: 35, video: 'hole_17-1080p.mp4',
+        note: "The 17th hole is a short par 3 with a palm tree to the left and bunkers surrounding the green. Out of bounds right, but should be a relatively easy tee shot. The wind can be a factor with club selection." },
+      18: { par: 5, dist: 445, yards: 445, index1: 14, index2: 28, video: 'hole_18-1080p.mp4',
+        note: "The 18th is a good par 5 finishing hole. Not much trouble other than a few fairway bunkers on the left, but otherwise fine. The long, narrow green is best approached by landing just short for an easy chip and a great opportunity to finish your round well." }
+    };
+
+    function showHoleDetail(holeNumber, score, par, detailId) {
+      const container = document.getElementById(detailId);
+      if (!container) return;
+      const hole = holeDetails[holeNumber];
+
+      const diff = score && par ? score - par : null;
+      const diffLabel = diff === null ? '' : diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`;
+      const scoreValue = score ? `${score}${diffLabel ? ` (${diffLabel})` : ''}` : '--';
+
+      const stat = (cls, label, value, sub) => `
+        <div class="sc-hole-stat ${cls}">
+          <span class="sc-hole-stat-label">${label}</span>
+          <span class="sc-hole-stat-value">${value}</span>
+          ${sub ? `<div class="sc-hole-stat-sub">${sub}</div>` : ''}
+        </div>`;
+
+      const videoHtml = hole && hole.video
+        ? `<div class="sc-hole-detail-video-wrap">
+             <video controls autoplay muted playsinline>
+               <source src="${holeVideoBase + hole.video}" type="video/mp4">
+             </video>
+           </div>`
+        : '';
+
+      container.innerHTML = `
+        ${videoHtml}
+        <div class="sc-hole-detail-info">
+          <div class="sc-hole-detail-title">
+            <h4>Hole ${holeNumber}</h4>
+            <button type="button" class="sc-hole-detail-close" onclick="closeHoleDetail('${detailId}')">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="sc-hole-detail-badges">
+            ${stat('sc-hole-stat-par', 'Par', hole && hole.par ? hole.par : '-')}
+            ${stat('', 'Distance', hole && hole.dist ? `${hole.dist}m`: '--', hole && hole.yards ? `${hole.yards} yd` : '')}
+            ${stat('', 'Index', hole ? `${hole.index1 ?? '--'} / ${hole.index2 ?? '--'}` : '--')}
+            ${stat('sc-hole-stat-score', 'Score', scoreValue)}
+          </div>
+          <p class="sc-hole-detail-note">${hole && hole.note ? hole.note : (hole && hole.video ? '' : 'Flyover coming soon.')}</p>
+        </div>`;
+
+      container.classList.remove('hidden');
+      if (window.lucide) window.lucide.createIcons();
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function closeHoleDetail(detailId) {
+      const container = document.getElementById(detailId);
+      if (!container) return;
+      container.classList.add('hidden');
+      container.innerHTML = '';
+    }
+
+    // ── Weather strip ─────────────────────────────────────
+
+    async function loadWeather() {
+      const strip = document.getElementById('weather-strip');
+      if (!strip) return;
+      try {
+        const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-34.878&longitude=150.744&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,uv_index&timezone=Australia%2FSydney');
+        const d = await r.json();
+        const c = d.current;
+        const code = c.weather_code;
+        const icon = wxIcon(code);
+        const desc = wxDesc(code);
+        strip.innerHTML = `
+          <span class="wx-icon">${icon}</span>
+          <div>
+            <span class="wx-temp">${Math.round(c.temperature_2m)}°</span>
+            <div class="wx-feels">Feels ${Math.round(c.apparent_temperature)}°</div>
+          </div>
+          <div class="wx-divider"></div>
+          <div style="font-size:12px;color:rgba(148,163,184,.8)">${desc}</div>
+          <div class="wx-divider"></div>
+          <div class="wx-stat"><span class="wx-stat-val">${Math.round(c.wind_speed_10m)} km/h</span><span class="wx-stat-lbl">Wind</span></div>
+          <div class="wx-stat"><span class="wx-stat-val">${c.uv_index?.toFixed(1) ?? '—'}</span><span class="wx-stat-lbl">UV</span></div>
+          <div style="flex:1"></div>
+          <div style="font-size:10px;color:rgba(148,163,184,.4);white-space:nowrap">Nowra, NSW</div>`;
+      } catch {
+        strip.style.display = 'none';
+      }
+    }
+
+    function wxIcon(code) {
+      if (code === 0) return '☀️';
+      if (code <= 3) return '⛅';
+      if (code <= 48) return '🌫️';
+      if (code <= 67) return '🌧️';
+      if (code <= 77) return '🌨️';
+      if (code <= 82) return '🌦️';
+      return '⛈️';
+    }
+    function wxDesc(code) {
+      if (code === 0) return 'Clear sky';
+      if (code === 1) return 'Mainly clear';
+      if (code === 2) return 'Partly cloudy';
+      if (code === 3) return 'Overcast';
+      if (code <= 48) return 'Foggy';
+      if (code <= 55) return 'Drizzle';
+      if (code <= 65) return 'Rainy';
+      if (code <= 77) return 'Snow';
+      if (code <= 82) return 'Showers';
+      return 'Thunderstorm';
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+
+    function rankBadgeHtml(rankNum, isTie) {
+      const label = isTie ? `T${rankNum}` : `${rankNum}`;
+      let cls = rankNum === 1 ? 'rank-1' : rankNum === 2 ? 'rank-2' : rankNum === 3 ? 'rank-3' : isTie ? 'rank-tie' : 'rank-norm';
+      return `<span class="rank-badge ${cls}">${label}</span>`;
+    }
+
+    function toParHtml(nett, par) {
+      const n = parseFloat(nett), p = parseFloat(par);
+      if (isNaN(n) || isNaN(p)) return '<span style="color:rgba(148,163,184,.3)">—</span>';
+      const diff = n - p;
+      if (diff === 0) return `<span class="topar-even">E</span>`;
+      if (diff < 0)   return `<span class="topar-under">${diff}</span>`;
+      return `<span class="topar-over">+${diff}</span>`;
+    }
+
+    function smartThru(thruRaw) {
+      const n = parseInt(thruRaw, 10);
+      if (!thruRaw || n === 0) return { desktop: '—', mobile: '—', done: false, notStarted: true };
+      if (n >= 18)             return { desktop: 'F',  mobile: 'F',  done: true,  notStarted: false };
+      return { desktop: String(n), mobile: `Hole ${n}`, done: false, notStarted: false };
+    }
+
+    function movementHtml(name, currentRank) {
+      const prev = prevRankMap[name];
+      if (prev == null || prev === currentRank) return '';
+      const diff = prev - currentRank;
+      return diff > 0 ? `<span class="mv-up">▲${diff}</span>` : `<span class="mv-down">▼${Math.abs(diff)}</span>`;
+    }
+
+    function getTeeInfo(name) {
+      const map = window._teemap || {};
+      // Team names are hyphen-joined player names — try each member.
+      const members = name.split('-').map(p => p.trim().toLowerCase()).filter(Boolean);
+      for (const key of members.length ? members : [name.toLowerCase()]) {
+        if (map[key]) return map[key];
+        for (const [k, v] of Object.entries(map)) {
+          if (key.includes(k) || k.includes(key)) return v;
+        }
+      }
+      return null;
+    }
+
+    // ── Avatar population ─────────────────────────────────
+
+    function applyAvatars() {
+      if (!window.avatarMapReady) return;
+      window.avatarMapReady.then(map => {
+        document.querySelectorAll('[data-player]').forEach(el => {
+          const members = el.dataset.player.split('-').map(p => p.trim()).filter(Boolean);
+          const urls = members
+            .map(name => {
+              const key = window.normalizePlayerName ? window.normalizePlayerName(name) : name.toLowerCase().trim();
+              return { name, url: map[key] };
+            })
+            .filter(m => m.url);
+          if (!urls.length) return;
+          el.querySelectorAll('.row-avatar-group').forEach(group => {
+            group.innerHTML = urls.map(m => `<img class="row-avatar" src="${m.url}" alt="${m.name}">`).join('');
+            group.classList.remove('hidden');
+          });
+        });
+      });
+    }
+
+    // ── Countdown ─────────────────────────────────────────
+
+    function updateCountdown() {
+      const el   = document.getElementById('countdown-val');
+      const wrap = document.getElementById('refresh-countdown');
+      if (!el) return;
+      el.textContent = `${countdownVal}s`;
+      if (countdownVal <= 10) wrap?.classList.add('pulsing');
+      else wrap?.classList.remove('pulsing');
+    }
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      countdownVal = REFRESH_SEC;
+      updateCountdown();
+      countdownInterval = setInterval(() => {
+        countdownVal--;
+        updateCountdown();
+        if (countdownVal <= 0) { clearInterval(countdownInterval); loadData(true); }
+      }, 1000);
+    }
+
+    function showError() {
+      document.getElementById('loading-skeleton').classList.add('hidden');
+      document.getElementById('error-state').classList.remove('hidden');
+    }
+
+    // ── Main render ───────────────────────────────────────
+    // The Sunday sheet's columns aren't fixed, so headers/values are located
+    // by label match (same approach as the previous liveSunday.html).
+    const parFallback = 72;
+
+    async function loadData(isRefresh = false) {
+      if (!isRefresh) {
+        document.getElementById('loading-skeleton').classList.remove('hidden');
+        document.getElementById('error-state').classList.add('hidden');
+      }
+
+      let lbData;
+      try {
+        lbData = await fetch(leaderboardUrl).then(r => r.text());
+      } catch (err) {
+        console.error('Fetch error:', err);
+        if (!isRefresh) showError();
+        startCountdown();
+        return;
+      }
+
+      const lbJson = parseGviz(lbData);
+
+      const headerLabels = lbJson.table.cols.map(col => (col && col.label ? col.label.toString().toLowerCase() : ''));
+      const sliceOffset = 1; // columns B..I
+      const displayedLabels = headerLabels.slice(sliceOffset, sliceOffset + 8);
+      const findDisplayedIndex = candidates => {
+        const lowerCandidates = candidates.map(c => c.toLowerCase());
+        return displayedLabels.findIndex(label => lowerCandidates.some(c => label.includes(c)));
+      };
+
+      const nettIdx     = findDisplayedIndex(['nett', 'net', 'score']);
+      const handicapIdx = findDisplayedIndex(['handicap', 'hcp']);
+      const throughIdx  = findDisplayedIndex(['through', 'thru']);
+      const parIdx      = findDisplayedIndex(['par']);
+
+      const rows = lbJson.table.rows.filter(r => r.c[2] && r.c[2].v);
+      rows.sort((a, b) => {
+        const ra = parseInt(a.c[1]?.v, 10) || 9999;
+        const rb = parseInt(b.c[1]?.v, 10) || 9999;
+        return ra - rb;
+      });
+
+      const rankCount = {};
+      rows.forEach(r => { const rv = parseInt(r.c[1]?.v, 10); rankCount[rv] = (rankCount[rv] || 0) + 1; });
+
+      if (!headersBuilt) {
         const headerRow = document.getElementById('header-row');
-        headers.forEach((header, index) => {
+        ['Rank','Team','Nett','Handicap','Thru','To Par'].forEach((h, i) => {
           const th = document.createElement('th');
-          th.textContent = header;
-          th.classList.add(`column-${String.fromCharCode(98 + index)}`);
+          th.textContent = h;
+          th.classList.add(`column-${String.fromCharCode(98 + i)}`);
           headerRow.appendChild(th);
         });
+        headersBuilt = true;
+      }
 
-        // Sort the table data by the 'Rank' column (index 1) in ascending order
-        tableData.sort((a, b) => {
-          const rankA = a.c[1] ? a.c[1].v : '';
-          const rankB = b.c[1] ? b.c[1].v : '';
-          const numA = parseInt(rankA, 10);
-          const numB = parseInt(rankB, 10);
+      const dataRows       = document.getElementById('data-rows');
+      const cardsContainer = document.getElementById('mobile-cards');
+      dataRows.innerHTML       = '';
+      cardsContainer.innerHTML = '';
 
-          if (!isNaN(numA) && !isNaN(numB)) {
-            return numA - numB;
-          } else if (!isNaN(numA)) {
-            return -1;
-          } else if (!isNaN(numB)) {
-            return 1;
-          } else {
-            return rankA.localeCompare(rankB);
+      let totalPlayers = 0, totalNett = 0, nettCount = 0, totalHandicap = 0, handicapCount = 0;
+      let underPar = 0, atPar = 0, overPar = 0, through18count = 0;
+      const newRankMap = {};
+
+      rows.forEach((row, idx) => {
+        const rankNum = parseInt(row.c[1]?.v, 10) || 0;
+        const rawName = row.c[2]?.v ?? `Team${idx+1}`;
+        const name    = rawName; // keep raw (hyphenated) for URLs / sheet lookups
+        const displayName = typeof rawName === 'string' ? rawName.replace(/-/g, ' & ') : rawName;
+
+        const nettVal     = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : '') : '';
+        const handicapVal = handicapIdx >= 0 ? (row.c[handicapIdx + sliceOffset] ? row.c[handicapIdx + sliceOffset].v : '') : '';
+        const throughVal  = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : '') : '';
+        const parVal      = parIdx >= 0 ? (row.c[parIdx + sliceOffset] ? row.c[parIdx + sliceOffset].v : '') : parFallback;
+
+        const isTie    = rankCount[rankNum] > 1;
+        const isLeader = rankNum === 1;
+        const thru     = smartThru(throughVal);
+        const mv       = movementHtml(name, rankNum);
+        const teeInfo  = thru.notStarted ? getTeeInfo(name) : null;
+
+        newRankMap[name] = rankNum;
+
+        const nett = parseFloat(nettVal);
+        const handicap = parseFloat(handicapVal);
+        const par = parseFloat(parVal);
+
+        totalPlayers += 1;
+        if (!isNaN(nett)) {
+          totalNett += nett;
+          nettCount += 1;
+          if (!isNaN(par)) {
+            if (nett < par) underPar += 1;
+            else if (nett === par) atPar += 1;
+            else overPar += 1;
           }
-        });
-
-        const searchInput = document.getElementById('leaderboard-search');
-        const applySearchFilter = () => {
-          const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
-          const rows = dataRows.querySelectorAll('tr');
-          rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.classList.toggle('hidden', query !== '' && !text.includes(query));
-          });
-
-          if (cardsContainer) {
-            const cards = cardsContainer.querySelectorAll('.leaderboard-card');
-            cards.forEach(card => {
-              const text = card.textContent.toLowerCase();
-              card.classList.toggle('hidden', query !== '' && !text.includes(query));
-            });
-          }
-        };
-
-        if (searchInput) {
-          searchInput.addEventListener('input', applySearchFilter);
         }
+        if (!isNaN(handicap)) { totalHandicap += handicap; handicapCount += 1; }
+        if (parseInt(throughVal, 10) >= 18) through18count += 1;
 
-        let totalPlayers = 0;
-        let totalNett = 0;
-        let nettCount = 0;
-        let totalHandicap = 0;
-        let handicapCount = 0;
-        let underPar = 0;
-        let atPar = 0;
-        let overPar = 0;
-        let through18 = 0;
+        // Desktop row
+        const tr = document.createElement('tr');
+        if (isLeader) tr.classList.add('leader-row');
+        tr.dataset.player = name;
+        tr.dataset.hcp    = handicapVal;
 
-        const parFallback = 72;
+        const tdRank = document.createElement('td');
+        tdRank.classList.add('column-b');
+        tdRank.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">${rankBadgeHtml(rankNum, isTie)}${mv}</div>`;
+        tr.appendChild(tdRank);
 
-        const cardsContainer = document.getElementById('mobile-cards');
+        const tdName = document.createElement('td');
+        tdName.classList.add('column-c');
+        tdName.style.textAlign = 'left';
+        const teeBadge = teeInfo?.teeTime ? `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>` : '';
+        const isStarred = (window._sunFavs || new Set()).has(name);
+        tdName.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+          <div class="row-avatar-group hidden"></div>
+          <div class="player-name-cell" style="flex:1">
+            <span class="player-name">${displayName}</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+              ${handicapVal !== '' ? `<span class="player-hcp">HC ${handicapVal}</span>` : ''}
+              ${teeBadge}
+            </div>
+          </div>
+          <button class="star-btn${isStarred ? ' starred' : ''}" data-player="${name}" onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
+        </div>`;
+        tr.appendChild(tdName);
 
-        // Populate the table rows
-        const dataRows = document.getElementById('data-rows');
-        tableData.forEach((row, index) => {
-          const tr = document.createElement('tr');
-          row.c.slice(1, 9).forEach((cell, i) => {
-            const td = document.createElement('td');
-            // For the Name column (i === 1), replace hyphens with ' & ' for display only
-            if (i === 1 && cell && typeof cell.v === 'string') {
-              td.textContent = cell.v.replace(/-/g, ' & ');
-            } else {
-              td.textContent = cell ? cell.v : '0';
-            }
-            td.classList.add(`column-${String.fromCharCode(98 + i)}`);
-            tr.appendChild(td);
-          });
+        const tdNett = document.createElement('td');
+        tdNett.classList.add('column-d');
+        tdNett.textContent = nettVal !== '' ? nettVal : '—';
+        tr.appendChild(tdNett);
 
-          // Use Column C for player/team name (index 2)
-          let playerName = row.c[2] ? row.c[2].v : `Player${index + 1}`;
-          tr.addEventListener('click', () => {
-            // Use the original playerName (with hyphens) for the URL
-            window.location.href = `scorecardSun.html?player=${encodeURIComponent(playerName)}`;
-          });
+        const tdHcp = document.createElement('td');
+        tdHcp.classList.add('column-e');
+        tdHcp.textContent = handicapVal !== '' ? handicapVal : '—';
+        tr.appendChild(tdHcp);
 
-          dataRows.appendChild(tr);
+        const tdThru = document.createElement('td');
+        tdThru.classList.add('column-f');
+        if (thru.done) tdThru.innerHTML = `<span class="thru-finished">F</span>`;
+        else tdThru.textContent = thru.desktop;
+        tr.appendChild(tdThru);
 
-          if (cardsContainer) {
-            const rankValue = row.c[1] ? row.c[1].v : '';
-            const displayName = typeof playerName === 'string' ? playerName.replace(/-/g, ' & ') : playerName;
-            const nettValue = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : '') : '';
-            const throughValue = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : '') : '';
-            const handicapValue = handicapIdx >= 0 ? (row.c[handicapIdx + sliceOffset] ? row.c[handicapIdx + sliceOffset].v : '') : '';
-            const nameWithHandicap = handicapValue !== '' ? `${displayName} (${handicapValue})` : displayName;
-            const nameParts = typeof nameWithHandicap === 'string'
-              ? nameWithHandicap.split(' & ').map(part => part.trim()).filter(Boolean)
-              : [nameWithHandicap];
-            const nameMarkup = nameParts
-              .map(part => `<span>${part}</span>`)
-              .join('<br>');
+        const tdToPar = document.createElement('td');
+        tdToPar.classList.add('column-g');
+        tdToPar.innerHTML = toParHtml(nettVal, parVal);
+        tr.appendChild(tdToPar);
 
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'leaderboard-card text-left';
-            card.addEventListener('click', () => {
-              window.location.href = `scorecardSun.html?player=${encodeURIComponent(playerName)}`;
-            });
-
-            card.innerHTML = `
-              <div class="leaderboard-row">
-                <span class="leaderboard-rank">#${rankValue}</span>
-                <span class="leaderboard-name leaderboard-name-stack">${nameMarkup}</span>
-                <span class="leaderboard-value">${throughValue !== '' ? throughValue : '--'}</span>
-                <span class="leaderboard-value">${nettValue !== '' ? nettValue : '--'}</span>
-              </div>
-            `;
-
-            cardsContainer.appendChild(card);
-          }
-
-          const nettValue = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : null) : null;
-          const handicapValue = handicapIdx >= 0 ? (row.c[handicapIdx + sliceOffset] ? row.c[handicapIdx + sliceOffset].v : null) : null;
-          const throughValue = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : null) : null;
-          const parValue = parIdx >= 0 ? (row.c[parIdx + sliceOffset] ? row.c[parIdx + sliceOffset].v : null) : parFallback;
-
-          const nett = parseFloat(nettValue);
-          const handicap = parseFloat(handicapValue);
-          const through = parseInt(throughValue, 10);
-          const par = parseFloat(parValue);
-
-          totalPlayers += 1;
-          if (!isNaN(nett)) {
-            totalNett += nett;
-            nettCount += 1;
-            if (!isNaN(par)) {
-              if (nett < par) underPar += 1;
-              else if (nett === par) atPar += 1;
-              else overPar += 1;
-            }
-          }
-          if (!isNaN(handicap)) {
-            totalHandicap += handicap;
-            handicapCount += 1;
-          }
-          if (!isNaN(through) && through >= 18) {
-            through18 += 1;
-          }
+        tr.addEventListener('click', () => {
+          if (compareMode) { toggleComparePlayer(name, tr, null); return; }
+          openScDrawer(name, { rankNum, isTie, nett: nettVal, hcp: handicapVal, thruRaw: throughVal, par: parVal });
         });
+        dataRows.appendChild(tr);
 
-        const avgNett = nettCount ? (totalNett / nettCount).toFixed(1) : '0.0';
-        const avgHandicap = handicapCount ? (totalHandicap / handicapCount).toFixed(1) : '0.0';
+        // Mobile card
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'leaderboard-card text-left';
+        card.dataset.player = name;
+        card.dataset.hcp    = handicapVal;
 
-        const setPulse = (id, value) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = value;
-        };
+        const thruLabel = thru.done
+          ? `<span class="thru-finished" style="font-size:11px">F</span>`
+          : teeInfo?.teeTime
+            ? `<span class="tee-badge-mobile">⏱ ${teeInfo.teeTime}</span>`
+            : `<span class="leaderboard-mini">${thru.mobile}</span>`;
 
-        setPulse('pulse-avg-nett', avgNett);
-        setPulse('pulse-avg-handicap', avgHandicap);
-        setPulse('pulse-under', underPar);
-        setPulse('pulse-even', atPar);
-        setPulse('pulse-over', overPar);
-        setPulse('pulse-through', through18);
+        const isStarredCard = (window._sunFavs || new Set()).has(name);
+        card.innerHTML = `
+          <button class="star-btn-card${isStarredCard ? ' starred' : ''}" data-player="${name}"
+            onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
+          <div class="leaderboard-row">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${rankBadgeHtml(rankNum, isTie)}${mv}</div>
+            <div style="display:flex;align-items:center;gap:7px">
+              <div class="row-avatar-group hidden"></div>
+              <span class="leaderboard-name">${displayName}</span>
+            </div>
+            <div style="text-align:right">
+              <div class="leaderboard-pts" style="line-height:1">${nettVal !== '' ? nettVal : '—'}</div>
+              <div class="proj-label" style="text-align:right">${toParHtml(nettVal, parVal)}</div>
+            </div>
+          </div>
+          <div class="leaderboard-sub">
+            ${handicapVal !== '' ? `<span class="player-hcp">HC ${handicapVal}</span>` : ''}
+            <span style="flex:1"></span>
+            ${thruLabel}
+          </div>
+        `;
 
-        applySearchFilter();
-      })
-      .catch(error => console.error('Error fetching data:', error));
+        card.addEventListener('click', () => {
+          if (compareMode) { toggleComparePlayer(name, tr, card); return; }
+          openScDrawer(name, { rankNum, isTie, nett: nettVal, hcp: handicapVal, thruRaw: throughVal, par: parVal });
+        });
+        cardsContainer.appendChild(card);
+      });
+
+      prevRankMap = newRankMap;
+
+      const setPulse = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setPulse('pulse-avg-nett',     nettCount     ? (totalNett / nettCount).toFixed(1)         : '0.0');
+      setPulse('pulse-avg-handicap', handicapCount ? (totalHandicap / handicapCount).toFixed(1) : '0.0');
+      setPulse('pulse-under', underPar);
+      setPulse('pulse-even',  atPar);
+      setPulse('pulse-over',  overPar);
+      setPulse('pulse-through', through18count);
+
+      document.getElementById('loading-skeleton').classList.add('hidden');
+      document.getElementById('table-wrap-el').classList.remove('hidden');
+      const mc = document.getElementById('mobile-cards');
+      mc.style.display = window.innerWidth < 768 ? 'grid' : '';
+
+      const searchInput = document.getElementById('leaderboard-search');
+      if (!searchListenerAttached && searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+        searchListenerAttached = true;
+      }
+      applyFilters();
+
+      if (window.lucide) window.lucide.createIcons();
+      applyAvatars();
+      startCountdown();
+    }
+
+    loadWeather();
+    loadData(false).then(() => {
+      const urlPlayer = new URLSearchParams(location.search).get('player');
+      if (urlPlayer) openScDrawer(decodeURIComponent(urlPlayer));
+    });
   </script>
 </body>
 </html>
