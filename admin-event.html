@@ -5060,6 +5060,21 @@ async function downloadRoomsSpreadsheet() {
       notifySetStatus("");
       renderNotifyVariableChips();
       loadNotifyTemplates();
+
+      // Tee-time/hole/playing-with variables read from the in-memory teeSheets.
+      // Any day still empty in memory gets filled from the saved Firestore copy
+      // (days with unsaved in-memory groups are left untouched).
+      const emptyDays = ['friday', 'saturday', 'sunday'].filter(d => (teeSheets[d] || []).length === 0);
+      if (emptyDays.length) {
+        getDoc(doc(firestore, 'eventYears', currentEventId)).then(snap => {
+          const saved = (snap.exists() ? snap.data().teeSheets : null) || {};
+          emptyDays.forEach(d => {
+            if (Array.isArray(saved[d]) && saved[d].length) teeSheets[d] = saved[d];
+          });
+          updateNotifyPreview();
+        }).catch(err => console.error('Tee sheet load for notify failed:', err));
+      }
+
       notifyTeeDaySelect.value = teeSheets[activeTeeDay] ? activeTeeDay : "saturday";
 
       const recipients = Array.from(selectedUids).map(uid => users.find(u => u.uid === uid)).filter(Boolean);

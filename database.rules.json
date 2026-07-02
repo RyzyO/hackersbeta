@@ -16,6 +16,10 @@
       ".read": "auth !== null",
       ".write": false
     },
+    "notificationTemplates": {
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
     "users": {
       ".read": true,
       ".write": "root.child('admins').child(auth.uid).val() === true",
