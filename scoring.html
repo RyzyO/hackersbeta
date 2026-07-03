@@ -19,8 +19,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getDatabase, ref, get, set, remove, onValue, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKRUXu15WVYV6w7RrunYYf-w5bDeUorJN_cEPxUwfmsIJ6xlWfa3DgHGrajZ8hGqE/exec';
+  import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0ljxNPGNPIZsDtHpgDMbfPhDr5UVYnhaoZhub0CoZYxwfEhMtaYXkdH3veVMIOrZh/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
@@ -88,7 +88,8 @@
   let resumeSessionCandidate = null;
   let courseGuideOpen = false;
   let scoreUpdateTimers = new Map(); // Debounce timers for score updates
-  let liveListenerUnsubs = []; // Firebase onValue unsubscribe fns, one per player sheet
+  let sheetPollTimer = null;         // interval handle for Apps Script sheet polling
+  let sheetPollInFlight = false;
 
   // ── REQUEST QUEUE ────────────────────────────────────────────
   // Single-flight, ordered queue for every Apps Script call. Previously, online events,
@@ -97,9 +98,18 @@
   // so a flaky course wifi connection can't pile up redundant requests against the same backend.
   const requestQueue = [];
   let requestQueueRunning = false;
-  function enqueueRequest(fn) {
+  // priority=true puts the job ahead of any queued non-priority jobs (score writes must never
+  // sit behind slow full-sheet reads).
+  function enqueueRequest(fn, priority = false) {
     return new Promise((resolve, reject) => {
-      requestQueue.push({ fn, resolve, reject });
+      const job = { fn, resolve, reject, priority };
+      if (priority) {
+        let i = 0;
+        while (i < requestQueue.length && requestQueue[i].priority) i++;
+        requestQueue.splice(i, 0, job);
+      } else {
+        requestQueue.push(job);
+      }
       runRequestQueue();
     });
   }
@@ -208,70 +218,82 @@
     setResumeSessionCandidate(chosen);
     return chosen;
   }
-  // ── LIVE SHEET LISTENERS (Firebase mirrors Sheets; Sheets stays source of truth) ──
-  // Architecture: Apps Script onEdit trigger writes the canonical edit to the Google Sheet,
-  // then mirrors that row into Firebase RTDB at liveSheets/{sheetName}/holes. This client
-  // NEVER treats Firebase as authoritative for writes — every score this client sends still
-  // goes through saveScore -> Apps Script -> the Sheet. Firebase is only a read-side push
-  // channel so we don't have to poll Apps Script every few seconds to notice changes made
-  // elsewhere (e.g. another scorer's device, or a manual edit in the Sheet itself).
-  function livePathForSheet(sheetName) {
-    return `liveSheets/${encodeFirebaseKey(sheetName)}`;
+  // ── LIVE SHEET SYNC (Apps Script IS the read/write channel; the Sheet is the source of truth) ──
+  // Every score write goes saveScore -> Apps Script -> the Sheet, and the response carries
+  // the recalculated points + running total so this device is correct instantly (no follow-up
+  // request needed for the device that made the edit).
+  // For everything ELSE (another scorer's device, a manual edit in the Sheet), we poll getHoles
+  // through the same Apps Script endpoint on a timer. NOTE: an earlier version of this polled
+  // the Sheet's gviz endpoint directly — that redirected to a Google login page in testing
+  // because the spreadsheet isn't shared as "anyone with the link", so it silently never
+  // synced. Apps Script (deployed as a public Web App) is the only channel confirmed to work
+  // without requiring the spreadsheet to be made public.
+  async function fetchSheetSnapshot(sheetName) {
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(sheetName)}`));
+    if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getHoles failed');
+    const byHole = {};
+    (resp.holes || []).forEach(h => {
+      byHole[Number(h.hole)] = {
+        score: (h.currentScore === '' || h.currentScore === null || h.currentScore === undefined) ? null : Number(h.currentScore),
+        points: (h.points === '' || h.points === null || h.points === undefined) ? null : Number(h.points)
+      };
+    });
+    const q2Total = (resp.q2Total === undefined || resp.q2Total === null) ? null : Number(resp.q2Total);
+    const handicapRaw = resp.handicap ?? resp.playerHandicap;
+    const handicap = (handicapRaw === undefined || handicapRaw === null) ? null : Number(handicapRaw);
+    return { byHole, q2Total, handicap };
   }
-  function encodeFirebaseKey(name) {
-    // Firebase keys can't contain . # $ [ ] /
-    return String(name).replace(/[.#$\[\]\/]/g, '_');
-  }
-  function attachLiveListenerForPlayer(player, pidx) {
-    const path = livePathForSheet(player.sheetName);
-    const handle = ref(firebaseDb, path);
-    const callback = (snap) => {
-      if (!snap.exists()) return;
-      const data = snap.val();
-      applyLiveSheetUpdate(player, pidx, data);
-    };
-    onValue(handle, callback);
-    liveListenerUnsubs.push(() => off(handle, 'value', callback));
-  }
-  function detachAllLiveListeners() {
-    liveListenerUnsubs.forEach(fn => { try { fn(); } catch (_) {} });
-    liveListenerUnsubs = [];
-  }
-  function applyLiveSheetUpdate(player, pidx, data) {
+  function applySheetSnapshot(player, pidx, snap) {
     let changed = false;
-    if (data.q2Total !== undefined && data.q2Total !== null && Number(data.q2Total) !== player.sheetTotal) {
-      player.sheetTotal = Number(data.q2Total);
+    if (snap.q2Total !== null && Number(snap.q2Total) !== player.sheetTotal) {
+      player.sheetTotal = Number(snap.q2Total);
       changed = true;
     }
-    if (Array.isArray(data.holes)) {
-      player.holes = data.holes.map(normalizeHoleRecord);
+    if (snap.handicap !== null && Number(snap.handicap) !== player.handicap) {
+      player.handicap = Number(snap.handicap);
       changed = true;
-      // Reconcile any score this client has queued/saved against what the Sheet now reports,
-      // so a manual edit in the Sheet or a save from another device updates this screen too.
-      player.holes.forEach(h => {
-        const rowIndex = h.rowIndex;
-        if (rowIndex === null || rowIndex === undefined) return;
-        const sheetScore = h.currentScore;
-        const isQueued = pendingScoreUpdates.some(u => u.sheetName === player.sheetName && u.rowIndex === rowIndex);
-        if (!isQueued && sheetScore !== null && sheetScore !== undefined && sheetScore !== '') {
-          player.scores[rowIndex] = sheetScore;
-        }
-      });
-      if (pidx === 0) {
-        holeData = player.holes;
-        roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
-      }
     }
+    (player.holes || []).forEach(h => {
+      const rec = snap.byHole[Number(h.hole)];
+      if (!rec) return;
+      // Never clobber a score this device is still trying to send or is actively editing.
+      const isQueued = pendingScoreUpdates.some(u => u.sheetName === player.sheetName && Number(u.rowIndex) === Number(h.rowIndex));
+      const isEditing = scoreUpdateTimers.has(`${pidx}|${h.rowIndex}`);
+      if (isQueued || isEditing) return;
+      const blank = v => v === null || v === undefined || v === '';
+      if (rec.points !== null && (blank(h.points) || Number(h.points) !== rec.points)) { h.points = rec.points; h.sheetPoints = rec.points; changed = true; }
+      if (rec.score !== null && (blank(h.currentScore) || Number(h.currentScore) !== rec.score)) { h.currentScore = rec.score; changed = true; }
+      if (rec.score !== null && (blank(player.scores[h.rowIndex]) || Number(player.scores[h.rowIndex]) !== rec.score)) { player.scores[h.rowIndex] = rec.score; changed = true; }
+    });
     if (changed) {
       updatePlayerCardDom(pidx);
       updateTotals();
       persistScoringSession();
     }
   }
-  function attachLiveListenersForAllPlayers() {
-    detachAllLiveListeners();
-    players.forEach((p, idx) => attachLiveListenerForPlayer(p, idx));
+  async function pollSheetsOnce() {
+    if (sheetPollInFlight || !players.length || !navigator.onLine || document.visibilityState !== 'visible') return;
+    sheetPollInFlight = true;
+    try {
+      await Promise.all(players.map(async (p, idx) => {
+        try { applySheetSnapshot(p, idx, await fetchSheetSnapshot(p.sheetName)); } catch (_) {}
+      }));
+    } finally {
+      sheetPollInFlight = false;
+    }
   }
+  function startSheetPolling() {
+    stopSheetPolling();
+    sheetPollTimer = setInterval(() => { pollSheetsOnce(); }, 20000);
+  }
+  function stopSheetPolling() {
+    if (sheetPollTimer) { clearInterval(sheetPollTimer); sheetPollTimer = null; }
+  }
+  // Handicap fallback: only needed if the deployed Apps Script predates the handicap field
+  // in its getHoles response. Left as a no-op placeholder so existing call sites don't need
+  // to change; real handicap sync now happens through fetchSheetSnapshot/pollSheetsOnce above.
+  async function loadHandicapMap() {}
+  function applyHandicapMapToPlayers() {}
   function restoreSessionSnapshot(snapshot) {
     if (!snapshot) return;
     sessionStage = snapshot.stage || 'draft';
@@ -305,10 +327,13 @@
       else renderStartHolePicker();
       updateTotals();
       updateConnectionStatus();
-      attachLiveListenersForAllPlayers();
+      applyHandicapMapToPlayers();
+      startSheetPolling();
       flushPendingScoreUpdates().catch(() => {});
-      // One-shot reconciliation against Apps Script (covers staleness from time spent offline);
-      // ongoing updates after this come from the Firebase listeners above, not polling.
+      // Immediate reconciliation straight from the Sheet via gviz (covers staleness from
+      // time spent offline); the polling interval keeps it fresh from here.
+      pollSheetsOnce();
+      // Also refresh rowIndex/handicap metadata from Apps Script in the background.
       reconcileHolesOnceFromSheet();
     } else {
       show('screen-loading');
@@ -321,13 +346,14 @@
       const results = await Promise.all(players.map(async (p) => {
         const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`));
         if (!resp.success) return null;
-        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap };
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
       }));
       results.forEach((r, idx) => {
         if (!r) return;
         r.player.holes = r.holes;
         if (r.q2Total !== undefined && r.q2Total !== null) r.player.sheetTotal = Number(r.q2Total);
-        if (r.handicap !== undefined && r.handicap !== null) r.player.handicap = Number(r.handicap);
+        const hcap = r.handicap ?? r.playerHandicap;
+        if (hcap !== undefined && hcap !== null) r.player.handicap = Number(hcap);
         updatePlayerCardDom(idx);
       });
       if (results[0]) {
@@ -343,7 +369,7 @@
     await continueSavedSession(resumeSessionCandidate);
   };
   function resetCurrentSession(keepSavedSnapshot = false) {
-    detachAllLiveListeners();
+    stopSheetPolling();
     selectedSheetNames = []; holeData = []; roundHoles = []; currentHoleIndex = 0;
     startHoleNumber = null; sessionStage = 'draft'; players = []; scores = {}; pendingRemoteSession = null;
     $('sheet-label').textContent = '';
@@ -377,11 +403,31 @@
     // single source of truth. The onEdit trigger then mirrors the result into Firebase for
     // other connected devices; this client never writes scores to Firebase directly.
     const url = `${APPS_SCRIPT_URL}?action=saveScore&sheet=${encodeURIComponent(sheetName)}&rowIndex=${encodeURIComponent(rowIndex)}&score=${encodeURIComponent(score)}`;
-    const resp = await enqueueRequest(() => fetchJsonViaProxy(url));
+    // priority=true: score writes jump ahead of any queued full-sheet reads.
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(url), true);
     if (!resp || resp.success === false) {
       throw new Error((resp && resp.error) || 'saveScore returned failure');
     }
     return resp;
+  }
+  // The saveScore response carries the Sheet's recalculated points for that hole, the running
+  // total, and the player's handicap — apply them immediately so the confirmed value lands in
+  // one round trip instead of a follow-up getHoles poll.
+  function applySaveResponse(sheetName, rowIndex, score, resp) {
+    if (!resp) return;
+    const pidx = players.findIndex(p => p.sheetName === sheetName);
+    if (pidx < 0) return;
+    const player = players[pidx];
+    const hole = (player.holes || []).find(h => Number(h.rowIndex) === Number(rowIndex));
+    if (hole) {
+      hole.currentScore = resp.savedScore ?? score;
+      if (resp.points !== undefined && resp.points !== null) { hole.points = Number(resp.points); hole.sheetPoints = Number(resp.points); }
+    }
+    if (resp.q2Total !== undefined && resp.q2Total !== null) player.sheetTotal = Number(resp.q2Total);
+    if (resp.handicap !== undefined && resp.handicap !== null) player.handicap = Number(resp.handicap);
+    updatePlayerCardDom(pidx);
+    updateTotals();
+    persistScoringSession();
   }
   let flushInFlight = false;
   async function flushPendingScoreUpdates() {
@@ -397,7 +443,8 @@
         let lastErr = null;
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
           try {
-            await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
+            const resp = await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
+            applySaveResponse(update.sheetName, update.rowIndex, update.score, resp);
             lastErr = null;
             break;
           } catch (err) {
@@ -554,11 +601,15 @@
     if (!players || !players.length) { hide('screen-loading'); show('screen-login'); return; }
     $('sheet-label').textContent = players.map(p => p.name).join(' · ');
     show('scorecard-loading'); hide('hole-view'); hide('round-nav');
+    // Kick off the gviz handicap/score read in parallel with the Apps Script getHoles call —
+    // gviz is a direct sheet read with no Apps Script cold-start, so handicaps are often
+    // available before getHoles even returns, and the very first card render already has them.
+    pollSheetsOnce();
     try {
       const results = await Promise.all(players.map(async (p) => {
         const resp = await fetchJsonWithRetry(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
         if (!resp.success) throw new Error(resp.error || `Failed to load holes for ${p.sheetName}`);
-        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap };
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
       }));
       results.forEach(({ player, holes, q2Total, handicap }) => {
         player.holes = holes;
@@ -570,7 +621,8 @@
       holeData = results[0].holes;
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
       hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
-      attachLiveListenersForAllPlayers();
+      applyHandicapMapToPlayers();
+      startSheetPolling();
       if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
       else renderStartHolePicker();
       persistScoringSession();
@@ -626,40 +678,41 @@
     if (!roundHoles.length) return null;
     return roundHoles[currentHoleIndex] || roundHoles[0];
   }
-  // Compute the player's running Stableford total.
-  // Uses sheetTotal (from q2Total) as the authoritative value when available,
-  // but also computes a local sum across all scored holes as an instant fallback.
-  // This means the header bar is never one save behind — it reflects the score
-  // the player just entered immediately, with sheetTotal overriding once confirmed.
+  // Compute the player's running Stableford total as a per-hole hybrid sum:
+  // each hole uses the Sheet's confirmed points when the Sheet's score matches what this
+  // device has, and the instant local calc otherwise. When every hole is confirmed this
+  // sum equals the Sheet's own Q2 total, and when the player has just tapped a score it
+  // reflects that tap immediately — the total is never a save behind, and never jumps
+  // back to a stale Sheet value while a save is in flight.
   function getPlayerScoreSummary(player) {
-    // Local sum: iterate every hole this player has a score for
     let localTotal = 0;
     let anyScored = false;
+    let allConfirmed = true;
     if (Array.isArray(player.holes) && player.holes.length) {
       player.holes.forEach(h => {
         const scored = player.scores[h.rowIndex];
         if (scored === '' || scored === null || scored === undefined) return;
         anyScored = true;
-        const courseHoleData = getCourseHole(h.hole);
-        const strokeIndex = courseHoleData ? courseHoleData.index1 : null;
+        const { index1, index2 } = getHoleIndexes(h);
         // Prefer confirmed sheet points for this hole; fall back to local calc
         const sheetIsUpToDate = h.currentScore !== null && h.currentScore !== undefined && h.currentScore !== ''
           && Number(h.currentScore) === Number(scored);
         if (sheetIsUpToDate && (h.points ?? h.sheetPoints) !== null && (h.points ?? h.sheetPoints) !== undefined) {
           localTotal += Number(h.points ?? h.sheetPoints);
         } else {
-          const local = computeLocalStablefordPoints(h.par, scored, strokeIndex, player.handicap ?? null);
-          localTotal += local !== null ? local : 0;
+          allConfirmed = false;
+          const local = computeLocalStablefordPoints(h.par, scored, index1, index2, player.handicap ?? null);
+          if (local !== null) localTotal += local;
+          else if ((h.points ?? h.sheetPoints) !== null && (h.points ?? h.sheetPoints) !== undefined) localTotal += Number(h.points ?? h.sheetPoints);
         }
       });
     }
-    // sheetTotal is the Sheet's own running total — use it if we have it and it's
-    // plausibly up to date (i.e. we've already scored at least one hole locally).
-    // Fall back to local sum when sheetTotal is absent (offline, first load).
-    const totalPoints = (player.sheetTotal !== undefined && player.sheetTotal !== null)
+    // Only defer to the Sheet's own Q2 total when every locally-known score is confirmed —
+    // it then covers scores entered outside this device that we may not have rows for yet.
+    const totalPoints = (allConfirmed && player.sheetTotal !== undefined && player.sheetTotal !== null)
       ? Number(player.sheetTotal)
-      : (anyScored ? localTotal : 0);
-    return { frontPoints: 0, backPoints: 0, totalPoints, localTotal };
+      : localTotal;
+    return { frontPoints: 0, backPoints: 0, totalPoints: anyScored || totalPoints ? totalPoints : 0, localTotal };
   }
   function getRelLabel(par, strokes) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
@@ -674,9 +727,8 @@
   function buildPlayerCardHtml(player, pidx, hole) {
     const existing = player.scores[hole.rowIndex] ?? '';
     const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
-    const courseHoleData = getCourseHole(hole.hole);
-    const strokeIndex = courseHoleData ? courseHoleData.index1 : null;
-    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, strokeIndex, player.handicap ?? null);
+    const { index1, index2 } = getHoleIndexes(playerHole);
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, index1, index2, player.handicap ?? null);
     const summary = getPlayerScoreSummary(player);
     const isLocalEstimate = (player.sheetTotal === undefined || player.sheetTotal === null) && summary.localTotal > 0;
     const runningLabel = `${summary.totalPoints} pts${isLocalEstimate ? ' (est)' : ''}`;
@@ -722,9 +774,8 @@
     }
     const existing = player.scores[hole.rowIndex] ?? '';
     const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
-    const courseHoleData = getCourseHole(hole.hole);
-    const strokeIndex = courseHoleData ? courseHoleData.index1 : null;
-    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, strokeIndex, player.handicap ?? null);
+    const { index1, index2 } = getHoleIndexes(playerHole);
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, index1, index2, player.handicap ?? null);
     const summary = getPlayerScoreSummary(player);
     const rel = getRelLabel(hole.par, existing);
     const ptsEl = $(`pts-${pidx}-${hole.rowIndex}`);
@@ -925,11 +976,8 @@
       setSaveStatus('Saved ✓', 'saved');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => setSaveStatus(''), 2000);
-      // Pull this player's own recalculated points once, ~1s after the write, since the
-      // handicap-adjusted points formula in the Sheet needs a moment to recalculate and we
-      // want the saving player's own screen to reflect the real value quickly. Other
-      // players' screens get the same update via the Firebase listener once onEdit fires.
-      setTimeout(() => refreshOwnPointsAfterSave(playerIndex), 1000);
+      // No follow-up poll needed: the saveScore response itself carried the Sheet's
+      // recalculated points + total, applied via applySaveResponse in the flush loop.
     } catch (err) {
       console.error('Autosave error:', err);
       persistScoringSession();
@@ -938,58 +986,48 @@
       saveTimer = setTimeout(() => setSaveStatus(''), 3000);
     }
   }
-  async function refreshOwnPointsAfterSave(playerIndex) {
-    const player = players[playerIndex];
-    if (!player || !navigator.onLine) return;
-    try {
-      const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(player.sheetName)}`));
-      if (!resp || !resp.success) return;
-      if (resp.q2Total !== undefined && resp.q2Total !== null) player.sheetTotal = Number(resp.q2Total);
-      if (resp.handicap !== undefined && resp.handicap !== null) player.handicap = Number(resp.handicap);
-      if (Array.isArray(resp.holes)) {
-        player.holes = resp.holes.map(normalizeHoleRecord);
-        if (playerIndex === 0) {
-          holeData = player.holes;
-          roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
-        }
-      }
-      updatePlayerCardDom(playerIndex);
-      updateTotals();
-      persistScoringSession();
-    } catch (_) {}
-  }
   // Compute Stableford points for a hole.
   // Priority: (1) confirmed sheet value if sheetScore matches current strokes,
   //           (2) local calculation using handicap + stroke index as instant fallback,
   //           (3) null only if no strokes entered yet.
-  // The local calc is intentionally simple — it gives an instant result on every tap
-  // without a network round-trip. The Sheet value always wins once it arrives.
-  // Note: sheetPoints === 0 is a legitimate score (double bogey or worse), so we no
-  // longer treat 0 as "missing" — that was the bug that caused valid zero-point holes
-  // to show "—" indefinitely.
-  function computeLocalStablefordPoints(par, strokes, strokeIndex, handicap) {
+  // The local calc replicates the Sheet's own POINTS formula (column M) exactly:
+  //   h <= 18: one shot on holes where handicap >= INDEX 1, else no shot.
+  //   h  > 18: one shot on EVERY hole, plus a second shot where handicap >= INDEX 2.
+  //   points = max(0, 2 + shots - (strokes - par))
+  // This is NOT the standard 18-rollover allocation — the event uses its own INDEX 2
+  // ordering for the second shot, so both indexes are needed.
+  function computeLocalStablefordPoints(par, strokes, index1, index2, handicap) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
-    if (handicap === null || handicap === undefined) return null;
+    if (handicap === null || handicap === undefined || isNaN(Number(handicap))) return null;
     const h = Number(handicap);
-    const si = Number(strokeIndex);
-    const shots = Math.floor(h / 18) + (si <= (h % 18) ? 1 : 0);
-    return Math.max(0, 2 + shots - (Number(strokes) - par));
+    const shots = h > 18
+      ? 1 + (h >= Number(index2) ? 1 : 0)
+      : (h >= Number(index1) ? 1 : 0);
+    return Math.max(0, 2 + shots - (Number(strokes) - Number(par)));
   }
-  function getStablefordPoints(par, strokes, sheetPoints, sheetScore, strokeIndex, handicap) {
+  function getStablefordPoints(par, strokes, sheetPoints, sheetScore, index1, index2, handicap) {
     if (strokes === '' || strokes === null || strokes === undefined) return null;
-    // Use the sheet's confirmed value when it matches the score we have locally
+    // Use the sheet's confirmed value when it matches the score we have locally.
+    // sheetPoints === 0 is a legitimate value (double bogey or worse), not "missing".
     const sheetIsUpToDate = sheetScore !== null && sheetScore !== undefined && sheetScore !== ''
       && Number(sheetScore) === Number(strokes);
     if (sheetIsUpToDate && sheetPoints !== null && sheetPoints !== undefined) {
       return Number(sheetPoints);
     }
     // Local fallback — instant, no network needed
-    const local = computeLocalStablefordPoints(par, strokes, strokeIndex, handicap);
+    const local = computeLocalStablefordPoints(par, strokes, index1, index2, handicap);
     if (local !== null) return local;
     // Last resort: use sheet points even if score doesn't match (e.g. no handicap loaded yet)
-    // Treat sheetPoints === 0 as a valid score now, not as "missing"
     if (sheetPoints !== null && sheetPoints !== undefined) return Number(sheetPoints);
     return null;
+  }
+  // Stroke indexes for a hole: prefer what the Sheet reported (columns G/H), fall back to
+  // the hardcoded course data.
+  function getHoleIndexes(hole) {
+    const ch = getCourseHole(hole.hole);
+    const index1 = (hole.index1 !== undefined && hole.index1 !== null && hole.index1 !== '') ? Number(hole.index1) : (ch ? ch.index1 : null);
+    const index2 = (hole.index2 !== undefined && hole.index2 !== null && hole.index2 !== '') ? Number(hole.index2) : (ch ? ch.index2 : null);
+    return { index1, index2 };
   }
   function updateTotals() {
     const bar = $('player-summary-bar');
@@ -1169,6 +1207,7 @@
   // ── INIT ─────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     updateConnectionStatus();
+    loadHandicapMap(); // background: handicaps for the instant local points calc
     const localSession = loadLocalSession();
     if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
       continueSavedSession(localSession);
@@ -1197,15 +1236,18 @@
     window.addEventListener('online', () => {
       updateConnectionStatus();
       flushRemoteSession();
-      flushPendingScoreUpdates();
+      // Push queued scores first, then pull the Sheet's current state so this device
+      // converges with anything that changed while it was offline.
+      flushPendingScoreUpdates().then(() => pollSheetsOnce()).catch(() => {});
     });
     window.addEventListener('offline', () => { updateConnectionStatus(); });
     window.addEventListener('beforeunload', () => { persistScoringSession(); savePendingQueue(); });
-    // Flush pending scores whenever the player returns to the tab/app
+    // Flush pending scores + resync whenever the player returns to the tab/app
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         updateConnectionStatus();
         if (navigator.onLine && pendingScoreUpdates.length) flushPendingScoreUpdates().catch(() => {});
+        if (navigator.onLine && sessionStage === 'active') pollSheetsOnce();
       }
     });
     if ('serviceWorker' in navigator) {

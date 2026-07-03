@@ -7,6 +7,31 @@
 const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
 const SCORE_COLUMN = 9; // Column I (1-indexed) = SCORE
 const POINTS_COLUMN = 13; // Column M (1-indexed) = Stableford points
+const TOTAL_CELL_ROW = 2, TOTAL_CELL_COL = 17; // Q2 = SUM(M:M) running total
+
+// Handicap: primary source is Players!C:D (name -> handicap) via the same VLOOKUP the sheet's
+// own K/L/M formulas use ($C2 against Players!$C:$D) — matching that exactly guarantees our
+// number always agrees with the sheet's own computed points. Falls back to column R (HANDICAP)
+// on the player's own tab, in case Players tab lookup misses (name mismatch, sheet reorganized).
+function lookupHandicap(ss, playerSheet) {
+  try {
+    const name = String(playerSheet.getRange(2, 3).getValue() || playerSheet.getName()).trim().toLowerCase();
+    const players = ss.getSheetByName('Players');
+    if (players) {
+      const rows = players.getRange(1, 3, players.getLastRow(), 2).getValues(); // C:D
+      for (let i = 0; i < rows.length; i++) {
+        if (String(rows[i][0]).trim().toLowerCase() === name && rows[i][1] !== '' && rows[i][1] !== null) {
+          return Number(rows[i][1]);
+        }
+      }
+    }
+  } catch (err) {}
+  try {
+    const r2 = playerSheet.getRange(2, 18).getValue(); // Column R, row 2
+    if (r2 !== '' && r2 !== null && r2 !== undefined && !isNaN(Number(r2))) return Number(r2);
+  } catch (err) {}
+  return null;
+}
 
 function doGet(e) {
   const output = ContentService.createTextOutput();
@@ -39,6 +64,7 @@ function doGet(e) {
       // Q2 = row 2 (data index 1), column Q (index 16) — the player's total points formula
       const q2Raw = data.length > 1 ? data[1][16] : null;
       const q2Total = (q2Raw === '' || q2Raw === null || q2Raw === undefined) ? null : Number(q2Raw);
+      const handicap = lookupHandicap(ss, sheet);
 
       const holes = [];
       let frontPoints = 0;
@@ -63,6 +89,8 @@ function doGet(e) {
           rowIndex: i, // 0-based index into the sheet data array
           hole: holeNumber, // Column E
           par: row[5], // Column F
+          index1: row[6], // Column G — stroke index (first allocation)
+          index2: row[7], // Column H — stroke index (second allocation)
           front: String(row[3]).toUpperCase() === 'FRONT', // Column D
           currentScore: row[8], // Column I
           points: pointsValue, // Column M
@@ -75,7 +103,7 @@ function doGet(e) {
         });
       }
 
-      output.setContent(JSON.stringify({ success: true, holes, q2Total }));
+      output.setContent(JSON.stringify({ success: true, holes, q2Total, handicap, playerHandicap: handicap }));
       return output;
     }
 
@@ -97,7 +125,19 @@ function doGet(e) {
         sheet.getRange(cellRow, SCORE_COLUMN).setValue(Number(score));
       }
 
-      output.setContent(JSON.stringify({ success: true }));
+      // Force recalculation, then read back the authoritative points for this hole and the
+      // running total, so the client can update instantly from this single round trip instead
+      // of polling getHoles afterwards.
+      SpreadsheetApp.flush();
+      const pointsRaw = sheet.getRange(cellRow, POINTS_COLUMN).getValue();
+      const points = (pointsRaw === '' || pointsRaw === null || pointsRaw === undefined) ? null : Number(pointsRaw);
+      const totalRaw = sheet.getRange(TOTAL_CELL_ROW, TOTAL_CELL_COL).getValue();
+      const q2Total = (totalRaw === '' || totalRaw === null || totalRaw === undefined) ? null : Number(totalRaw);
+      const savedScoreRaw = sheet.getRange(cellRow, SCORE_COLUMN).getValue();
+      const savedScore = (savedScoreRaw === '' || savedScoreRaw === null || savedScoreRaw === undefined) ? null : Number(savedScoreRaw);
+      const handicap = lookupHandicap(ss, sheet);
+
+      output.setContent(JSON.stringify({ success: true, rowIndex, points, q2Total, handicap, savedScore }));
       return output;
     }
 
