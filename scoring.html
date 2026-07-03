@@ -20,7 +20,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0ljxNPGNPIZsDtHpgDMbfPhDr5UVYnhaoZhub0CoZYxwfEhMtaYXkdH3veVMIOrZh/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsIpFLV6y4b-Bct4NnQ624Mdx6glCUfg7nbazbMhsNGuUpJSmqNfTUz1e5XK3SjIQX/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
@@ -35,6 +35,7 @@
   const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.v3';
   const SESSION_QUEUE_KEY   = 'hackerscup.scoring.queue.v2';
   const SHEET_NAMES_CACHE_KEY = 'hackerscup.scoring.sheetnames.v1';
+  const HANDICAP_CACHE_KEY = 'hackerscup.scoring.handicaps.v1'; // { sheetName: handicap }, survives session cache resets
   // ── COURSE DATA ─────────────────────────────────────────────
   const COURSE_BASE_URL = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
   const COURSE_HOLES = [
@@ -92,35 +93,35 @@
   let sheetPollInFlight = false;
 
   // ── REQUEST QUEUE ────────────────────────────────────────────
-  // Single-flight, ordered queue for every Apps Script call. Previously, online events,
-  // visibilitychange, and post-save refreshes could each independently kick off overlapping
-  // requests against Apps Script. This collapses everything into one in-flight call at a time,
-  // so a flaky course wifi connection can't pile up redundant requests against the same backend.
+  // Bounded-concurrency, ordered queue for every Apps Script call. Originally this ran fully
+  // single-flight (one call at a time, globally) to stop online events, visibilitychange, and
+  // post-save refreshes from piling up overlapping requests on a flaky course wifi connection.
+  // That was safe but serialized unrelated reads unnecessarily — e.g. loading 4 players' holes
+  // one after another instead of in parallel. A small concurrency cap keeps the "don't pile up
+  // requests" protection while letting a few genuinely-independent reads overlap.
   const requestQueue = [];
-  let requestQueueRunning = false;
-  // priority=true puts the job ahead of any queued non-priority jobs (score writes must never
-  // sit behind slow full-sheet reads).
+  let inFlightCount = 0;
+  const MAX_CONCURRENT_REQUESTS = 3;
+  // priority=true bypasses the concurrency cap entirely and runs immediately — score writes
+  // must never sit behind slow full-sheet reads.
   function enqueueRequest(fn, priority = false) {
     return new Promise((resolve, reject) => {
-      const job = { fn, resolve, reject, priority };
-      if (priority) {
-        let i = 0;
-        while (i < requestQueue.length && requestQueue[i].priority) i++;
-        requestQueue.splice(i, 0, job);
-      } else {
-        requestQueue.push(job);
-      }
-      runRequestQueue();
+      const job = { fn, resolve, reject };
+      if (priority) runJob(job);
+      else { requestQueue.push(job); pumpRequestQueue(); }
     });
   }
-  async function runRequestQueue() {
-    if (requestQueueRunning) return;
-    requestQueueRunning = true;
-    while (requestQueue.length) {
-      const { fn, resolve, reject } = requestQueue.shift();
-      try { resolve(await fn()); } catch (err) { reject(err); }
+  function runJob(job) {
+    inFlightCount++;
+    Promise.resolve().then(job.fn).then(job.resolve, job.reject).finally(() => {
+      inFlightCount--;
+      pumpRequestQueue();
+    });
+  }
+  function pumpRequestQueue() {
+    while (inFlightCount < MAX_CONCURRENT_REQUESTS && requestQueue.length) {
+      runJob(requestQueue.shift());
     }
-    requestQueueRunning = false;
   }
 
   try {
@@ -164,6 +165,29 @@
   }
   function savePendingQueue() {
     try { localStorage.setItem(SESSION_QUEUE_KEY, JSON.stringify(pendingScoreUpdates)); } catch (err) {}
+  }
+  // Handicap cache: kept separate from the session snapshot so it survives a session reset
+  // (new round, sign-out) and is available the instant a player is selected again — the local
+  // Stableford calc needs a handicap to produce a number at all, so we never want a network
+  // round trip standing between "player selected" and "points render correctly".
+  function loadHandicapCache() {
+    try { return safeParseJson(localStorage.getItem(HANDICAP_CACHE_KEY)) || {}; } catch (err) { return {}; }
+  }
+  function saveHandicapToCache(sheetName, handicap) {
+    if (handicap === null || handicap === undefined || isNaN(Number(handicap))) return;
+    try {
+      const cache = loadHandicapCache();
+      cache[sheetName] = Number(handicap);
+      localStorage.setItem(HANDICAP_CACHE_KEY, JSON.stringify(cache));
+    } catch (err) {}
+  }
+  function applyHandicapCacheToPlayers() {
+    const cache = loadHandicapCache();
+    players.forEach(p => {
+      if ((p.handicap === null || p.handicap === undefined) && cache[p.sheetName] !== undefined) {
+        p.handicap = Number(cache[p.sheetName]);
+      }
+    });
   }
   function isResumeEligibleSession(session) {
     if (!session) return false;
@@ -222,26 +246,45 @@
   // Every score write goes saveScore -> Apps Script -> the Sheet, and the response carries
   // the recalculated points + running total so this device is correct instantly (no follow-up
   // request needed for the device that made the edit).
-  // For everything ELSE (another scorer's device, a manual edit in the Sheet), we poll getHoles
-  // through the same Apps Script endpoint on a timer. NOTE: an earlier version of this polled
+  // For everything ELSE (another scorer's device, a manual edit in the Sheet), we poll getHolesBatch
+  // through the same Apps Script endpoint on a timer — ONE round trip for the whole group (up to
+  // 4 players) instead of one getHoles call per player. NOTE: an earlier version of this polled
   // the Sheet's gviz endpoint directly — that redirected to a Google login page in testing
   // because the spreadsheet isn't shared as "anyone with the link", so it silently never
   // synced. Apps Script (deployed as a public Web App) is the only channel confirmed to work
   // without requiring the spreadsheet to be made public.
-  async function fetchSheetSnapshot(sheetName) {
-    const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(sheetName)}`));
-    if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getHoles failed');
+  const isBlank = v => v === null || v === undefined || v === '';
+  function snapshotFromHolesResult(resp) {
+    if (!resp || !resp.success) return null;
     const byHole = {};
     (resp.holes || []).forEach(h => {
       byHole[Number(h.hole)] = {
-        score: (h.currentScore === '' || h.currentScore === null || h.currentScore === undefined) ? null : Number(h.currentScore),
-        points: (h.points === '' || h.points === null || h.points === undefined) ? null : Number(h.points)
+        score: isBlank(h.currentScore) ? null : Number(h.currentScore),
+        points: isBlank(h.points) ? null : Number(h.points)
       };
     });
-    const q2Total = (resp.q2Total === undefined || resp.q2Total === null) ? null : Number(resp.q2Total);
+    const q2Total = isBlank(resp.q2Total) ? null : Number(resp.q2Total);
     const handicapRaw = resp.handicap ?? resp.playerHandicap;
-    const handicap = (handicapRaw === undefined || handicapRaw === null) ? null : Number(handicapRaw);
+    const handicap = isBlank(handicapRaw) ? null : Number(handicapRaw);
     return { byHole, q2Total, handicap };
+  }
+  // Fetches getHolesBatch for a whole group in ONE Apps Script call instead of one getHoles
+  // call per player — returns the raw per-sheet result objects (rowIndex, par, index1/index2,
+  // currentScore, points, q2Total, handicap), used wherever full hole records are needed
+  // (initial load, reconciliation). priority=true is used for the initial load.
+  async function fetchHolesBatchRaw(sheetNames, priority = false) {
+    const joined = sheetNames.join('|');
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHolesBatch&sheets=${encodeURIComponent(joined)}`), priority);
+    if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getHolesBatch failed');
+    return resp.results || {};
+  }
+  // Lighter-weight view used by the polling loop, which only needs score/points/total/handicap
+  // to reconcile against what's already rendered, not full hole metadata.
+  async function fetchAllSheetSnapshots(sheetNames, priority = false) {
+    const results = await fetchHolesBatchRaw(sheetNames, priority);
+    const out = {};
+    sheetNames.forEach(name => { out[name] = snapshotFromHolesResult(results[name]); });
+    return out;
   }
   function applySheetSnapshot(player, pidx, snap) {
     let changed = false;
@@ -253,6 +296,7 @@
       player.handicap = Number(snap.handicap);
       changed = true;
     }
+    if (snap.handicap !== null) saveHandicapToCache(player.sheetName, snap.handicap);
     (player.holes || []).forEach(h => {
       const rec = snap.byHole[Number(h.hole)];
       if (!rec) return;
@@ -260,10 +304,9 @@
       const isQueued = pendingScoreUpdates.some(u => u.sheetName === player.sheetName && Number(u.rowIndex) === Number(h.rowIndex));
       const isEditing = scoreUpdateTimers.has(`${pidx}|${h.rowIndex}`);
       if (isQueued || isEditing) return;
-      const blank = v => v === null || v === undefined || v === '';
-      if (rec.points !== null && (blank(h.points) || Number(h.points) !== rec.points)) { h.points = rec.points; h.sheetPoints = rec.points; changed = true; }
-      if (rec.score !== null && (blank(h.currentScore) || Number(h.currentScore) !== rec.score)) { h.currentScore = rec.score; changed = true; }
-      if (rec.score !== null && (blank(player.scores[h.rowIndex]) || Number(player.scores[h.rowIndex]) !== rec.score)) { player.scores[h.rowIndex] = rec.score; changed = true; }
+      if (rec.points !== null && (isBlank(h.points) || Number(h.points) !== rec.points)) { h.points = rec.points; h.sheetPoints = rec.points; changed = true; }
+      if (rec.score !== null && (isBlank(h.currentScore) || Number(h.currentScore) !== rec.score)) { h.currentScore = rec.score; changed = true; }
+      if (rec.score !== null && (isBlank(player.scores[h.rowIndex]) || Number(player.scores[h.rowIndex]) !== rec.score)) { player.scores[h.rowIndex] = rec.score; changed = true; }
     });
     if (changed) {
       updatePlayerCardDom(pidx);
@@ -275,9 +318,9 @@
     if (sheetPollInFlight || !players.length || !navigator.onLine || document.visibilityState !== 'visible') return;
     sheetPollInFlight = true;
     try {
-      await Promise.all(players.map(async (p, idx) => {
-        try { applySheetSnapshot(p, idx, await fetchSheetSnapshot(p.sheetName)); } catch (_) {}
-      }));
+      const snaps = await fetchAllSheetSnapshots(players.map(p => p.sheetName));
+      players.forEach((p, idx) => { const snap = snaps[p.sheetName]; if (snap) applySheetSnapshot(p, idx, snap); });
+    } catch (_) {
     } finally {
       sheetPollInFlight = false;
     }
@@ -289,11 +332,6 @@
   function stopSheetPolling() {
     if (sheetPollTimer) { clearInterval(sheetPollTimer); sheetPollTimer = null; }
   }
-  // Handicap fallback: only needed if the deployed Apps Script predates the handicap field
-  // in its getHoles response. Left as a no-op placeholder so existing call sites don't need
-  // to change; real handicap sync now happens through fetchSheetSnapshot/pollSheetsOnce above.
-  async function loadHandicapMap() {}
-  function applyHandicapMapToPlayers() {}
   function restoreSessionSnapshot(snapshot) {
     if (!snapshot) return;
     sessionStage = snapshot.stage || 'draft';
@@ -327,13 +365,13 @@
       else renderStartHolePicker();
       updateTotals();
       updateConnectionStatus();
-      applyHandicapMapToPlayers();
+      applyHandicapCacheToPlayers();
       startSheetPolling();
       flushPendingScoreUpdates().catch(() => {});
-      // Immediate reconciliation straight from the Sheet via gviz (covers staleness from
+      // Immediate reconciliation straight from the Sheet via Apps Script (covers staleness from
       // time spent offline); the polling interval keeps it fresh from here.
       pollSheetsOnce();
-      // Also refresh rowIndex/handicap metadata from Apps Script in the background.
+      // Also refresh rowIndex/handicap metadata via the batched endpoint in the background.
       reconcileHolesOnceFromSheet();
     } else {
       show('screen-loading');
@@ -343,17 +381,18 @@
   async function reconcileHolesOnceFromSheet() {
     if (!players.length || !navigator.onLine) return;
     try {
-      const results = await Promise.all(players.map(async (p) => {
-        const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`));
-        if (!resp.success) return null;
+      const rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName));
+      const results = players.map(p => {
+        const resp = rawResults[p.sheetName];
+        if (!resp || !resp.success) return null;
         return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
-      }));
+      });
       results.forEach((r, idx) => {
         if (!r) return;
         r.player.holes = r.holes;
         if (r.q2Total !== undefined && r.q2Total !== null) r.player.sheetTotal = Number(r.q2Total);
         const hcap = r.handicap ?? r.playerHandicap;
-        if (hcap !== undefined && hcap !== null) r.player.handicap = Number(hcap);
+        if (hcap !== undefined && hcap !== null) { r.player.handicap = Number(hcap); saveHandicapToCache(r.player.sheetName, hcap); }
         updatePlayerCardDom(idx);
       });
       if (results[0]) {
@@ -424,7 +463,7 @@
       if (resp.points !== undefined && resp.points !== null) { hole.points = Number(resp.points); hole.sheetPoints = Number(resp.points); }
     }
     if (resp.q2Total !== undefined && resp.q2Total !== null) player.sheetTotal = Number(resp.q2Total);
-    if (resp.handicap !== undefined && resp.handicap !== null) player.handicap = Number(resp.handicap);
+    if (resp.handicap !== undefined && resp.handicap !== null) { player.handicap = Number(resp.handicap); saveHandicapToCache(sheetName, resp.handicap); }
     updatePlayerCardDom(pidx);
     updateTotals();
     persistScoringSession();
@@ -589,39 +628,36 @@
     resetCurrentSession(false); await loadSheetNames();
   };
   // ── SCORING SCREEN ────────────────────────────────────────────
-  // Retry wrapper: one auto-retry after 1s — handles transient proxy blips
-  async function fetchJsonWithRetry(url) {
-    try { return await enqueueRequest(() => fetchJsonViaProxy(url)); }
-    catch (_) {
-      await new Promise(r => setTimeout(r, 1000));
-      return enqueueRequest(() => fetchJsonViaProxy(url));
-    }
-  }
   async function loadHoles() {
     if (!players || !players.length) { hide('screen-loading'); show('screen-login'); return; }
     $('sheet-label').textContent = players.map(p => p.name).join(' · ');
     show('scorecard-loading'); hide('hole-view'); hide('round-nav');
-    // Kick off the gviz handicap/score read in parallel with the Apps Script getHoles call —
-    // gviz is a direct sheet read with no Apps Script cold-start, so handicaps are often
-    // available before getHoles even returns, and the very first card render already has them.
-    pollSheetsOnce();
+    // Seed handicap from the durable local cache immediately — the local Stableford calc can
+    // then produce a correct number on the very first render, before any network call returns.
+    applyHandicapCacheToPlayers();
     try {
-      const results = await Promise.all(players.map(async (p) => {
-        const resp = await fetchJsonWithRetry(`${APPS_SCRIPT_URL}?action=getHoles&sheet=${encodeURIComponent(p.sheetName)}`);
-        if (!resp.success) throw new Error(resp.error || `Failed to load holes for ${p.sheetName}`);
+      let rawResults;
+      try {
+        rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName), true);
+      } catch (_) {
+        await new Promise(r => setTimeout(r, 1000));
+        rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName), true);
+      }
+      const results = players.map(p => {
+        const resp = rawResults[p.sheetName];
+        if (!resp || !resp.success) throw new Error((resp && resp.error) || `Failed to load holes for ${p.sheetName}`);
         return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
-      }));
+      });
       results.forEach(({ player, holes, q2Total, handicap }) => {
         player.holes = holes;
         player.scores = {};
         if (q2Total !== undefined && q2Total !== null) player.sheetTotal = Number(q2Total);
-        if (handicap !== undefined && handicap !== null) player.handicap = Number(handicap);
+        if (handicap !== undefined && handicap !== null) { player.handicap = Number(handicap); saveHandicapToCache(player.sheetName, handicap); }
         holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) player.scores[h.rowIndex] = h.currentScore; });
       });
       holeData = results[0].holes;
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
       hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
-      applyHandicapMapToPlayers();
       startSheetPolling();
       if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
       else renderStartHolePicker();
@@ -1021,12 +1057,17 @@
     if (sheetPoints !== null && sheetPoints !== undefined) return Number(sheetPoints);
     return null;
   }
-  // Stroke indexes for a hole: prefer what the Sheet reported (columns G/H), fall back to
-  // the hardcoded course data.
+  // Stroke indexes for a hole: the hardcoded COURSE_HOLES table (the course guide) is
+  // authoritative — it's the verified scorecard data for Worrigee Links. The Sheet's own G/H
+  // columns are computed via SUMIFS against a separate 'Course Info' tab, and testing turned up
+  // at least one case where that tab disagreed with the course guide (a hole showing Par 4 from
+  // the Sheet vs Par 5 in the guide) — so the Sheet's index1/index2 are only used as a fallback
+  // for a hole number the course guide doesn't recognize (e.g. stray/test rows in the sheet).
   function getHoleIndexes(hole) {
     const ch = getCourseHole(hole.hole);
-    const index1 = (hole.index1 !== undefined && hole.index1 !== null && hole.index1 !== '') ? Number(hole.index1) : (ch ? ch.index1 : null);
-    const index2 = (hole.index2 !== undefined && hole.index2 !== null && hole.index2 !== '') ? Number(hole.index2) : (ch ? ch.index2 : null);
+    if (ch) return { index1: ch.index1, index2: ch.index2 };
+    const index1 = (hole.index1 !== undefined && hole.index1 !== null && hole.index1 !== '') ? Number(hole.index1) : null;
+    const index2 = (hole.index2 !== undefined && hole.index2 !== null && hole.index2 !== '') ? Number(hole.index2) : null;
     return { index1, index2 };
   }
   function updateTotals() {
@@ -1061,25 +1102,13 @@
     });
   }
   // ── LEADERBOARD ───────────────────────────────────────────────
-  // Reads from the same Google Sheets gviz endpoint used by liveSaturday.html.
-  // Two fetches: the leaderboard tab (rank, name, points, front, back, through)
-  // and the handicap tab (name → handicap lookup). The current group's players
-  // are highlighted in the drawer.
-  const LB_SHEET_ID   = SPREADSHEET_ID;
-  const LB_GID        = '1551828927'; // "Sat Leaderboard" tab — update if GID differs in this sheet
-  const LB_HCAP_GID   = '1849833306'; // "Players" / handicap tab — update if GID differs
-
+  // Reads through the same Apps Script Web App as everything else (action=getLeaderboard),
+  // which does the rank/name/points/handicap lookup server-side in one call. This used to read
+  // the Sheet's gviz endpoint directly (two separate fetches) — the same technique that hit a
+  // Google login wall in testing on this spreadsheet, so it's been moved onto the one channel
+  // confirmed to work without requiring the spreadsheet to be public.
   let lbOpen = false;
   let lbPrevRanks = {};
-
-  function gvizUrl(gid) {
-    return `https://docs.google.com/spreadsheets/d/${LB_SHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
-  }
-  function parseGviz(text) {
-    const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
-    if (!match) throw new Error('Unexpected gviz response format');
-    return JSON.parse(match[1]);
-  }
 
   window.openLeaderboard = function() {
     if (lbOpen) return;
@@ -1115,42 +1144,15 @@
     list.innerHTML = '<div class="lb-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>';
 
     try {
-      const [lbText, hcapText] = await Promise.all([
-        fetch(gvizUrl(LB_GID)).then(r => r.text()),
-        fetch(gvizUrl(LB_HCAP_GID)).then(r => r.text()).catch(() => null)
-      ]);
+      const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getLeaderboard`));
+      if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getLeaderboard failed');
 
-      const lbJson = parseGviz(lbText);
-      const rows = lbJson.table.rows;
-
-      // Build handicap lookup: name → handicap string
-      const hcapMap = {};
-      if (hcapText) {
-        try {
-          const hcapJson = parseGviz(hcapText);
-          hcapJson.table.rows.forEach(r => {
-            const name = r.c[0]?.v;
-            const hcap = r.c[1]?.v;
-            if (name) hcapMap[name] = hcap;
-          });
-        } catch (_) {}
-      }
-
-      // Columns (matching liveSaturday): c[1]=Rank c[2]=Name c[3]=Points c[4]=Front c[5]=Back c[6]=Through
+      // Apps Script already filters rank 0/blank and sorts ascending; each row carries its own
+      // handicap now, so there's no separate hcapMap fetch/lookup needed on the client.
       const myNames = new Set(players.map(p => p.sheetName));
-
-      // Filter out rows with rank 0 or blank, sort by rank ascending
-      const valid = rows
-        .map(r => ({
-          rank:    r.c[1]?.v,
-          name:    r.c[2]?.v ?? '',
-          pts:     r.c[3]?.v ?? '',
-          front:   r.c[4]?.v ?? '',
-          back:    r.c[5]?.v ?? '',
-          through: r.c[6]?.v ?? '',
-        }))
-        .filter(e => e.rank && parseInt(e.rank, 10) !== 0)
-        .sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
+      const valid = (resp.rows || []).map(r => ({
+        rank: r.rank, name: r.name ?? '', pts: r.pts ?? '', front: r.front ?? '', back: r.back ?? '', through: r.through ?? '', hcap: r.handicap
+      }));
 
       if (!valid.length) {
         list.innerHTML = '<div class="lb-empty">No scores posted yet</div>';
@@ -1165,8 +1167,7 @@
         const isMine = myNames.has(e.name);
         const rankNum = parseInt(e.rank, 10);
         const rankCls = rankNum <= 3 ? ` lb-rank-${rankNum}` : '';
-        const hcap = hcapMap[e.name];
-        const displayName = hcap != null ? `${e.name} <span class="lb-hcap">(${hcap})</span>` : e.name;
+        const displayName = e.hcap != null ? `${e.name} <span class="lb-hcap">(${e.hcap})</span>` : e.name;
 
         const prev = lbPrevRanks[e.name];
         let deltaHtml = '';
@@ -1207,7 +1208,6 @@
   // ── INIT ─────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     updateConnectionStatus();
-    loadHandicapMap(); // background: handicaps for the instant local points calc
     const localSession = loadLocalSession();
     if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
       continueSavedSession(localSession);
