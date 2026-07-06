@@ -542,7 +542,7 @@
 
     function personalizedFormatTeamHandicap(value) {
       if (value === null || !Number.isFinite(value)) return "";
-      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+      return Number.isInteger(value) ? String(value) : parseFloat(value.toFixed(2)).toString();
     }
 
     let personalizedUsersByUid = new Map();

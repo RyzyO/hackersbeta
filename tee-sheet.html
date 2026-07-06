@@ -634,7 +634,7 @@
                 done.add(uid); done.add(pid);
                 const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
                 const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
-                const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(1) : null;
+                const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
                 const pi1=players.indexOf(uid), pi2=players.indexOf(pid);
                 playersHtml += `
                   <div class="rounded-lg border border-blue-500/25 bg-blue-500/5 px-2.5 py-2 mb-1.5 last:mb-0">
@@ -900,7 +900,7 @@
               done.add(uid); done.add(pid);
               const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
               const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
-              const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(1) : null;
+              const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
               playersHtml += `
                 <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
                   <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc?' · Team HC '+teamHc:''}</div>

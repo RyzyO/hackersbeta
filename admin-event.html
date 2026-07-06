@@ -2302,7 +2302,7 @@ async function downloadRoomsSpreadsheet() {
     }
 
     function formatTeamHandicap(value) {
-      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+      return Number.isInteger(value) ? String(value) : parseFloat(value.toFixed(2)).toString();
     }
 
     function updateAmbroseTeamHandicap() {
@@ -2793,7 +2793,7 @@ async function downloadRoomsSpreadsheet() {
               const u2 = users.find(x => x.uid === pid);
               const h1 = numericHandicapFor(uid, rec);
               const h2 = numericHandicapFor(pid, prec);
-              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(1) : null;
+              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
               playersHtml += `
                 <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
                   <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
