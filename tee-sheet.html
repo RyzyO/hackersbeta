@@ -803,13 +803,15 @@
       if (!tsSelectedPlayers.length) { showToast('Select at least one player.','warn'); return; }
       if (tsSelectedPlayers.length>4) { showToast('Max 4 players per group.','warn'); return; }
       const hole = $('#tsManualHole')?.value.trim()||'1';
-      const teeTime = $('#tsManualTime')?.value.trim()||'';
+      const rawTime = $('#tsManualTime')?.value.trim()||'';
+      const teeTime = rawTime ? formatTeeTime(parseTeeTime(rawTime)) : '';
       teeSheets[activeTeeDay].push({ hole, teeTime, players:[...tsSelectedPlayers] });
       tsSelectedPlayers = [];
       if ($('#tsManualHole')) $('#tsManualHole').value='';
       if ($('#tsManualTime')) $('#tsManualTime').value='';
       renderTeeSheet();
       showToast('Group added.','success');
+      saveTeeSheets();
     }
 
     // ── Firebase: load/save ──
@@ -823,6 +825,11 @@
           saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
           sunday:   Array.isArray(saved.sunday)   ? saved.sunday   : [],
         };
+        // Normalize any previously saved times (e.g. "6.05", "0605") to "6:05 AM" style
+        ['friday','saturday','sunday'].forEach(day => teeSheets[day].forEach(g => {
+          const raw = asString(g.teeTime||'').trim();
+          if (raw) g.teeTime = formatTeeTime(parseTeeTime(raw));
+        }));
         syncShotgunTimeInput();
         renderTeeSheet();
         const total = teeSheets.friday.length+teeSheets.saturday.length+teeSheets.sunday.length;
@@ -1253,7 +1260,7 @@
       const uid = btn.dataset.tsPool;
       const idx = tsSelectedPlayers.indexOf(uid);
       if (idx>=0) tsSelectedPlayers.splice(idx,1); else tsSelectedPlayers.push(uid);
-      renderTsPool(); renderTsStaging();
+      renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
     // Staging deselect chips
@@ -1261,7 +1268,7 @@
       const desel = e.target.closest('[data-ts-desel]');
       if (!desel) return;
       tsSelectedPlayers.splice(Number(desel.dataset.tsDesel),1);
-      renderTsPool(); renderTsStaging();
+      renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
     // Unassigned stage buttons
@@ -1270,7 +1277,7 @@
       if (!stageBtn) return;
       const uid = stageBtn.dataset.tsStage;
       if (!tsSelectedPlayers.includes(uid)) tsSelectedPlayers.push(uid);
-      renderTsPool(); renderTsStaging();
+      renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
     // Groups: delete group / remove player
@@ -1346,7 +1353,7 @@
     $('#exportPdfBtn').addEventListener('click', ()=>exportTeeSheetPdf(activeTeeDay));
     $('#exportLabelsBtn').addEventListener('click', exportLabelsPdf);
     $('#addGroupBtn').addEventListener('click', tsAddManualGroup);
-    $('#clearStagingBtn').addEventListener('click', ()=>{ tsSelectedPlayers=[]; renderTsPool(); renderTsStaging(); });
+    $('#clearStagingBtn').addEventListener('click', ()=>{ tsSelectedPlayers=[]; renderTsPool(); renderTsStaging(); renderTsGroups(); });
     $('#tsPoolSearch').addEventListener('input', renderTsPool);
 
     // Event select
