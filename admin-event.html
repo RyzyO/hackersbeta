@@ -4087,15 +4087,17 @@ async function downloadRoomsSpreadsheet() {
       mergeEventPlayersCache(eventId);
       persistEventPlayersCache(eventId);
 
-      // Self-heal: if Firestore holds an explicit handicap that differs from what
-      // this page displays (cache-merged), the cached value likely came from a save
-      // that never fully reached the database — push it back so pages that read
-      // Firestore directly (tee-sheet.html) show the same numbers.
+      // Self-heal: an old bug (Number('') === 0) wrote handicap 0 into some
+      // Firestore records. If Firestore says exactly 0 but this page displays a
+      // real handicap, push the displayed value back so pages that read Firestore
+      // directly (tee-sheet.html) match. Deliberately restricted to zeros only —
+      // never overwrites any other Firestore value, so a stale local cache can't
+      // clobber a legitimate edit made elsewhere.
       const healWrites = [];
       eventPlayers.forEach((record, uid) => {
         const fsHc = toHcNumber((dataByUid[uid] || {}).handicap);
         const memHc = toHcNumber(record.handicap);
-        if (fsHc !== null && memHc !== null && fsHc !== memHc) {
+        if (fsHc === 0 && memHc !== null && memHc !== 0) {
           healWrites.push(setDoc(doc(firestore, "eventYears", eventId, "players", uid),
             { handicap: memHc, updatedAt: serverTimestamp() }, { merge: true }));
         }
