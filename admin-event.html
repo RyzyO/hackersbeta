@@ -686,6 +686,9 @@
               <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-sky-400 shrink-0"></i> Send notification
             </button>
             <div class="mobile-actions-divider"></div>
+            <button type="button" class="mobile-actions-item" data-mobile-click-target="syncHandicapsBtn">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Sync handicaps everywhere
+            </button>
             <button type="button" class="mobile-actions-item" data-mobile-click-target="refreshBtn">
               <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i> Refresh data
             </button>
@@ -733,6 +736,10 @@
           <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
           <span id="dirtyCount">0</span> unsaved
         </div>
+
+        <button id="syncHandicapsBtn" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs hover:bg-s3 hover:text-white transition" title="Write every handicap exactly as displayed to player profiles and this event year">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Sync HCs
+        </button>
 
         <button id="saveAllBtn" class="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 active:scale-[0.97] transition">
           <i data-lucide="save" class="w-3.5 h-3.5"></i> Save All
@@ -4842,6 +4849,37 @@ async function downloadRoomsSpreadsheet() {
       } finally {
         refreshBtn.disabled = false;
         refreshBtn.querySelector("i")?.classList.remove("animate-spin");
+      }
+    });
+
+    // Write every handicap exactly as displayed right now to the player profile
+    // (RTDB + Firestore users doc) AND this event year's record. One-click way to
+    // make the browser that shows the correct numbers the source of truth.
+    document.getElementById('syncHandicapsBtn')?.addEventListener('click', async () => {
+      const entries = [];
+      eventPlayers.forEach((record, uid) => {
+        const hc = toHcNumber(record.handicap);
+        if (hc !== null) entries.push([uid, hc]);
+      });
+      if (!entries.length) { showToast('No handicaps to sync.', 'warn'); return; }
+      if (!confirm(`Write ${entries.length} handicaps exactly as shown right now to player profiles AND ${currentEventId}? This overwrites what is stored everywhere.`)) return;
+      const btn = document.getElementById('syncHandicapsBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const writes = [];
+        for (const [uid, hc] of entries) {
+          writes.push(setDoc(doc(firestore, 'eventYears', currentEventId, 'players', uid), { handicap: hc, updatedAt: serverTimestamp() }, { merge: true }));
+          writes.push(setDoc(doc(firestore, 'users', uid), { handicap: hc }, { merge: true }));
+          writes.push(set(ref(db, `users/${uid}/handicap`), hc));
+        }
+        await Promise.all(writes);
+        persistEventPlayersCache(currentEventId);
+        showToast(`Synced ${entries.length} handicaps to profiles and ${currentEventId}`, 'success');
+      } catch (err) {
+        console.error('Handicap sync failed:', err);
+        showToast('Handicap sync failed: ' + err.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
 
