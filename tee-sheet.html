@@ -113,7 +113,7 @@
   </div>
 
   <!-- Auth bar -->
-  <div id="authBar" class="hidden fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
+  <div id="authBar" class="hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
     <i data-lucide="user-check" class="w-3.5 h-3.5 text-accent"></i>
     <span id="authEmail" class="text-slate-300"></span>
     <button id="signOutBtn" class="ml-1 text-slate-500 hover:text-red-400 transition">
@@ -401,14 +401,19 @@
       if (first?.teeTime) input.value = first.teeTime;
     }
 
+    // Accepts "6:05", "6.05", "605", "0605", "1402", "6", "6pm", "6.05 PM", etc.
+    // Without AM/PM, hours 0–11 are AM and 12–23 are PM (24-hour style).
     function parseTeeTime(s) {
       const str = String(s || '').trim().toUpperCase();
-      const m = str.match(/^(\d{1,2}):?(\d{2})\s*(AM|PM)?$/);
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
       if (!m) return 8 * 60;
-      let h = Number(m[1]), min = Number(m[2]);
-      if (m[3]==='PM' && h<12) h+=12;
-      if (m[3]==='AM' && h===12) h=0;
-      return h*60+min;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return 8 * 60;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
+      return h * 60 + min;
     }
 
     function formatTeeTime(totalMins) {
@@ -427,6 +432,21 @@
       const groupsPerHole = Math.max(2, Math.ceil(totalGroups/18));
       const absIdx = (startLetter.charCodeAt(0)-65)+groupIndex;
       return `${(((startNum-1+Math.floor(absIdx/groupsPerHole))%18)+1)}${String.fromCharCode(65+absIdx%groupsPerHole)}`;
+    }
+
+    // Order groups by tee time (traditional) or hole label (shotgun, A before B);
+    // group numbers follow this order rather than entry order.
+    function sortTeeSheetGroups(day) {
+      const arr = teeSheets[day];
+      if (!Array.isArray(arr)) return;
+      if (isShotgun(day)) {
+        arr.sort((a,b) => {
+          const ha = parseHoleLabel(a.hole), hb = parseHoleLabel(b.hole);
+          return ha.num - hb.num || ha.letter.localeCompare(hb.letter);
+        });
+      } else {
+        arr.sort((a,b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime));
+      }
     }
 
     function tsAssignedSet() {
@@ -565,6 +585,7 @@
       if (!display) return;
       const isShotgunDay = isShotgun(activeTeeDay);
 
+      sortTeeSheetGroups(activeTeeDay);
       const groups = teeSheets[activeTeeDay];
       const eligible = getEligibleForDay(activeTeeDay);
       const assignedSet = tsAssignedSet();
@@ -694,6 +715,11 @@
               </div>
               <div class="px-3 py-2 bg-s0/40 border-t border-brd/50 flex items-center justify-between">
                 <span class="text-[10px] text-slate-600">Avg HC ${avgHC}</span>
+                ${tsSelectedPlayers.length && cap<4 ? `
+                  <button type="button" data-ts-add-to="${gi}"
+                    class="text-[10px] px-2 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent font-semibold hover:bg-accent/25 transition">
+                    + Add ${Math.min(tsSelectedPlayers.length, 4-cap)} here
+                  </button>` : ''}
               </div>
             </div>`;
         }).join('');
@@ -830,6 +856,7 @@
 
     // ── PDF export ──
     async function exportTeeSheetPdf(day) {
+      sortTeeSheetGroups(day);
       const groups = teeSheets[day];
       if (!groups||!groups.length) { showToast(`No ${day} groups to export.`,'warn'); return; }
       const btn = $('#exportPdfBtn');
@@ -1017,6 +1044,7 @@
     // Pure jsPDF with Kanit TTF fetched from jsDelivr. No html2canvas.
     // Every position is in real mm — guaranteed no cut-off or drift.
     async function exportLabelsPdf() {
+      ['friday','saturday','sunday'].forEach(sortTeeSheetGroups);
       const totalGroups = teeSheets.friday.length + teeSheets.saturday.length + teeSheets.sunday.length;
       if (totalGroups === 0) { showToast('No tee sheet data — load tee sheets first.', 'warn'); return; }
 
@@ -1259,20 +1287,44 @@
         if (!teeSheets[activeTeeDay][gi].players.length) teeSheets[activeTeeDay].splice(gi,1);
         renderTeeSheet(); return;
       }
+      const addTo = e.target.closest('[data-ts-add-to]');
+      if (addTo) {
+        const group = teeSheets[activeTeeDay][Number(addTo.dataset.tsAddTo)];
+        if (!group) return;
+        if (!Array.isArray(group.players)) group.players = [];
+        const assigned = tsAssignedSet();
+        const added = [];
+        for (const uid of tsSelectedPlayers) {
+          if (group.players.length >= 4) break;
+          if (assigned.has(uid)) continue;
+          group.players.push(uid); added.push(uid);
+        }
+        if (!added.length) { showToast('Group is full.','warn'); return; }
+        tsSelectedPlayers = tsSelectedPlayers.filter(u=>!added.includes(u));
+        renderTeeSheet();
+        showToast(`Added ${added.length} player${added.length!==1?'s':''} to group.`,'success');
+        return;
+      }
     });
 
     // Inline hole/time edits
     document.addEventListener('change', e => {
       if (e.target.classList.contains('ts-group-hole')) {
         teeSheets[activeTeeDay][Number(e.target.dataset.gi)].hole = e.target.value.trim();
+        renderTsGroups();
       }
       if (e.target.classList.contains('ts-group-time')) {
-        teeSheets[activeTeeDay][Number(e.target.dataset.gi)].teeTime = e.target.value.trim();
-      }
-      if (e.target.id === 'tsStartTime' && isShotgun(activeTeeDay)) {
-        const newTime = formatTeeTime(parseTeeTime(e.target.value));
-        teeSheets[activeTeeDay].forEach(g => { g.teeTime = newTime; });
+        const raw = e.target.value.trim();
+        teeSheets[activeTeeDay][Number(e.target.dataset.gi)].teeTime = raw ? formatTeeTime(parseTeeTime(raw)) : '';
         renderTsGroups();
+      }
+      if (e.target.id === 'tsStartTime') {
+        const newTime = formatTeeTime(parseTeeTime(e.target.value));
+        e.target.value = newTime;
+        if (isShotgun(activeTeeDay)) {
+          teeSheets[activeTeeDay].forEach(g => { g.teeTime = newTime; });
+          renderTsGroups();
+        }
       }
     });
 
