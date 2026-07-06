@@ -351,16 +351,23 @@
     }
 
     // ── Data helpers ──
+    // Empty strings and non-numeric junk count as "no handicap" so the
+    // profile fallback kicks in (Number('') is 0, which silently zeroed HCs).
+    function toHcNumber(v) {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
     function normalizeEventRecord(uid, data = {}, fallbackUser = null) {
+      const hc = toHcNumber(data.handicap) ?? toHcNumber(fallbackUser?.handicap);
       return {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         skins: !!data.skins,
         coming: !!data.coming,
         saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
         sundayAttendance: data.sundayAttendance == null ? true : !!data.sundayAttendance,
-        handicap: data.handicap != null
-          ? Number(data.handicap)
-          : (fallbackUser?.handicap != null ? Number(fallbackUser.handicap) : ''),
+        handicap: hc !== null ? hc : '',
       };
     }
 
@@ -1010,7 +1017,7 @@
           uid,
           displayName: r.displayName||f.displayName||'',
           hackerNumber: f.hackerNumber||r.hackerNumber||'',
-          handicap: r.handicap!=null ? Number(r.handicap) : '',
+          handicap: toHcNumber(r.handicap) ?? toHcNumber(f.handicap) ?? '',
         };
       }).sort((a,b)=>normalize(a.displayName).localeCompare(normalize(b.displayName)));
     }

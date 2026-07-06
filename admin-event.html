@@ -2269,10 +2269,18 @@ async function downloadRoomsSpreadsheet() {
         sundayAttendance: data.sundayAttendance == null ? true : !!data.sundayAttendance,
         thursday: !!data.thursday,
         sponsorNotes: asString(data.sponsorNotes),
-        handicap: data.handicap !== undefined && data.handicap !== null
-          ? Number(data.handicap)
-          : (fallbackUser && fallbackUser.handicap !== undefined && fallbackUser.handicap !== null ? Number(fallbackUser.handicap) : "")
+        handicap: toHcNumber(data.handicap) !== null
+          ? toHcNumber(data.handicap)
+          : (toHcNumber(fallbackUser && fallbackUser.handicap) !== null ? toHcNumber(fallbackUser.handicap) : "")
       };
+    }
+
+    // Empty strings and non-numeric junk count as "no handicap" so the
+    // profile fallback kicks in (Number('') is 0, which silently zeroed HCs).
+    function toHcNumber(v) {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
     }
 
     function readEventPlayersCache(eventId) {
@@ -4055,7 +4063,7 @@ async function downloadRoomsSpreadsheet() {
           golfAustraliaNumber: f.golfAustraliaNumber || r.golfAustraliaNumber || "",
           email: f.email || r.email || f.authEmail || r.authEmail || "",
           mobile: f.mobile || f.mobileNumber || r.mobile || r.mobileNumber || "",
-          handicap: r.handicap !== undefined && r.handicap !== null ? Number(r.handicap) : "",
+          handicap: toHcNumber(r.handicap) !== null ? toHcNumber(r.handicap) : (toHcNumber(f.handicap) !== null ? toHcNumber(f.handicap) : ""),
           financialStatus: f.financialStatus || "",
           amtOutstanding: f.amtOutstanding !== undefined && f.amtOutstanding !== null ? Number(f.amtOutstanding) : ""
         };
@@ -5198,8 +5206,68 @@ async function downloadRoomsSpreadsheet() {
       notifyPreviewMessageEl.textContent = resolveNotifyText(notifyMessageInput.value, vars) || "Your message will appear here";
     }
 
+    // Recipients are picked inside the modal (seeded from any table selection),
+    // so mobile can compose without table checkboxes.
+    let notifyRecipients = new Set();
+    const notifyRecipListEl = document.getElementById('notifyRecipList');
+    const notifyRecipSearchEl = document.getElementById('notifyRecipSearch');
+
+    function notifyComingUsers() {
+      return users
+        .filter(u => !!getEventRecord(u.uid).coming)
+        .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+    }
+
+    function renderNotifyRecipList() {
+      if (!notifyRecipListEl) return;
+      const q = (notifyRecipSearchEl?.value || '').trim().toLowerCase();
+      const coming = notifyComingUsers()
+        .filter(u => !q || (u.displayName || '').toLowerCase().includes(q));
+      if (!coming.length) {
+        notifyRecipListEl.innerHTML = '<div class="px-3 py-3 text-xs text-slate-600 text-center">No players match.</div>';
+        return;
+      }
+      notifyRecipListEl.innerHTML = coming.map(u => {
+        const sel = notifyRecipients.has(u.uid);
+        return `
+          <button type="button" data-notify-recip="${escapeHtml(u.uid)}"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left transition ${sel ? 'bg-accent/10' : 'hover:bg-s3/60'}">
+            <span class="text-sm ${sel ? 'text-white font-medium' : 'text-slate-300'} truncate">${escapeHtml(u.displayName || u.uid.slice(0, 8))}</span>
+            <span class="shrink-0 w-[18px] h-[18px] rounded-full border flex items-center justify-center text-[11px] ${sel ? 'bg-accent border-accent text-s0 font-bold' : 'border-brd text-transparent'}">✓</span>
+          </button>`;
+      }).join('');
+    }
+
+    function updateNotifyRecipientsUI() {
+      renderNotifyRecipList();
+      notifyRecipientCountEl.textContent = `${notifyRecipients.size} recipient${notifyRecipients.size !== 1 ? 's' : ''} selected`;
+      const recipients = Array.from(notifyRecipients).map(uid => users.find(u => u.uid === uid)).filter(Boolean);
+      const prevUid = notifyPreviewUidSelect.value;
+      notifyPreviewUidSelect.innerHTML = recipients
+        .map(u => `<option value="${u.uid}">${escapeHtml(u.displayName)}</option>`)
+        .join("");
+      if (recipients.some(u => u.uid === prevUid)) notifyPreviewUidSelect.value = prevUid;
+      updateNotifyPreview();
+    }
+
+    notifyRecipListEl?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-notify-recip]');
+      if (!btn) return;
+      const uid = btn.dataset.notifyRecip;
+      if (notifyRecipients.has(uid)) notifyRecipients.delete(uid); else notifyRecipients.add(uid);
+      updateNotifyRecipientsUI();
+    });
+    notifyRecipSearchEl?.addEventListener('input', renderNotifyRecipList);
+    document.getElementById('notifyRecipAllBtn')?.addEventListener('click', () => {
+      notifyComingUsers().forEach(u => notifyRecipients.add(u.uid));
+      updateNotifyRecipientsUI();
+    });
+    document.getElementById('notifyRecipClearBtn')?.addEventListener('click', () => {
+      notifyRecipients.clear();
+      updateNotifyRecipientsUI();
+    });
+
     function openNotifyModal() {
-      if (selectedUids.size === 0) { showToast('Select players first — tap rows in the player table.', 'warn'); return; }
       notifyTitleInput.value = "";
       notifyMessageInput.value = "";
       notifyImageUrlInput.value = "";
@@ -5224,13 +5292,10 @@ async function downloadRoomsSpreadsheet() {
 
       notifyTeeDaySelect.value = teeSheets[activeTeeDay] ? activeTeeDay : "saturday";
 
-      const recipients = Array.from(selectedUids).map(uid => users.find(u => u.uid === uid)).filter(Boolean);
-      notifyRecipientCountEl.textContent = `${recipients.length} recipient${recipients.length !== 1 ? "s" : ""} selected`;
-      notifyPreviewUidSelect.innerHTML = recipients
-        .map(u => `<option value="${u.uid}">${escapeHtml(u.displayName)}</option>`)
-        .join("");
+      notifyRecipients = new Set(selectedUids);
+      if (notifyRecipSearchEl) notifyRecipSearchEl.value = '';
+      updateNotifyRecipientsUI();
 
-      updateNotifyPreview();
       notifyOverlay.classList.remove("hidden");
       notifyOverlay.classList.add("flex");
       lucide.createIcons();
@@ -5242,8 +5307,8 @@ async function downloadRoomsSpreadsheet() {
     }
 
     async function sendNotifyToSelected() {
-      const uids = Array.from(selectedUids);
-      if (uids.length === 0) return;
+      const uids = Array.from(notifyRecipients);
+      if (uids.length === 0) { notifySetStatus("Select at least one recipient.", "error"); return; }
       const title = notifyTitleInput.value.trim();
       const message = notifyMessageInput.value.trim();
       if (!title || !message) { notifySetStatus("Title and message are required.", "error"); return; }
@@ -5516,6 +5581,19 @@ async function downloadRoomsSpreadsheet() {
       </div>
 
       <div class="notify-sheet-body flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold">Recipients</label>
+          <div class="flex items-center gap-3">
+            <button type="button" id="notifyRecipAllBtn" class="text-[11px] font-semibold text-accent hover:brightness-110 transition">All coming</button>
+            <button type="button" id="notifyRecipClearBtn" class="text-[11px] text-slate-500 hover:text-slate-300 transition">Clear</button>
+          </div>
+        </div>
+        <input id="notifyRecipSearch" type="text" placeholder="Search players…"
+          class="w-full px-3 py-2 rounded-lg bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+        <div id="notifyRecipList" class="mt-2 max-h-44 overflow-y-auto rounded-lg border border-brd bg-s2/40 divide-y divide-brd/40"></div>
+      </div>
 
       <div>
         <label class="block text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Templates</label>
