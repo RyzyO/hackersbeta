@@ -4086,6 +4086,26 @@ async function downloadRoomsSpreadsheet() {
 
       mergeEventPlayersCache(eventId);
       persistEventPlayersCache(eventId);
+
+      // Self-heal: if Firestore holds an explicit handicap that differs from what
+      // this page displays (cache-merged), the cached value likely came from a save
+      // that never fully reached the database — push it back so pages that read
+      // Firestore directly (tee-sheet.html) show the same numbers.
+      const healWrites = [];
+      eventPlayers.forEach((record, uid) => {
+        const fsHc = toHcNumber((dataByUid[uid] || {}).handicap);
+        const memHc = toHcNumber(record.handicap);
+        if (fsHc !== null && memHc !== null && fsHc !== memHc) {
+          healWrites.push(setDoc(doc(firestore, "eventYears", eventId, "players", uid),
+            { handicap: memHc, updatedAt: serverTimestamp() }, { merge: true }));
+        }
+      });
+      if (healWrites.length) {
+        Promise.all(healWrites)
+          .then(() => showToast(`Re-synced ${healWrites.length} handicap${healWrites.length !== 1 ? 's' : ''} to the database`, 'success'))
+          .catch(err => console.error('Handicap re-sync failed:', err));
+      }
+
       refreshAwardProfilesFromEvent();
 
       dirty.clear();
