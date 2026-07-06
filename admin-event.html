@@ -2354,13 +2354,18 @@ async function downloadRoomsSpreadsheet() {
       });
     }
 
+    // Accepts "6:05", "6.05", "605", "0605", "1402", "6", "6pm", "6.05 PM", etc.
+    // Without AM/PM, hours 0–11 are AM and 12–23 are PM (24-hour style).
     function parseTeeTime(s) {
       const str = String(s || '').trim().toUpperCase();
-      const m = str.match(/^(\d{1,2}):?(\d{2})\s*(AM|PM)?$/);
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
       if (!m) return 8 * 60;
-      let h = Number(m[1]), min = Number(m[2]);
-      if (m[3] === 'PM' && h < 12) h += 12;
-      if (m[3] === 'AM' && h === 12) h = 0;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return 8 * 60;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
       return h * 60 + min;
     }
 
@@ -2545,6 +2550,11 @@ async function downloadRoomsSpreadsheet() {
                 <div class="flex items-center gap-2">
                   <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Group ${gi + 1}</span>
                   <span class="text-[10px] text-slate-600">Avg HC ${avgHC}</span>
+                  ${tsSelectedPlayers.length && players.length < 4 ? `
+                    <button type="button" data-ts-add-to="${gi}"
+                      class="text-[10px] px-2 py-0.5 rounded bg-accent/15 border border-accent/30 text-accent font-semibold hover:bg-accent/25 transition">
+                      + Add ${Math.min(tsSelectedPlayers.length, 4 - players.length)} here
+                    </button>` : ''}
                 </div>
                 <div class="flex items-center gap-2">
                   <div class="flex items-center gap-1">
@@ -2674,7 +2684,8 @@ async function downloadRoomsSpreadsheet() {
       if (tsSelectedPlayers.length === 0) { setTsStatus('Select at least one player.', 'error'); return; }
       if (tsSelectedPlayers.length > 4) { setTsStatus('Max 4 players per group.', 'error'); return; }
       const hole = document.getElementById('tsManualHole')?.value.trim() || '1';
-      const teeTime = document.getElementById('tsManualTime')?.value.trim() || '';
+      const rawTime = document.getElementById('tsManualTime')?.value.trim() || '';
+      const teeTime = rawTime ? formatTeeTime(parseTeeTime(rawTime)) : '';
       teeSheets[activeTeeDay].push({ hole, teeTime, players: [...tsSelectedPlayers] });
       tsSelectedPlayers = [];
       if (document.getElementById('tsManualHole')) document.getElementById('tsManualHole').value = '';
@@ -2694,6 +2705,11 @@ async function downloadRoomsSpreadsheet() {
           saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
           sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
         };
+        // Normalize any previously saved times (e.g. "6.05", "0605") to "6:05 AM" style
+        ['friday', 'saturday', 'sunday'].forEach(day => teeSheets[day].forEach(g => {
+          const raw = asString(g.teeTime || '').trim();
+          if (raw) g.teeTime = formatTeeTime(parseTeeTime(raw));
+        }));
         syncShotgunTimeInput();
         renderTeeSheet();
         const total = teeSheets.friday.length + teeSheets.saturday.length + teeSheets.sunday.length;
@@ -4777,6 +4793,8 @@ async function downloadRoomsSpreadsheet() {
     // Load / Save / Export
     document.getElementById('tsLoadBtn')?.addEventListener('click', loadTeeSheets);
     document.getElementById('tsSaveBtn')?.addEventListener('click', saveTeeSheets);
+    // Exposed so the module open/close script (separate scope) can auto-load on open
+    window.loadTeeSheets = loadTeeSheets;
     document.getElementById('tsExportBtn')?.addEventListener('click', () => exportTeeSheetPdf(activeTeeDay));
     document.getElementById('tsLabelsBtn')?.addEventListener('click', exportLabelsPdf);
 
@@ -4791,6 +4809,7 @@ async function downloadRoomsSpreadsheet() {
       tsSelectedPlayers = [];
       renderTsSelectedChips();
       renderTsPool();
+      renderTsGroups();
     });
 
     // Clear entire day
@@ -4820,6 +4839,7 @@ async function downloadRoomsSpreadsheet() {
         }
         renderTsSelectedChips();
         renderTsPool();
+        renderTsGroups();
         return;
       }
 
@@ -4829,6 +4849,27 @@ async function downloadRoomsSpreadsheet() {
         tsSelectedPlayers.splice(Number(deselBtn.dataset.tsDesel), 1);
         renderTsSelectedChips();
         renderTsPool();
+        renderTsGroups();
+        return;
+      }
+
+      // Add staged players to an existing group
+      const addTo = e.target.closest('[data-ts-add-to]');
+      if (addTo) {
+        const group = teeSheets[activeTeeDay][Number(addTo.dataset.tsAddTo)];
+        if (!group) return;
+        if (!Array.isArray(group.players)) group.players = [];
+        const assigned = tsAssignedSet();
+        const added = [];
+        for (const uid of tsSelectedPlayers) {
+          if (group.players.length >= 4) break;
+          if (assigned.has(uid)) continue;
+          group.players.push(uid); added.push(uid);
+        }
+        if (!added.length) { setTsStatus('Group is full.', 'warn'); return; }
+        tsSelectedPlayers = tsSelectedPlayers.filter(u => !added.includes(u));
+        renderTeeSheet();
+        setTsStatus(`Added ${added.length} player${added.length !== 1 ? 's' : ''} to group.`, 'success');
         return;
       }
 
@@ -4872,6 +4913,17 @@ async function downloadRoomsSpreadsheet() {
         renderTsGroups();
         return;
       }
+    });
+
+    // Normalize group time fields to "6:05 AM" style once editing finishes (blur)
+    document.addEventListener('change', e => {
+      const timeInput = e.target.closest('.ts-group-time');
+      if (!timeInput) return;
+      const gi = Number(timeInput.dataset.gi);
+      const raw = timeInput.value.trim();
+      const formatted = raw ? formatTeeTime(parseTeeTime(raw)) : '';
+      if (teeSheets[activeTeeDay][gi]) teeSheets[activeTeeDay][gi].teeTime = formatted;
+      timeInput.value = formatted;
     });
 
     // Keyboard shortcuts
@@ -5459,6 +5511,9 @@ async function downloadRoomsSpreadsheet() {
 
         function setModuleOpen(module, shouldOpen) {
           module.classList.toggle('module-hidden', !shouldOpen);
+          // Always pull fresh tee sheets from Firestore when the module is opened,
+          // so changes made on the standalone Tee Sheet Maker page flow through.
+          if (shouldOpen && module.getAttribute('data-admin-module') === 'tee-sheet') window.loadTeeSheets?.();
           renderOpenMenu();
         }
 
