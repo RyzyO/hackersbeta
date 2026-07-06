@@ -4824,6 +4824,27 @@ async function downloadRoomsSpreadsheet() {
     // Pool search live filter
     document.getElementById('tsPoolSearch')?.addEventListener('input', renderTsPool);
 
+    // On Sunday, confirmed Ambrose partners stage and unstage together
+    function tsConfirmedPartnerUid(uid) {
+      if (activeTeeDay !== 'sunday') return null;
+      const pid = getEventRecord(uid).ambrosePartnerUid;
+      if (!pid || getEventRecord(pid).ambrosePartnerUid !== uid) return null;
+      return pid;
+    }
+    function tsStagePartner(uid) {
+      const pid = tsConfirmedPartnerUid(uid);
+      if (!pid || tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
+      if (tsSelectedPlayers.length >= 4) return;
+      if (!getEligibleForDay(activeTeeDay).some(u => u.uid === pid)) return;
+      tsSelectedPlayers.push(pid);
+    }
+    function tsUnstagePartner(uid) {
+      const pid = tsConfirmedPartnerUid(uid);
+      if (!pid) return;
+      const i = tsSelectedPlayers.indexOf(pid);
+      if (i >= 0) tsSelectedPlayers.splice(i, 1);
+    }
+
     // Delegated clicks within the tee sheet section
     document.addEventListener('click', e => {
       // Player pool — toggle selection
@@ -4834,8 +4855,10 @@ async function downloadRoomsSpreadsheet() {
         if (idx === -1) {
           if (tsSelectedPlayers.length >= 4) { setTsStatus('Max 4 players per group.', 'warn'); return; }
           tsSelectedPlayers.push(uid);
+          tsStagePartner(uid);
         } else {
           tsSelectedPlayers.splice(idx, 1);
+          tsUnstagePartner(uid);
         }
         renderTsSelectedChips();
         renderTsPool();
@@ -4846,7 +4869,8 @@ async function downloadRoomsSpreadsheet() {
       // Deselect chip
       const deselBtn = e.target.closest('[data-ts-desel]');
       if (deselBtn) {
-        tsSelectedPlayers.splice(Number(deselBtn.dataset.tsDesel), 1);
+        const [removedUid] = tsSelectedPlayers.splice(Number(deselBtn.dataset.tsDesel), 1);
+        if (removedUid) tsUnstagePartner(removedUid);
         renderTsSelectedChips();
         renderTsPool();
         renderTsGroups();

@@ -1253,13 +1253,34 @@
 
     // ── Event listeners ──
 
+    // On Sunday, confirmed Ambrose partners stage and unstage together
+    function confirmedPartnerUid(uid) {
+      if (activeTeeDay !== 'sunday') return null;
+      const pid = getEventRecord(uid).ambrosePartnerUid;
+      if (!pid || getEventRecord(pid).ambrosePartnerUid !== uid) return null;
+      return pid;
+    }
+    function stagePartner(uid) {
+      const pid = confirmedPartnerUid(uid);
+      if (!pid || tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
+      if (!getEligibleForDay(activeTeeDay).some(u => u.uid === pid)) return;
+      tsSelectedPlayers.push(pid);
+    }
+    function unstagePartner(uid) {
+      const pid = confirmedPartnerUid(uid);
+      if (!pid) return;
+      const i = tsSelectedPlayers.indexOf(pid);
+      if (i >= 0) tsSelectedPlayers.splice(i, 1);
+    }
+
     // Pool click
     $('#tsPoolList').addEventListener('click', e => {
       const btn = e.target.closest('[data-ts-pool]');
       if (!btn||btn.disabled) return;
       const uid = btn.dataset.tsPool;
       const idx = tsSelectedPlayers.indexOf(uid);
-      if (idx>=0) tsSelectedPlayers.splice(idx,1); else tsSelectedPlayers.push(uid);
+      if (idx>=0) { tsSelectedPlayers.splice(idx,1); unstagePartner(uid); }
+      else { tsSelectedPlayers.push(uid); stagePartner(uid); }
       renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
@@ -1267,7 +1288,8 @@
     document.addEventListener('click', e => {
       const desel = e.target.closest('[data-ts-desel]');
       if (!desel) return;
-      tsSelectedPlayers.splice(Number(desel.dataset.tsDesel),1);
+      const [uid] = tsSelectedPlayers.splice(Number(desel.dataset.tsDesel),1);
+      if (uid) unstagePartner(uid);
       renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
@@ -1276,7 +1298,7 @@
       const stageBtn = e.target.closest('[data-ts-stage]');
       if (!stageBtn) return;
       const uid = stageBtn.dataset.tsStage;
-      if (!tsSelectedPlayers.includes(uid)) tsSelectedPlayers.push(uid);
+      if (!tsSelectedPlayers.includes(uid)) { tsSelectedPlayers.push(uid); stagePartner(uid); }
       renderTsPool(); renderTsStaging(); renderTsGroups();
     });
 
