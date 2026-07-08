@@ -127,6 +127,7 @@
       }
       .player-avatar-inner img { width: 100%; height: 100%; object-fit: cover; border-radius: 9999px; }
       .player-name { font-weight: 700; color: #f8fafc; line-height: 1.25; word-break: break-word; }
+      .player-nickname { font-size: .78rem; font-style: italic; color: #38bdf8; margin-top: .1rem; line-height: 1.2; }
       .player-sub { font-size: .76rem; color: #94a3b8; margin-top: .15rem; }
 
       /* Skeleton */
@@ -163,6 +164,7 @@
         font-size: 2rem; color: #38bdf8; text-transform: uppercase; overflow: hidden;
       }
       .profile-avatar-inner img { width: 100%; height: 100%; object-fit: cover; border-radius: 9999px; }
+      .name-nickname { font-style: italic; font-weight: 600; color: #38bdf8; }
       .hacker-tag {
         display: inline-flex; align-items: center; gap: .4rem;
         background: rgba(245, 158, 11, 0.12);
@@ -360,6 +362,10 @@
 
     let allPlayers = [];       // [{ name, data }]
     const playerMap = {};      // name -> data
+    const nicknameMap = {};    // normalized display name -> nickname
+
+    const normName = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, ' ').trim();
+    const nicknameFor = (name) => nicknameMap[normName(name)] || '';
 
     const esc = (s) => (s == null ? '' : String(s).replace(/[&<>"']/g, c => (
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
@@ -373,11 +379,14 @@
         : esc(initialOf(name));
       const events = data.eventsAttended || (Array.isArray(data.attendedYears) ? data.attendedYears.length : 0) || 0;
       const last = data.lastAttended ? `Last HC${esc(data.lastAttended)}` : 'No events yet';
+      const nickname = nicknameFor(name);
+      const nicknameHtml = nickname ? `<div class="player-nickname">“${esc(nickname)}”</div>` : '';
       return `
         <button type="button" class="player-card" data-name="${esc(name)}">
           <div class="player-avatar"><div class="player-avatar-inner">${avatar}</div></div>
           <div class="min-w-0 flex-1">
             <div class="player-name">${esc(name)}</div>
+            ${nicknameHtml}
             <div class="player-sub">${events} event${events == 1 ? '' : 's'} · ${last}</div>
           </div>
         </button>`;
@@ -399,7 +408,9 @@
     function applyFilter() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       const list = q
-        ? allPlayers.filter(p => p.name.toLowerCase().includes(q))
+        ? allPlayers.filter(p =>
+            p.name.toLowerCase().includes(q) ||
+            nicknameFor(p.name).toLowerCase().includes(q))
         : allPlayers;
       renderGrid(list);
     }
@@ -513,7 +524,20 @@
     }
 
     function renderDetail(name, data) {
-      document.getElementById('dName').textContent = name;
+      const nickname = nicknameFor(name);
+      // Insert the nickname between the first and last name, e.g. John “Ace” Smith.
+      const nameEl = document.getElementById('dName');
+      if (nickname) {
+        const parts = name.trim().split(/\s+/);
+        const first = parts.shift();
+        const rest = parts.join(' ');
+        const nick = `<span class="name-nickname">“${esc(nickname)}” </span>`;
+        nameEl.innerHTML = rest
+          ? `${esc(first)} ${nick} ${esc(rest)}`
+          : `${esc(first)} ${nick}`;
+      } else {
+        nameEl.textContent = name;
+      }
       const avatarEl = document.getElementById('dAvatar');
       if (data.avatarUrl) avatarEl.innerHTML = `<img src="${esc(data.avatarUrl)}" alt="${esc(name)}">`;
       else avatarEl.textContent = initialOf(name);
@@ -566,7 +590,18 @@
     // ---------- Load ----------
     async function loadPlayers() {
       try {
-        const snap = await db.collection('attendeeProfiles').get();
+        // Load profiles + user nicknames in parallel. Nicknames live on the
+        // users/{uid} doc (displayName + nickname); profiles are keyed by name.
+        const [snap, usersSnap] = await Promise.all([
+          db.collection('attendeeProfiles').get(),
+          db.collection('users').get().catch(() => null),
+        ]);
+        if (usersSnap) {
+          usersSnap.forEach(u => {
+            const d = u.data() || {};
+            if (d.displayName && d.nickname) nicknameMap[normName(d.displayName)] = d.nickname.trim();
+          });
+        }
         allPlayers = [];
         snap.forEach(doc => {
           const data = doc.data() || {};

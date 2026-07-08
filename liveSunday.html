@@ -106,6 +106,16 @@
     /* ── Player name cell ────────────────────────────── */
     .player-name-cell { display: flex; flex-direction: column; gap: 2px; text-align: left; }
     .player-name { font-size: 14px; font-weight: 600; color: #fff; }
+    .player-nickname {
+      font-size: 11px;
+      font-style: italic;
+      font-weight: 500;
+      color: #38bdf8;
+      line-height: 1.1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .player-hcp  {
       display: inline-block;
       font-size: 10px;
@@ -1249,10 +1259,14 @@
       try {
         const usersSnap = await getDocs(collection(db, 'users'));
         const uidToName = {};
+        const nicknameMap = {};
         usersSnap.forEach(d => {
-          const n = d.data().displayName;
+          const data = d.data();
+          const n = data.displayName;
           if (n) uidToName[d.id] = n.trim();
+          if (n && data.nickname) nicknameMap[normalizeName(n)] = data.nickname.trim();
         });
+        window._nicknameMap = nicknameMap;
         const evSnap = await getDoc(doc(db, 'eventYears', 'HC25'));
         const sunGroups = evSnap.data()?.teeSheets?.sunday || [];
         const teeMap = {};
@@ -1266,8 +1280,19 @@
       } catch (e) {
         console.warn('Tee sheet load failed:', e);
         window._teemap = {};
+        if (!window._nicknameMap) window._nicknameMap = {};
       }
     }
+
+    // Resolve nickname(s) for a (possibly hyphenated/paired) team name.
+    window.lookupNickname = function(rawName) {
+      const map = window._nicknameMap || {};
+      const parts = String(rawName).split(/\s*[-&]\s*/).map(p => p.trim()).filter(Boolean);
+      const nicks = parts
+        .map(p => map[window.normalizePlayerName(p)])
+        .filter(Boolean);
+      return nicks.join(' & ');
+    };
 
     // ── Auth + favourites ─────────────────────────────────
     window._authUser     = null;
@@ -1990,11 +2015,13 @@
         tdName.classList.add('column-c');
         tdName.style.textAlign = 'left';
         const teeBadge = teeInfo?.teeTime ? `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>` : '';
+        const nickname = window.lookupNickname(name);
+        const nicknameHtml = nickname ? `<span class="player-nickname">“${nickname}”</span>` : '';
         const isStarred = (window._sunFavs || new Set()).has(name);
         tdName.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
           <div class="row-avatar-group hidden"></div>
           <div class="player-name-cell" style="flex:1">
-            <span class="player-name">${displayName}</span>
+            <span class="player-name">${displayName}</span>${nicknameHtml}
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               ${handicapVal !== '' ? `<span class="player-hcp">HC ${handicapVal}</span>` : ''}
               ${teeBadge}
@@ -2052,7 +2079,10 @@
             <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${rankBadgeHtml(rankNum, isTie)}${mv}</div>
             <div style="display:flex;align-items:center;gap:7px">
               <div class="row-avatar-group hidden"></div>
-              <span class="leaderboard-name">${displayName}</span>
+              <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                <span class="leaderboard-name">${displayName}</span>
+                ${nicknameHtml}
+              </div>
             </div>
             <div style="text-align:right">
               <div class="leaderboard-pts" style="line-height:1">${nettVal !== '' ? nettVal : '—'}</div>
