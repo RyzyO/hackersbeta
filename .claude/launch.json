@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-l", "8642", "."],
       "port": 8642
+    },
+    {
+      "name": "tmstipping",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "8643", "C:\\Users\\riley\\Documents\\Github\\tmstipping"],
+      "port": 8643
     }
   ]
 }

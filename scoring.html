@@ -20,6 +20,11 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  // TODO: scoring only supports Saturday's tee sheet for now — expand CURRENT_EVENT_ID/SCORING_DAY
+  // into a day picker once the Friday/Sunday UI is dialed in.
+  const CURRENT_EVENT_ID = 'HC26';
+  const SCORING_DAY = 'saturday';
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsIpFLV6y4b-Bct4NnQ624Mdx6glCUfg7nbazbMhsNGuUpJSmqNfTUz1e5XK3SjIQX/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
@@ -65,6 +70,7 @@
   const firebaseApp = initializeApp(FIREBASE_CONFIG);
   const firebaseAuth = getAuth(firebaseApp);
   const firebaseDb = getDatabase(firebaseApp);
+  const firebaseFirestore = getFirestore(firebaseApp);
   async function fetchJsonViaProxy(url, options) {
     const response = await fetch(url, options);
     const text = await response.text();
@@ -74,6 +80,8 @@
   // ── STATE ────────────────────────────────────────────────────
   let selectedSheetNames = [];
   let allSheetNames = [];
+  let teeSheetGroups = []; // [{ hole, teeTime, players:[{uid, displayName, sheetName}] }] — Saturday only for now
+  let selectedGroupIndex = null;
   let holeData = [];
   let players = [];
   let scores = {};
@@ -346,10 +354,8 @@
       holeData = [...snapshot.holeData];
       roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
     }
-    $('input-sheet-search').value = '';
     $('login-error').textContent = '';
     renderSelectedList();
-    renderSheetSearch('');
   }
   async function continueSavedSession(snapshot) {
     if (!snapshot) return;
@@ -411,9 +417,9 @@
     stopSheetPolling();
     selectedSheetNames = []; holeData = []; roundHoles = []; currentHoleIndex = 0;
     startHoleNumber = null; sessionStage = 'draft'; players = []; scores = {}; pendingRemoteSession = null;
+    selectedGroupIndex = null;
     $('sheet-label').textContent = '';
-    $('input-sheet-search').value = '';
-    $('sheet-results').innerHTML = '';
+    $('teesheet-groups').innerHTML = '';
     $('selected-list').innerHTML = '';
     $('hole-view').innerHTML = '';
     // Reset login panel to idle state
@@ -508,7 +514,7 @@
     // Serve from cache immediately so search works without waiting for network
     try {
       const cached = localStorage.getItem(SHEET_NAMES_CACHE_KEY);
-      if (cached) { allSheetNames = JSON.parse(cached) || []; renderSheetSearch($('input-sheet-search').value.trim()); }
+      if (cached) allSheetNames = JSON.parse(cached) || [];
     } catch (_) {}
     if (!navigator.onLine) return;
     try {
@@ -516,11 +522,11 @@
       if (!data.success) throw new Error(data.error || 'Unable to load sheet names');
       allSheetNames = data.sheets || [];
       try { localStorage.setItem(SHEET_NAMES_CACHE_KEY, JSON.stringify(allSheetNames)); } catch (_) {}
-      renderSheetSearch($('input-sheet-search').value.trim());
-      const urlSheet = new URLSearchParams(window.location.search).get('sheet');
-      if (urlSheet) {
-        const exact = allSheetNames.find(name => name.toLowerCase() === urlSheet.toLowerCase() && isSelectableSheetName(name));
-        if (exact) selectSheet(exact);
+      // Sheet names may have arrived after the tee sheet groups did — re-match now that we can.
+      if (teeSheetGroups.length) {
+        teeSheetGroups.forEach(group => group.players.forEach(p => { if (!p.sheetName) p.sheetName = matchSheetNameForDisplayName(p.displayName); }));
+        if (selectedGroupIndex !== null) selectedSheetNames = teeSheetGroups[selectedGroupIndex].players.filter(p => p.sheetName).map(p => p.sheetName);
+        renderTeeSheetGroups();
       }
     } catch (err) {
       if ($('login-error')) $('login-error').textContent = err.message;
@@ -545,79 +551,128 @@
     const r = getLastNameSortKey(a).localeCompare(getLastNameSortKey(b), undefined, { sensitivity: 'base' });
     return r !== 0 ? r : String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
   }
-  function renderSheetSearch(query) {
-    const results = $('sheet-results');
-    if (!results) return;
-    results.innerHTML = '';
-    if (!allSheetNames.length) { results.innerHTML = '<div class="sheet-empty">Loading sheet list…</div>'; return; }
-    const normalized = query.toLowerCase();
-    const matches = allSheetNames.filter(name => name.toLowerCase().trim().includes(normalized) && isSelectableSheetName(name)).sort(compareByLastName);
-    if (!matches.length) { results.innerHTML = '<div class="sheet-empty">No matching sheets</div>'; return; }
-    matches.forEach(name => {
+  // ── TEE SHEET GROUPS ──────────────────────────────────────────
+  // Players are picked by tapping their tee-sheet group (Saturday only, for now) instead of
+  // free-text name search. Groups are keyed by Firebase uid in Firestore; we resolve each uid to
+  // a displayName (Realtime DB) and then to a Google Sheet tab name by normalized-name match,
+  // since there is no stored uid<->sheetName link. Unmatched players get a manual dropdown.
+  function normalizeNameForMatch(v) {
+    return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function matchSheetNameForDisplayName(displayName) {
+    const target = normalizeNameForMatch(displayName);
+    if (!target) return null;
+    const exact = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatch(name) === target);
+    return exact || null;
+  }
+  async function loadTeeSheetGroups() {
+    const status = $('teesheet-status');
+    if (status) status.textContent = 'Loading Saturday groups…';
+    try {
+      const [usersSnap, eventSnap] = await Promise.all([
+        get(ref(firebaseDb, 'users')),
+        getDoc(doc(firebaseFirestore, 'eventYears', CURRENT_EVENT_ID)),
+      ]);
+      const usersMap = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+      const saved = eventSnap.exists() ? (eventSnap.data() || {}) : {};
+      const savedGroups = Array.isArray(saved.teeSheets?.[SCORING_DAY]) ? saved.teeSheets[SCORING_DAY] : [];
+      teeSheetGroups = savedGroups.map(g => ({
+        hole: g.hole,
+        teeTime: g.teeTime,
+        players: (g.players || []).map(uid => {
+          const displayName = (usersMap[uid] && usersMap[uid].displayName) || uid;
+          return { uid, displayName, sheetName: matchSheetNameForDisplayName(displayName) };
+        }),
+      }));
+      if (status) status.textContent = teeSheetGroups.length ? `${teeSheetGroups.length} group${teeSheetGroups.length === 1 ? '' : 's'} — tap one to load its players` : 'No Saturday groups saved yet — add them in the tee sheet first.';
+    } catch (err) {
+      teeSheetGroups = [];
+      if (status) status.textContent = `Failed to load tee sheet: ${err.message}`;
+    }
+    renderTeeSheetGroups();
+  }
+  function renderTeeSheetGroups() {
+    const el = $('teesheet-groups');
+    if (!el) return;
+    el.innerHTML = '';
+    if (!teeSheetGroups.length) {
+      el.innerHTML = '<div class="sheet-empty">No Saturday groups saved yet</div>';
+      return;
+    }
+    teeSheetGroups.forEach((group, gi) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'sheet-option';
-      button.textContent = name;
-      button.onclick = () => toggleSelectSheet(name, button);
-      if (selectedSheetNames.includes(name)) button.classList.add('selected');
-      results.appendChild(button);
+      if (selectedGroupIndex === gi) button.classList.add('selected');
+      const label = document.createElement('span');
+      const prefix = [group.teeTime, group.hole ? `Hole ${group.hole}` : null].filter(Boolean).join(' · ');
+      label.textContent = (prefix ? prefix + ' — ' : '') + (group.players.map(p => p.displayName).join(', ') || '(empty group)');
+      button.appendChild(label);
+      button.onclick = () => selectGroup(gi);
+      el.appendChild(button);
     });
     renderSelectedList();
+  }
+  function selectGroup(gi) {
+    selectedGroupIndex = gi;
+    const group = teeSheetGroups[gi];
+    selectedSheetNames = group ? group.players.filter(p => p.sheetName).map(p => p.sheetName) : [];
+    $('login-error').textContent = '';
+    renderTeeSheetGroups();
+    persistScoringSession();
   }
   function renderSelectedList() {
     const el = $('selected-list');
     if (!el) return;
     el.innerHTML = '';
-    [...selectedSheetNames].sort(compareByLastName).forEach(name => {
+    if (selectedGroupIndex === null) return;
+    const group = teeSheetGroups[selectedGroupIndex];
+    if (!group) return;
+    const sortedSheetOptions = allSheetNames.filter(isSelectableSheetName).sort(compareByLastName);
+    group.players.forEach((p, pi) => {
       const chip = document.createElement('div');
       chip.className = 'player-chip';
       const span = document.createElement('span');
-      span.textContent = name;
-      const btn = document.createElement('button');
-      btn.setAttribute('aria-label', `Remove ${name}`);
-      btn.textContent = '×';
-      btn.onclick = () => toggleSelectSheet(name);
-      chip.appendChild(span);
-      chip.appendChild(btn);
+      if (p.sheetName) {
+        span.textContent = p.displayName;
+        chip.appendChild(span);
+      } else {
+        chip.classList.add('player-chip-warn');
+        span.textContent = `⚠ ${p.displayName} —`;
+        chip.appendChild(span);
+        const select = document.createElement('select');
+        select.className = 'lx-fix-select';
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = 'Choose sheet…';
+        select.appendChild(blank);
+        sortedSheetOptions.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          select.appendChild(opt);
+        });
+        select.onchange = () => assignSheetToGroupPlayer(pi, select.value);
+        chip.appendChild(select);
+      }
       el.appendChild(chip);
     });
   }
-  function toggleSelectSheet(name, btnEl) {
-    const idx = selectedSheetNames.indexOf(name);
-    if (idx >= 0) {
-      selectedSheetNames.splice(idx, 1);
-      if (btnEl) btnEl.classList.remove('selected');
-    } else {
-      if (selectedSheetNames.length >= 4) { $('login-error').textContent = 'You can select up to 4 players.'; return; }
-      selectedSheetNames.push(name);
-      if (btnEl) btnEl.classList.add('selected');
-      $('login-error').textContent = '';
-    }
-    renderSelectedList();
-    // Re-render search to reflect state
-    renderSheetSearch($('input-sheet-search').value.trim());
+  function assignSheetToGroupPlayer(playerIndex, sheetName) {
+    const group = teeSheetGroups[selectedGroupIndex];
+    if (!group) return;
+    group.players[playerIndex].sheetName = sheetName || null;
+    selectedSheetNames = group.players.filter(p => p.sheetName).map(p => p.sheetName);
+    renderTeeSheetGroups();
     persistScoringSession();
   }
-  function selectSheet(name) { toggleSelectSheet(name); }
   window.startScoring = function() {
-    if (!selectedSheetNames.length) { $('login-error').textContent = 'Select at least one player to score.'; return; }
+    if (!selectedSheetNames.length) { $('login-error').textContent = 'Select a group with at least one matched player.'; return; }
     players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
     scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = null; sessionStage = 'active';
     persistScoringSession();
     hide('screen-login'); show('screen-loading');
     loadHoles();
   };
-  window.renderSheetSearch = renderSheetSearch;
-  window.searchSheets = function() { renderSheetSearch($('input-sheet-search').value.trim()); };
-  window.openSelectedSheet = function() {
-    const query = $('input-sheet-search').value.trim();
-    if (!query) { $('login-error').textContent = 'Enter a sheet name'; return; }
-    const exact = allSheetNames.find(name => name.toLowerCase() === query.toLowerCase() && isSelectableSheetName(name));
-    if (exact) { selectSheet(exact); return; }
-    const partial = allSheetNames.find(name => name.toLowerCase().includes(query.toLowerCase()) && isSelectableSheetName(name));
-    if (partial) { selectSheet(partial); return; }
-    $('login-error').textContent = 'No sheet found with that name';
-  };
+  window.loadTeeSheetGroups = loadTeeSheetGroups;
   window.handleSignOut = async function() {
     persistScoringSession(); resetCurrentSession(true);
     await refreshResumeCandidate(); await loadSheetNames();
@@ -1212,7 +1267,6 @@
     if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
       continueSavedSession(localSession);
     } else {
-      renderSheetSearch('');
       loadSheetNames();
     }
     // Auth runs in parallel — only needed for Firebase sync, not for scoring
@@ -1409,6 +1463,19 @@ body{
   background:none;border:none;color:var(--light);
   font-size:17px;line-height:1;cursor:pointer;
   padding:0 2px;opacity:.6;
+}
+.player-chip-warn{
+  background:rgba(234,179,8,0.1);
+  border-color:rgba(234,179,8,0.4);
+}
+.lx-fix-select{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Inter',sans-serif;font-size:12px;
+  padding:4px 6px;
+  max-width:150px;
 }
 /* Search input row */
 .lx-search-wrap{
@@ -1904,29 +1971,20 @@ body{
     <div class="lx-panel-idle" id="lx-panel-idle">
       <button class="lx-start-btn" onclick="lxOpenSearch()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Find players &amp; start round
+        Choose group &amp; start round
       </button>
-      <div id="login-helper" class="lx-helper">Up to 4 players per group</div>
+      <div id="login-helper" class="lx-helper">Saturday tee sheet groups</div>
     </div>
 
-    <!-- Expanded state: search + results + selected + action -->
+    <!-- Expanded state: tee sheet groups + selected + action -->
     <div class="lx-panel-search hidden" id="lx-panel-search">
 
-      <!-- Selected players -->
+      <!-- Group list -->
+      <div id="teesheet-status" class="lx-helper" style="text-align:left"></div>
+      <div id="teesheet-groups" class="lx-results" style="max-height:40vh"></div>
+
+      <!-- Selected group's players (with manual fix-up for unmatched) -->
       <div id="selected-list" class="lx-selected"></div>
-
-      <!-- Search input -->
-      <div class="lx-search-wrap">
-        <svg class="lx-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="input-sheet-search" type="text" autocomplete="off" autocapitalize="none"
-               placeholder="Search by name…" oninput="searchSheets()"
-               onkeydown="if(event.key==='Enter') openSelectedSheet()"
-               class="lx-search-input">
-        <button class="lx-search-clear" id="lx-clear-btn" onclick="lxClearSearch()" aria-label="Clear">×</button>
-      </div>
-
-      <!-- Results list -->
-      <div id="sheet-results" class="lx-results"></div>
 
       <!-- Error -->
       <div id="login-error" class="lx-error"></div>
@@ -2045,22 +2103,13 @@ function lxOpenSearch() {
   const search = document.getElementById('lx-panel-search');
   if (idle) idle.classList.add('hidden');
   if (search) search.classList.remove('hidden');
-  if (window.renderSheetSearch) renderSheetSearch('');
-  setTimeout(() => { const inp = document.getElementById('input-sheet-search'); if (inp) inp.focus(); }, 60);
+  if (window.loadTeeSheetGroups) loadTeeSheetGroups();
 }
 function lxCloseSearch() {
   const idle = document.getElementById('lx-panel-idle');
   const search = document.getElementById('lx-panel-search');
   if (idle) idle.classList.remove('hidden');
   if (search) search.classList.add('hidden');
-  const inp = document.getElementById('input-sheet-search');
-  if (inp) inp.value = '';
-  if (window.renderSheetSearch) renderSheetSearch('');
-}
-function lxClearSearch() {
-  const inp = document.getElementById('input-sheet-search');
-  if (inp) { inp.value = ''; inp.focus(); }
-  if (window.renderSheetSearch) renderSheetSearch('');
 }
 </script>
 </body>

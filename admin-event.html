@@ -911,6 +911,7 @@
             <option value="25">25</option>
             <option value="50">50</option>
             <option value="100">100</option>
+            <option value="300">300</option>
           </select>
           <span class="text-xs text-slate-500">per page</span>
         </div>
@@ -1038,6 +1039,42 @@
       </section>
 
       </div>
+      <div id="module-duplicate-profiles" class="admin-module module-hidden" data-admin-module="duplicate-profiles" data-module-title="Duplicate Profiles">
+        <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Duplicate Profiles" title="Minimise Duplicate Profiles">−</button>
+      <!-- DUPLICATE PROFILES -->
+      <section class="bg-s1 border border-brd rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 class="text-[11px] uppercase tracking-widest text-slate-500 font-semibold">Duplicate Profiles</h3>
+            <p class="text-xs text-slate-600 mt-1">attendeeProfiles is keyed by name, so typos and slight variants create duplicate records. Find close matches and merge their awards into one profile.</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <label for="dupThreshold" class="text-xs text-slate-500">Similarity</label>
+            <input id="dupThreshold" type="range" min="50" max="95" value="80" class="w-32 accent-[#06d6a4]" />
+            <span id="dupThresholdLabel" class="text-xs text-slate-400 w-12">80%</span>
+            <button id="dupFindBtn" class="px-3 py-1.5 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition">Find duplicates</button>
+          </div>
+        </div>
+
+        <div id="dupResultsMeta" class="text-xs text-slate-500"></div>
+        <div id="dupPairsList" class="space-y-2"></div>
+        <div id="dupEmpty" class="hidden text-sm text-slate-500 border border-dashed border-brd rounded-xl p-4 text-center">No potential duplicates found at this similarity level.</div>
+      </section>
+      </div>
+
+      <!-- Duplicate merge modal -->
+      <div id="dupMergeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+        <div class="bg-s1 border border-brd rounded-xl p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4">
+          <div class="text-sm font-bold text-white uppercase tracking-wide">Merge Profiles</div>
+          <div id="dupMergeContent" class="space-y-3"></div>
+          <div id="dupMergeStatus" class="text-xs text-slate-500 min-h-[16px]"></div>
+          <div class="flex justify-end gap-2">
+            <button id="dupMergeCancelBtn" type="button" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Cancel</button>
+            <button id="dupMergeConfirmBtn" type="button" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed">Merge</button>
+          </div>
+        </div>
+      </div>
+
       <div id="module-tee-sheet" class="admin-module module-hidden" data-admin-module="tee-sheet" data-module-title="Tee Sheet Maker">
         <button type="button" class="module-minimise-btn" data-module-minimise aria-label="Minimise Tee Sheet Maker" title="Minimise Tee Sheet Maker">−</button>
       <!-- TEE SHEET MAKER -->
@@ -1290,7 +1327,7 @@
     import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
    
     import {
-      getFirestore, collection, getDocs, doc, setDoc, getDoc, serverTimestamp, arrayUnion
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, deleteDoc, serverTimestamp, arrayUnion
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // === FIREBASE CONFIG ===
@@ -1396,6 +1433,10 @@
     let awardSearchValue = '';
     let awardComingOnly = true;
     let awardMilestone = 'all';
+    let dupProfilesCache = null;
+    let dupProfilesPromise = null;
+    let dupPairs = [];
+    let dupMergeState = null;
 
     // === DOM REFS ===
     const $ = (sel) => document.querySelector(sel);
@@ -1703,17 +1744,28 @@ async function downloadRoomsSpreadsheet() {
   if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
 
   try {
-    // Build roomNumber → [names...] map from portal data (all players, not just coming)
+    // Build roomNumber → [{name, mobile}...] map from portal data (all players, not just coming)
+    // Also track, per room, which nights are needed (OR'd across all occupants):
+    // Thursday/Sunday = weekday-rate nights (col M), Friday/Saturday = weekend-rate nights (col Q)
     const roomMap = new Map();
+    const roomNights = new Map();
     users.forEach(user => {
       const record = getEventRecord(user.uid);
       const roomNum = parseInt(asString(record.roomNumber).trim());
       const name = asString(user.displayName).trim();
       if (!roomNum || !name) return;
+      const mobile = asString(user.mobile).trim();
       if (!roomMap.has(roomNum)) roomMap.set(roomNum, []);
-      roomMap.get(roomNum).push(name);
+      roomMap.get(roomNum).push({ name, mobile });
+
+      if (!roomNights.has(roomNum)) roomNights.set(roomNum, { thursday: false, friday: false, saturday: false, sunday: false });
+      const nights = roomNights.get(roomNum);
+      if (record.thursday) nights.thursday = true;
+      if (record.skins) nights.friday = true;
+      if (record.saturdayAttendance) nights.saturday = true;
+      if (record.sundayAttendance) nights.sunday = true;
     });
-    roomMap.forEach(names => names.sort((a, b) => a.localeCompare(b)));
+    roomMap.forEach(people => people.sort((a, b) => a.name.localeCompare(b.name)));
 
     // Load the template — try fetch first (works on web server / GH Pages),
     // fall back to a file-picker for local file:// access
@@ -1745,26 +1797,49 @@ async function downloadRoomsSpreadsheet() {
     const ws = wb.Sheets[wb.SheetNames[0]];
 
     // Data rows 2-42 | col F = room number
-    // Name slots: X (col 24) = person 1, AA (col 27) = person 2, AD (col 30) = person 3
-    const nameSlots = ['X', 'AA', 'AD'];
+    // Name slots: X (col 24) = person 1, AA (col 27) = person 2
+    // Room Contacts: AD (col 30) = each person's name + mobile number
+    const nameSlots = ['X', 'AA'];
+
+    const setCell = (addr, value) => {
+      if (ws[addr]) {
+        ws[addr].v = value;
+        ws[addr].w = value;
+        ws[addr].t = value ? 's' : ws[addr].t;
+      } else if (value) {
+        ws[addr] = { t: 's', v: value, w: value };
+      }
+    };
+
+    const setNumCell = (addr, value) => {
+      if (ws[addr]) {
+        ws[addr].v = value;
+        delete ws[addr].w;
+        ws[addr].t = 'n';
+      } else {
+        ws[addr] = { t: 'n', v: value };
+      }
+    };
 
     for (let row = 2; row <= 42; row++) {
       const roomCell = ws[`F${row}`];
       if (!roomCell) continue;
       const roomNum = parseInt(roomCell.v);
       if (!roomNum) continue;
-      const names = roomMap.get(roomNum) || [];
+      const people = roomMap.get(roomNum) || [];
       nameSlots.forEach((col, i) => {
-        const addr = `${col}${row}`;
-        const name = names[i] || '';
-        if (ws[addr]) {
-          ws[addr].v = name;
-          ws[addr].w = name;
-          ws[addr].t = name ? 's' : ws[addr].t;
-        } else if (name) {
-          ws[addr] = { t: 's', v: name, w: name };
-        }
+        setCell(`${col}${row}`, people[i] ? people[i].name : '');
       });
+      const contacts = people
+        .map(p => p.mobile ? `${p.name} - ${p.mobile}` : p.name)
+        .join(' ');
+
+      const nights = roomNights.get(roomNum) || { thursday: false, friday: false, saturday: false, sunday: false };
+      const weekdayNights = (nights.thursday ? 1 : 0) + (nights.sunday ? 1 : 0);
+      const weekendNights = (nights.friday ? 1 : 0) + (nights.saturday ? 1 : 0);
+      setNumCell(`M${row}`, weekdayNights);
+      setNumCell(`Q${row}`, weekendNights);
+      setCell(`AD${row}`, contacts);
     }
 
     // Write and trigger download
@@ -2251,6 +2326,257 @@ async function downloadRoomsSpreadsheet() {
         if (input) input.value = '';
       });
       setAwardStatus('');
+    });
+
+    // === DUPLICATE PROFILES ===
+    // attendeeProfiles is keyed by displayName, so slightly different spellings
+    // of the same person create separate documents. This scans every doc in the
+    // collection (not just names matching a current user, unlike the Awards
+    // Lookup cache above) and flags pairs whose names are close matches.
+    async function loadAllAttendeeProfiles(force = false) {
+      if (!force && dupProfilesCache) return dupProfilesCache;
+      if (!force && dupProfilesPromise) return dupProfilesPromise;
+
+      dupProfilesPromise = (async () => {
+        const snap = await getDocs(collection(firestore, 'attendeeProfiles'));
+        const list = [];
+        snap.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          list.push({
+            id: docSnap.id,
+            displayName: data.displayName || docSnap.id,
+            nickname: data.nickname || '',
+            hackerNumber: data.hackerNumber || '',
+            attendedYears: Array.isArray(data.attendedYears) ? data.attendedYears : [],
+            eventsAttended: data.eventsAttended,
+            totalBadges: Array.isArray(data.totalBadges) ? data.totalBadges : [],
+            consecutiveBadges: Array.isArray(data.consecutiveBadges) ? data.consecutiveBadges : [],
+            honours: Array.isArray(data.honours) ? data.honours : [],
+            otherAwards: Array.isArray(data.otherAwards) ? data.otherAwards : [],
+          });
+        });
+        dupProfilesCache = list;
+        return dupProfilesCache;
+      })().catch(err => {
+        console.error('Failed to load attendeeProfiles for duplicate scan:', err);
+        dupProfilesCache = [];
+        return dupProfilesCache;
+      }).finally(() => { dupProfilesPromise = null; });
+
+      return dupProfilesPromise;
+    }
+
+    function levenshteinDistance(a, b) {
+      const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(0));
+      for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+      for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+      for (let j = 1; j <= b.length; j++) {
+        for (let i = 1; i <= a.length; i++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[j][i] = Math.min(matrix[j][i - 1] + 1, matrix[j - 1][i] + 1, matrix[j - 1][i - 1] + cost);
+        }
+      }
+      return matrix[b.length][a.length];
+    }
+
+    function nameSimilarity(a, b) {
+      const na = normalize(a).trim();
+      const nb = normalize(b).trim();
+      const maxLen = Math.max(na.length, nb.length);
+      if (maxLen === 0) return 100;
+      return Math.round((1 - levenshteinDistance(na, nb) / maxLen) * 100);
+    }
+
+    function renderDupPairs() {
+      const listEl = document.getElementById('dupPairsList');
+      const metaEl = document.getElementById('dupResultsMeta');
+      const emptyEl = document.getElementById('dupEmpty');
+      if (!listEl || !metaEl || !emptyEl) return;
+
+      const scannedCount = dupProfilesCache ? dupProfilesCache.length : 0;
+
+      if (!dupPairs.length) {
+        listEl.innerHTML = '';
+        emptyEl.classList.toggle('hidden', scannedCount === 0);
+        metaEl.textContent = scannedCount ? `Scanned ${scannedCount} profiles. No matches at this threshold.` : '';
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      metaEl.textContent = `${dupPairs.length} potential duplicate pair${dupPairs.length === 1 ? '' : 's'} out of ${scannedCount} profiles.`;
+
+      listEl.innerHTML = dupPairs.map((pair, i) => `
+        <div class="flex items-center justify-between gap-3 bg-s2 border border-brd rounded-xl px-4 py-3 flex-wrap">
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="text-xs font-semibold text-accent">${pair.similarity}%</span>
+            <span class="text-sm text-white">${escapeHtml(pair.a.displayName || pair.a.id)}</span>
+            <span class="text-slate-600 text-xs">vs</span>
+            <span class="text-sm text-white">${escapeHtml(pair.b.displayName || pair.b.id)}</span>
+          </div>
+          <button type="button" class="px-3 py-1.5 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition" data-dup-merge="${i}">Review merge</button>
+        </div>
+      `).join('');
+    }
+
+    async function findDuplicateProfiles() {
+      const metaEl = document.getElementById('dupResultsMeta');
+      if (metaEl) metaEl.textContent = 'Scanning profiles…';
+      const profiles = await loadAllAttendeeProfiles();
+      const threshold = Number(document.getElementById('dupThreshold')?.value || 80);
+      const pairs = [];
+      for (let i = 0; i < profiles.length; i++) {
+        for (let j = i + 1; j < profiles.length; j++) {
+          const similarity = nameSimilarity(profiles[i].displayName || profiles[i].id, profiles[j].displayName || profiles[j].id);
+          if (similarity >= threshold) pairs.push({ a: profiles[i], b: profiles[j], similarity });
+        }
+      }
+      pairs.sort((x, y) => y.similarity - x.similarity);
+      dupPairs = pairs;
+      renderDupPairs();
+    }
+
+    function dedupeHonours(list) {
+      const map = new Map();
+      list.forEach(entry => {
+        const key = makeKey(entry.category, entry.text);
+        if (map.has(key)) {
+          const existing = map.get(key);
+          ['eventId', 'year', 'location'].forEach(f => { if (entry[f] && !existing[f]) existing[f] = entry[f]; });
+        } else {
+          map.set(key, Object.assign({}, entry));
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    function dedupeStrings(list) {
+      const map = new Map();
+      list.forEach(v => {
+        const key = normalize(cleanAwardText(v));
+        if (key && !map.has(key)) map.set(key, cleanAwardText(v));
+      });
+      return Array.from(map.values());
+    }
+
+    function buildMergedProfile(primary, secondary) {
+      const attendedYears = Array.from(new Set([...(primary.attendedYears || []), ...(secondary.attendedYears || [])])).sort((a, b) => Number(a) - Number(b));
+      const honours = dedupeHonours([...(primary.honours || []), ...(secondary.honours || [])]);
+      const otherAwards = dedupeStrings([...(primary.otherAwards || []), ...(secondary.otherAwards || [])]);
+      const totalBadges = dedupeStrings([...(primary.totalBadges || []), ...(secondary.totalBadges || [])]);
+      const consecutiveBadges = dedupeStrings([...(primary.consecutiveBadges || []), ...(secondary.consecutiveBadges || [])]);
+      const eventsAttended = attendedYears.length > 0 ? attendedYears.length : Math.max(Number(primary.eventsAttended) || 0, Number(secondary.eventsAttended) || 0);
+      return {
+        displayName: primary.displayName || primary.id,
+        nickname: primary.nickname || secondary.nickname || '',
+        hackerNumber: primary.hackerNumber || secondary.hackerNumber || '',
+        attendedYears,
+        eventsAttended,
+        totalBadges,
+        consecutiveBadges,
+        honours,
+        otherAwards
+      };
+    }
+
+    function setDupMergeStatus(message, type = '') {
+      const el = document.getElementById('dupMergeStatus');
+      if (!el) return;
+      el.textContent = message || '';
+      el.classList.remove('text-emerald-400', 'text-red-400', 'text-slate-500');
+      el.classList.add(type === 'success' ? 'text-emerald-400' : type === 'error' ? 'text-red-400' : 'text-slate-500');
+    }
+
+    function renderDupMergeModal() {
+      if (!dupMergeState) return;
+      const { primary, secondary } = dupMergeState;
+      const merged = buildMergedProfile(primary, secondary);
+      const content = document.getElementById('dupMergeContent');
+      if (!content) return;
+      const totalAwards = merged.honours.length + merged.otherAwards.length;
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-s2 border border-brd rounded-xl p-3">
+            <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-1">Keep (primary)</div>
+            <div class="text-sm font-semibold text-white">${escapeHtml(primary.displayName || primary.id)}</div>
+            <div class="text-[11px] text-slate-500 mt-1">${getAwardEntries(primary).length} awards · doc: ${escapeHtml(primary.id)}</div>
+          </div>
+          <div class="bg-s2 border border-brd rounded-xl p-3 opacity-70">
+            <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-1">Merge in &amp; delete</div>
+            <div class="text-sm font-semibold text-white">${escapeHtml(secondary.displayName || secondary.id)}</div>
+            <div class="text-[11px] text-slate-500 mt-1">${getAwardEntries(secondary).length} awards · doc: ${escapeHtml(secondary.id)}</div>
+          </div>
+        </div>
+        <button type="button" id="dupMergeSwapBtn" class="text-xs text-accent hover:underline">Swap which profile is primary</button>
+        <div class="bg-s1 border border-dashed border-brd rounded-xl p-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">Result after merge</div>
+          <div class="text-sm text-white mb-1">${merged.attendedYears.length} year${merged.attendedYears.length === 1 ? '' : 's'} attended · ${totalAwards} award${totalAwards === 1 ? '' : 's'} total</div>
+          <div class="text-[11px] text-slate-500">The "${escapeHtml(secondary.id)}" record will be deleted after its data is copied in.</div>
+        </div>
+      `;
+      document.getElementById('dupMergeSwapBtn')?.addEventListener('click', () => {
+        dupMergeState = { primary: dupMergeState.secondary, secondary: dupMergeState.primary };
+        renderDupMergeModal();
+      });
+      setDupMergeStatus('');
+    }
+
+    function openDupMergeModal(i) {
+      const pair = dupPairs[i];
+      if (!pair) return;
+      dupMergeState = { primary: pair.a, secondary: pair.b };
+      renderDupMergeModal();
+      document.getElementById('dupMergeModal')?.classList.remove('hidden');
+      document.getElementById('dupMergeModal')?.classList.add('flex');
+    }
+
+    function closeDupMergeModal() {
+      document.getElementById('dupMergeModal')?.classList.add('hidden');
+      document.getElementById('dupMergeModal')?.classList.remove('flex');
+      dupMergeState = null;
+    }
+
+    async function confirmDupMerge() {
+      if (!dupMergeState) return;
+      const { primary, secondary } = dupMergeState;
+      const btn = document.getElementById('dupMergeConfirmBtn');
+      if (btn) btn.disabled = true;
+      setDupMergeStatus('Merging…');
+      try {
+        const merged = buildMergedProfile(primary, secondary);
+        await setDoc(doc(firestore, 'attendeeProfiles', primary.id), merged, { merge: true });
+        await deleteDoc(doc(firestore, 'attendeeProfiles', secondary.id));
+
+        setDupMergeStatus('Merged successfully.', 'success');
+        await loadAllAttendeeProfiles(true);
+        await loadAwardProfiles(true);
+        refreshAwardProfilesFromEvent();
+        await findDuplicateProfiles();
+        setTimeout(closeDupMergeModal, 900);
+      } catch (err) {
+        console.error('Failed to merge profiles:', err);
+        setDupMergeStatus(err.message || 'Merge failed.', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    document.getElementById('dupThreshold')?.addEventListener('input', (e) => {
+      const label = document.getElementById('dupThresholdLabel');
+      if (label) label.textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('dupFindBtn')?.addEventListener('click', () => { findDuplicateProfiles(); });
+
+    document.getElementById('dupPairsList')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-dup-merge]');
+      if (!btn) return;
+      openDupMergeModal(Number(btn.dataset.dupMerge));
+    });
+
+    document.getElementById('dupMergeCancelBtn')?.addEventListener('click', closeDupMergeModal);
+    document.getElementById('dupMergeConfirmBtn')?.addEventListener('click', confirmDupMerge);
+    document.getElementById('dupMergeModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'dupMergeModal') closeDupMergeModal();
     });
 
     const EVENT_PLAYERS_CACHE_PREFIX = "hackerscup.admin-event.eventPlayers.v1";
@@ -4473,21 +4799,21 @@ async function downloadRoomsSpreadsheet() {
     //   Ground-floor inner → 'down' (bottom margin)
     const ROOM_MAP_COORDS = {
       // First Floor — outer row (golf view) → labels go UP into the top margin
-      23:[.225,.217,'up'], 25:[.281,.186,'up'], 27:[.331,.175,'up'], 29:[.383,.167,'up'], 30:[.433,.158,'up'],
-      32:[.480,.156,'up'], 33:[.536,.168,'up'], 36:[.586,.172,'up'], 38:[.638,.172,'up'], 39:[.692,.178,'up'],
-      40:[.747,.202,'up'], 41:[.799,.222,'up'], 44:[.850,.245,'up'], 46:[.900,.269,'up'],
+      23:[.205,.193,'up'], 25:[.268,.169,'up'], 27:[.327,.155,'up'], 29:[.359,.148,'up'], 30:[.419,.140,'up'],
+      32:[.462,.135,'up'], 33:[.519,.151,'up'], 36:[.561,.149,'up'], 38:[.607,.151,'up'], 39:[.658,.153,'up'],
+      40:[.716,.179,'up'], 41:[.772,.198,'up'], 44:[.816,.221,'up'], 46:[.855,.242,'up'],
       // First Floor — inner row (pool view) → labels go DOWN into the top of the inter-floor gap
-      24:[.285,.387,'down'], 26:[.336,.371,'down'], 28:[.386,.359,'down'], 31:[.464,.360,'down'],
-      34:[.516,.360,'down'], 35:[.567,.360,'down'], 37:[.619,.363,'down'],
-      42:[.735,.396,'down'], 43:[.786,.414,'down'], 45:[.838,.434,'down'],
+      24:[.274,.339,'down'], 26:[.324,.337,'down'], 28:[.369,.327,'down'], 31:[.436,.327,'down'],
+      34:[.503,.327,'down'], 35:[.549,.327,'down'], 37:[.592,.327,'down'],
+      42:[.709,.359,'down'], 43:[.773,.377,'down'], 45:[.809,.395,'down'],
       // Ground Floor — outer row (golf view) → labels go UP into the bottom of the inter-floor gap
-       1:[.210,.727,'up'],  2:[.262,.706,'up'],  3:[.310,.694,'up'],  6:[.361,.682,'up'],
-       7:[.409,.674,'up'],  9:[.457,.670,'up'], 10:[.513,.688,'up'], 13:[.564,.692,'up'],
-      15:[.612,.690,'up'], 16:[.662,.694,'up'], 17:[.717,.716,'up'], 20:[.768,.745,'up'],
-      21:[.817,.765,'up'], 22:[.869,.786,'up'],
+       1:[.207,.673,'up'],  2:[.249,.663,'up'],  3:[.311,.657,'up'],  6:[.387,.652,'up'],
+       7:[.422,.650,'up'],  9:[.450,.648,'up'], 10:[.489,.657,'up'], 13:[.538,.657,'up'],
+      15:[.584,.657,'up'], 16:[.627,.657,'up'], 17:[.713,.696,'up'], 20:[.770,.709,'up'],
+      21:[.808,.728,'up'], 22:[.843,.742,'up'],
       // Ground Floor — inner row (pool view) → labels go DOWN into the bottom margin
-       4:[.322,.875,'down'],  5:[.372,.867,'down'],  8:[.447,.867,'down'], 11:[.496,.871,'down'],
-      12:[.547,.871,'down'], 14:[.598,.871,'down'], 18:[.705,.901,'down'], 19:[.756,.920,'down'],
+       4:[.298,.805,'down'],  5:[.346,.805,'down'],  8:[.423,.805,'down'], 11:[.465,.805,'down'],
+      12:[.529,.805,'down'], 14:[.570,.805,'down'], 18:[.681,.835,'down'], 19:[.724,.851,'down'],
     };
 
     function updateRoomMapOverlay() {

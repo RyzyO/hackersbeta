@@ -597,7 +597,7 @@
       </div>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="search" class="search" type="text" placeholder="Filter by name or number" aria-label="Filter players" />
+        <input id="search" class="search" type="text" placeholder="Filter by name, or enter numbers e.g. 5, 12, 87" aria-label="Filter players" />
       </div>
       <div class="stat-strip">
         <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Loaded</div></div>
@@ -900,8 +900,16 @@ function renderRoster() {
   }).join('');
 }
 function getFiltered() {
-  const base = activePool(), q = norm(search.value || '');
-  if (!q) return [...base];
+  const base = activePool(), raw = (search.value || '').trim();
+  if (!raw) return [...base];
+
+  // If the query looks like a list of numbers (e.g. "5, 12 87; 3"), match those exact numbers.
+  if (/^[\d\s,;]+$/.test(raw)) {
+    const nums = new Set(raw.split(/[\s,;]+/).filter(Boolean).map(Number));
+    return base.filter(p => nums.has(p.no));
+  }
+
+  const q = norm(raw);
   return base.filter(p => norm(p.name).includes(q) || String(p.no).includes(q));
 }
 function refresh() {

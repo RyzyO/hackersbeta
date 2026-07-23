@@ -751,6 +751,56 @@
     </div>
   </div>
 
+  <!-- Duplicate Detection -->
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">Find & Merge Duplicates</div>
+      <div class="gb-toolbar">
+        <input id="similarityThreshold" type="range" min="50" max="95" value="80" style="width:150px;cursor:pointer;">
+        <span id="thresholdLabel" style="font-size:12px;color:var(--text-2);min-width:50px;">80% similar</span>
+        <button class="btn btn-primary btn-sm" id="findDuplicatesBtn">Find duplicates</button>
+      </div>
+    </div>
+
+    <div id="duplicatesContainer" style="display:none;">
+      <div class="table-wrap" style="margin-bottom:16px;">
+        <table style="min-width:800px;">
+          <thead>
+            <tr>
+              <th style="width:35px;"></th>
+              <th>Group</th>
+              <th>Similarity</th>
+              <th>Players</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="duplicatesTableBody"></tbody>
+        </table>
+      </div>
+      <div class="status-line" id="duplicateStatus"></div>
+    </div>
+
+    <div id="noResults" style="padding:24px;text-align:center;color:var(--text-3);display:none;">
+      No potential duplicates found at this similarity level.
+    </div>
+  </div>
+
+  <!-- Merge Modal -->
+  <div id="mergeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;">
+    <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-xl);padding:24px;max-width:500px;max-height:80vh;overflow-y:auto;width:90%;">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:16px;">Merge Profiles</div>
+
+      <div id="mergeContent"></div>
+
+      <div class="status-line" id="mergeStatusLine" style="margin-bottom:16px;"></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost btn-sm" id="cancelMergeBtn">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="confirmMergeBtn">Merge</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Group builder -->
   <div class="card">
     <div class="section-header">
@@ -888,6 +938,8 @@
   let groupBuilderGroups = [];
   let groupBuilderSelectedPlayers = [];
   let groupBuilderLoadedDocId = null;
+  let duplicateGroups = [];
+  let mergeData = null;
 
   const dirty = new Map();
   const selected = new Set();
@@ -946,6 +998,200 @@
 
   function getUniquePlayerNames() {
     return Array.from(new Set(users.map(u => asString(u.displayName).trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }
+
+  function levenshteinDistance(a, b) {
+    const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(0));
+    for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+    for (let j = 1; j <= b.length; j++) {
+      for (let i = 1; i <= a.length; i++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(matrix[j][i - 1] + 1, matrix[j - 1][i] + 1, matrix[j - 1][i - 1] + cost);
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  function calculateSimilarity(a, b) {
+    const maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 100;
+    const distance = levenshteinDistance(a.toLowerCase(), b.toLowerCase());
+    return Math.round((1 - distance / maxLen) * 100);
+  }
+
+  function findDuplicates() {
+    const threshold = Number($("similarityThreshold").value);
+    const validUsers = users.filter(u => asString(u.displayName).trim().length > 0);
+    duplicateGroups = [];
+    const seen = new Set();
+
+    for (let i = 0; i < validUsers.length; i++) {
+      for (let j = i + 1; j < validUsers.length; j++) {
+        const nameA = asString(validUsers[i].displayName).trim();
+        const nameB = asString(validUsers[j].displayName).trim();
+        const similarity = calculateSimilarity(nameA, nameB);
+
+        if (similarity >= threshold && !seen.has(`${i}-${j}`) && !seen.has(`${j}-${i}`)) {
+          duplicateGroups.push({
+            user1: validUsers[i],
+            user2: validUsers[j],
+            similarity
+          });
+          seen.add(`${i}-${j}`);
+        }
+      }
+    }
+
+    duplicateGroups.sort((a, b) => b.similarity - a.similarity);
+    renderDuplicates();
+  }
+
+  function renderDuplicates() {
+    const container = $("duplicatesContainer");
+    const tbody = $("duplicatesTableBody");
+    const noResults = $("noResults");
+
+    if (duplicateGroups.length === 0) {
+      container.style.display = "none";
+      noResults.style.display = "block";
+      return;
+    }
+
+    container.style.display = "block";
+    noResults.style.display = "none";
+
+    tbody.innerHTML = duplicateGroups.map((group, idx) => `
+      <tr>
+        <td class="cell-check"><input type="checkbox" data-merge-group="${idx}" /></td>
+        <td>Group ${idx + 1}</td>
+        <td style="color:var(--aqua);font-weight:600;">${group.similarity}%</td>
+        <td>
+          <div style="font-size:12px;">
+            <div>${escapeHtml(asString(group.user1.displayName))}</div>
+            <div style="color:var(--text-3);">${escapeHtml(group.user1.email)}</div>
+            <div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border);">
+              ${escapeHtml(asString(group.user2.displayName))}
+            </div>
+            <div style="color:var(--text-3);">${escapeHtml(group.user2.email)}</div>
+          </div>
+        </td>
+        <td class="cell-actions">
+          <button class="tiny-btn" type="button" data-merge-pair="${idx}">Merge</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function openMergeDialog(groupIdx) {
+    const group = duplicateGroups[groupIdx];
+    if (!group) return;
+
+    mergeData = {
+      groupIdx,
+      user1: group.user1,
+      user2: group.user2,
+      primary: group.user1,
+      secondary: group.user2
+    };
+
+    const content = $("mergeContent");
+    content.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="padding:12px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;">Primary (Keep)</div>
+          <div style="font-weight:500;margin-bottom:8px;">${escapeHtml(asString(group.user1.displayName))}</div>
+          <div style="font-size:12px;color:var(--text-3);">
+            Email: ${escapeHtml(group.user1.email)}<br>
+            UID: ${escapeHtml(group.user1.uid)}
+          </div>
+        </div>
+
+        <div style="padding:12px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);opacity:0.6;">
+          <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;">Merge Into Primary</div>
+          <div style="font-weight:500;margin-bottom:8px;">${escapeHtml(asString(group.user2.displayName))}</div>
+          <div style="font-size:12px;color:var(--text-3);">
+            Email: ${escapeHtml(group.user2.email)}<br>
+            UID: ${escapeHtml(group.user2.uid)}
+          </div>
+        </div>
+
+        <div style="padding:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius);font-size:12px;color:var(--amber);">
+          ⚠ This will copy all data from the secondary profile to the primary, then update references.
+        </div>
+      </div>
+    `;
+
+    $("mergeModal").style.display = "flex";
+  }
+
+  async function confirmMerge() {
+    if (!mergeData) return;
+
+    const statusEl = $("mergeStatusLine");
+    const btn = $("confirmMergeBtn");
+    const modal = $("mergeModal");
+
+    try {
+      btn.disabled = true;
+      setStatus(statusEl, "Merging profiles…");
+
+      const primary = mergeData.user1;
+      const secondary = mergeData.user2;
+
+      // Merge non-empty fields from secondary to primary
+      const mergedData = { ...primary };
+      const fieldsToMerge = ["displayName", "mobile", "email", "hackerNumber", "handicap", "fri", "sat", "sun", "roomNumber", "level", "amtOutstanding", "financialStatus"];
+
+      for (const field of fieldsToMerge) {
+        if (!mergedData[field] && secondary[field]) {
+          mergedData[field] = secondary[field];
+        }
+      }
+
+      // Update primary user with merged data
+      const firestoreMerge = {};
+      for (const field of ["amtOutstanding", "financialStatus", "mobile", "displayName"]) {
+        if (mergedData[field] !== primary[field]) {
+          firestoreMerge[field] = mergedData[field];
+        }
+      }
+
+      if (Object.keys(firestoreMerge).length > 0) {
+        await setDoc(doc(firestore, "users", primary.uid), firestoreMerge, { merge: true });
+      }
+
+      // Update RTD
+      for (const field of ["displayName", "mobile", "email", "hackerNumber", "handicap", "fri", "sat", "sun", "roomNumber", "level"]) {
+        if (mergedData[field] !== primary[field]) {
+          await set(ref(db, `users/${primary.uid}/${field}`), mergedData[field]);
+        }
+      }
+
+      // Copy non-empty fields if primary didn't have them
+      for (const field of fieldsToMerge) {
+        if (mergedData[field] && mergedData[field] !== secondary[field]) {
+          await set(ref(db, `users/${primary.uid}/${field}`), mergedData[field]);
+        }
+      }
+
+      // Mark secondary as merged (soft delete)
+      await set(ref(db, `users/${secondary.uid}/mergedIntoUid`), primary.uid);
+      await setDoc(doc(firestore, "users", secondary.uid), { mergedIntoUid: primary.uid }, { merge: true });
+
+      setStatus(statusEl, "Merged successfully!", "success");
+
+      setTimeout(() => {
+        modal.style.display = "none";
+        loadUsers();
+      }, 1500);
+
+    } catch (error) {
+      console.error(error);
+      setStatus(statusEl, error.message || "Merge failed.", "error");
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function getAssignedBuilderPlayers() {
@@ -1211,6 +1457,36 @@
     }
     clearRowDirty(uid);
   }
+
+  // Duplicate detection event listeners
+  $("similarityThreshold").addEventListener("input", e => {
+    $("thresholdLabel").textContent = `${e.target.value}% similar`;
+  });
+
+  $("findDuplicatesBtn").addEventListener("click", findDuplicates);
+
+  $("duplicatesTableBody").addEventListener("click", e => {
+    const mergeBtn = e.target.closest("[data-merge-pair]");
+    if (mergeBtn) {
+      const groupIdx = Number(mergeBtn.getAttribute("data-merge-pair"));
+      openMergeDialog(groupIdx);
+    }
+  });
+
+  $("cancelMergeBtn").addEventListener("click", () => {
+    $("mergeModal").style.display = "none";
+    mergeData = null;
+  });
+
+  $("confirmMergeBtn").addEventListener("click", confirmMerge);
+
+  // Close modal on outside click
+  $("mergeModal").addEventListener("click", e => {
+    if (e.target.id === "mergeModal") {
+      $("mergeModal").style.display = "none";
+      mergeData = null;
+    }
+  });
 
   // Event listeners
   tableBody.addEventListener("input", e => {
