@@ -1419,6 +1419,7 @@
     let dirty = new Set();
     let adminLoaded = false;
     let currentEditUid = null;
+    let handicapTouched = false;
     let editPanelExistingRoommates = [];
     let activeFilters = { attendance: null, payment: null, skins: null, gaps: null };
     let teeSheets = { friday: [], saturday: [], sunday: [] };
@@ -4452,6 +4453,9 @@ async function downloadRoomsSpreadsheet() {
     }
 
     // === SAVE PLAYER ===
+    // Sentinel meaning "admin didn't touch the handicap field" — saveEventPlayer
+    // uses this to skip re-writing handicap to Firestore on a no-op save.
+    const HANDICAP_UNCHANGED = Symbol("handicap-unchanged");
     function validateHandicap(value) {
       const trimmed = asString(value).trim();
       if (trimmed === "") return { ok: true, value: "" };
@@ -4481,9 +4485,17 @@ async function downloadRoomsSpreadsheet() {
 
       // Validate
       if ((nextRecord.roommates || []).length > 2) throw new Error("Max 2 roommates.");
-      const hc = validateHandicap(nextRecord.handicap);
-      if (!hc.ok) throw new Error(hc.message);
-      nextRecord.handicap = hc.value;
+      const skipHandicapWrite = fieldValues.handicap === HANDICAP_UNCHANGED;
+      if (skipHandicapWrite) {
+        // Admin never touched the handicap field this edit — keep the
+        // in-memory display as-is but don't re-write it to Firestore, so a
+        // no-op save can't re-confirm a stale/resolved value over real data.
+        nextRecord.handicap = previous.handicap;
+      } else {
+        const hc = validateHandicap(nextRecord.handicap);
+        if (!hc.ok) throw new Error(hc.message);
+        nextRecord.handicap = hc.value;
+      }
 
       const outstanding = validateOutstanding(nextPayment.amtOutstanding);
       if (!outstanding.ok) throw new Error(outstanding.message);
@@ -4502,6 +4514,11 @@ async function downloadRoomsSpreadsheet() {
 
       const writes = [];
       const eventPayload = { ...nextRecord };
+      // eventPayload keeps handicap for local display; the Firestore-bound
+      // copy omits it entirely when untouched so merge:true leaves whatever
+      // is already stored alone instead of re-writing it.
+      const firestorePayload = { ...eventPayload };
+      if (skipHandicapWrite) delete firestorePayload.handicap;
       writes.push(set(ref(db, `users/${uid}/displayName`), asString(fieldValues.displayName).trim()));
       writes.push(set(ref(db, `users/${uid}/hackerNumber`), asString(fieldValues.hackerNumber).trim() || null));
 
@@ -4520,7 +4537,13 @@ async function downloadRoomsSpreadsheet() {
         } else return;
 
         const payload = { ...targetRecord, roommates: uniqueSorted(updatedRoommates), roomNumber: updatedRoomNumber, updatedAt: serverTimestamp() };
-        if (playerUid === uid) Object.assign(payload, eventPayload);
+        if (playerUid === uid) {
+          Object.assign(payload, firestorePayload);
+          if (skipHandicapWrite) delete payload.handicap;
+        } else {
+          // Room cascade writes for other players: never touch their handicap.
+          delete payload.handicap;
+        }
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), payload, { merge: true }));
         writes.push(set(ref(db, `users/${playerUid}/roomNumber`), updatedRoomNumber || null));
       });
@@ -4542,7 +4565,7 @@ async function downloadRoomsSpreadsheet() {
 
       if (writes.length === 0) {
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", uid), {
-          ...eventPayload, updatedAt: serverTimestamp()
+          ...firestorePayload, updatedAt: serverTimestamp()
         }, { merge: true }));
       }
 
@@ -4631,6 +4654,7 @@ async function downloadRoomsSpreadsheet() {
       editShirtSize.value = asString(record.shirtSize);
       editPantSize.value = asString(record.pantSize);
       editHandicap.value = record.handicap !== "" ? asString(record.handicap) : "";
+      handicapTouched = false;
       hcCalcIndex.value = "";
       updateHcCalc();
       editHackerNumber.value = asString(user.hackerNumber || "");
@@ -4994,6 +5018,12 @@ async function downloadRoomsSpreadsheet() {
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
 
+    // Only overwrite the stored handicap if the admin actually edits this
+    // field. Prevents a no-op save from re-writing whatever value happened
+    // to be displayed (which can be a resolved fallback, not the real
+    // per-event override) back over good data.
+    editHandicap.addEventListener("input", () => { handicapTouched = true; });
+
     // === GA HANDICAP CALCULATOR (Worrigee Links, Black, Men) ===
     const WORRIGEE_BLACK_MEN = { rating: 68, slope: 120, par: 70 };
     // WHS-recommended allowance for individual stroke play / Stableford — Golf Australia's
@@ -5055,7 +5085,7 @@ async function downloadRoomsSpreadsheet() {
           saturdayAttendance: editSaturdayAttendance.checked,
           sundayAttendance: editSundayAttendance.checked,
           thursday: editThursday.checked,
-          handicap: editHandicap.value,
+          handicap: handicapTouched ? editHandicap.value : HANDICAP_UNCHANGED,
           ambrosePartnerUid: editPartner.value,
           roomNumber: editRoomNumber.value.trim(),
           roommates: [...editPanelExistingRoommates],
@@ -5218,6 +5248,7 @@ async function downloadRoomsSpreadsheet() {
           const record = getEventRecord(uid);
           const fieldValues = uid === currentEditUid ? {
             ...record,
+            handicap: handicapTouched ? editHandicap.value : HANDICAP_UNCHANGED,
             financialStatus: editFinancialStatus.value,
             amtOutstanding: editAmtOutstanding.value,
             hackerNumber: editHackerNumber.value.trim(),
@@ -5225,7 +5256,7 @@ async function downloadRoomsSpreadsheet() {
             golfAustraliaNumber: editGolfAustraliaNumber.value.trim(),
             mobile: editMobile.value.trim(),
             email: editEmail.value.trim(),
-          } : record;
+          } : { ...record, handicap: HANDICAP_UNCHANGED };
           await saveEventPlayer(uid, fieldValues);
         }
         showToast("All changes saved", "success");
