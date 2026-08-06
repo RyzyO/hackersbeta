@@ -59,6 +59,9 @@
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span> Live
         </span>
         <select id="eventSelect" class="text-xs px-2.5 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 focus:outline-none focus:border-accent transition"></select>
+        <button id="handicapsBtn" class="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 hover:bg-s3 hover:text-white transition">
+          <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> Handicaps
+        </button>
       </div>
     </div>
     <div class="max-w-6xl mx-auto px-4 flex items-center gap-1 overflow-x-auto">
@@ -89,6 +92,30 @@
 
   <div class="text-center text-[11px] text-slate-600 py-4">
     Updated automatically · <span id="lastUpdated">—</span>
+  </div>
+
+  <!-- Handicaps modal -->
+  <div id="handicapsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+    <div class="w-full max-w-md max-h-[80vh] bg-s1 border border-brd rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-brd shrink-0">
+        <h2 class="text-sm font-bold text-white">Handicaps</h2>
+        <button id="handicapsCloseBtn" class="w-7 h-7 rounded-lg bg-s3 hover:bg-s4 flex items-center justify-center transition text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-s1">
+            <tr class="text-[11px] text-slate-500 uppercase tracking-wide">
+              <th class="text-left font-semibold px-4 py-2">#</th>
+              <th class="text-left font-semibold px-4 py-2">Player</th>
+              <th class="text-right font-semibold px-4 py-2">HC</th>
+            </tr>
+          </thead>
+          <tbody id="handicapsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -158,11 +185,12 @@
       return {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         handicap: hc !== null ? hc : '',
+        coming: !!data.coming,
       };
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { ambrosePartnerUid: '', handicap: '' };
+      return eventPlayers.get(uid) || { ambrosePartnerUid: '', handicap: '', coming: false };
     }
 
     function numericHandicapFor(uid, record) {
@@ -220,6 +248,7 @@
         return {
           uid,
           displayName: r.displayName || f.displayName || "",
+          hackerNumber: f.hackerNumber || r.hackerNumber || "",
         };
       });
 
@@ -353,6 +382,42 @@
       lucide.createIcons();
     }
 
+    // ── Handicaps modal ──
+    function renderHandicapsTable() {
+      const rows = users
+        .filter(u => getEventRecord(u.uid).coming)
+        .map(u => {
+          const hc = numericHandicapFor(u.uid, getEventRecord(u.uid));
+          const hnRaw = asString(u.hackerNumber).trim();
+          const hn = Number(hnRaw);
+          return { ...u, hc, hnRaw, hnSort: hnRaw !== '' && Number.isFinite(hn) ? hn : Infinity };
+        }).sort((a, b) => a.hnSort - b.hnSort || a.displayName.localeCompare(b.displayName));
+
+      $('#handicapsTableBody').innerHTML = rows.map(r => `
+        <tr class="border-t border-brd/40">
+          <td class="px-4 py-2 text-slate-500 font-mono text-xs">${escapeHtml(r.hnRaw || '—')}</td>
+          <td class="px-4 py-2 text-white truncate max-w-[220px]">${escapeHtml(r.displayName || r.uid.slice(0,8))}</td>
+          <td class="px-4 py-2 text-right font-mono text-slate-300">${r.hc !== null ? r.hc : '—'}</td>
+        </tr>`).join('');
+    }
+
+    function openHandicapsModal() {
+      renderHandicapsTable();
+      const modal = $('#handicapsModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeHandicapsModal() {
+      const modal = $('#handicapsModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    $('#handicapsBtn').addEventListener('click', openHandicapsModal);
+    $('#handicapsCloseBtn').addEventListener('click', closeHandicapsModal);
+    $('#handicapsModal').addEventListener('click', e => { if (e.target.id === 'handicapsModal') closeHandicapsModal(); });
+
     function populateEventSelect() {
       const sel = $('#eventSelect');
       sel.innerHTML = EVENT_OPTIONS.map(e => `<option value="${e.id}" ${e.id===currentEventId?'selected':''}>${e.year} · ${e.id}</option>`).join('');
@@ -361,6 +426,7 @@
         updateUrl();
         await loadUsersAndEventPlayers();
         watchTeeSheet();
+        if (!$('#handicapsModal').classList.contains('hidden')) renderHandicapsTable();
       });
     }
 
@@ -395,7 +461,12 @@
       }
       watchTeeSheet();
       // Refresh player/handicap data periodically (tee sheet itself is live via onSnapshot).
-      setInterval(() => { loadUsersAndEventPlayers().then(render).catch(() => {}); }, 5 * 60 * 1000);
+      setInterval(() => {
+        loadUsersAndEventPlayers().then(() => {
+          render();
+          if (!$('#handicapsModal').classList.contains('hidden')) renderHandicapsTable();
+        }).catch(() => {});
+      }, 5 * 60 * 1000);
     })();
   </script>
 </body>
