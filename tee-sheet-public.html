@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Tee Sheet — Hackers Cup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911', s1: '#0c1019', s2: '#111725', s3: '#182030', s4: '#1f2a3e',
+            accent: '#06d6a4', 'accent-dim': 'rgba(6,214,164,0.12)', 'accent-glow': 'rgba(6,214,164,0.25)',
+            brd: '#1c2640',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a4a70; }
+    html, body { height: 100%; }
+    body { background: #060911; }
+    .ts-day-tab { position: relative; }
+    .ts-day-tab::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: #06d6a4; transform: scaleX(0); transition: transform 0.2s;
+    }
+    .ts-day-tab.active { color: #ffffff; }
+    .ts-day-tab.active::after { transform: scaleX(1); }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+  </style>
+</head>
+<body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <div class="border-b border-brd bg-s1/80 backdrop-blur-md sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-accent-dim border border-accent/20 flex items-center justify-center shrink-0">
+          <i data-lucide="flag" class="w-4 h-4 text-accent"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-sm font-bold text-white truncate">Hackers Cup Tee Sheet</div>
+          <div id="eventLabel" class="text-[11px] text-slate-500 truncate">Loading…</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium px-2.5 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span> Live
+        </span>
+        <select id="eventSelect" class="text-xs px-2.5 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 focus:outline-none focus:border-accent transition"></select>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4 flex items-center gap-1 overflow-x-auto">
+      <button class="ts-day-tab active flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="friday">
+        Friday <span id="tab-badge-friday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-s3 text-slate-400"></span>
+      </button>
+      <button class="ts-day-tab flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="saturday">
+        Saturday <span id="tab-badge-saturday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-s3 text-slate-400"></span>
+      </button>
+      <button class="ts-day-tab flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="sunday">
+        Sunday <span id="tab-badge-sunday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-s3 text-slate-400"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="flex-1 max-w-6xl w-full mx-auto p-4">
+    <div id="tsGroupsDisplay"
+      style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-content:start;">
+    </div>
+    <div id="tsEmpty" class="hidden flex-col items-center justify-center py-24 text-center gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-s2 border border-brd flex items-center justify-center mx-auto">
+        <i data-lucide="layout-grid" class="w-7 h-7 text-slate-600"></i>
+      </div>
+      <div class="text-slate-400 text-sm font-medium">No groups posted yet for this day</div>
+    </div>
+  </div>
+
+  <div class="text-center text-[11px] text-slate-600 py-4">
+    Updated automatically · <span id="lastUpdated">—</span>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {
+      getFirestore, collection, getDocs, doc, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const EVENT_OPTIONS = [
+      { id: "HC26", year: 2026 }, { id: "HC25", year: 2025 }, { id: "HC24", year: 2024 }, { id: "HC23", year: 2023 },
+      { id: "HC22", year: 2022 }, { id: "HC21", year: 2021 }, { id: "HC20", year: 2019 },
+      { id: "HC19", year: 2018 }, { id: "HC18", year: 2017 }, { id: "HC17", year: 2016 },
+      { id: "HC16", year: 2015 }, { id: "HC15", year: 2014 }, { id: "HC14", year: 2013 },
+      { id: "HC13", year: 2012 }, { id: "HC12", year: 2011 }, { id: "HC11", year: 2010 },
+      { id: "HC10", year: 2009 }, { id: "HC9", year: 2008 }, { id: "HC8", year: 2007 },
+      { id: "HC7", year: 2006 }
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const firestore = getFirestore(app);
+
+    const params = new URLSearchParams(location.search);
+    let currentEventId = EVENT_OPTIONS.find(e => e.id === params.get('event'))?.id || EVENT_OPTIONS[0].id;
+    let activeTeeDay = ['friday','saturday','sunday'].includes(params.get('day')) ? params.get('day') : 'friday';
+
+    let users = [];
+    let eventPlayers = new Map();
+    let teeSheets = { friday: [], saturday: [], sunday: [] };
+    let unsubTeeSheets = null;
+
+    const $ = s => document.querySelector(s);
+
+    function asString(v) { return v == null ? '' : String(v); }
+    function escapeHtml(v) {
+      return String(v || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    }
+    function currentEventConfig() { return EVENT_OPTIONS.find(e => e.id === currentEventId) || EVENT_OPTIONS[0]; }
+
+    // Empty strings and non-numeric junk count as "no handicap" so the
+    // profile fallback kicks in (Number('') is 0, which silently zeroed HCs).
+    function toHcNumber(v) {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function normalizeEventRecord(uid, data = {}, fallbackUser = null) {
+      const hc = toHcNumber(data.handicap) ?? toHcNumber(fallbackUser?.handicap);
+      return {
+        ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        handicap: hc !== null ? hc : '',
+      };
+    }
+
+    function getEventRecord(uid) {
+      return eventPlayers.get(uid) || { ambrosePartnerUid: '', handicap: '' };
+    }
+
+    function numericHandicapFor(uid, record) {
+      const u = users.find(x => x.uid === uid);
+      const raw = (record.handicap !== '' && record.handicap != null)
+        ? Number(record.handicap)
+        : (u?.handicap != null && u.handicap !== '' ? Number(u.handicap) : NaN);
+      return Number.isFinite(raw) ? raw : null;
+    }
+
+    function isShotgun(day) { return day !== 'saturday'; }
+
+    function parseHoleLabel(s) {
+      const m = String(s||'').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
+      return m ? { num: Math.min(18,Math.max(1,parseInt(m[1],10))), letter: m[2] } : { num:1, letter:'' };
+    }
+
+    function parseTeeTime(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+      if (!m) return 8 * 60;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return 8 * 60;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
+      return h * 60 + min;
+    }
+
+    function sortTeeSheetGroups(day) {
+      const arr = teeSheets[day];
+      if (!Array.isArray(arr)) return;
+      if (isShotgun(day)) {
+        arr.sort((a, b) => {
+          const ha = parseHoleLabel(a.hole), hb = parseHoleLabel(b.hole);
+          return ha.num - hb.num || ha.letter.localeCompare(hb.letter);
+        });
+      } else {
+        arr.sort((a, b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime));
+      }
+    }
+
+    // ── Data loading ──
+    async function loadUsersAndEventPlayers() {
+      const [rtdbSnap, firestoreUsersSnap, eventPlayersSnap] = await Promise.all([
+        get(ref(db, "users")),
+        getDocs(collection(firestore, "users")),
+        getDocs(collection(firestore, "eventYears", currentEventId, "players")),
+      ]);
+      const rtdbData = rtdbSnap.exists() ? rtdbSnap.val() : {};
+      const firestoreUsers = {};
+      firestoreUsersSnap.forEach(d => { firestoreUsers[d.id] = d.data() || {}; });
+
+      users = Object.keys(rtdbData).map(uid => {
+        const r = rtdbData[uid] || {};
+        const f = firestoreUsers[uid] || {};
+        return {
+          uid,
+          displayName: r.displayName || f.displayName || "",
+          handicap: toHcNumber(r.handicap) ?? toHcNumber(f.handicap) ?? "",
+        };
+      });
+
+      const dataByUid = {};
+      eventPlayersSnap.forEach(d => { dataByUid[d.id] = d.data() || {}; });
+      eventPlayers = new Map();
+      users.forEach(u => {
+        eventPlayers.set(u.uid, normalizeEventRecord(u.uid, dataByUid[u.uid] || {}, u));
+      });
+    }
+
+    function watchTeeSheet() {
+      if (unsubTeeSheets) unsubTeeSheets();
+      unsubTeeSheets = onSnapshot(doc(firestore, 'eventYears', currentEventId), snap => {
+        const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
+        teeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        render();
+        $('#lastUpdated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }, err => {
+        console.error('Tee sheet stream failed:', err);
+        $('#tsGroupsDisplay').innerHTML = `
+          <div class="col-span-full text-center py-16 text-red-400 text-sm">
+            Couldn't load the tee sheet. It may not be shared publicly yet.
+          </div>`;
+      });
+    }
+
+    // ── Render ──
+    function render() {
+      $('#eventLabel').textContent = `${currentEventConfig().year} · ${currentEventId}`;
+
+      sortTeeSheetGroups(activeTeeDay);
+      const groups = teeSheets[activeTeeDay];
+      const display = $('#tsGroupsDisplay');
+      const empty = $('#tsEmpty');
+
+      ['friday','saturday','sunday'].forEach(day => {
+        const badge = $(`#tab-badge-${day}`);
+        if (!badge) return;
+        const n = teeSheets[day].length;
+        badge.textContent = n;
+        badge.classList.toggle('hidden', n === 0);
+      });
+
+      if (!groups.length) {
+        display.innerHTML = '';
+        display.classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        return;
+      }
+      display.classList.remove('hidden');
+      empty.classList.add('hidden');
+      empty.classList.remove('flex');
+
+      display.innerHTML = groups.map((group, gi) => {
+        const players = Array.isArray(group.players) ? group.players : [];
+
+        let playersHtml = '';
+        if (activeTeeDay === 'sunday') {
+          const done = new Set();
+          for (const uid of players) {
+            if (done.has(uid)) continue;
+            const rec = getEventRecord(uid);
+            const pid = rec.ambrosePartnerUid;
+            const prec = pid ? getEventRecord(pid) : null;
+            const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
+            if (confirmed) {
+              done.add(uid); done.add(pid);
+              const u1 = users.find(x => x.uid === uid), u2 = users.find(x => x.uid === pid);
+              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
+              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
+              playersHtml += `
+                <div class="rounded-lg border border-blue-500/25 bg-blue-500/5 px-2.5 py-2 mb-1.5 last:mb-0">
+                  <div class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1.5">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+                  <div class="flex items-center justify-between py-0.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u1?.displayName || '?')}</span>
+                    ${h1 !== null ? `<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h1}</span>` : ''}
+                  </div>
+                  <div class="flex items-center justify-between py-0.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u2?.displayName || '?')}</span>
+                    ${h2 !== null ? `<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h2}</span>` : ''}
+                  </div>
+                </div>`;
+            } else {
+              done.add(uid);
+              const u = users.find(x => x.uid === uid), hc = numericHandicapFor(uid, rec);
+              playersHtml += `
+                <div class="flex items-center justify-between py-1.5 border-b border-brd/40 last:border-b-0">
+                  <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName || uid.slice(0,8))}</span>
+                  ${hc !== null ? `<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${hc}</span>` : ''}
+                  <span class="text-[10px] text-amber-400 shrink-0 ml-1.5">no pair</span>
+                </div>`;
+            }
+          }
+        } else {
+          playersHtml = players.map(uid => {
+            const u = users.find(x => x.uid === uid), rec = getEventRecord(uid), hc = numericHandicapFor(uid, rec);
+            return `
+              <div class="flex items-center justify-between py-1.5 border-b border-brd/40 last:border-b-0">
+                <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName || uid.slice(0,8))}</span>
+                ${hc !== null ? `<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${hc}</span>` : ''}
+              </div>`;
+          }).join('');
+        }
+
+        return `
+          <div class="bg-s1 border border-brd rounded-xl overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-3 pt-3 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-accent/15 border border-accent/20 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">${gi+1}</span>
+                <span class="text-[11px] font-semibold text-slate-300">Group ${gi+1}</span>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full border font-mono text-slate-300 bg-s3 border-brd">${players.length}/4</span>
+            </div>
+            <div class="flex items-center gap-3 px-3 pb-2.5 border-b border-brd text-xs text-slate-400">
+              <span>Hole <span class="text-white font-mono">${escapeHtml(asString(group.hole || 1))}</span></span>
+              <span class="text-slate-700">·</span>
+              <span>Time <span class="text-white font-mono">${escapeHtml(asString(group.teeTime || ''))}</span></span>
+            </div>
+            <div class="px-3 py-2 flex-1">
+              ${playersHtml || '<div class="text-xs text-slate-600 py-2">No players</div>'}
+            </div>
+          </div>`;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function populateEventSelect() {
+      const sel = $('#eventSelect');
+      sel.innerHTML = EVENT_OPTIONS.map(e => `<option value="${e.id}" ${e.id===currentEventId?'selected':''}>${e.year} · ${e.id}</option>`).join('');
+      sel.addEventListener('change', async () => {
+        currentEventId = sel.value;
+        updateUrl();
+        await loadUsersAndEventPlayers();
+        watchTeeSheet();
+      });
+    }
+
+    function setActiveDay(day) {
+      activeTeeDay = day;
+      document.querySelectorAll('.ts-day-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tsDay === day));
+      updateUrl();
+      render();
+    }
+
+    function updateUrl() {
+      const url = new URL(location.href);
+      url.searchParams.set('event', currentEventId);
+      url.searchParams.set('day', activeTeeDay);
+      history.replaceState(null, '', url);
+    }
+
+    document.querySelectorAll('.ts-day-tab').forEach(btn => {
+      btn.addEventListener('click', () => setActiveDay(btn.dataset.tsDay));
+      if (btn.dataset.tsDay === activeTeeDay) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+
+    // ── Init ──
+    (async function init() {
+      populateEventSelect();
+      lucide.createIcons();
+      try {
+        await loadUsersAndEventPlayers();
+      } catch (err) {
+        console.error('Failed to load players:', err);
+      }
+      watchTeeSheet();
+      // Refresh player/handicap data periodically (tee sheet itself is live via onSnapshot).
+      setInterval(() => { loadUsersAndEventPlayers().then(render).catch(() => {}); }, 5 * 60 * 1000);
+    })();
+  </script>
+</body>
+</html>
