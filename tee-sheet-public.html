@@ -149,8 +149,12 @@
       return Number.isFinite(n) ? n : null;
     }
 
-    function normalizeEventRecord(uid, data = {}, fallbackUser = null) {
-      const hc = toHcNumber(data.handicap) ?? toHcNumber(fallbackUser?.handicap);
+    // No fallback: the per-event record (eventYears/{eventId}/players/{uid}.handicap)
+    // is the single source of truth here, matching what admin-event's player card
+    // actually writes. Merging in the base user profile as a fallback is what
+    // caused wrong/stale values to show, so it's deliberately not done.
+    function normalizeEventRecord(uid, data = {}) {
+      const hc = toHcNumber(data.handicap);
       return {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
         handicap: hc !== null ? hc : '',
@@ -162,10 +166,7 @@
     }
 
     function numericHandicapFor(uid, record) {
-      const u = users.find(x => x.uid === uid);
-      const raw = (record.handicap !== '' && record.handicap != null)
-        ? Number(record.handicap)
-        : (u?.handicap != null && u.handicap !== '' ? Number(u.handicap) : NaN);
+      const raw = record.handicap !== '' && record.handicap != null ? Number(record.handicap) : NaN;
       return Number.isFinite(raw) ? raw : null;
     }
 
@@ -219,7 +220,6 @@
         return {
           uid,
           displayName: r.displayName || f.displayName || "",
-          handicap: toHcNumber(r.handicap) ?? toHcNumber(f.handicap) ?? "",
         };
       });
 
@@ -227,7 +227,7 @@
       eventPlayersSnap.forEach(d => { dataByUid[d.id] = d.data() || {}; });
       eventPlayers = new Map();
       users.forEach(u => {
-        eventPlayers.set(u.uid, normalizeEventRecord(u.uid, dataByUid[u.uid] || {}, u));
+        eventPlayers.set(u.uid, normalizeEventRecord(u.uid, dataByUid[u.uid] || {}));
       });
     }
 
