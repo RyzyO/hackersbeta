@@ -421,11 +421,17 @@
   <!-- ===================== EDIT PANEL ===================== -->
   <div id="editPanel" class="fixed top-0 right-0 h-full w-full max-w-lg bg-s1 border-l border-brd z-40 transform translate-x-full transition-transform duration-300 ease-out overflow-y-auto shadow-2xl">
     <div class="sticky top-0 z-10 bg-s1/95 backdrop-blur-md border-b border-brd px-6 py-4 flex items-center justify-between">
-      <div>
-        <h2 id="editPlayerName" class="text-lg font-bold text-white truncate max-w-[260px]"></h2>
-        <p id="editPlayerUid" class="text-xs text-slate-500 font-mono mt-0.5 truncate max-w-[260px]"></p>
+      <div class="flex items-center gap-3 min-w-0">
+        <div id="editPlayerAvatarWrap" class="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden bg-s3 border border-brd flex items-center justify-center">
+          <span id="editPlayerInitials" class="text-sm font-bold text-slate-400"></span>
+        </div>
+        <div class="min-w-0">
+          <h2 id="editPlayerName" class="text-lg font-bold text-white truncate max-w-[220px]"></h2>
+          <p id="editPlayerNickname" class="text-xs text-accent font-medium truncate max-w-[220px]"></p>
+          <p id="editPlayerUid" class="text-xs text-slate-500 font-mono mt-0.5 truncate max-w-[220px]"></p>
+        </div>
       </div>
-      <button id="editCloseBtn" class="w-9 h-9 rounded-xl bg-s3 hover:bg-s4 flex items-center justify-center transition">
+      <button id="editCloseBtn" class="w-9 h-9 rounded-xl bg-s3 hover:bg-s4 flex items-center justify-center transition flex-shrink-0">
         <i data-lucide="x" class="w-4 h-4 text-slate-400"></i>
       </button>
     </div>
@@ -1467,7 +1473,10 @@
     const editCancelBtn = $("#editCancelBtn");
     const editSaveBtn = $("#editSaveBtn");
     const editPlayerName = $("#editPlayerName");
+    const editPlayerNickname = $("#editPlayerNickname");
     const editPlayerUid = $("#editPlayerUid");
+    const editPlayerAvatarWrap = $("#editPlayerAvatarWrap");
+    const editPlayerInitials = $("#editPlayerInitials");
     const editComing = $("#editComing");
     const editSkins = $("#editSkins");
     const editSaturdayAttendance = $("#editSaturdayAttendance");
@@ -4335,7 +4344,7 @@ async function downloadRoomsSpreadsheet() {
         const partner = users.find(u => u.uid === record.ambrosePartnerUid);
         const partnerName = partner ? (partner.displayName || "") : "";
         const textMatch = !q || [
-          user.displayName, user.hackerNumber, user.uid,
+          user.displayName, user.nickname, user.hackerNumber, user.uid,
           record.shirtSize, record.pantSize, roomNames,
           partnerName, record.sponsorNotes, record.handicap,
           paid.label, record.skins ? "yes" : "no",
@@ -4384,22 +4393,34 @@ async function downloadRoomsSpreadsheet() {
     }
 
     // === DATA LOADING ===
+    const normPlayerName = (s) => (s || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
     async function loadUsers() {
       showToast("Loading players...", "info");
-      const [rtdbSnap, firestoreSnap] = await Promise.all([
+      const [rtdbSnap, firestoreSnap, attendeeProfilesSnap] = await Promise.all([
         get(ref(db, "users")),
-        getDocs(collection(firestore, "users"))
+        getDocs(collection(firestore, "users")),
+        // Profile pictures are actually stored keyed by player name here, same source
+        // players.html reads from — users/{uid}.avatarUrl isn't where they live.
+        getDocs(collection(firestore, "attendeeProfiles"))
       ]);
       const rtdbData = rtdbSnap.exists() ? rtdbSnap.val() : {};
       const firestoreUsers = {};
       firestoreSnap.forEach(docSnap => { firestoreUsers[docSnap.id] = docSnap.data() || {}; });
+      const avatarByName = {};
+      attendeeProfilesSnap.forEach(docSnap => {
+        const d = docSnap.data() || {};
+        if (d.avatarUrl) avatarByName[normPlayerName(docSnap.id)] = d.avatarUrl;
+      });
 
       users = Object.keys(rtdbData).map(uid => {
         const r = rtdbData[uid] || {};
         const f = firestoreUsers[uid] || {};
+        const displayName = r.displayName || f.displayName || "";
         return {
           uid,
-          displayName: r.displayName || f.displayName || "",
+          displayName,
+          nickname: f.nickname || r.nickname || "",
+          avatarUrl: f.avatarUrl || r.avatarUrl || avatarByName[normPlayerName(displayName)] || "",
           hackerNumber: f.hackerNumber || r.hackerNumber || "",
           golfAustraliaNumber: f.golfAustraliaNumber || r.golfAustraliaNumber || "",
           email: f.email || r.email || f.authEmail || r.authEmail || "",
@@ -4629,7 +4650,26 @@ async function downloadRoomsSpreadsheet() {
 
       // Populate header
       editPlayerName.textContent = user.displayName || "(no name)";
+      editPlayerNickname.textContent = user.nickname ? `"${user.nickname}"` : "";
       editPlayerUid.textContent = uid;
+      const avatarImg = editPlayerAvatarWrap.querySelector("img");
+      if (user.avatarUrl) {
+        if (avatarImg) {
+          avatarImg.src = user.avatarUrl;
+        } else {
+          const img = document.createElement("img");
+          img.src = user.avatarUrl;
+          img.alt = "Profile picture";
+          img.className = "w-full h-full object-cover";
+          editPlayerAvatarWrap.appendChild(img);
+        }
+        editPlayerInitials.style.display = "none";
+      } else {
+        if (avatarImg) avatarImg.remove();
+        editPlayerInitials.style.display = "";
+        const initials = (user.displayName || "?").trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+        editPlayerInitials.textContent = initials;
+      }
 
       // Populate fields
       editComing.checked = !!record.coming;

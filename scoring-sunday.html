@@ -706,7 +706,12 @@
   // Reveals the manual "Choose group & start round" panel — used once we've established
   // there's no personalized match (or none is possible, e.g. not signed in), so the panel
   // never needs to flash on screen while that lookup is still in flight.
+  function hideMyRoundSkeleton() {
+    const el = $('my-round-skeleton');
+    if (el) el.classList.add('hidden');
+  }
   function revealPanelIdle() {
+    hideMyRoundSkeleton(); // outcome is known either way once this runs
     const idle = $('lx-panel-idle');
     const search = $('lx-panel-search');
     const panel = $('lx-panel');
@@ -745,6 +750,7 @@
       revealPanelIdle();
       return;
     }
+    hideMyRoundSkeleton();
     const group = teeSheetGroups[myGroupIndex];
     $('myround-day').textContent = SCORING_DAY.charAt(0).toUpperCase() + SCORING_DAY.slice(1);
     $('myround-hole').textContent = group.hole ? `Tee ${group.hole}` : 'Tee TBC';
@@ -1699,6 +1705,37 @@ body{
   transition:opacity .15s;
 }
 .lx-resume-btn:active{opacity:.8}
+/* Skeleton loader for the My Round card slot */
+@keyframes skeletonPulse{0%,100%{opacity:.55}50%{opacity:1}}
+.lx-skeleton{
+  margin:20px 20px 0;
+  padding:20px 20px 18px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+}
+.lx-skeleton-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.lx-skeleton-bar{
+  height:11px;border-radius:6px;background:var(--surface2);
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+}
+.lx-skeleton-bar-sm{width:70px}
+.lx-skeleton-badges{display:flex;gap:8px}
+.lx-skeleton-pill{
+  width:56px;height:22px;border-radius:999px;background:var(--surface2);
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+}
+.lx-skeleton-row{
+  height:30px;border-radius:8px;background:var(--surface2);
+  margin-bottom:8px;
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+}
+.lx-skeleton-row:last-of-type{animation-delay:.1s;margin-bottom:18px}
+.lx-skeleton-btn{
+  height:48px;border-radius:14px;background:var(--surface2);
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+  animation-delay:.3s;
+}
 /* My Round dashboard card */
 .lx-myround{
   margin:20px 20px 0;
@@ -2335,6 +2372,21 @@ body{
     
     <div class="lx-logo">Live Scoring · 2026</div>
     <div class="lx-course">Worrigee Links</div>
+  </div>
+
+  <!-- Skeleton — shown while we don't yet know whether a My Round match exists, so the
+       screen never sits blank during the auth + tee-sheet lookup. -->
+  <div id="my-round-skeleton" class="lx-skeleton">
+    <div class="lx-skeleton-head">
+      <div class="lx-skeleton-bar lx-skeleton-bar-sm"></div>
+      <div class="lx-skeleton-badges">
+        <div class="lx-skeleton-pill"></div>
+        <div class="lx-skeleton-pill"></div>
+      </div>
+    </div>
+    <div class="lx-skeleton-row"></div>
+    <div class="lx-skeleton-row"></div>
+    <div class="lx-skeleton-btn"></div>
   </div>
 
   <!-- My Round dashboard — shown when the signed-in player is found in a tee sheet group -->
