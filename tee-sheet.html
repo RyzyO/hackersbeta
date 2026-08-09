@@ -1136,7 +1136,7 @@
 
         // Friday — Skins
         for (const g of (teeSheets.friday || [])) {
-          const teeInfo = g.hole ? `Skins: Tee-${g.hole}` : 'Skins';
+          const teeInfo = g.hole ? `Skins: Tee ${g.hole}` : 'Skins';
           for (const uid of (g.players || [])) {
             const u = users.find(x => x.uid === uid);
             const rec = getEventRecord(uid);
@@ -1146,10 +1146,11 @@
 
         // Saturday — Stableford
         for (const g of (teeSheets.saturday || [])) {
+          const teeInfo = g.teeTime || 'Stableford';
           for (const uid of (g.players || [])) {
             const u = users.find(x => x.uid === uid);
             const rec = getEventRecord(uid);
-            labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo: 'Stableford', day: 'saturday' });
+            labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo, day: 'saturday' });
           }
         }
 
@@ -1201,9 +1202,11 @@
           pdf.setLineWidth(0.18);
           pdf.rect(x, y, LW, LH);
 
-          // Logo
-          const logoH = 5.5;
-          const logoW = Math.min(logoH * logoAspect, 34);
+          // Logo (fit within 34 x 5.5mm box, preserving aspect ratio)
+          const logoMaxH = 5.5, logoMaxW = 34;
+          const logoScale = Math.min(logoMaxW / (logoMaxH * logoAspect), 1);
+          const logoH = logoMaxH * logoScale;
+          const logoW = logoH * logoAspect;
           const logoY = y + PAD + 0.3;
           if (logoDataUrl) {
             pdf.addImage(logoDataUrl, x + PAD, logoY, logoW, logoH);
@@ -1218,11 +1221,6 @@
           pdf.setTextColor(...NAVY);
           pdf.text(dayName, x + LW - PAD, logoY + 3, { align: 'right' });
 
-          // Tee info — smaller, grey
-          pdf.setFont(FONT, 'normal');
-          pdf.setFontSize(6.5);
-          pdf.setTextColor(95, 95, 95);
-          pdf.text(label.teeInfo, x + LW - PAD, logoY + 6, { align: 'right' });
 
           // Separator
           const sepY = logoY + logoH + 1.5;
@@ -1235,6 +1233,12 @@
           pdf.setFontSize(11);
           pdf.setTextColor(12, 18, 35);
           pdf.text(ellipsis(pdf, label.name + hcStr, maxNameW), x + PAD, sepY + 4.2);
+
+          // Tee info — bottom right, bold navy, larger
+          pdf.setFont(FONT, 'bold');
+          pdf.setFontSize(13);
+          pdf.setTextColor(...NAVY);
+          pdf.text(label.teeInfo, x + LW - PAD, y + LH - PAD - 0.3, { align: 'right' });
         }
 
         // Paginate

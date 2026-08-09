@@ -1799,7 +1799,7 @@ async function downloadRoomsSpreadsheet() {
     const wb = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true });
     const ws = wb.Sheets[wb.SheetNames[0]];
 
-    // Data rows 2-42 | col F = room number
+    // Data rows 2-44 | col F = room number
     // Name slots: X (col 24) = person 1, AA (col 27) = person 2
     // Room Contacts: AD (col 30) = each person's name + mobile number
     const nameSlots = ['X', 'AA'];
@@ -1824,7 +1824,7 @@ async function downloadRoomsSpreadsheet() {
       }
     };
 
-    for (let row = 2; row <= 42; row++) {
+    for (let row = 2; row <= 44; row++) {
       const roomCell = ws[`F${row}`];
       if (!roomCell) continue;
       const roomNum = parseInt(roomCell.v);
