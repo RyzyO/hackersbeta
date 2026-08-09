@@ -485,6 +485,10 @@
     </div>
   </div>
 
+  <!-- Warms the Live Scoring welcome screens' data in the background so scoring.html /
+       scoring-friday.html / scoring-sunday.html load their My Round card instantly. -->
+  <script type="module" src="assets/js/scoring-prefetch.js"></script>
+
   <!-- Firebase and Application Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";

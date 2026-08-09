@@ -20,7 +20,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   // TODO: scoring only supports Saturday's tee sheet for now — expand CURRENT_EVENT_ID/SCORING_DAY
   // into a day picker once the Friday/Sunday UI is dialed in.
   const CURRENT_EVENT_ID = 'HC26';
@@ -570,31 +570,62 @@
     const exact = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatch(name) === target);
     return exact || null;
   }
+  // Normalizes a display name for matching against attendeeProfiles doc IDs (name-keyed).
+  const normPlayerName = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, ' ').trim();
+  // Same key assets/js/scoring-prefetch.js writes to from other pages (index.html, score.html)
+  // — reading it here means the My Round card can paint instantly instead of waiting on
+  // this page's own network round trip.
+  const TEESHEET_CACHE_KEY = `hackerscup.scoring.teesheetgroups.${SCORING_DAY}.v1`;
   async function loadTeeSheetGroups() {
     const status = $('teesheet-status');
-    if (status) status.textContent = 'Loading Saturday groups…';
     try {
-      const [usersSnap, eventSnap] = await Promise.all([
+      const cachedRaw = localStorage.getItem(TEESHEET_CACHE_KEY);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && Array.isArray(cached.groups) && cached.groups.length) {
+          teeSheetGroups = cached.groups;
+          if (status) status.textContent = `${teeSheetGroups.length} group${teeSheetGroups.length === 1 ? '' : 's'} — tap one to load its players`;
+          renderTeeSheetGroups();
+          renderMyRoundCard();
+        }
+      }
+    } catch (err) {}
+    if (status && !teeSheetGroups.length) status.textContent = 'Loading Saturday groups…';
+    try {
+      const [usersSnap, eventSnap, attendeeProfilesSnap] = await Promise.all([
         get(ref(firebaseDb, 'users')),
         getDoc(doc(firebaseFirestore, 'eventYears', CURRENT_EVENT_ID)),
+        // Profile pictures live keyed by player name here (same source players.html reads),
+        // not on users/{uid} — see admin-event.html for the same fix.
+        getDocs(collection(firebaseFirestore, 'attendeeProfiles')),
       ]);
       const usersMap = usersSnap.exists() ? (usersSnap.val() || {}) : {};
       const saved = eventSnap.exists() ? (eventSnap.data() || {}) : {};
+      const avatarByName = {};
+      attendeeProfilesSnap.forEach(docSnap => {
+        const d = docSnap.data() || {};
+        if (d.avatarUrl) avatarByName[normPlayerName(docSnap.id)] = d.avatarUrl;
+      });
       const savedGroups = Array.isArray(saved.teeSheets?.[SCORING_DAY]) ? saved.teeSheets[SCORING_DAY] : [];
       teeSheetGroups = savedGroups.map(g => ({
         hole: g.hole,
         teeTime: g.teeTime,
         players: (g.players || []).map(uid => {
           const displayName = (usersMap[uid] && usersMap[uid].displayName) || uid;
-          return { uid, displayName, sheetName: matchSheetNameForDisplayName(displayName) };
+          const avatarUrl = (usersMap[uid] && usersMap[uid].avatarUrl) || avatarByName[normPlayerName(displayName)] || '';
+          return { uid, displayName, avatarUrl, sheetName: matchSheetNameForDisplayName(displayName) };
         }),
       }));
       if (status) status.textContent = teeSheetGroups.length ? `${teeSheetGroups.length} group${teeSheetGroups.length === 1 ? '' : 's'} — tap one to load its players` : 'No Saturday groups saved yet — add them in the tee sheet first.';
+      try { localStorage.setItem(TEESHEET_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), groups: teeSheetGroups })); } catch (err) {}
     } catch (err) {
-      teeSheetGroups = [];
-      if (status) status.textContent = `Failed to load tee sheet: ${err.message}`;
+      // A stale cache render (if any) is still better than nothing — only clear on failure
+      // when there was no cache to fall back to.
+      if (!teeSheetGroups.length) teeSheetGroups = [];
+      if (status) status.textContent = teeSheetGroups.length ? status.textContent : `Failed to load tee sheet: ${err.message}`;
     }
     renderTeeSheetGroups();
+    renderMyRoundCard();
   }
   function renderTeeSheetGroups() {
     const el = $('teesheet-groups');
@@ -690,6 +721,15 @@
     if (panel && panel.classList.contains('has-my-round')) return; // a match was already found
     if (idle && (!search || search.classList.contains('hidden'))) idle.classList.remove('hidden');
   }
+  // Real profile picture when one's set, initials circle otherwise — same fallback pattern
+  // used across the site (profile.html, site-nav.js, admin-event.html).
+  function myroundAvatarHtml(p) {
+    if (p.avatarUrl) {
+      return `<img class="myround-player-avatar myround-player-avatar-img" src="${p.avatarUrl}" alt="">`;
+    }
+    const initials = (p.displayName || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `<span class="myround-player-avatar">${initials}</span>`;
+  }
   // Finds the signed-in player's own group in today's tee sheet (by uid) and renders the
   // "My Round" dashboard card so they don't have to search the full group list themselves.
   function renderMyRoundCard() {
@@ -715,10 +755,9 @@
     playersEl.innerHTML = '';
     group.players.forEach(p => {
       const isMe = p.uid === firebaseUid;
-      const initials = (p.displayName || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
       const row = document.createElement('div');
       row.className = 'myround-player' + (isMe ? ' me' : '');
-      row.innerHTML = `<span class="myround-player-avatar">${initials}</span><span>${p.displayName}${isMe ? ' (You)' : ''}</span>`;
+      row.innerHTML = `${myroundAvatarHtml(p)}<span>${p.displayName}${isMe ? ' (You)' : ''}</span>`;
       playersEl.appendChild(row);
     });
     card.classList.remove('hidden');
@@ -1646,6 +1685,7 @@ body{
   border:1px solid rgba(56,189,248,0.3);
 }
 .myround-player.me .myround-player-avatar{background:var(--sky);color:#fff;border-color:var(--sky)}
+.myround-player-avatar-img{object-fit:cover;background:var(--surface2)}
 .lx-myround-btn{
   width:100%;
   display:flex;align-items:center;justify-content:center;gap:10px;
