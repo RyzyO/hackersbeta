@@ -675,6 +675,16 @@
     tick();
     myRoundCountdownTimer = setInterval(tick, 1000);
   }
+  // Reveals the manual "Choose group & start round" panel — used once we've established
+  // there's no personalized match (or none is possible, e.g. not signed in), so the panel
+  // never needs to flash on screen while that lookup is still in flight.
+  function revealPanelIdle() {
+    const idle = $('lx-panel-idle');
+    const search = $('lx-panel-search');
+    const panel = $('lx-panel');
+    if (panel && panel.classList.contains('has-my-round')) return; // a match was already found
+    if (idle && (!search || search.classList.contains('hidden'))) idle.classList.remove('hidden');
+  }
   // Finds the signed-in player's own group in today's tee sheet (by uid) and renders the
   // "My Round" dashboard card so they don't have to search the full group list themselves.
   function renderMyRoundCard() {
@@ -687,8 +697,7 @@
       myGroupIndex = null; card.classList.add('hidden'); stopMyRoundCountdown();
       const panel = $('lx-panel');
       if (panel) panel.classList.remove('has-my-round');
-      const idle = $('lx-panel-idle');
-      if (idle && $('lx-panel-search')?.classList.contains('hidden')) idle.classList.remove('hidden');
+      revealPanelIdle();
       return;
     }
     const group = teeSheetGroups[myGroupIndex];
@@ -1394,8 +1403,11 @@
         await flushPendingScoreUpdates();
       } else {
         setResumeSessionCandidate(null);
+        revealPanelIdle(); // not signed in — no "My Round" match is possible, show the manual picker
       }
     });
+    // Safety net: if auth/network stalls, don't leave the player with nothing to tap.
+    setTimeout(revealPanelIdle, 8000);
     window.addEventListener('online', () => {
       updateConnectionStatus();
       flushRemoteSession();
@@ -2184,8 +2196,10 @@ body{
   <!-- New round panel -->
   <div class="lx-panel" id="lx-panel">
 
-    <!-- Collapsed state: just the CTA -->
-    <div class="lx-panel-idle" id="lx-panel-idle">
+    <!-- Collapsed state: just the CTA. Starts hidden — only shown once we've established
+         there's no personalized "My Round" match (or that check isn't possible), so it
+         never flashes on screen while that lookup is still in flight. -->
+    <div class="lx-panel-idle hidden" id="lx-panel-idle">
       <button class="lx-start-btn" onclick="lxOpenSearch()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Choose group &amp; start round
