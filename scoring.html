@@ -667,7 +667,10 @@
   window.startScoring = function() {
     if (!selectedSheetNames.length) { $('login-error').textContent = 'Select a group with at least one matched player.'; return; }
     players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
-    scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = null; sessionStage = 'active';
+    // A shotgun-start group already knows its starting hole — skip the "which hole?" prompt.
+    const selectedGroup = selectedGroupIndex !== null ? teeSheetGroups[selectedGroupIndex] : null;
+    const groupStartHole = selectedGroup && selectedGroup.hole ? Number(selectedGroup.hole) : null;
+    scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = groupStartHole; sessionStage = 'active';
     persistScoringSession();
     hide('screen-login'); show('screen-loading');
     loadHoles();
@@ -831,7 +834,7 @@
         <div class="player-card" id="pcard-${pidx}" data-row="${hole.rowIndex}">
           <div class="player-card-top">
             <div class="player-info">
-              <div class="player-name">${player.name}<span class="player-hc">${player.handicap != null ? ` (HC ${player.handicap})` : ''}</span></div>
+              <div class="player-name">${player.name}<span class="player-hc">${player.handicap != null ? ` (${player.handicap})` : ''}</span></div>
               <div class="player-running" id="prunning-${pidx}">${runningLabel}</div>
             </div>
             <div class="player-right">
@@ -1315,6 +1318,21 @@
   });
 </script>
 <style>
+/* ── MINI RESET ─────────────────────────────────
+   tailwind-built.css is a preflight-less utility-only build (no @tailwind base), so the
+   browser's native <a> underline and native <button> chrome (background/border) aren't
+   stripped by Tailwind like on pages using the full CDN build. Replicate just those two
+   resets here rather than pulling in the whole preflight layer. */
+a { text-decoration: none; }
+button {
+  background-color: transparent;
+  background-image: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
 /* ── TOKENS ─────────────────────────────────── */
 :root {
   --bg:        #0b1120;
