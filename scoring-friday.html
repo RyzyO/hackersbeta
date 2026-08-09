@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hackers Cup Live Scoring — Friday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Kanit:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<link rel="manifest" href="site.webmanifest">
+<!--
+  TAILWIND: this is a static, pre-built stylesheet generated via the Tailwind CLI
+  (`npx tailwindcss -i input.css -o tailwind-built.css --minify`) scanning only the
+  classes actually used in this file. It is NOT the runtime CDN script — no compiler
+  ships to the browser, no recompilation happens on load. To regenerate after changing
+  classes in the markup below, re-run the CLI build against this file.
+-->
+<link rel="stylesheet" href="tailwind-built.css">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  // TODO: scoring only supports Saturday's tee sheet for now — expand CURRENT_EVENT_ID/SCORING_DAY
+  // into a day picker once the Friday/Sunday UI is dialed in.
+  const CURRENT_EVENT_ID = 'HC26';
+  const SCORING_DAY = 'friday';
+  // The countdown needs the actual competition date, not "today" — a tee time like "3:14 PM"
+  // is meaningless as a target without pinning it to this specific day.
+  const SCORING_DAY_DATE = '2026-08-21';
+  // Friday is a shotgun start — every group tees off at once, so this is the fallback shown
+  // when a group's own teeTime isn't set in the tee sheet, not a per-group staggered time.
+  const DEFAULT_SHOTGUN_TIME = '10:00 AM';
+  // Friday is Skins — same Stableford points formula as Saturday (points still shown per
+  // hole and as a running total), but there's no live leaderboard for Skins.
+  const SHOW_LEADERBOARD = false;
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsIpFLV6y4b-Bct4NnQ624Mdx6glCUfg7nbazbMhsNGuUpJSmqNfTUz1e5XK3SjIQX/exec';
+  const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
+    authDomain: 'hackers-cup.firebaseapp.com',
+    databaseURL: 'https://hackers-cup-default-rtdb.firebaseio.com',
+    projectId: 'hackers-cup',
+    storageBucket: 'hackers-cup.appspot.com',
+    messagingSenderId: '765736070872',
+    appId: '1:765736070872:web:86a51c41916e7af75631ad',
+    measurementId: 'G-6E1M14F510'
+  };
+  const SESSION_STORAGE_KEY = 'hackerscup.scoring.session.friday.v3';
+  const SESSION_QUEUE_KEY   = 'hackerscup.scoring.queue.friday.v2';
+  const SHEET_NAMES_CACHE_KEY = 'hackerscup.scoring.sheetnames.v1';
+  const HANDICAP_CACHE_KEY = 'hackerscup.scoring.handicaps.v1'; // { sheetName: handicap }, survives session cache resets
+  // ── COURSE DATA ─────────────────────────────────────────────
+  const COURSE_BASE_URL = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
+  const COURSE_HOLES = [
+    { num: 1, par: 5, dist: 468, yards: 473, index1: 10, index2: 22, index3: 40, video: 'hole_1-1080p.mp4', note: 'The opening hole is a relatively short par 5 with little trouble — a good opportunity to start with a birdie. A straight drive right of the fairway bunkers sets up an approachable second. The best miss is short of the green for an easy chip to the long, flat, narrow putting surface.' },
+    { num: 2, par: 3, dist: 202, yards: 210, index1: 1, index2: 27, index3: 45, video: 'hole_2-1080p.mp4', note: 'The hardest hole on the course. Avoid the water hazard down the left side. The ideal miss is just short — a chip to an uphill sloping green. Par here is always a great score.' },
+    { num: 3, par: 4, dist: 324, yards: 330, index1: 11, index2: 29, index3: 47, video: 'hole_3-1080p.mp4', note: 'A slight dogleg left, strong par 4. Drive right of the fairway bunker for a shorter approach. Two bunkers sit left of the long, undulating green.' },
+    { num: 4, par: 4, dist: 279, yards: 292, index1: 12, index2: 31, index3: 49, video: 'hole_4-1080p-1.mp4', note: 'Big hitters can go for the green from the elevated tee. Two bunkers punish drives that are short and right. Avoid the thick wood right of the green at all costs.' },
+    { num: 5, par: 4, dist: 370, yards: 360, index1: 3, index2: 20, index3: 38, video: 'hole_5-1080p.mp4', note: 'A long par 4 — keep it straight. Avoid OB left and trees right. A mid-to-short iron second should find a large green with bunkers left and right.' },
+    { num: 6, par: 3, dist: 132, yards: 165, index1: 14, index2: 35, index3: 53, video: 'hole_6-1080p.mp4', note: 'A tough par 3, with OB left and right. Three bunkers surround a large green. Most come up just short — which is desirable. The tee shot can be deceiving.' },
+    { num: 7, par: 5, dist: 478, yards: 497, index1: 7, index2: 19, index3: 37, video: 'hole_7-1080p.mp4', note: 'The signature hole. Dogleg left with OB all down the left. Aim for the bunkers — a straight drive over the water sets up well. Play conservatively: stay left with your approach into the long, narrow green. Three-shot par 5.' },
+    { num: 8, par: 3, dist: 157, yards: 160, index1: 5, index2: 32, index3: 50, video: 'hole_8-1080p.mp4', note: 'Greenside bunkers guard this par 3. Short is the most desirable miss for an easy chip to a very large, narrow green. Avoid pin-high either side.' },
+    { num: 9, par: 4, dist: 346, yards: 350, index1: 6, index2: 21, index3: 39, video: 'hole_9-1080p.mp4', note: 'Long hitters must lay up short of the water (250m from tee). Water continues up the right. Approach to an uphill sloping green — miss short for an easy chip.' },
+    { num: 10, par: 4, dist: 335, yards: 335, index1: 8, index2: 23, index3: 41, video: 'hole_10-1080p.mp4', note: 'Dogleg right par 4. Aim for the pine trees left — avoid right-hand fairway bunkers. Long, narrow green with one bunker left. Avoid missing right.' },
+    { num: 11, par: 5, dist: 444, yards: 444, index1: 13, index2: 26, index3: 44, video: 'hole_11-1080p.mp4', note: 'A real birdie opportunity. Little trouble off the tee — longer hitters can reach in two. Avoid missing right (tough downhill chip). Short left is the ideal miss.' },
+    { num: 12, par: 3, dist: 185, yards: 185, index1: 4, index2: 28, index3: 46, video: 'hole_12-1080p.mp4', note: 'Long par 3 with OB left. Bunker short right and long left. Miss just short — an easy chip to a long, narrow, undulating green.' },
+    { num: 13, par: 4, dist: 280, yards: 280, index1: 17, index2: 33, index3: 51, video: 'hole_13-1080p-1.mp4', note: 'A reachable par 4 but OB all the way down the left and a pond if you are long. The safe play is 200m off the tee.' },
+    { num: 14, par: 3, dist: 175, yards: 175, index1: 2, index2: 25, index3: 43, video: 'hole_14-1080p.mp4', note: 'Looks straightforward but water lurks right and OB left. Miss just short — a simple chip to a long flat green. Avoid pin-high right.' },
+    { num: 15, par: 4, dist: 242, yards: 242, index1: 18, index2: 36, index3: 54, video: 'hole_15-1080p.mp4', note: 'The easiest hole. Long hitters can drive the green over two bunkers. The fairway doglegs left to right — plenty of room left. Massive green and a great birdie opportunity.' },
+    { num: 16, par: 4, dist: 350, yards: 350, index1: 9, index2: 24, index3: 42, video: 'hole_16-1080p.mp4', note: 'Long dogleg left. Keep the drive right of the fairway bunker for a good approach to a big flat green. Two grassy mounds to avoid right of the fairway.' },
+    { num: 17, par: 3, dist: 144, yards: 132, index1: 15, index2: 34, index3: 52, video: 'hole_17-1080p.mp4', note: 'Short par 3 with a palm tree left and bunkers surrounding the green. OB right. Wind can affect club selection. Miss just short for an easy chip to the sloping green.' },
+    { num: 18, par: 5, dist: 445, yards: 445, index1: 16, index2: 30, index3: 48, video: 'hole_18-1080p.mp4', note: 'A good finishing par 5. A few fairway bunkers left but otherwise fine. Avoid the grassy mound short left and bunkers either side. Land just short for an easy chip — finish well.' },
+  ];
+  function getCourseHole(holeNumber) {
+    return COURSE_HOLES.find(h => h.num === Number(holeNumber)) || null;
+  }
+  // ── FIREBASE ─────────────────────────────────────────────────
+  const firebaseApp = initializeApp(FIREBASE_CONFIG);
+  const firebaseAuth = getAuth(firebaseApp);
+  const firebaseDb = getDatabase(firebaseApp);
+  const firebaseFirestore = getFirestore(firebaseApp);
+  async function fetchJsonViaProxy(url, options) {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || `Request failed with status ${response.status}`);
+    try { return JSON.parse(text); } catch (err) { throw new Error(`Expected JSON but received: ${text.slice(0, 120)}`); }
+  }
+  // ── STATE ────────────────────────────────────────────────────
+  let selectedSheetNames = [];
+  let allSheetNames = [];
+  let teeSheetGroups = []; // [{ hole, teeTime, players:[{uid, displayName, sheetName}] }] — Saturday only for now
+  let selectedGroupIndex = null;
+  let myGroupIndex = null;
+  let holeData = [];
+  let players = [];
+  let scores = {};
+  let roundHoles = [];
+  let currentHoleIndex = 0;
+  let startHoleNumber = null;
+  let sessionStage = 'draft';
+  let saveTimer = null;
+  let sessionSyncTimer = null;
+  let firebaseUid = null;
+  let myRoundCountdownTimer = null;
+  let pendingRemoteSession = null;
+  let pendingScoreUpdates = [];
+  let resumeSessionCandidate = null;
+  let courseGuideOpen = false;
+  let scoreUpdateTimers = new Map(); // Debounce timers for score updates
+  let sheetPollTimer = null;         // interval handle for Apps Script sheet polling
+  let sheetPollInFlight = false;
+
+  // ── REQUEST QUEUE ────────────────────────────────────────────
+  // Bounded-concurrency, ordered queue for every Apps Script call. Originally this ran fully
+  // single-flight (one call at a time, globally) to stop online events, visibilitychange, and
+  // post-save refreshes from piling up overlapping requests on a flaky course wifi connection.
+  // That was safe but serialized unrelated reads unnecessarily — e.g. loading 4 players' holes
+  // one after another instead of in parallel. A small concurrency cap keeps the "don't pile up
+  // requests" protection while letting a few genuinely-independent reads overlap.
+  const requestQueue = [];
+  let inFlightCount = 0;
+  const MAX_CONCURRENT_REQUESTS = 3;
+  // priority=true bypasses the concurrency cap entirely and runs immediately — score writes
+  // must never sit behind slow full-sheet reads.
+  function enqueueRequest(fn, priority = false) {
+    return new Promise((resolve, reject) => {
+      const job = { fn, resolve, reject };
+      if (priority) runJob(job);
+      else { requestQueue.push(job); pumpRequestQueue(); }
+    });
+  }
+  function runJob(job) {
+    inFlightCount++;
+    Promise.resolve().then(job.fn).then(job.resolve, job.reject).finally(() => {
+      inFlightCount--;
+      pumpRequestQueue();
+    });
+  }
+  function pumpRequestQueue() {
+    while (inFlightCount < MAX_CONCURRENT_REQUESTS && requestQueue.length) {
+      runJob(requestQueue.shift());
+    }
+  }
+
+  try {
+    const storedQueue = localStorage.getItem(SESSION_QUEUE_KEY);
+    if (storedQueue) pendingScoreUpdates = JSON.parse(storedQueue) || [];
+  } catch (err) { pendingScoreUpdates = []; }
+  // ── DOM HELPERS ──────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const show = id => $(id) && $(id).classList.remove('hidden');
+  const hide = id => $(id) && $(id).classList.add('hidden');
+  function safeParseJson(value) {
+    try { return JSON.parse(value); } catch (err) { return null; }
+  }
+  window.toggleMobileMenu = function() {
+    const menu = $('mobile-menu');
+    if (menu) menu.classList.toggle('hidden');
+  };
+
+  function normalizeHoleRecord(hole) {
+    if (!hole || typeof hole !== 'object') return hole;
+    return hole;
+  }
+  // ── SESSION PERSISTENCE ──────────────────────────────────────
+  function getSessionSnapshot() {
+    return {
+      version: 3, stage: sessionStage,
+      selectedSheetNames: [...selectedSheetNames],
+      players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) }, holes: p.holes ? [...p.holes] : [], sheetTotal: p.sheetTotal, handicap: p.handicap ?? null })),
+      holeData: holeData ? [...holeData] : [],
+      scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now()
+    };
+  }
+  function saveLocalSession(snapshot) {
+    try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(snapshot)); } catch (err) {}
+  }
+  function loadLocalSession() {
+    try { const raw = localStorage.getItem(SESSION_STORAGE_KEY); return raw ? safeParseJson(raw) : null; } catch (err) { return null; }
+  }
+  function clearLocalSession() {
+    try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (err) {}
+  }
+  function savePendingQueue() {
+    try { localStorage.setItem(SESSION_QUEUE_KEY, JSON.stringify(pendingScoreUpdates)); } catch (err) {}
+  }
+  // Handicap cache: kept separate from the session snapshot so it survives a session reset
+  // (new round, sign-out) and is available the instant a player is selected again — the local
+  // Stableford calc needs a handicap to produce a number at all, so we never want a network
+  // round trip standing between "player selected" and "points render correctly".
+  function loadHandicapCache() {
+    try { return safeParseJson(localStorage.getItem(HANDICAP_CACHE_KEY)) || {}; } catch (err) { return {}; }
+  }
+  function saveHandicapToCache(sheetName, handicap) {
+    if (handicap === null || handicap === undefined || isNaN(Number(handicap))) return;
+    try {
+      const cache = loadHandicapCache();
+      cache[sheetName] = Number(handicap);
+      localStorage.setItem(HANDICAP_CACHE_KEY, JSON.stringify(cache));
+    } catch (err) {}
+  }
+  function applyHandicapCacheToPlayers() {
+    const cache = loadHandicapCache();
+    players.forEach(p => {
+      if ((p.handicap === null || p.handicap === undefined) && cache[p.sheetName] !== undefined) {
+        p.handicap = Number(cache[p.sheetName]);
+      }
+    });
+  }
+  function isResumeEligibleSession(session) {
+    if (!session) return false;
+    if (session.stage !== 'active') return false;
+    if (!Array.isArray(session.selectedSheetNames) || !session.selectedSheetNames.length) return false;
+    const playersWithScores = Array.isArray(session.players) ? session.players : [];
+    return playersWithScores.some(p => Object.values(p?.scores || {}).some(s => s !== null && s !== undefined && s !== ''));
+  }
+  function sessionHasCachedHoles(snapshot) {
+    return snapshot && Array.isArray(snapshot.holeData) && snapshot.holeData.length > 0;
+  }
+  function setResumeSessionCandidate(session) {
+    resumeSessionCandidate = isResumeEligibleSession(session) ? session : null;
+    const card = $('session-resume-card');
+    const meta = $('session-resume-meta');
+    const newLink = $('lx-new-link');
+    if (!card || !meta) return;
+    if (!resumeSessionCandidate) {
+      card.classList.add('hidden');
+      meta.textContent = '';
+      if (newLink) newLink.classList.add('hidden');
+      return;
+    }
+    const names = (resumeSessionCandidate.selectedSheetNames || []).join(' · ');
+    const savedAt = resumeSessionCandidate.savedAt;
+    const timeStr = savedAt ? new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'recently';
+    meta.textContent = names ? `${names} · saved ${timeStr}` : `In progress · saved ${timeStr}`;
+    card.classList.remove('hidden');
+    if (newLink) newLink.classList.remove('hidden');
+  }
+  function persistScoringSession() {
+    const snapshot = getSessionSnapshot();
+    saveLocalSession(snapshot);
+    pendingRemoteSession = snapshot;
+    setResumeSessionCandidate(snapshot);
+    clearTimeout(sessionSyncTimer);
+    sessionSyncTimer = setTimeout(() => flushRemoteSession(snapshot), 300);
+  }
+  async function flushRemoteSession(snapshot = pendingRemoteSession) {
+    if (!firebaseUid || !snapshot || !navigator.onLine) return;
+    try { await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/friday`), snapshot); pendingRemoteSession = null; } catch (err) {}
+  }
+  async function loadRemoteSession() {
+    if (!firebaseUid) return null;
+    try { const snap = await get(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); return snap.exists() ? snap.val() : null; } catch (err) { return null; }
+  }
+  async function refreshResumeCandidate() {
+    if (!firebaseUid) { setResumeSessionCandidate(null); return null; }
+    const localSession = loadLocalSession();
+    const remoteSession = await loadRemoteSession();
+    const chosen = [localSession, remoteSession].filter(Boolean).sort((a, b) => Number(b.savedAt || 0) - Number(a.savedAt || 0))[0] || null;
+    setResumeSessionCandidate(chosen);
+    return chosen;
+  }
+  // ── LIVE SHEET SYNC (Apps Script IS the read/write channel; the Sheet is the source of truth) ──
+  // Every score write goes saveScore -> Apps Script -> the Sheet, and the response carries
+  // the recalculated points + running total so this device is correct instantly (no follow-up
+  // request needed for the device that made the edit).
+  // For everything ELSE (another scorer's device, a manual edit in the Sheet), we poll getHolesBatch
+  // through the same Apps Script endpoint on a timer — ONE round trip for the whole group (up to
+  // 4 players) instead of one getHoles call per player. NOTE: an earlier version of this polled
+  // the Sheet's gviz endpoint directly — that redirected to a Google login page in testing
+  // because the spreadsheet isn't shared as "anyone with the link", so it silently never
+  // synced. Apps Script (deployed as a public Web App) is the only channel confirmed to work
+  // without requiring the spreadsheet to be made public.
+  const isBlank = v => v === null || v === undefined || v === '';
+  function snapshotFromHolesResult(resp) {
+    if (!resp || !resp.success) return null;
+    const byHole = {};
+    (resp.holes || []).forEach(h => {
+      byHole[Number(h.hole)] = {
+        score: isBlank(h.currentScore) ? null : Number(h.currentScore),
+        points: isBlank(h.points) ? null : Number(h.points)
+      };
+    });
+    const q2Total = isBlank(resp.q2Total) ? null : Number(resp.q2Total);
+    const handicapRaw = resp.handicap ?? resp.playerHandicap;
+    const handicap = isBlank(handicapRaw) ? null : Number(handicapRaw);
+    return { byHole, q2Total, handicap };
+  }
+  // Fetches getHolesBatch for a whole group in ONE Apps Script call instead of one getHoles
+  // call per player — returns the raw per-sheet result objects (rowIndex, par, index1/index2,
+  // currentScore, points, q2Total, handicap), used wherever full hole records are needed
+  // (initial load, reconciliation). priority=true is used for the initial load.
+  async function fetchHolesBatchRaw(sheetNames, priority = false) {
+    const joined = sheetNames.join('|');
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getHolesBatch&sheets=${encodeURIComponent(joined)}`), priority);
+    if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getHolesBatch failed');
+    return resp.results || {};
+  }
+  // Lighter-weight view used by the polling loop, which only needs score/points/total/handicap
+  // to reconcile against what's already rendered, not full hole metadata.
+  async function fetchAllSheetSnapshots(sheetNames, priority = false) {
+    const results = await fetchHolesBatchRaw(sheetNames, priority);
+    const out = {};
+    sheetNames.forEach(name => { out[name] = snapshotFromHolesResult(results[name]); });
+    return out;
+  }
+  function applySheetSnapshot(player, pidx, snap) {
+    let changed = false;
+    if (snap.q2Total !== null && Number(snap.q2Total) !== player.sheetTotal) {
+      player.sheetTotal = Number(snap.q2Total);
+      changed = true;
+    }
+    if (snap.handicap !== null && Number(snap.handicap) !== player.handicap) {
+      player.handicap = Number(snap.handicap);
+      changed = true;
+    }
+    if (snap.handicap !== null) saveHandicapToCache(player.sheetName, snap.handicap);
+    (player.holes || []).forEach(h => {
+      const rec = snap.byHole[Number(h.hole)];
+      if (!rec) return;
+      // Never clobber a score this device is still trying to send or is actively editing.
+      const isQueued = pendingScoreUpdates.some(u => u.sheetName === player.sheetName && Number(u.rowIndex) === Number(h.rowIndex));
+      const isEditing = scoreUpdateTimers.has(`${pidx}|${h.rowIndex}`);
+      if (isQueued || isEditing) return;
+      if (rec.points !== null && (isBlank(h.points) || Number(h.points) !== rec.points)) { h.points = rec.points; h.sheetPoints = rec.points; changed = true; }
+      if (rec.score !== null && (isBlank(h.currentScore) || Number(h.currentScore) !== rec.score)) { h.currentScore = rec.score; changed = true; }
+      if (rec.score !== null && (isBlank(player.scores[h.rowIndex]) || Number(player.scores[h.rowIndex]) !== rec.score)) { player.scores[h.rowIndex] = rec.score; changed = true; }
+    });
+    if (changed) {
+      updatePlayerCardDom(pidx);
+      updateTotals();
+      persistScoringSession();
+    }
+  }
+  async function pollSheetsOnce() {
+    if (sheetPollInFlight || !players.length || !navigator.onLine || document.visibilityState !== 'visible') return;
+    sheetPollInFlight = true;
+    try {
+      const snaps = await fetchAllSheetSnapshots(players.map(p => p.sheetName));
+      players.forEach((p, idx) => { const snap = snaps[p.sheetName]; if (snap) applySheetSnapshot(p, idx, snap); });
+    } catch (_) {
+    } finally {
+      sheetPollInFlight = false;
+    }
+  }
+  function startSheetPolling() {
+    stopSheetPolling();
+    sheetPollTimer = setInterval(() => { pollSheetsOnce(); }, 20000);
+  }
+  function stopSheetPolling() {
+    if (sheetPollTimer) { clearInterval(sheetPollTimer); sheetPollTimer = null; }
+  }
+  function restoreSessionSnapshot(snapshot) {
+    if (!snapshot) return;
+    sessionStage = snapshot.stage || 'draft';
+    selectedSheetNames = Array.isArray(snapshot.selectedSheetNames) ? [...snapshot.selectedSheetNames] : [];
+    players = Array.isArray(snapshot.players) && snapshot.players.length
+      ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: p.holes ? [...p.holes] : [], scores: { ...(p.scores || {}) }, sheetTotal: p.sheetTotal, handicap: p.handicap ?? null }))
+      : selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
+    scores = snapshot.scores || {};
+    currentHoleIndex = Number(snapshot.currentHoleIndex || 0);
+    startHoleNumber = snapshot.startHoleNumber ?? null;
+    if (Array.isArray(snapshot.holeData) && snapshot.holeData.length) {
+      holeData = [...snapshot.holeData];
+      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+    }
+    $('login-error').textContent = '';
+    renderSelectedList();
+  }
+  async function continueSavedSession(snapshot) {
+    if (!snapshot) return;
+    restoreSessionSnapshot(snapshot);
+    hide('screen-login');
+    if (sessionHasCachedHoles(snapshot)) {
+      // Instant resume — render immediately from cache, reconcile in background
+      show('screen-scoring');
+      hide('scorecard-loading');
+      const rn = $('round-nav');
+      if (rn) { rn.classList.remove('hidden'); rn.style.display = 'flex'; }
+      if (startHoleNumber !== null) startRoundAtHole(startHoleNumber);
+      else renderStartHolePicker();
+      updateTotals();
+      updateConnectionStatus();
+      applyHandicapCacheToPlayers();
+      startSheetPolling();
+      flushPendingScoreUpdates().catch(() => {});
+      // Immediate reconciliation straight from the Sheet via Apps Script (covers staleness from
+      // time spent offline); the polling interval keeps it fresh from here.
+      pollSheetsOnce();
+      // Also refresh rowIndex/handicap metadata via the batched endpoint in the background.
+      reconcileHolesOnceFromSheet();
+    } else {
+      show('screen-loading');
+      await loadHoles();
+    }
+  }
+  async function reconcileHolesOnceFromSheet() {
+    if (!players.length || !navigator.onLine) return;
+    try {
+      const rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName));
+      const results = players.map(p => {
+        const resp = rawResults[p.sheetName];
+        if (!resp || !resp.success) return null;
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
+      });
+      results.forEach((r, idx) => {
+        if (!r) return;
+        r.player.holes = r.holes;
+        if (r.q2Total !== undefined && r.q2Total !== null) r.player.sheetTotal = Number(r.q2Total);
+        const hcap = r.handicap ?? r.playerHandicap;
+        if (hcap !== undefined && hcap !== null) { r.player.handicap = Number(hcap); saveHandicapToCache(r.player.sheetName, hcap); }
+        updatePlayerCardDom(idx);
+      });
+      if (results[0]) {
+        holeData = results[0].holes;
+        roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+        updateTotals();
+        persistScoringSession();
+      }
+    } catch (_) {}
+  }
+  window.continueSavedScoringSession = async function() {
+    if (!resumeSessionCandidate) return;
+    await continueSavedSession(resumeSessionCandidate);
+  };
+  function resetCurrentSession(keepSavedSnapshot = false) {
+    stopSheetPolling();
+    selectedSheetNames = []; holeData = []; roundHoles = []; currentHoleIndex = 0;
+    startHoleNumber = null; sessionStage = 'draft'; players = []; scores = {}; pendingRemoteSession = null;
+    selectedGroupIndex = null;
+    $('sheet-label').textContent = '';
+    $('teesheet-groups').innerHTML = '';
+    $('selected-list').innerHTML = '';
+    $('hole-view').innerHTML = '';
+    // Reset login panel to idle state
+    show('lx-panel-idle'); hide('lx-panel-search');
+    hide('start-hole-overlay'); hide('screen-scoring'); hide('screen-loading');
+    show('screen-login');
+    if (!keepSavedSnapshot) { clearLocalSession(); setResumeSessionCandidate(null); }
+    else setResumeSessionCandidate(loadLocalSession());
+  }
+  async function queueScoreUpdate(player, rowIndex, score) {
+    // Deduplicate: if same sheetName+rowIndex already queued, update it in place
+    const existing = pendingScoreUpdates.findIndex(u => u.sheetName === player.sheetName && u.rowIndex === Number(rowIndex));
+    if (existing >= 0) {
+      pendingScoreUpdates[existing] = { sheetName: player.sheetName, rowIndex: Number(rowIndex), score, savedAt: Date.now() };
+    } else {
+      pendingScoreUpdates.push({ sheetName: player.sheetName, rowIndex: Number(rowIndex), score, savedAt: Date.now() });
+    }
+    savePendingQueue();
+    updateConnectionStatus();
+    if (!navigator.onLine) return;
+    await flushPendingScoreUpdates();
+  }
+  async function postScoreViaProxy(sheetName, rowIndex, score) {
+    // saveScore is a GET action handled by Apps Script's doGet(). This call is the ONLY
+    // write path for scores — it writes directly to the Google Sheet, which remains the
+    // single source of truth. The onEdit trigger then mirrors the result into Firebase for
+    // other connected devices; this client never writes scores to Firebase directly.
+    const url = `${APPS_SCRIPT_URL}?action=saveScore&sheet=${encodeURIComponent(sheetName)}&rowIndex=${encodeURIComponent(rowIndex)}&score=${encodeURIComponent(score)}`;
+    // priority=true: score writes jump ahead of any queued full-sheet reads.
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(url), true);
+    if (!resp || resp.success === false) {
+      throw new Error((resp && resp.error) || 'saveScore returned failure');
+    }
+    return resp;
+  }
+  // The saveScore response carries the Sheet's recalculated points for that hole, the running
+  // total, and the player's handicap — apply them immediately so the confirmed value lands in
+  // one round trip instead of a follow-up getHoles poll.
+  function applySaveResponse(sheetName, rowIndex, score, resp) {
+    if (!resp) return;
+    const pidx = players.findIndex(p => p.sheetName === sheetName);
+    if (pidx < 0) return;
+    const player = players[pidx];
+    const hole = (player.holes || []).find(h => Number(h.rowIndex) === Number(rowIndex));
+    if (hole) {
+      hole.currentScore = resp.savedScore ?? score;
+      if (resp.points !== undefined && resp.points !== null) { hole.points = Number(resp.points); hole.sheetPoints = Number(resp.points); }
+    }
+    if (resp.q2Total !== undefined && resp.q2Total !== null) player.sheetTotal = Number(resp.q2Total);
+    if (resp.handicap !== undefined && resp.handicap !== null) { player.handicap = Number(resp.handicap); saveHandicapToCache(sheetName, resp.handicap); }
+    updatePlayerCardDom(pidx);
+    updateTotals();
+    persistScoringSession();
+  }
+  let flushInFlight = false;
+  async function flushPendingScoreUpdates() {
+    if (flushInFlight) return; // single-flight: a second caller just waits for the next tick
+    if (!pendingScoreUpdates.length || !navigator.onLine) return;
+    flushInFlight = true;
+    updateConnectionStatus();
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1200;
+    try {
+      while (pendingScoreUpdates.length) {
+        const update = pendingScoreUpdates[0];
+        let lastErr = null;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          try {
+            const resp = await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
+            applySaveResponse(update.sheetName, update.rowIndex, update.score, resp);
+            lastErr = null;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          }
+        }
+        if (lastErr) {
+          console.warn('Score save failed after retries, will retry when back online:', lastErr);
+          break;
+        }
+        pendingScoreUpdates.shift();
+        savePendingQueue();
+      }
+    } finally {
+      flushInFlight = false;
+      updateConnectionStatus();
+    }
+  }
+  // ── SHEET LOADING ─────────────────────────────────────────────
+  async function loadSheetNames() {
+    // Serve from cache immediately so search works without waiting for network
+    try {
+      const cached = localStorage.getItem(SHEET_NAMES_CACHE_KEY);
+      if (cached) allSheetNames = JSON.parse(cached) || [];
+    } catch (_) {}
+    if (!navigator.onLine) return;
+    try {
+      const data = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getSheetNames`));
+      if (!data.success) throw new Error(data.error || 'Unable to load sheet names');
+      allSheetNames = data.sheets || [];
+      try { localStorage.setItem(SHEET_NAMES_CACHE_KEY, JSON.stringify(allSheetNames)); } catch (_) {}
+      // Sheet names may have arrived after the tee sheet groups did — re-match now that we can.
+      if (teeSheetGroups.length) {
+        teeSheetGroups.forEach(group => group.players.forEach(p => { if (!p.sheetName) p.sheetName = matchSheetNameForDisplayName(p.displayName); }));
+        if (selectedGroupIndex !== null) selectedSheetNames = teeSheetGroups[selectedGroupIndex].players.filter(p => p.sheetName).map(p => p.sheetName);
+        renderTeeSheetGroups();
+      }
+    } catch (err) {
+      if ($('login-error')) $('login-error').textContent = err.message;
+    }
+  }
+  function isSelectableSheetName(name) {
+    const lower = String(name || '').toLowerCase().trim();
+    if (!lower) return false;
+    const ignored = new Set(['database', 'course info', 'players', 'sat leaderboard', '_scorelog']);
+    if (ignored.has(lower)) return false;
+    if (/^sheet\s*\d+$/i.test(lower)) return false;
+    return !lower.startsWith('_');
+  }
+  function getLastNameSortKey(name) {
+    const value = String(name || '').trim();
+    if (!value) return '';
+    if (value.includes(',')) return value.split(',')[0].trim().toLowerCase();
+    const parts = value.split(/\s+/).filter(Boolean);
+    return (parts[parts.length - 1] || value).toLowerCase();
+  }
+  function compareByLastName(a, b) {
+    const r = getLastNameSortKey(a).localeCompare(getLastNameSortKey(b), undefined, { sensitivity: 'base' });
+    return r !== 0 ? r : String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+  }
+  // ── TEE SHEET GROUPS ──────────────────────────────────────────
+  // Players are picked by tapping their tee-sheet group (Saturday only, for now) instead of
+  // free-text name search. Groups are keyed by Firebase uid in Firestore; we resolve each uid to
+  // a displayName (Realtime DB) and then to a Google Sheet tab name by normalized-name match,
+  // since there is no stored uid<->sheetName link. Unmatched players get a manual dropdown.
+  function normalizeNameForMatch(v) {
+    return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function matchSheetNameForDisplayName(displayName) {
+    const target = normalizeNameForMatch(displayName);
+    if (!target) return null;
+    const exact = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatch(name) === target);
+    return exact || null;
+  }
+  async function loadTeeSheetGroups() {
+    const status = $('teesheet-status');
+    if (status) status.textContent = 'Loading Friday groups…';
+    try {
+      const [usersSnap, eventSnap] = await Promise.all([
+        get(ref(firebaseDb, 'users')),
+        getDoc(doc(firebaseFirestore, 'eventYears', CURRENT_EVENT_ID)),
+      ]);
+      const usersMap = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+      const saved = eventSnap.exists() ? (eventSnap.data() || {}) : {};
+      const savedGroups = Array.isArray(saved.teeSheets?.[SCORING_DAY]) ? saved.teeSheets[SCORING_DAY] : [];
+      teeSheetGroups = savedGroups.map(g => ({
+        hole: g.hole,
+        teeTime: g.teeTime,
+        players: (g.players || []).map(uid => {
+          const displayName = (usersMap[uid] && usersMap[uid].displayName) || uid;
+          return { uid, displayName, sheetName: matchSheetNameForDisplayName(displayName) };
+        }),
+      }));
+      if (status) status.textContent = teeSheetGroups.length ? `${teeSheetGroups.length} group${teeSheetGroups.length === 1 ? '' : 's'} — tap one to load its players` : 'No Friday groups saved yet — add them in the tee sheet first.';
+    } catch (err) {
+      teeSheetGroups = [];
+      if (status) status.textContent = `Failed to load tee sheet: ${err.message}`;
+    }
+    renderTeeSheetGroups();
+  }
+  function renderTeeSheetGroups() {
+    const el = $('teesheet-groups');
+    if (!el) return;
+    el.innerHTML = '';
+    if (!teeSheetGroups.length) {
+      el.innerHTML = '<div class="sheet-empty">No Friday groups saved yet</div>';
+      return;
+    }
+    teeSheetGroups.forEach((group, gi) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'sheet-option';
+      if (selectedGroupIndex === gi) button.classList.add('selected');
+      const label = document.createElement('span');
+      const prefix = [group.teeTime, group.hole ? `Hole ${group.hole}` : null].filter(Boolean).join(' · ');
+      label.textContent = (prefix ? prefix + ' — ' : '') + (group.players.map(p => p.displayName).join(', ') || '(empty group)');
+      button.appendChild(label);
+      button.onclick = () => selectGroup(gi);
+      el.appendChild(button);
+    });
+    renderSelectedList();
+  }
+  function selectGroup(gi) {
+    selectedGroupIndex = gi;
+    const group = teeSheetGroups[gi];
+    selectedSheetNames = group ? group.players.filter(p => p.sheetName).map(p => p.sheetName) : [];
+    $('login-error').textContent = '';
+    renderTeeSheetGroups();
+    persistScoringSession();
+  }
+  // Parses tee-sheet time strings ("7:42 AM", "7:42am", "07:42") into minutes-since-midnight.
+  function parseTeeTimeToMinutes(s) {
+    const str = String(s || '').trim().toUpperCase();
+    const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+    if (!m) return null;
+    let h = Number(m[1]);
+    const min = Number(m[2] || 0);
+    if (h > 23 || min > 59) return null;
+    const mer = m[3] ? m[3][0] : '';
+    if (mer === 'P' && h < 12) h += 12;
+    if (mer === 'A' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  function stopMyRoundCountdown() {
+    if (myRoundCountdownTimer) { clearInterval(myRoundCountdownTimer); myRoundCountdownTimer = null; }
+  }
+  function startMyRoundCountdown(teeTimeStr) {
+    stopMyRoundCountdown();
+    const el = $('myround-countdown');
+    if (!el) return;
+    const mins = parseTeeTimeToMinutes(teeTimeStr);
+    if (mins === null) { el.classList.add('hidden'); return; }
+    // Pin the countdown to the actual competition date, not whatever day it is right now.
+    const target = new Date(`${SCORING_DAY_DATE}T00:00:00`);
+    target.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+    const tick = () => {
+      const diffMs = target.getTime() - Date.now();
+      if (diffMs <= 0) {
+        // Tee time has arrived (or passed) — nothing useful left to count down, so hide it.
+        el.classList.add('hidden');
+        stopMyRoundCountdown();
+        return;
+      }
+      el.classList.remove('hidden');
+      el.classList.remove('cd-urgent', 'cd-started');
+      const totalSecs = Math.floor(diffMs / 1000);
+      const d = Math.floor(totalSecs / 86400);
+      const h = Math.floor((totalSecs % 86400) / 3600);
+      const m = Math.floor((totalSecs % 3600) / 60);
+      const s = totalSecs % 60;
+      if (diffMs <= 15 * 60 * 1000) el.classList.add('cd-urgent');
+      const parts = d > 0 ? `${d}d ${h}h`
+        : h > 0 ? `${h}h ${String(m).padStart(2,'0')}m`
+        : `${m}m ${String(s).padStart(2,'0')}s`;
+      el.innerHTML = `Tee off in <span class="cd-num">${parts}</span>`;
+    };
+    tick();
+    myRoundCountdownTimer = setInterval(tick, 1000);
+  }
+  // Reveals the manual "Choose group & start round" panel — used once we've established
+  // there's no personalized match (or none is possible, e.g. not signed in), so the panel
+  // never needs to flash on screen while that lookup is still in flight.
+  function revealPanelIdle() {
+    const idle = $('lx-panel-idle');
+    const search = $('lx-panel-search');
+    const panel = $('lx-panel');
+    if (panel && panel.classList.contains('has-my-round')) return; // a match was already found
+    if (idle && (!search || search.classList.contains('hidden'))) idle.classList.remove('hidden');
+  }
+  // Finds the signed-in player's own group in today's tee sheet (by uid) and renders the
+  // "My Round" dashboard card so they don't have to search the full group list themselves.
+  function renderMyRoundCard() {
+    const card = $('my-round-card');
+    if (!card) return;
+    myGroupIndex = firebaseUid
+      ? teeSheetGroups.findIndex(g => g.players.some(p => p.uid === firebaseUid))
+      : -1;
+    if (myGroupIndex === -1) {
+      myGroupIndex = null; card.classList.add('hidden'); stopMyRoundCountdown();
+      const panel = $('lx-panel');
+      if (panel) panel.classList.remove('has-my-round');
+      revealPanelIdle();
+      return;
+    }
+    const group = teeSheetGroups[myGroupIndex];
+    $('myround-day').textContent = SCORING_DAY.charAt(0).toUpperCase() + SCORING_DAY.slice(1);
+    $('myround-hole').textContent = group.hole ? `Tee ${group.hole}` : 'Tee TBC';
+    $('myround-time').textContent = group.teeTime || DEFAULT_SHOTGUN_TIME;
+    startMyRoundCountdown(group.teeTime || DEFAULT_SHOTGUN_TIME);
+    const playersEl = $('myround-players');
+    playersEl.innerHTML = '';
+    group.players.forEach(p => {
+      const isMe = p.uid === firebaseUid;
+      const initials = (p.displayName || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const row = document.createElement('div');
+      row.className = 'myround-player' + (isMe ? ' me' : '');
+      row.innerHTML = `<span class="myround-player-avatar">${initials}</span><span>${p.displayName}${isMe ? ' (You)' : ''}</span>`;
+      playersEl.appendChild(row);
+    });
+    card.classList.remove('hidden');
+    // The card's own "Change Group" button replaces this panel's CTA — keep it out of the
+    // way until the player actually taps Change Group (lxOpenSearch shows it again).
+    const panel = $('lx-panel');
+    if (panel) panel.classList.add('has-my-round');
+    const idle = $('lx-panel-idle');
+    if (idle) idle.classList.add('hidden');
+  }
+  window.startMyRound = function() {
+    if (myGroupIndex === null) return;
+    selectGroup(myGroupIndex);
+    window.startScoring();
+  };
+  function renderSelectedList() {
+    const el = $('selected-list');
+    if (!el) return;
+    el.innerHTML = '';
+    if (selectedGroupIndex === null) return;
+    const group = teeSheetGroups[selectedGroupIndex];
+    if (!group) return;
+    const sortedSheetOptions = allSheetNames.filter(isSelectableSheetName).sort(compareByLastName);
+    group.players.forEach((p, pi) => {
+      const chip = document.createElement('div');
+      chip.className = 'player-chip';
+      const span = document.createElement('span');
+      if (p.sheetName) {
+        span.textContent = p.displayName;
+        chip.appendChild(span);
+      } else {
+        chip.classList.add('player-chip-warn');
+        span.textContent = `⚠ ${p.displayName} —`;
+        chip.appendChild(span);
+        const select = document.createElement('select');
+        select.className = 'lx-fix-select';
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = 'Choose sheet…';
+        select.appendChild(blank);
+        sortedSheetOptions.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          select.appendChild(opt);
+        });
+        select.onchange = () => assignSheetToGroupPlayer(pi, select.value);
+        chip.appendChild(select);
+      }
+      el.appendChild(chip);
+    });
+  }
+  function assignSheetToGroupPlayer(playerIndex, sheetName) {
+    const group = teeSheetGroups[selectedGroupIndex];
+    if (!group) return;
+    group.players[playerIndex].sheetName = sheetName || null;
+    selectedSheetNames = group.players.filter(p => p.sheetName).map(p => p.sheetName);
+    renderTeeSheetGroups();
+    persistScoringSession();
+  }
+  window.startScoring = function() {
+    if (!selectedSheetNames.length) { $('login-error').textContent = 'Select a group with at least one matched player.'; return; }
+    stopMyRoundCountdown();
+    players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
+    // A shotgun-start group already knows its starting hole — skip the "which hole?" prompt.
+    const selectedGroup = selectedGroupIndex !== null ? teeSheetGroups[selectedGroupIndex] : null;
+    const groupStartHole = selectedGroup && selectedGroup.hole ? Number(selectedGroup.hole) : null;
+    scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = groupStartHole; sessionStage = 'active';
+    persistScoringSession();
+    hide('screen-login'); show('screen-loading');
+    loadHoles();
+  };
+  window.loadTeeSheetGroups = loadTeeSheetGroups;
+  window.handleSignOut = async function() {
+    persistScoringSession(); resetCurrentSession(true);
+    await refreshResumeCandidate(); await loadSheetNames();
+  };
+  window.startNewScoringSession = async function() {
+    clearLocalSession(); pendingScoreUpdates = []; savePendingQueue(); setResumeSessionCandidate(null);
+    if (firebaseUid) { try { await remove(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); } catch (err) {} }
+    resetCurrentSession(false); await loadSheetNames();
+  };
+  // ── SCORING SCREEN ────────────────────────────────────────────
+  async function loadHoles() {
+    if (!players || !players.length) { hide('screen-loading'); show('screen-login'); return; }
+    $('sheet-label').textContent = players.map(p => p.name).join(' · ');
+    show('scorecard-loading'); hide('hole-view'); hide('round-nav');
+    // Seed handicap from the durable local cache immediately — the local Stableford calc can
+    // then produce a correct number on the very first render, before any network call returns.
+    applyHandicapCacheToPlayers();
+    try {
+      let rawResults;
+      try {
+        rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName), true);
+      } catch (_) {
+        await new Promise(r => setTimeout(r, 1000));
+        rawResults = await fetchHolesBatchRaw(players.map(p => p.sheetName), true);
+      }
+      const results = players.map(p => {
+        const resp = rawResults[p.sheetName];
+        if (!resp || !resp.success) throw new Error((resp && resp.error) || `Failed to load holes for ${p.sheetName}`);
+        return { player: p, holes: (resp.holes || []).map(normalizeHoleRecord), q2Total: resp.q2Total, handicap: resp.handicap ?? resp.playerHandicap };
+      });
+      results.forEach(({ player, holes, q2Total, handicap }) => {
+        player.holes = holes;
+        player.scores = {};
+        if (q2Total !== undefined && q2Total !== null) player.sheetTotal = Number(q2Total);
+        if (handicap !== undefined && handicap !== null) { player.handicap = Number(handicap); saveHandicapToCache(player.sheetName, handicap); }
+        holes.forEach(h => { if (h.currentScore !== '' && h.currentScore !== null && h.currentScore !== undefined) player.scores[h.rowIndex] = h.currentScore; });
+      });
+      holeData = results[0].holes;
+      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+      hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
+      startSheetPolling();
+      if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
+      else renderStartHolePicker();
+      persistScoringSession();
+      flushPendingScoreUpdates().catch(() => {});
+    } catch (err) {
+      const el = $('scorecard-loading');
+      if (el) {
+        el.innerHTML = '';
+        const warn = document.createElement('div');
+        warn.style.color = 'var(--gold)'; warn.style.marginBottom = '14px';
+        warn.textContent = `⚠ ${err.message}`;
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = 'Retry';
+        retryBtn.style.cssText = 'background:var(--sky);border:none;border-radius:12px;color:#fff;padding:11px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px';
+        retryBtn.onclick = () => loadHoles();
+        const backBtn = document.createElement('button');
+        backBtn.textContent = '← Back';
+        backBtn.style.cssText = 'background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);padding:11px 18px;font-size:13px;cursor:pointer';
+        backBtn.onclick = () => window.handleSignOut();
+        el.appendChild(warn); el.appendChild(retryBtn); el.appendChild(backBtn);
+      }
+      hide('screen-loading'); show('screen-scoring');
+    }
+  }
+  function renderStartHolePicker() {
+    const overlay = $('start-hole-overlay');
+    const grid = $('start-hole-grid');
+    if (!overlay || !grid) return;
+    const uniqueHoles = [...new Set(roundHoles.map(h => Number(h.hole)))].sort((a, b) => a - b);
+    grid.innerHTML = '';
+    uniqueHoles.forEach(holeNumber => {
+      const ch = getCourseHole(holeNumber);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'start-hole-btn';
+      button.innerHTML = `<span class="shb-num">${holeNumber}</span>${ch ? `<span class="shb-par">Par ${ch.par}</span>` : ''}`;
+      button.onclick = () => startRoundAtHole(holeNumber);
+      grid.appendChild(button);
+    });
+    overlay.classList.remove('hidden');
+  }
+  function startRoundAtHole(holeNumber) {
+    startHoleNumber = Number(holeNumber);
+    const startIndex = roundHoles.findIndex(h => Number(h.hole) === startHoleNumber);
+    currentHoleIndex = startIndex >= 0 ? startIndex : 0;
+    $('start-hole-overlay').classList.add('hidden');
+    show('hole-view');
+    const rn = $('round-nav');
+    if (rn) { rn.classList.remove('hidden'); rn.style.display = 'flex'; }
+    renderCurrentHole(); persistScoringSession();
+  }
+  function getCurrentHole() {
+    if (!roundHoles.length) return null;
+    return roundHoles[currentHoleIndex] || roundHoles[0];
+  }
+  // Compute the player's running Stableford total as a per-hole hybrid sum:
+  // each hole uses the Sheet's confirmed points when the Sheet's score matches what this
+  // device has, and the instant local calc otherwise. When every hole is confirmed this
+  // sum equals the Sheet's own Q2 total, and when the player has just tapped a score it
+  // reflects that tap immediately — the total is never a save behind, and never jumps
+  // back to a stale Sheet value while a save is in flight.
+  function getPlayerScoreSummary(player) {
+    let localTotal = 0;
+    let anyScored = false;
+    let allConfirmed = true;
+    if (Array.isArray(player.holes) && player.holes.length) {
+      player.holes.forEach(h => {
+        const scored = player.scores[h.rowIndex];
+        if (scored === '' || scored === null || scored === undefined) return;
+        anyScored = true;
+        const { index1, index2, index3 } = getHoleIndexes(h);
+        // Prefer confirmed sheet points for this hole; fall back to local calc
+        const sheetIsUpToDate = h.currentScore !== null && h.currentScore !== undefined && h.currentScore !== ''
+          && Number(h.currentScore) === Number(scored);
+        if (sheetIsUpToDate && (h.points ?? h.sheetPoints) !== null && (h.points ?? h.sheetPoints) !== undefined) {
+          localTotal += Number(h.points ?? h.sheetPoints);
+        } else {
+          allConfirmed = false;
+          const local = computeLocalStablefordPoints(h.par, scored, index1, index2, index3, player.handicap ?? null);
+          if (local !== null) localTotal += local;
+          else if ((h.points ?? h.sheetPoints) !== null && (h.points ?? h.sheetPoints) !== undefined) localTotal += Number(h.points ?? h.sheetPoints);
+        }
+      });
+    }
+    // Only defer to the Sheet's own Q2 total when every locally-known score is confirmed —
+    // it then covers scores entered outside this device that we may not have rows for yet.
+    const totalPoints = (allConfirmed && player.sheetTotal !== undefined && player.sheetTotal !== null)
+      ? Number(player.sheetTotal)
+      : localTotal;
+    return { frontPoints: 0, backPoints: 0, totalPoints: anyScored || totalPoints ? totalPoints : 0, localTotal };
+  }
+  function getRelLabel(par, strokes) {
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
+    const diff = Number(par) - Number(strokes);
+    if (diff >= 3) return { label: 'Albatross', cls: 'rel-eagle' };
+    if (diff === 2) return { label: 'Eagle', cls: 'rel-eagle' };
+    if (diff === 1) return { label: 'Birdie', cls: 'rel-birdie' };
+    if (diff === 0) return { label: 'Par', cls: 'rel-par' };
+    if (diff === -1) return { label: 'Bogey', cls: 'rel-bogey' };
+    return { label: 'Double+', cls: 'rel-double' };
+  }
+  function buildPlayerCardHtml(player, pidx, hole) {
+    const existing = player.scores[hole.rowIndex] ?? '';
+    const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
+    const { index1, index2, index3 } = getHoleIndexes(playerHole);
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, index1, index2, index3, player.handicap ?? null);
+    const summary = getPlayerScoreSummary(player);
+    const isLocalEstimate = (player.sheetTotal === undefined || player.sheetTotal === null) && summary.localTotal > 0;
+    const runningLabel = `${summary.totalPoints} pts${isLocalEstimate ? ' (est)' : ''}`;
+    const rel = getRelLabel(hole.par, existing);
+    const relHtml = rel
+      ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>`
+      : `<span class="rel-badge rel-empty">—</span>`;
+    return `
+        <div class="player-card" id="pcard-${pidx}" data-row="${hole.rowIndex}">
+          <div class="player-card-top">
+            <div class="player-info">
+              <div class="player-name">${player.name}<span class="player-hc">${player.handicap != null ? ` (${player.handicap})` : ''}</span></div>
+              <div class="player-running" id="prunning-${pidx}">${runningLabel}</div>
+            </div>
+            <div class="player-right">
+              <span id="prel-${pidx}">${relHtml}</span>
+              <div class="player-pts" id="pts-${pidx}-${hole.rowIndex}">${pts !== null ? pts : '—'}</div>
+            </div>
+          </div>
+          <div class="score-row">
+            <button class="score-minus" onclick="adjustScoreForPlayer(${pidx}, ${hole.rowIndex}, -1)" aria-label="Decrease">−</button>
+            <div class="score-center" id="score-display-${pidx}-${hole.rowIndex}" onclick="focusScoreInput(${pidx}, ${hole.rowIndex})">
+              <span class="score-val">${existing !== '' ? existing : '—'}</span>
+            </div>
+            <button class="score-plus" onclick="adjustScoreForPlayer(${pidx}, ${hole.rowIndex}, 1)" aria-label="Increase">+</button>
+          </div>
+        </div>`;
+  }
+  // Surgical update for a single player's card — used on every score tap and every live
+  // Firebase update. Avoids re-stringifying/re-parsing the entire hole card (all player
+  // cards + guide panel + dots) just to change one number, which is what made every tap
+  // feel sluggish before. Falls back to a full renderCurrentHole() if the card for the
+  // current hole isn't in the DOM yet (e.g. right after a hole change).
+  function updatePlayerCardDom(pidx) {
+    const hole = getCurrentHole();
+    if (!hole) return;
+    const player = players[pidx];
+    if (!player) return;
+    const card = $(`pcard-${pidx}`);
+    if (!card || Number(card.dataset.row) !== Number(hole.rowIndex)) {
+      renderCurrentHole();
+      return;
+    }
+    const existing = player.scores[hole.rowIndex] ?? '';
+    const playerHole = player.holes.find(h => h.rowIndex === hole.rowIndex) || hole;
+    const { index1, index2, index3 } = getHoleIndexes(playerHole);
+    const pts = getStablefordPoints(hole.par, existing, playerHole.points ?? playerHole.sheetPoints, playerHole.currentScore ?? null, index1, index2, index3, player.handicap ?? null);
+    const summary = getPlayerScoreSummary(player);
+    const rel = getRelLabel(hole.par, existing);
+    const ptsEl = $(`pts-${pidx}-${hole.rowIndex}`);
+    if (ptsEl) ptsEl.textContent = pts !== null ? pts : '—';
+    const runningEl = $(`prunning-${pidx}`);
+    if (runningEl) {
+      const isLocalEstimate = (player.sheetTotal === undefined || player.sheetTotal === null) && summary.localTotal > 0;
+      runningEl.textContent = `${summary.totalPoints} pts${isLocalEstimate ? ' (est)' : ''}`;
+    }
+    const relEl = $(`prel-${pidx}`);
+    if (relEl) relEl.innerHTML = rel ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>` : `<span class="rel-badge rel-empty">—</span>`;
+    const scoreDisplay = $(`score-display-${pidx}-${hole.rowIndex}`);
+    if (scoreDisplay) {
+      const valEl = scoreDisplay.querySelector('.score-val');
+      if (valEl) valEl.textContent = existing !== '' ? existing : '—';
+    }
+  }
+  function renderCurrentHole() {
+    const hole = getCurrentHole();
+    const view = $('hole-view');
+    if (!hole || !view) return;
+    const courseHole = getCourseHole(hole.hole);
+    const total = roundHoles.length;
+    const current = currentHoleIndex + 1;
+    const progressPct = Math.round((current / total) * 100);
+    const prevHole = currentHoleIndex > 0 ? roundHoles[currentHoleIndex - 1] : null;
+    const nextHole = currentHoleIndex < roundHoles.length - 1 ? roundHoles[currentHoleIndex + 1] : null;
+    const playerCards = players.map((player, pidx) => buildPlayerCardHtml(player, pidx, hole)).join('');
+    // Course guide panel — video uses preload="none" and no src until expanded (see
+    // toggleCourseGuide), so switching holes never triggers 18 background video fetches.
+    let courseGuideHtml = '';
+    if (courseHole) {
+      const videoUrl = COURSE_BASE_URL + courseHole.video;
+      courseGuideHtml = `
+        <div class="course-guide-panel" id="course-guide-panel" data-video-url="${videoUrl}">
+          <button class="guide-toggle" id="guide-toggle-btn" onclick="toggleCourseGuide()" aria-expanded="${courseGuideOpen}">
+            <span class="guide-toggle-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              Course Guide
+            </span>
+            <span class="guide-toggle-meta">${courseHole.dist}m · Par ${courseHole.par} · Index ${courseHole.index1}</span>
+            <svg class="guide-chevron ${courseGuideOpen ? 'open' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="guide-body ${courseGuideOpen ? 'open' : ''}" id="guide-body">
+            <div class="guide-video-wrap">
+              <video class="guide-video" id="guide-video" preload="none" controls playsinline>
+              </video>
+              <div class="guide-video-label">Hole ${courseHole.num} Flyover</div>
+            </div>
+            <div class="guide-stats-row">
+              <div class="guide-stat"><span class="gs-label">Distance</span><span class="gs-val">${courseHole.dist}m <span class="gs-sub">${courseHole.yards}yd</span></span></div>
+              <div class="guide-stat"><span class="gs-label">Par</span><span class="gs-val">${courseHole.par}</span></div>
+              <div class="guide-stat"><span class="gs-label">Index 1</span><span class="gs-val">${courseHole.index1}</span></div>
+              <div class="guide-stat"><span class="gs-label">Index 2</span><span class="gs-val">${courseHole.index2}</span></div>
+              <div class="guide-stat"><span class="gs-label">Index 3</span><span class="gs-val">${courseHole.index3}</span></div>
+            </div>
+            <p class="guide-note">${courseHole.note}</p>
+          </div>
+        </div>`;
+    }
+    const maxDots = Math.min(total, 18);
+    const dotStart = Math.max(0, Math.min(currentHoleIndex - 4, total - maxDots));
+    let dotsHtml = '';
+    for (let i = dotStart; i < dotStart + maxDots && i < total; i++) {
+      const isDone = i < currentHoleIndex;
+      const isCurr = i === currentHoleIndex;
+      dotsHtml += `<div class="progress-dot ${isDone ? 'done' : ''} ${isCurr ? 'curr' : ''}"></div>`;
+    }
+    view.innerHTML = `
+      <div class="hole-card">
+        <div class="hole-card-top">
+          <div class="hole-left">
+            <div class="hole-eyebrow">HOLE</div>
+            <div class="hole-number">${hole.hole}</div>
+          </div>
+          <div class="hole-right">
+            <div class="hole-par-block">
+              <span class="hole-par-label">Par</span>
+              <span class="hole-par-val">${hole.par}</span>
+            </div>
+            <div class="hole-progress-label">${current} / ${total}</div>
+          </div>
+        </div>
+        <div class="hole-progress-track">
+          <div class="hole-progress-fill" style="width:${progressPct}%"></div>
+        </div>
+        <div class="hole-dots">${dotsHtml}</div>
+        <div class="hole-body">
+          ${playerCards}
+        </div>
+        ${courseGuideHtml}
+      </div>
+    `;
+    courseGuideOpen = false; // collapse on every hole change so the video never autoplays/loads
+    const prevBtn = $('prev-hole-btn');
+    const nextBtn = $('next-hole-btn');
+    if (prevBtn) { prevBtn.disabled = currentHoleIndex === 0; prevBtn.textContent = prevHole ? `← Hole ${prevHole.hole}` : '← Prev'; }
+    if (nextBtn) { nextBtn.disabled = currentHoleIndex === roundHoles.length - 1; nextBtn.textContent = nextHole ? `Hole ${nextHole.hole} →` : 'Next →'; }
+    updateTotals();
+  }
+  window.toggleCourseGuide = function() {
+    courseGuideOpen = !courseGuideOpen;
+    const body = $('guide-body');
+    const btn = $('guide-toggle-btn');
+    const panel = $('course-guide-panel');
+    const chevron = btn?.querySelector('.guide-chevron');
+    if (body) body.classList.toggle('open', courseGuideOpen);
+    if (btn) btn.setAttribute('aria-expanded', courseGuideOpen);
+    if (chevron) chevron.classList.toggle('open', courseGuideOpen);
+    // Lazy-load the video source only the first time the guide is actually opened.
+    if (courseGuideOpen && panel) {
+      const video = $('guide-video');
+      const videoUrl = panel.dataset.videoUrl;
+      if (video && videoUrl && !video.dataset.loaded) {
+        const source = document.createElement('source');
+        source.src = `${videoUrl}#t=0.001`;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        video.load();
+        video.dataset.loaded = '1';
+      }
+    }
+  };
+  window.focusScoreInput = function(playerIndex, rowIndex) {
+    const val = prompt(`Score for ${players[playerIndex]?.name}:`, players[playerIndex]?.scores[rowIndex] ?? '');
+    if (val !== null) setScoreForPlayer(playerIndex, rowIndex, val);
+  };
+  window.moveHole = function(delta) {
+    if (!roundHoles.length) return;
+    const next = currentHoleIndex + delta;
+    if (next < 0 || next >= roundHoles.length) return;
+    currentHoleIndex = next;
+    renderCurrentHole(); persistScoringSession();
+  };
+  function updateConnectionStatus() {
+    const el = $('connection-status');
+    if (!el) return;
+    if (!navigator.onLine) {
+      const n = pendingScoreUpdates.length;
+      el.textContent = n ? `Offline · ${n} queued` : 'Offline';
+      el.className = 'conn-status conn-offline';
+    } else if (pendingScoreUpdates.length) {
+      el.textContent = `Syncing ${pendingScoreUpdates.length}…`;
+      el.className = 'conn-status conn-syncing';
+    } else {
+      el.textContent = '';
+      el.className = 'conn-status';
+    }
+  }
+  function setSaveStatus(message, kind) {
+    const status = $('save-status');
+    if (!status) return;
+    status.textContent = message || '';
+    status.className = 'save-status' + (kind ? ` save-status-${kind}` : '');
+  }
+  window.setScoreForPlayer = async function(playerIndex, rowIndex, val) {
+    const n = parseInt(val);
+    const player = players[playerIndex];
+    if (!player) return;
+    if (!isNaN(n) && n >= 1 && n <= 9) player.scores[rowIndex] = n;
+    else delete player.scores[rowIndex];
+    updatePlayerCardDom(playerIndex);
+    debouncedAutosave(playerIndex, rowIndex);
+  };
+  window.adjustScoreForPlayer = async function(playerIndex, rowIndex, delta) {
+    const player = players[playerIndex];
+    if (!player) return;
+    const hole = holeData.find(h => h.rowIndex === rowIndex);
+    const current = player.scores[rowIndex] ?? hole?.par ?? 4;
+    const next = Math.max(1, Math.min(9, current + delta));
+    player.scores[rowIndex] = next;
+    updatePlayerCardDom(playerIndex);
+    debouncedAutosave(playerIndex, rowIndex);
+  };
+  function debouncedAutosave(playerIndex, rowIndex) {
+    const key = `${playerIndex}|${rowIndex}`;
+    if (scoreUpdateTimers.has(key)) {
+      clearTimeout(scoreUpdateTimers.get(key));
+    }
+    const timerId = setTimeout(() => {
+      autosaveScoreForPlayer(playerIndex, rowIndex).then(() => {
+        scoreUpdateTimers.delete(key);
+      });
+    }, 600);
+    scoreUpdateTimers.set(key, timerId);
+  }
+  async function autosaveScoreForPlayer(playerIndex, rowIndex) {
+    const player = players[playerIndex];
+    if (!player || !player.sheetName) return;
+    const score = player.scores[rowIndex];
+    setSaveStatus('Saving…', 'saving');
+    try {
+      // This is the canonical write: queueScoreUpdate -> Apps Script saveScore -> the Sheet.
+      // The Sheet is updated here, synchronously from this player's perspective. Other
+      // devices learn about it via the onEdit-trigger -> Firebase mirror, not from this call.
+      await queueScoreUpdate(player, rowIndex, score);
+      persistScoringSession();
+      updatePlayerCardDom(playerIndex);
+      setSaveStatus('Saved ✓', 'saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => setSaveStatus(''), 2000);
+      // No follow-up poll needed: the saveScore response itself carried the Sheet's
+      // recalculated points + total, applied via applySaveResponse in the flush loop.
+    } catch (err) {
+      console.error('Autosave error:', err);
+      persistScoringSession();
+      setSaveStatus('Queued — will retry', 'saving');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => setSaveStatus(''), 3000);
+    }
+  }
+  // Compute Stableford points for a hole.
+  // Priority: (1) confirmed sheet value if sheetScore matches current strokes,
+  //           (2) local calculation using handicap + stroke index as instant fallback,
+  //           (3) null only if no strokes entered yet.
+  // The local calc replicates the Sheet's own POINTS formula (column M) exactly:
+  //   h <= 18: one shot on holes where handicap >= INDEX 1, else no shot.
+  //   18 < h <= 36: one shot on EVERY hole, plus a second shot where handicap >= INDEX 2.
+  //   h  > 36: two shots on EVERY hole, plus a third shot where handicap >= INDEX 3.
+  //   points = max(0, 2 + shots - (strokes - par))
+  // This is NOT the standard 18-rollover allocation — the event uses its own INDEX 2 / INDEX 3
+  // ordering for the second/third shot, so all three indexes are needed.
+  function computeLocalStablefordPoints(par, strokes, index1, index2, index3, handicap) {
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
+    if (handicap === null || handicap === undefined || isNaN(Number(handicap))) return null;
+    const h = Number(handicap);
+    const shots = h > 36
+      ? 2 + (h >= Number(index3) ? 1 : 0)
+      : h > 18
+      ? 1 + (h >= Number(index2) ? 1 : 0)
+      : (h >= Number(index1) ? 1 : 0);
+    return Math.max(0, 2 + shots - (Number(strokes) - Number(par)));
+  }
+  function getStablefordPoints(par, strokes, sheetPoints, sheetScore, index1, index2, index3, handicap) {
+    if (strokes === '' || strokes === null || strokes === undefined) return null;
+    // Use the sheet's confirmed value when it matches the score we have locally.
+    // sheetPoints === 0 is a legitimate value (double bogey or worse), not "missing".
+    const sheetIsUpToDate = sheetScore !== null && sheetScore !== undefined && sheetScore !== ''
+      && Number(sheetScore) === Number(strokes);
+    if (sheetIsUpToDate && sheetPoints !== null && sheetPoints !== undefined) {
+      return Number(sheetPoints);
+    }
+    // Local fallback — instant, no network needed
+    const local = computeLocalStablefordPoints(par, strokes, index1, index2, index3, handicap);
+    if (local !== null) return local;
+    // Last resort: use sheet points even if score doesn't match (e.g. no handicap loaded yet)
+    if (sheetPoints !== null && sheetPoints !== undefined) return Number(sheetPoints);
+    return null;
+  }
+  // Stroke indexes for a hole: the hardcoded COURSE_HOLES table (the course guide) is
+  // authoritative — it's the verified scorecard data for Worrigee Links. The Sheet's own G/H
+  // columns are computed via SUMIFS against a separate 'Course Info' tab, and testing turned up
+  // at least one case where that tab disagreed with the course guide (a hole showing Par 4 from
+  // the Sheet vs Par 5 in the guide) — so the Sheet's index1/index2/index3 are only used as a
+  // fallback for a hole number the course guide doesn't recognize (e.g. stray/test rows in the sheet).
+  function getHoleIndexes(hole) {
+    const ch = getCourseHole(hole.hole);
+    if (ch) return { index1: ch.index1, index2: ch.index2, index3: ch.index3 };
+    const index1 = (hole.index1 !== undefined && hole.index1 !== null && hole.index1 !== '') ? Number(hole.index1) : null;
+    const index2 = (hole.index2 !== undefined && hole.index2 !== null && hole.index2 !== '') ? Number(hole.index2) : null;
+    const index3 = (hole.index3 !== undefined && hole.index3 !== null && hole.index3 !== '') ? Number(hole.index3) : null;
+    return { index1, index2, index3 };
+  }
+  function updateTotals() {
+    const bar = $('player-summary-bar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    players.forEach(player => {
+      const totals = getPlayerScoreSummary(player);
+      const cell = document.createElement('div');
+      cell.className = 'total-chip';
+      const initials = player.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const initialsEl = document.createElement('div');
+      initialsEl.className = 'chip-initials';
+      initialsEl.textContent = initials;
+      const infoEl = document.createElement('div');
+      infoEl.className = 'chip-info';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'chip-name';
+      nameEl.textContent = player.name;
+      const ptsEl = document.createElement('div');
+      ptsEl.className = 'chip-pts';
+      ptsEl.textContent = `${totals.totalPoints} `;
+      const ptsLabel = document.createElement('span');
+      ptsLabel.className = 'chip-pts-label';
+      ptsLabel.textContent = 'pts';
+      ptsEl.appendChild(ptsLabel);
+      infoEl.appendChild(nameEl);
+      infoEl.appendChild(ptsEl);
+      cell.appendChild(initialsEl);
+      cell.appendChild(infoEl);
+      bar.appendChild(cell);
+    });
+  }
+  // ── LEADERBOARD ───────────────────────────────────────────────
+  // Reads through the same Apps Script Web App as everything else (action=getLeaderboard),
+  // which does the rank/name/points/handicap lookup server-side in one call. This used to read
+  // the Sheet's gviz endpoint directly (two separate fetches) — the same technique that hit a
+  // Google login wall in testing on this spreadsheet, so it's been moved onto the one channel
+  // confirmed to work without requiring the spreadsheet to be public.
+  let lbOpen = false;
+  let lbPrevRanks = {};
+
+  window.openLeaderboard = function() {
+    if (lbOpen) return;
+    lbOpen = true;
+    const backdrop = $('lb-backdrop');
+    const drawer = $('lb-drawer');
+    if (!backdrop || !drawer) return;
+    backdrop.classList.remove('hidden');
+    drawer.classList.remove('hidden');
+    requestAnimationFrame(() => drawer.classList.add('open'));
+    document.body.style.overflow = 'hidden';
+    fetchAndRenderLeaderboard();
+  };
+
+  window.closeLeaderboard = function() {
+    if (!lbOpen) return;
+    lbOpen = false;
+    const drawer = $('lb-drawer');
+    const backdrop = $('lb-backdrop');
+    if (drawer) drawer.classList.remove('open');
+    setTimeout(() => {
+      if (drawer) drawer.classList.add('hidden');
+      if (backdrop) backdrop.classList.add('hidden');
+      document.body.style.overflow = '';
+    }, 300);
+  };
+
+  async function fetchAndRenderLeaderboard() {
+    window.fetchAndRenderLeaderboard = fetchAndRenderLeaderboard;
+    const list = $('lb-list');
+    const updatedEl = $('lb-updated');
+    if (!list) return;
+    list.innerHTML = '<div class="lb-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>';
+
+    try {
+      const resp = await enqueueRequest(() => fetchJsonViaProxy(`${APPS_SCRIPT_URL}?action=getLeaderboard`));
+      if (!resp || !resp.success) throw new Error((resp && resp.error) || 'getLeaderboard failed');
+
+      // Apps Script already filters rank 0/blank and sorts ascending; each row carries its own
+      // handicap now, so there's no separate hcapMap fetch/lookup needed on the client.
+      const myNames = new Set(players.map(p => p.sheetName));
+      const valid = (resp.rows || []).map(r => ({
+        rank: r.rank, name: r.name ?? '', pts: r.pts ?? '', front: r.front ?? '', back: r.back ?? '', through: r.through ?? '', hcap: r.handicap
+      }));
+
+      if (!valid.length) {
+        list.innerHTML = '<div class="lb-empty">No scores posted yet</div>';
+        return;
+      }
+
+      // Rank delta vs previous open
+      const newRanks = {};
+      valid.forEach(e => { newRanks[e.name] = parseInt(e.rank, 10); });
+
+      const html = valid.map(e => {
+        const isMine = myNames.has(e.name);
+        const rankNum = parseInt(e.rank, 10);
+        const rankCls = rankNum <= 3 ? ` lb-rank-${rankNum}` : '';
+        const displayName = e.hcap != null ? `${e.name} <span class="lb-hcap">(${e.hcap})</span>` : e.name;
+
+        const prev = lbPrevRanks[e.name];
+        let deltaHtml = '';
+        if (prev !== undefined && prev !== rankNum) {
+          const moved = prev - rankNum;
+          deltaHtml = `<span class="lb-delta ${moved > 0 ? 'lb-delta-up' : 'lb-delta-dn'}">${moved > 0 ? '▲' : '▼'}${Math.abs(moved)}</span>`;
+        }
+
+        const through = e.through !== '' ? e.through : '—';
+        const pts     = e.pts     !== '' ? e.pts     : '—';
+
+        return `
+          <div class="lb-row${isMine ? ' lb-mine' : ''}">
+            <div class="lb-rank${rankCls}">${e.rank}</div>
+            <div class="lb-name">${displayName}</div>
+            ${deltaHtml}
+            <div class="lb-meta-col">
+              <span class="lb-through">${through}</span>
+              <span class="lb-pts">${pts}<span class="lb-pts-label">pts</span></span>
+            </div>
+          </div>`;
+      }).join('');
+
+      list.innerHTML = html;
+      lbPrevRanks = newRanks;
+
+      const firstMine = list.querySelector('.lb-mine');
+      if (firstMine) firstMine.scrollIntoView({ block: 'nearest' });
+
+      if (updatedEl) {
+        updatedEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (err) {
+      list.innerHTML = `<div class="lb-empty">Unable to load — ${err.message}</div>`;
+    }
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    updateConnectionStatus();
+    const localSession = loadLocalSession();
+    if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
+      continueSavedSession(localSession);
+    } else {
+      loadSheetNames();
+    }
+    // Auth runs in parallel — only needed for Firebase sync, not for scoring
+    onAuthStateChanged(firebaseAuth, async (user) => {
+      firebaseUid = user ? user.uid : null;
+      if (firebaseUid) {
+        pendingRemoteSession = loadLocalSession();
+        if (sessionStage !== 'active') {
+          const bestSession = await refreshResumeCandidate();
+          if (bestSession && bestSession.stage === 'active' && !players.length) {
+            if ($('login-helper')) $('login-helper').textContent = 'Resume your saved session or start a new one.';
+          }
+          await loadSheetNames();
+          await loadTeeSheetGroups();
+          renderMyRoundCard();
+        }
+        await flushRemoteSession(pendingRemoteSession);
+        await flushPendingScoreUpdates();
+      } else {
+        setResumeSessionCandidate(null);
+        revealPanelIdle(); // not signed in — no "My Round" match is possible, show the manual picker
+      }
+    });
+    // Safety net: if auth/network stalls, don't leave the player with nothing to tap.
+    setTimeout(revealPanelIdle, 8000);
+    window.addEventListener('online', () => {
+      updateConnectionStatus();
+      flushRemoteSession();
+      // Push queued scores first, then pull the Sheet's current state so this device
+      // converges with anything that changed while it was offline.
+      flushPendingScoreUpdates().then(() => pollSheetsOnce()).catch(() => {});
+    });
+    window.addEventListener('offline', () => { updateConnectionStatus(); });
+    window.addEventListener('beforeunload', () => { persistScoringSession(); savePendingQueue(); });
+    // Flush pending scores + resync whenever the player returns to the tab/app
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        updateConnectionStatus();
+        if (navigator.onLine && pendingScoreUpdates.length) flushPendingScoreUpdates().catch(() => {});
+        if (navigator.onLine && sessionStage === 'active') pollSheetsOnce();
+      }
+    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/scoring-sw.js').catch(() => {});
+    }
+  });
+</script>
+<style>
+/* ── MINI RESET ─────────────────────────────────
+   tailwind-built.css is a preflight-less utility-only build (no @tailwind base), so the
+   browser's native <a> underline and native <button> chrome (background/border) aren't
+   stripped by Tailwind like on pages using the full CDN build. Replicate just those two
+   resets here rather than pulling in the whole preflight layer. */
+a { text-decoration: none; }
+button {
+  background-color: transparent;
+  background-image: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* ── TOKENS ─────────────────────────────────── */
+:root {
+  --bg:        #0b1120;
+  --surface:   #141f35;
+  --surface2:  #1a2d4a;
+  --card:      rgba(20,31,53,0.92);
+  --border:    rgba(255,255,255,0.09);
+  --border-em: rgba(56,189,248,0.25);
+  --sky:       #0ea5e9;
+  --light:     #38bdf8;
+  --green:     #22c55e;
+  --gold:      #f59e0b;
+  --red:       #ef4444;
+  --muted:     #94a3b8;
+  --text:      #f1f5f9;
+  --radius-sm: 10px;
+  --radius:    16px;
+  --radius-lg: 22px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  min-height:100dvh;
+  overscroll-behavior:none;
+  padding-top:64px;
+  padding-bottom:80px;
+}
+.hidden{display:none!important}
+/* ── NAV ────────────────────────────────────── */
+.glass{
+  background:rgba(11,17,32,0.85);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border);
+}
+/* ── SCREENS ────────────────────────────────── */
+.screen{
+  min-height:calc(100dvh - 64px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:28px 20px;
+}
+/* ── LOGIN ──────────────────────────────────── */
+#screen-login{
+  background:
+    radial-gradient(ellipse at 20% 75%, rgba(14,165,233,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 15%, rgba(56,189,248,0.12) 0%, transparent 45%),
+    var(--bg);
+  justify-content:flex-start;
+  padding:0;
+  align-items:stretch;
+}
+/* Hero */
+.lx-hero{
+  display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:18px 24px;
+  border-bottom:1px solid var(--border);
+}
+.lx-logo{
+  font-family:'Kanit',sans-serif;
+  font-style:italic;
+  font-size:20px;
+  letter-spacing:.5px;
+  color:var(--light);
+  line-height:1;
+}
+.lx-year{
+  font-size:10px;letter-spacing:1.5px;color:var(--muted);
+  text-transform:uppercase;
+}
+.lx-course{
+  font-size:10px;letter-spacing:1px;color:rgba(56,189,248,0.55);
+  text-transform:uppercase;
+}
+.lx-course::before{content:'·';margin-right:8px;color:var(--muted)}
+/* Resume card */
+.lx-resume{
+  display:flex;align-items:center;gap:14px;
+  margin:20px 20px 0;
+  padding:16px 18px;
+  background:rgba(14,165,233,0.07);
+  border:1px solid rgba(56,189,248,0.22);
+  border-radius:var(--radius);
+}
+.lx-resume-icon{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(14,165,233,0.15);
+  color:var(--light);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.lx-resume-body{flex:1;min-width:0}
+.lx-resume-label{font-size:12px;font-weight:700;color:var(--light);letter-spacing:.3px}
+.lx-resume-meta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lx-resume-btn{
+  flex-shrink:0;
+  background:var(--sky);color:#fff;border:none;
+  border-radius:10px;font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:700;
+  padding:9px 16px;cursor:pointer;
+  transition:opacity .15s;
+}
+.lx-resume-btn:active{opacity:.8}
+/* My Round dashboard card */
+.lx-myround{
+  margin:20px 20px 0;
+  padding:20px 20px 18px;
+  background:
+    linear-gradient(160deg, rgba(56,189,248,0.16) 0%, rgba(14,165,233,0.05) 45%, rgba(20,31,53,0.9) 100%),
+    var(--card);
+  border:1px solid rgba(56,189,248,0.3);
+  border-radius:18px;
+  box-shadow:0 12px 30px -14px rgba(14,165,233,0.35);
+}
+.lx-myround-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:14px;
+}
+.lx-myround-day{
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--light);
+}
+.lx-myround-badges{display:flex;gap:8px}
+.lx-myround-badge{
+  font-size:12px;font-weight:700;color:#fff;
+  background:rgba(14,165,233,0.22);
+  border:1px solid rgba(56,189,248,0.4);
+  border-radius:999px;padding:5px 12px;
+  white-space:nowrap;
+}
+.lx-myround-badge-time{background:rgba(245,158,11,0.16);border-color:rgba(245,158,11,0.35);color:var(--gold)}
+.lx-myround-countdown{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-align:center;margin-bottom:14px;
+  padding:8px 10px;border-radius:10px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+}
+.lx-myround-countdown .cd-num{
+  font-family:'Kanit',sans-serif;font-size:15px;font-weight:700;
+  color:var(--light);letter-spacing:.5px;
+}
+.lx-myround-countdown.cd-urgent .cd-num{color:var(--gold)}
+.lx-myround-countdown.cd-started{color:var(--green)}
+.lx-myround-players{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:18px;
+}
+.myround-player{
+  display:flex;align-items:center;gap:10px;
+  font-size:14px;color:var(--muted);
+}
+.myround-player.me{color:#fff;font-weight:700}
+.myround-player-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+  background:rgba(56,189,248,0.15);color:var(--light);
+  border:1px solid rgba(56,189,248,0.3);
+}
+.myround-player.me .myround-player-avatar{background:var(--sky);color:#fff;border-color:var(--sky)}
+.lx-myround-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--sky);color:#fff;border:none;
+  border-radius:14px;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  padding:15px 20px;cursor:pointer;
+  transition:opacity .15s,transform .1s;
+}
+.lx-myround-btn:active{opacity:.85;transform:scale(.98)}
+.lx-myround-change{
+  width:100%;
+  background:none;border:none;
+  color:var(--muted);font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:600;
+  padding:10px 0 0;cursor:pointer;
+  text-align:center;
+}
+.lx-myround-change:active{color:var(--light)}
+/* New session link */
+.lx-new-link{
+  background:none;border:none;
+  color:var(--muted);font-family:'Inter',sans-serif;
+  font-size:12px;text-decoration:underline;
+  cursor:pointer;padding:4px;margin:10px auto 0;
+  display:block;
+}
+/* Panel */
+.lx-panel{
+  margin:20px 20px 0;
+}
+/* Idle state */
+.lx-panel-idle{display:flex;flex-direction:column;gap:10px}
+.lx-start-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--sky);color:#fff;border:none;
+  border-radius:var(--radius);
+  font-family:'Inter',sans-serif;font-size:16px;font-weight:700;
+  padding:17px 20px;cursor:pointer;
+  transition:opacity .15s,transform .1s;
+  letter-spacing:.2px;
+}
+.lx-start-btn:active{opacity:.85;transform:scale(.98)}
+.lx-helper{
+  font-size:12px;color:var(--muted);
+  text-align:center;min-height:16px;
+}
+/* Search expanded */
+.lx-panel-search{display:flex;flex-direction:column;gap:10px}
+.lx-selected{display:flex;gap:6px;flex-wrap:wrap;min-height:0}
+/* Selected player chips */
+.player-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 10px 6px 13px;
+  background:rgba(14,165,233,0.12);
+  border:1px solid rgba(14,165,233,0.4);
+  border-radius:999px;
+  font-size:13px;color:var(--light);
+}
+.player-chip button{
+  background:none;border:none;color:var(--light);
+  font-size:17px;line-height:1;cursor:pointer;
+  padding:0 2px;opacity:.6;
+}
+.player-chip-warn{
+  background:rgba(234,179,8,0.1);
+  border-color:rgba(234,179,8,0.4);
+}
+.lx-fix-select{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Inter',sans-serif;font-size:12px;
+  padding:4px 6px;
+  max-width:150px;
+}
+/* Search input row */
+.lx-search-wrap{
+  position:relative;display:flex;align-items:center;
+}
+.lx-search-icon{
+  position:absolute;left:14px;color:var(--muted);pointer-events:none;flex-shrink:0;
+}
+.lx-search-input{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--text);
+  font-family:'Inter',sans-serif;font-size:16px;
+  padding:13px 40px 13px 42px;
+  outline:none;
+  transition:border-color .2s;
+}
+.lx-search-input:focus{border-color:var(--sky)}
+.lx-search-clear{
+  position:absolute;right:12px;
+  background:none;border:none;
+  color:var(--muted);font-size:20px;line-height:1;
+  cursor:pointer;padding:4px;opacity:.7;
+}
+/* Results */
+.lx-results{
+  display:flex;flex-direction:column;gap:5px;
+  max-height:36vh;overflow-y:auto;
+  scrollbar-width:none;
+}
+.lx-results::-webkit-scrollbar{display:none}
+.sheet-option{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:'Inter',sans-serif;font-size:14px;
+  padding:13px 16px;
+  text-align:left;cursor:pointer;width:100%;
+  transition:background .12s,border-color .12s;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-option:active,.sheet-option:hover{background:var(--surface2)}
+.sheet-option.selected{
+  background:rgba(14,165,233,0.1);
+  border-color:rgba(14,165,233,0.45);
+  color:var(--light);
+}
+.sheet-option.selected::after{
+  content:'✓';font-size:13px;color:var(--sky);
+}
+.sheet-empty{color:var(--muted);font-size:13px;text-align:center;padding:12px 0}
+/* Errors */
+.lx-error{font-size:12px;color:var(--red);min-height:16px;text-align:center}
+/* Actions */
+.lx-actions{display:flex;flex-direction:column;gap:8px;padding-top:4px}
+.lx-go-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--sky);color:#fff;border:none;
+  border-radius:var(--radius);
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  padding:15px 20px;cursor:pointer;
+  transition:opacity .15s,transform .1s;
+}
+.lx-go-btn:active{opacity:.85;transform:scale(.98)}
+.lx-cancel-btn{
+  background:transparent;color:var(--muted);
+  border:none;
+  font-family:'Inter',sans-serif;font-size:13px;
+  padding:10px;cursor:pointer;width:100%;
+}
+/* Shared btn styles still used by resume/scoring screen */
+.btn-primary{
+  background:var(--sky);color:#fff;
+  border:none;border-radius:var(--radius);
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:.5px;padding:15px;cursor:pointer;width:100%;
+  transition:opacity .15s,transform .1s;
+}
+.btn-primary:active{opacity:.85;transform:scale(.98)}
+.btn-primary.secondary{background:transparent;border:1px solid var(--border);color:var(--light)}
+.btn-ghost{
+  background:transparent;color:var(--light);
+  border:1px solid var(--border);border-radius:var(--radius);
+  font-family:'Inter',sans-serif;font-size:13px;
+  padding:10px 20px;cursor:pointer;
+}
+.action-row{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+/* ── LOADING ─────────────────────────────────── */
+#screen-loading{gap:16px;color:var(--light);font-size:12px;letter-spacing:2px}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--light);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── SCORING SCREEN ──────────────────────────── */
+#screen-scoring{
+  align-items:stretch;justify-content:flex-start;
+  padding:0;max-width:560px;margin:0 auto;width:100%;
+}
+.scoring-header{
+  background:rgba(11,17,32,0.9);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px 12px;
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(12px);
+}
+.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.header-logo{font-family:'Kanit',sans-serif;font-style:italic;font-size:20px;letter-spacing:1px;color:var(--light)}
+.header-right{display:flex;align-items:center;gap:10px}
+#sheet-label{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px}
+.save-status{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);min-height:13px}
+.save-status-saving{color:var(--gold)}
+.save-status-saved{color:var(--green)}
+.save-status-error{color:var(--red)}
+.conn-status{font-size:10px;letter-spacing:.5px;font-weight:600;padding:2px 8px;border-radius:99px;transition:all .3s}
+.conn-offline{background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3)}
+.conn-syncing{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.signout-btn{background:none;border:none;color:var(--muted);font-size:11px;letter-spacing:.5px;cursor:pointer;text-transform:uppercase;padding:4px 8px;border-radius:6px}
+.signout-btn:hover{color:var(--light)}
+/* totals bar */
+.totals-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.totals-bar::-webkit-scrollbar{display:none}
+.total-chip{
+  display:flex;align-items:center;gap:9px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:7px 12px;
+  flex-shrink:0;
+  min-width:0;
+}
+.chip-initials{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(14,165,233,0.15);
+  color:var(--light);
+  font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.chip-info{display:flex;flex-direction:column}
+.chip-name{font-size:11px;color:var(--muted);white-space:nowrap}
+.chip-pts{font-size:17px;font-weight:700;color:var(--text);line-height:1}
+.chip-pts-label{font-size:10px;font-weight:400;color:var(--muted)}
+/* leaderboard peek button */
+.lb-peek-btn{
+  background:none;border:none;color:var(--muted);
+  cursor:pointer;padding:4px 6px;border-radius:6px;
+  display:flex;align-items:center;
+  transition:color .15s;
+}
+.lb-peek-btn:hover,.lb-peek-btn:active{color:var(--light)}
+/* leaderboard drawer */
+.lb-backdrop{
+  position:fixed;inset:0;z-index:40;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+}
+.lb-drawer{
+  position:fixed;bottom:0;left:0;right:0;z-index:41;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  border-radius:24px 24px 0 0;
+  max-height:80dvh;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.32,.72,0,1);
+}
+.lb-drawer.open{transform:translateY(0)}
+.lb-handle-row{display:flex;justify-content:center;padding:10px 0 4px}
+.lb-handle{width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15)}
+.lb-header{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 18px 14px;
+  border-bottom:1px solid var(--border);
+}
+.lb-title{font-size:15px;font-weight:700;color:var(--text);flex:1}
+.lb-updated{font-size:11px;color:var(--muted)}
+.lb-refresh{
+  background:none;border:none;color:var(--muted);
+  cursor:pointer;padding:4px 6px;border-radius:6px;
+  display:flex;align-items:center;
+  transition:color .15s;
+}
+.lb-refresh:active{color:var(--light)}
+.lb-close{
+  background:none;border:none;
+  color:var(--muted);font-size:22px;line-height:1;
+  cursor:pointer;padding:2px 6px;
+}
+.lb-list{overflow-y:auto;flex:1;padding:8px 0 32px;scrollbar-width:none}
+.lb-list::-webkit-scrollbar{display:none}
+.lb-loading{display:flex;justify-content:center;padding:32px}
+.lb-row{
+  display:grid;
+  grid-template-columns: 28px 1fr auto 80px;
+  align-items:center;gap:10px;
+  padding:11px 18px;
+  border-bottom:1px solid var(--border);
+}
+.lb-row:last-child{border-bottom:none}
+.lb-row.lb-mine{background:rgba(14,165,233,0.07)}
+.lb-rank{
+  font-size:13px;font-weight:700;color:var(--muted);
+  text-align:center;
+}
+.lb-rank.lb-rank-1{color:#f59e0b}
+.lb-rank.lb-rank-2{color:#94a3b8}
+.lb-rank.lb-rank-3{color:#b45309}
+.lb-name{font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-hcap{font-size:11px;color:var(--muted);font-weight:400}
+.lb-mine .lb-name{color:var(--light);font-weight:600}
+.lb-meta-col{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.lb-through{font-size:10px;color:var(--muted);letter-spacing:.5px}
+.lb-pts{font-size:17px;font-weight:700;color:var(--text);line-height:1.1}
+.lb-pts-label{font-size:10px;font-weight:400;color:var(--muted);margin-left:2px}
+.lb-delta{
+  font-size:11px;font-weight:600;
+  padding:2px 5px;border-radius:99px;
+  white-space:nowrap;
+}
+.lb-delta-up{color:#4ade80;background:rgba(34,197,94,0.1)}
+.lb-delta-dn{color:#f87171;background:rgba(239,68,68,0.1)}
+.lb-empty{color:var(--muted);font-size:13px;text-align:center;padding:32px 18px}
+/* scorecard */
+.scorecard-wrap{overflow-y:auto;flex:1;padding:14px 14px 24px}
+#hole-view{width:100%}
+.hole-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:16px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.25);
+}
+.hole-card-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.hole-left{}
+.hole-eyebrow{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.hole-number{
+  font-family:'Kanit',sans-serif;font-style:italic;
+  font-size:56px;line-height:.95;color:var(--light);
+}
+.hole-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hole-par-block{display:flex;align-items:baseline;gap:4px}
+.hole-par-label{font-size:11px;color:var(--muted)}
+.hole-par-val{font-size:32px;font-weight:700;color:var(--text);line-height:1}
+.hole-progress-label{font-size:10px;color:var(--muted);letter-spacing:1px}
+.hole-progress-track{height:2px;background:rgba(255,255,255,0.07);border-radius:99px;margin-bottom:6px}
+.hole-progress-fill{height:2px;background:var(--sky);border-radius:99px;transition:width .4s ease}
+.hole-dots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.progress-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12);transition:all .2s}
+.progress-dot.done{background:#1a4a2e;box-shadow:0 0 0 1px var(--green)}
+.progress-dot.curr{width:18px;border-radius:3px;background:var(--sky)}
+/* player cards */
+.hole-body{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.player-card{
+  background:rgba(11,17,32,0.6);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:12px 14px;
+  transition:border-color .2s;
+}
+.player-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.player-info{display:flex;flex-direction:column;gap:2px}
+.player-name{font-size:15px;font-weight:600;color:var(--text)}
+.player-hc{font-size:12px;font-weight:500;color:var(--text-dim,#94a3b8)}
+.player-running{font-size:11px;color:var(--muted);letter-spacing:.5px}
+.player-right{display:flex;align-items:center;gap:10px}
+.player-pts{font-size:28px;font-weight:700;color:var(--text);line-height:1;min-width:28px;text-align:right}
+/* rel badges */
+.rel-badge{
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;letter-spacing:.3px;
+  white-space:nowrap;
+}
+.rel-eagle{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)}
+.rel-birdie{background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+.rel-par{background:rgba(148,163,184,0.1);color:var(--muted);border:1px solid rgba(148,163,184,0.15)}
+.rel-bogey{background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.2)}
+.rel-double{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+.rel-empty{background:transparent;color:var(--muted);border:1px solid transparent}
+/* score controls */
+.score-row{display:flex;align-items:stretch;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.score-minus,.score-plus{
+  width:68px;background:var(--surface2);border:none;color:var(--text);
+  font-size:26px;font-weight:300;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .1s;flex-shrink:0;min-height:58px;
+}
+.score-minus:active,.score-plus:active{background:rgba(56,189,248,0.15)}
+.score-center{
+  flex:1;background:rgba(11,17,32,0.5);
+  display:flex;align-items:center;justify-content:center;
+  border-left:1px solid var(--border);border-right:1px solid var(--border);
+  cursor:pointer;min-height:58px;
+}
+.score-val{font-size:30px;font-weight:600;color:var(--text)}
+/* round nav */
+#round-nav{display:flex;gap:8px;padding:0 14px 14px}
+.hole-nav-btn{
+  flex:1;background:var(--surface);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:13px 10px;font-size:13px;font-weight:600;
+  letter-spacing:.3px;cursor:pointer;transition:background .15s;
+}
+.hole-nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.hole-nav-btn:not(:disabled):active{background:var(--surface2)}
+/* ── COURSE GUIDE PANEL ──────────────────────── */
+.course-guide-panel{
+  border-top:1px solid var(--border);
+  margin-top:2px;
+}
+.guide-toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  width:100%;background:none;border:none;
+  padding:11px 2px;cursor:pointer;
+  color:var(--text);
+}
+.guide-toggle-label{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  flex:1;text-align:left;
+}
+.guide-toggle-meta{font-size:11px;color:var(--sky);flex-shrink:0}
+.guide-chevron{color:var(--muted);transition:transform .25s;flex-shrink:0}
+.guide-chevron.open{transform:rotate(180deg)}
+.guide-body{
+  display:none;
+  flex-direction:column;
+  gap:10px;
+  padding-bottom:4px;
+}
+.guide-body.open{display:flex}
+.guide-video-wrap{position:relative;border-radius:var(--radius-sm);overflow:hidden;background:#000}
+.guide-video{width:100%;aspect-ratio:16/9;display:block;border-radius:var(--radius-sm)}
+.guide-video-label{
+  position:absolute;bottom:8px;left:10px;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,0.6);
+  background:rgba(0,0,0,0.5);padding:3px 8px;border-radius:6px;
+  pointer-events:none;
+}
+.guide-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.guide-stat{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:8px 10px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.gs-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.gs-val{font-size:16px;font-weight:700;color:var(--text);line-height:1}
+.gs-sub{font-size:10px;font-weight:400;color:var(--muted)}
+.guide-note{
+  font-size:12px;line-height:1.65;color:rgba(148,163,184,0.85);
+  border-left:2px solid var(--sky);
+  padding-left:10px;
+}
+/* ── START HOLE OVERLAY ──────────────────────── */
+.start-hole-overlay{
+  position:fixed;inset:0;z-index:30;
+  background:rgba(2,6,18,0.92);
+  backdrop-filter:blur(14px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;
+  animation:fadeIn .25s ease-out;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.start-hole-card{
+  width:100%;max-width:400px;
+  max-height:min(90dvh,720px);
+  overflow-y:auto;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:22px 18px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.5);
+}
+.start-hole-title{
+  font-family:'Kanit',sans-serif;font-style:italic;
+  font-size:26px;color:var(--light);margin-bottom:4px;
+}
+.start-hole-sub{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.start-hole-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.start-hole-btn{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:var(--text);
+  padding:12px 8px;
+  cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;
+  transition:background .15s,border-color .15s;
+}
+.start-hole-btn:hover{background:rgba(14,165,233,0.1);border-color:var(--sky)}
+.start-hole-btn:active{background:rgba(14,165,233,0.2)}
+.shb-num{font-family:'Kanit',sans-serif;font-style:italic;font-size:24px;line-height:1;color:var(--text)}
+.shb-par{font-size:10px;color:var(--muted);letter-spacing:1px}
+#scorecard-loading{padding:40px 20px;text-align:center;color:var(--muted);font-size:12px;letter-spacing:2px}
+/* ── BOTTOM NAV ─────────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(11,17,32,0.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  z-index:50;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@media(min-width:768px){.bottom-nav{display:none}body{padding-bottom:0}}
+@media(max-width:480px){
+  .hole-number{font-size:48px}
+  .score-minus,.score-plus{width:58px}
+  .guide-stats-row{grid-template-columns:1fr 1fr}
+  .start-hole-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<!--
+  ICONS: previously loaded from unpkg.com/lucide@latest (unpinned version, full ~1500-icon
+  set parsed client-side for the 5 icons actually used here). Inlined as raw SVG below —
+  same visual output (24x24 viewBox, stroke-based, 2px stroke), zero extra requests, zero
+  third-party dependency, and no risk of an upstream "latest" release changing icon shapes
+  under us. Source: lucide.dev icon set, used here under its ISC license terms.
+-->
+<!-- ── TOP NAV ──────────────────────────────────────────────── -->
+<nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex-shrink-0 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-slate-800">
+          <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain" width="32" height="32" loading="eager">
+        </div>
+        <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+      </div>
+      <div class="hidden md:flex items-center space-x-1">
+        <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+        <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+        <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+        <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+        <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+        <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+        <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+        <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+      </div>
+      <div class="md:hidden">
+        <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10" aria-label="Open menu">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+    <div class="px-4 pt-2 pb-3 space-y-1">
+      <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+      <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+      <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+      <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+      <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+      <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+      <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      <a href="notifications-center.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Notifications</a>
+    </div>
+  </div>
+</nav>
+<!-- ── LOGIN ─────────────────────────────────────────────────── -->
+<div id="screen-login" class="screen">
+
+  <!-- Hero -->
+  <div class="lx-hero">
+    
+    <div class="lx-logo">Live Scoring · 2026</div>
+    <div class="lx-course">Worrigee Links</div>
+  </div>
+
+  <!-- My Round dashboard — shown when the signed-in player is found in a tee sheet group -->
+  <div id="my-round-card" class="lx-myround hidden">
+    <div class="lx-myround-head">
+      <span class="lx-myround-day" id="myround-day">Friday</span>
+      <div class="lx-myround-badges">
+        <span class="lx-myround-badge" id="myround-hole"></span>
+        <span class="lx-myround-badge lx-myround-badge-time" id="myround-time"></span>
+      </div>
+    </div>
+    <div class="lx-myround-countdown" id="myround-countdown"></div>
+    <div class="lx-myround-players" id="myround-players"></div>
+    <button class="lx-myround-btn" onclick="startMyRound()">
+      Start My Round
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+    <button class="lx-myround-change" onclick="lxOpenSearch()">Change Group</button>
+  </div>
+
+  <!-- Resume card — shown when a session exists, hidden otherwise -->
+  <div id="session-resume-card" class="lx-resume hidden">
+    <div class="lx-resume-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </div>
+    <div class="lx-resume-body">
+      <div class="lx-resume-label">Resume round</div>
+      <div id="session-resume-meta" class="lx-resume-meta"></div>
+    </div>
+    <button class="lx-resume-btn" onclick="continueSavedScoringSession()">Continue</button>
+  </div>
+
+  <!-- New round panel -->
+  <div class="lx-panel" id="lx-panel">
+
+    <!-- Collapsed state: just the CTA. Starts hidden — only shown once we've established
+         there's no personalized "My Round" match (or that check isn't possible), so it
+         never flashes on screen while that lookup is still in flight. -->
+    <div class="lx-panel-idle hidden" id="lx-panel-idle">
+      <button class="lx-start-btn" onclick="lxOpenSearch()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Choose group &amp; start round
+      </button>
+      <div id="login-helper" class="lx-helper">Friday tee sheet groups</div>
+    </div>
+
+    <!-- Expanded state: tee sheet groups + selected + action -->
+    <div class="lx-panel-search hidden" id="lx-panel-search">
+
+      <!-- Group list -->
+      <div id="teesheet-status" class="lx-helper" style="text-align:left"></div>
+      <div id="teesheet-groups" class="lx-results" style="max-height:40vh"></div>
+
+      <!-- Selected group's players (with manual fix-up for unmatched) -->
+      <div id="selected-list" class="lx-selected"></div>
+
+      <!-- Error -->
+      <div id="login-error" class="lx-error"></div>
+
+      <!-- Action row -->
+      <div class="lx-actions">
+        <button class="lx-go-btn" onclick="startScoring()">
+          Start round
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="lx-cancel-btn" onclick="lxCloseSearch()">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- New session link shown below resume card -->
+  <button class="lx-new-link hidden" id="lx-new-link" onclick="startNewScoringSession()">Start a new round instead</button>
+
+</div>
+<!-- ── LOADING ────────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen hidden">
+  <div class="spinner"></div>
+  <div style="font-size:11px;letter-spacing:3px;color:var(--light)">LOADING</div>
+</div>
+<!-- ── SCORING ────────────────────────────────────────────────── -->
+<div id="screen-scoring" class="screen hidden">
+  <div class="scoring-header">
+    <div class="header-row">
+      <div>
+        <div class="header-logo">HACKERS CUP</div>
+        <div id="sheet-label"></div>
+      </div>
+      <div class="header-right">
+        <div id="save-status" class="save-status"></div>
+        <div id="connection-status" class="conn-status"></div>
+        <!-- No live leaderboard for Skins — peek button intentionally omitted -->
+        <button class="signout-btn" onclick="handleSignOut()">Change</button>
+      </div>
+    </div>
+    <div class="totals-bar" id="player-summary-bar"></div>
+  </div>
+  <div class="scorecard-wrap">
+    <div id="scorecard-loading">LOADING HOLES…</div>
+    <div id="hole-view" class="hidden"></div>
+  </div>
+  <div id="round-nav" class="hidden" style="display:none;gap:8px;padding:0 14px 14px">
+    <button id="prev-hole-btn" class="hole-nav-btn" onclick="moveHole(-1)">← Prev</button>
+    <button id="next-hole-btn" class="hole-nav-btn" onclick="moveHole(1)">Next →</button>
+  </div>
+  <div id="start-hole-overlay" class="start-hole-overlay hidden">
+    <div class="start-hole-card">
+      <div class="start-hole-title">Which hole?</div>
+      <div class="start-hole-sub">Pick where you're starting</div>
+      <div id="start-hole-grid" class="start-hole-grid"></div>
+    </div>
+  </div>
+</div>
+  <div id="start-hole-overlay" class="start-hole-overlay hidden">
+    <div class="start-hole-card">
+      <div class="start-hole-title">Which hole?</div>
+      <div class="start-hole-sub">Pick where you're starting</div>
+      <div id="start-hole-grid" class="start-hole-grid"></div>
+    </div>
+  </div>
+</div>
+<!-- LEADERBOARD DRAWER -->
+<div id="lb-backdrop" class="lb-backdrop hidden" onclick="closeLeaderboard()"></div>
+<div id="lb-drawer" class="lb-drawer hidden">
+  <div class="lb-handle-row"><div class="lb-handle"></div></div>
+  <div class="lb-header">
+    <div class="lb-title">Leaderboard</div>
+    <div id="lb-updated" class="lb-updated"></div>
+    <button class="lb-refresh" onclick="fetchAndRenderLeaderboard()" aria-label="Refresh">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <button class="lb-close" onclick="closeLeaderboard()" aria-label="Close">×</button>
+  </div>
+  <div id="lb-list" class="lb-list">
+    <div class="lb-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>
+  </div>
+</div>
+<!-- BOTTOM NAV -->
+<div class="bottom-nav md:hidden">
+  <div class="flex justify-around items-center h-16">
+    <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span class="text-[10px] font-medium">Payment</span>
+    </a>
+    <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <span class="text-[10px] font-medium">Podcast</span>
+    </a>
+    <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-sky-400">
+      <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span class="text-[10px] font-medium">Score</span>
+    </a>
+  </div>
+</div>
+<script>
+// Fix round-nav display (hidden attr conflict with display:flex)
+document.addEventListener('DOMContentLoaded', () => {
+  const rn = document.getElementById('round-nav');
+  if (rn) { rn.style.display = ''; }
+});
+// Login panel interactions — must be plain globals (not module-scoped) so
+// inline onclick handlers can reach them before the module finishes loading.
+function lxOpenSearch() {
+  const idle = document.getElementById('lx-panel-idle');
+  const search = document.getElementById('lx-panel-search');
+  if (idle) idle.classList.add('hidden');
+  if (search) search.classList.remove('hidden');
+  if (window.loadTeeSheetGroups) loadTeeSheetGroups();
+}
+function lxCloseSearch() {
+  const idle = document.getElementById('lx-panel-idle');
+  const search = document.getElementById('lx-panel-search');
+  const panel = document.getElementById('lx-panel');
+  // If the My Round card already found a match, its own "Change Group" button is the
+  // entry point — don't let this panel's idle CTA pop back open behind it.
+  const hasMyRound = panel && panel.classList.contains('has-my-round');
+  if (idle && !hasMyRound) idle.classList.remove('hidden');
+  if (search) search.classList.add('hidden');
+}
+</script>
+</body>
+</html>
