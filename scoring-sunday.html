@@ -1573,8 +1573,71 @@
   }
 
   // ── INIT ─────────────────────────────────────────────────────
+  // ── HERO WEATHER ─────────────────────────────────────────────
+  // Open-Meteo (same source + coordinates as weather.html, no API key needed). Cached for
+  // 30 min so repeat visits/tab switches don't re-fetch — this is decorative context for
+  // the hero, not something that needs to be second-fresh.
+  const WEATHER_CACHE_KEY = 'hackerscup.scoring.weather.v1';
+  const WEATHER_MAX_AGE_MS = 30 * 60 * 1000;
+  function weatherIconSvg(code) {
+    if (code === 0) {
+      return '<circle cx="12" cy="12" r="4"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M4.2 4.2l2.1 2.1"/><path d="M17.7 17.7l2.1 2.1"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.2 19.8l2.1-2.1"/><path d="M17.7 6.3l2.1-2.1"/>';
+    }
+    const cloud = '<circle cx="9" cy="14" r="3.2"/><circle cx="14" cy="12" r="4.2"/><circle cx="17.5" cy="15" r="2.6"/><rect x="5.5" y="15" width="14" height="4" rx="2"/>';
+    if ([1, 2, 3, 45, 48].includes(code)) return cloud;
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return cloud + '<path d="M9 20l-1 2"/><path d="M13 20l-1 2"/><path d="M17 20l-1 2"/>';
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return cloud + '<path d="M9 20v2"/><path d="M13 21v2"/><path d="M17 20v2"/>';
+    if ([95, 96, 99].includes(code)) return cloud + '<path d="M12 19l-2 3h3l-2 3"/>';
+    return cloud;
+  }
+  function weatherDesc(code) {
+    const map = {
+      0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+      45: 'Foggy', 48: 'Foggy', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+      61: 'Light Rain', 63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 73: 'Snow',
+      75: 'Heavy Snow', 77: 'Snow', 80: 'Rain Showers', 81: 'Rain Showers', 82: 'Heavy Showers',
+      85: 'Snow Showers', 86: 'Snow Showers', 95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
+    };
+    return map[code] || 'Worrigee Links';
+  }
+  function paintWeather(temp, code) {
+    const iconEl = $('lx-weather-icon');
+    const tempEl = $('lx-weather-temp');
+    const descEl = $('lx-weather-desc');
+    if (!iconEl || !tempEl || !descEl) return;
+    iconEl.innerHTML = weatherIconSvg(code);
+    tempEl.textContent = `${Math.round(temp)}°`;
+    descEl.textContent = weatherDesc(code);
+  }
+  async function loadWeather() {
+    try {
+      const cachedRaw = localStorage.getItem(WEATHER_CACHE_KEY);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && cached.savedAt && Date.now() - cached.savedAt < WEATHER_MAX_AGE_MS
+          && cached.temp !== undefined && cached.code !== undefined) {
+          paintWeather(cached.temp, cached.code);
+          return; // fresh enough — skip the network call entirely
+        }
+      }
+    } catch (err) {}
+    if (!navigator.onLine) return;
+    try {
+      const resp = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-34.878&longitude=150.744&current=temperature_2m,weather_code&timezone=Australia/Sydney');
+      const data = await resp.json();
+      const temp = data && data.current && data.current.temperature_2m;
+      const code = data && data.current && data.current.weather_code;
+      if (temp === undefined || code === undefined) return;
+      paintWeather(temp, code);
+      try { localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), temp, code })); } catch (err) {}
+    } catch (err) {
+      // Leave the default "Worrigee Links" label in place — weather here is decorative
+      // context, not something that should ever block or error the actual scoring flow.
+    }
+  }
   window.addEventListener('DOMContentLoaded', () => {
     updateConnectionStatus();
+    loadWeather();
     const localSession = loadLocalSession();
     if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
       continueSavedSession(localSession);
@@ -1701,7 +1764,7 @@ body{
 }
 /* Hero */
 .lx-hero{
-  display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
   padding:18px 24px;
   border-bottom:1px solid var(--border);
 }
@@ -1717,11 +1780,14 @@ body{
   font-size:10px;letter-spacing:1.5px;color:var(--muted);
   text-transform:uppercase;
 }
-.lx-course{
+.lx-weather{
+  display:flex;align-items:center;gap:5px;
   font-size:10px;letter-spacing:1px;color:rgba(56,189,248,0.55);
   text-transform:uppercase;
 }
-.lx-course::before{content:'·';margin-right:8px;color:var(--muted)}
+.lx-weather-icon{color:rgba(56,189,248,0.55);flex-shrink:0}
+.lx-weather-temp{font-weight:700;color:var(--light);letter-spacing:.3px}
+.lx-weather-sep{color:var(--muted)}
 /* Resume card */
 .lx-resume{
   display:flex;align-items:center;gap:14px;
@@ -2414,9 +2480,13 @@ body{
 
   <!-- Hero -->
   <div class="lx-hero">
-    
-    <div class="lx-logo">Live Scoring · 2026</div>
-    <div class="lx-course">Worrigee Links</div>
+    <div class="lx-logo">Hackers Cup 26</div>
+    <div class="lx-weather" id="lx-weather">
+      <svg id="lx-weather-icon" class="lx-weather-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+      <span id="lx-weather-temp"></span>
+      <span class="lx-weather-sep">·</span>
+      <span id="lx-weather-desc">Worrigee Links</span>
+    </div>
   </div>
 
   <!-- Skeleton — shown while we don't yet know whether a My Round match exists, so the
