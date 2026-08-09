@@ -25,6 +25,9 @@
   // into a day picker once the Friday/Sunday UI is dialed in.
   const CURRENT_EVENT_ID = 'HC26';
   const SCORING_DAY = 'saturday';
+  // The countdown needs the actual competition date, not "today" — a tee time like "3:14 PM"
+  // is meaningless as a target without pinning it to this specific Saturday.
+  const SCORING_DAY_DATE = '2026-08-22';
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsIpFLV6y4b-Bct4NnQ624Mdx6glCUfg7nbazbMhsNGuUpJSmqNfTUz1e5XK3SjIQX/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
@@ -82,6 +85,7 @@
   let allSheetNames = [];
   let teeSheetGroups = []; // [{ hole, teeTime, players:[{uid, displayName, sheetName}] }] — Saturday only for now
   let selectedGroupIndex = null;
+  let myGroupIndex = null;
   let holeData = [];
   let players = [];
   let scores = {};
@@ -92,6 +96,7 @@
   let saveTimer = null;
   let sessionSyncTimer = null;
   let firebaseUid = null;
+  let myRoundCountdownTimer = null;
   let pendingRemoteSession = null;
   let pendingScoreUpdates = [];
   let resumeSessionCandidate = null;
@@ -621,6 +626,99 @@
     renderTeeSheetGroups();
     persistScoringSession();
   }
+  // Parses tee-sheet time strings ("7:42 AM", "7:42am", "07:42") into minutes-since-midnight.
+  function parseTeeTimeToMinutes(s) {
+    const str = String(s || '').trim().toUpperCase();
+    const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+    if (!m) return null;
+    let h = Number(m[1]);
+    const min = Number(m[2] || 0);
+    if (h > 23 || min > 59) return null;
+    const mer = m[3] ? m[3][0] : '';
+    if (mer === 'P' && h < 12) h += 12;
+    if (mer === 'A' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  function stopMyRoundCountdown() {
+    if (myRoundCountdownTimer) { clearInterval(myRoundCountdownTimer); myRoundCountdownTimer = null; }
+  }
+  function startMyRoundCountdown(teeTimeStr) {
+    stopMyRoundCountdown();
+    const el = $('myround-countdown');
+    if (!el) return;
+    const mins = parseTeeTimeToMinutes(teeTimeStr);
+    if (mins === null) { el.classList.add('hidden'); return; }
+    // Pin the countdown to the actual competition date, not whatever day it is right now.
+    const target = new Date(`${SCORING_DAY_DATE}T00:00:00`);
+    target.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+    const tick = () => {
+      const diffMs = target.getTime() - Date.now();
+      if (diffMs <= 0) {
+        // Tee time has arrived (or passed) — nothing useful left to count down, so hide it.
+        el.classList.add('hidden');
+        stopMyRoundCountdown();
+        return;
+      }
+      el.classList.remove('hidden');
+      el.classList.remove('cd-urgent', 'cd-started');
+      const totalSecs = Math.floor(diffMs / 1000);
+      const d = Math.floor(totalSecs / 86400);
+      const h = Math.floor((totalSecs % 86400) / 3600);
+      const m = Math.floor((totalSecs % 3600) / 60);
+      const s = totalSecs % 60;
+      if (diffMs <= 15 * 60 * 1000) el.classList.add('cd-urgent');
+      const parts = d > 0 ? `${d}d ${h}h`
+        : h > 0 ? `${h}h ${String(m).padStart(2,'0')}m`
+        : `${m}m ${String(s).padStart(2,'0')}s`;
+      el.innerHTML = `Tee off in <span class="cd-num">${parts}</span>`;
+    };
+    tick();
+    myRoundCountdownTimer = setInterval(tick, 1000);
+  }
+  // Finds the signed-in player's own group in today's tee sheet (by uid) and renders the
+  // "My Round" dashboard card so they don't have to search the full group list themselves.
+  function renderMyRoundCard() {
+    const card = $('my-round-card');
+    if (!card) return;
+    myGroupIndex = firebaseUid
+      ? teeSheetGroups.findIndex(g => g.players.some(p => p.uid === firebaseUid))
+      : -1;
+    if (myGroupIndex === -1) {
+      myGroupIndex = null; card.classList.add('hidden'); stopMyRoundCountdown();
+      const panel = $('lx-panel');
+      if (panel) panel.classList.remove('has-my-round');
+      const idle = $('lx-panel-idle');
+      if (idle && $('lx-panel-search')?.classList.contains('hidden')) idle.classList.remove('hidden');
+      return;
+    }
+    const group = teeSheetGroups[myGroupIndex];
+    $('myround-day').textContent = SCORING_DAY.charAt(0).toUpperCase() + SCORING_DAY.slice(1);
+    $('myround-hole').textContent = group.hole ? `Tee ${group.hole}` : 'Tee TBC';
+    $('myround-time').textContent = group.teeTime || 'Time TBC';
+    startMyRoundCountdown(group.teeTime);
+    const playersEl = $('myround-players');
+    playersEl.innerHTML = '';
+    group.players.forEach(p => {
+      const isMe = p.uid === firebaseUid;
+      const initials = (p.displayName || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const row = document.createElement('div');
+      row.className = 'myround-player' + (isMe ? ' me' : '');
+      row.innerHTML = `<span class="myround-player-avatar">${initials}</span><span>${p.displayName}${isMe ? ' (You)' : ''}</span>`;
+      playersEl.appendChild(row);
+    });
+    card.classList.remove('hidden');
+    // The card's own "Change Group" button replaces this panel's CTA — keep it out of the
+    // way until the player actually taps Change Group (lxOpenSearch shows it again).
+    const panel = $('lx-panel');
+    if (panel) panel.classList.add('has-my-round');
+    const idle = $('lx-panel-idle');
+    if (idle) idle.classList.add('hidden');
+  }
+  window.startMyRound = function() {
+    if (myGroupIndex === null) return;
+    selectGroup(myGroupIndex);
+    window.startScoring();
+  };
   function renderSelectedList() {
     const el = $('selected-list');
     if (!el) return;
@@ -666,6 +764,7 @@
   }
   window.startScoring = function() {
     if (!selectedSheetNames.length) { $('login-error').textContent = 'Select a group with at least one matched player.'; return; }
+    stopMyRoundCountdown();
     players = selectedSheetNames.map(name => ({ sheetName: name, name, holes: [], scores: {} }));
     // A shotgun-start group already knows its starting hole — skip the "which hole?" prompt.
     const selectedGroup = selectedGroupIndex !== null ? teeSheetGroups[selectedGroupIndex] : null;
@@ -1288,6 +1387,8 @@
             if ($('login-helper')) $('login-helper').textContent = 'Resume your saved session or start a new one.';
           }
           await loadSheetNames();
+          await loadTeeSheetGroups();
+          renderMyRoundCard();
         }
         await flushRemoteSession(pendingRemoteSession);
         await flushPendingScoreUpdates();
@@ -1392,28 +1493,27 @@ body{
 }
 /* Hero */
 .lx-hero{
-  display:flex;flex-direction:column;align-items:center;
-  padding:52px 24px 40px;
+  display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:18px 24px;
   border-bottom:1px solid var(--border);
 }
 .lx-logo{
   font-family:'Kanit',sans-serif;
   font-style:italic;
-  font-size:56px;
-  letter-spacing:2px;
+  font-size:20px;
+  letter-spacing:.5px;
   color:var(--light);
   line-height:1;
-  text-align:center;
 }
 .lx-year{
-  font-size:10px;letter-spacing:3px;color:var(--muted);
-  text-transform:uppercase;margin-top:6px;
-}
-.lx-course{
-  margin-top:18px;
-  font-size:13px;letter-spacing:1px;color:rgba(56,189,248,0.55);
+  font-size:10px;letter-spacing:1.5px;color:var(--muted);
   text-transform:uppercase;
 }
+.lx-course{
+  font-size:10px;letter-spacing:1px;color:rgba(56,189,248,0.55);
+  text-transform:uppercase;
+}
+.lx-course::before{content:'·';margin-right:8px;color:var(--muted)}
 /* Resume card */
 .lx-resume{
   display:flex;align-items:center;gap:14px;
@@ -1441,6 +1541,81 @@ body{
   transition:opacity .15s;
 }
 .lx-resume-btn:active{opacity:.8}
+/* My Round dashboard card */
+.lx-myround{
+  margin:20px 20px 0;
+  padding:20px 20px 18px;
+  background:
+    linear-gradient(160deg, rgba(56,189,248,0.16) 0%, rgba(14,165,233,0.05) 45%, rgba(20,31,53,0.9) 100%),
+    var(--card);
+  border:1px solid rgba(56,189,248,0.3);
+  border-radius:18px;
+  box-shadow:0 12px 30px -14px rgba(14,165,233,0.35);
+}
+.lx-myround-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:14px;
+}
+.lx-myround-day{
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--light);
+}
+.lx-myround-badges{display:flex;gap:8px}
+.lx-myround-badge{
+  font-size:12px;font-weight:700;color:#fff;
+  background:rgba(14,165,233,0.22);
+  border:1px solid rgba(56,189,248,0.4);
+  border-radius:999px;padding:5px 12px;
+  white-space:nowrap;
+}
+.lx-myround-badge-time{background:rgba(245,158,11,0.16);border-color:rgba(245,158,11,0.35);color:var(--gold)}
+.lx-myround-countdown{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-align:center;margin-bottom:14px;
+  padding:8px 10px;border-radius:10px;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+}
+.lx-myround-countdown .cd-num{
+  font-family:'Kanit',sans-serif;font-size:15px;font-weight:700;
+  color:var(--light);letter-spacing:.5px;
+}
+.lx-myround-countdown.cd-urgent .cd-num{color:var(--gold)}
+.lx-myround-countdown.cd-started{color:var(--green)}
+.lx-myround-players{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:18px;
+}
+.myround-player{
+  display:flex;align-items:center;gap:10px;
+  font-size:14px;color:var(--muted);
+}
+.myround-player.me{color:#fff;font-weight:700}
+.myround-player-avatar{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+  background:rgba(56,189,248,0.15);color:var(--light);
+  border:1px solid rgba(56,189,248,0.3);
+}
+.myround-player.me .myround-player-avatar{background:var(--sky);color:#fff;border-color:var(--sky)}
+.lx-myround-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--sky);color:#fff;border:none;
+  border-radius:14px;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  padding:15px 20px;cursor:pointer;
+  transition:opacity .15s,transform .1s;
+}
+.lx-myround-btn:active{opacity:.85;transform:scale(.98)}
+.lx-myround-change{
+  width:100%;
+  background:none;border:none;
+  color:var(--muted);font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:600;
+  padding:10px 0 0;cursor:pointer;
+  text-align:center;
+}
+.lx-myround-change:active{color:var(--light)}
 /* New session link */
 .lx-new-link{
   background:none;border:none;
@@ -1971,9 +2146,27 @@ body{
 
   <!-- Hero -->
   <div class="lx-hero">
-    <div class="lx-logo">HACKERS CUP</div>
-    <div class="lx-year">Live Scoring · 2026</div>
+    
+    <div class="lx-logo">Live Scoring · 2026</div>
     <div class="lx-course">Worrigee Links</div>
+  </div>
+
+  <!-- My Round dashboard — shown when the signed-in player is found in a tee sheet group -->
+  <div id="my-round-card" class="lx-myround hidden">
+    <div class="lx-myround-head">
+      <span class="lx-myround-day" id="myround-day">Saturday</span>
+      <div class="lx-myround-badges">
+        <span class="lx-myround-badge" id="myround-hole"></span>
+        <span class="lx-myround-badge lx-myround-badge-time" id="myround-time"></span>
+      </div>
+    </div>
+    <div class="lx-myround-countdown" id="myround-countdown"></div>
+    <div class="lx-myround-players" id="myround-players"></div>
+    <button class="lx-myround-btn" onclick="startMyRound()">
+      Start My Round
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+    <button class="lx-myround-change" onclick="lxOpenSearch()">Change Group</button>
   </div>
 
   <!-- Resume card — shown when a session exists, hidden otherwise -->
@@ -2132,7 +2325,11 @@ function lxOpenSearch() {
 function lxCloseSearch() {
   const idle = document.getElementById('lx-panel-idle');
   const search = document.getElementById('lx-panel-search');
-  if (idle) idle.classList.remove('hidden');
+  const panel = document.getElementById('lx-panel');
+  // If the My Round card already found a match, its own "Change Group" button is the
+  // entry point — don't let this panel's idle CTA pop back open behind it.
+  const hasMyRound = panel && panel.classList.contains('has-my-round');
+  if (idle && !hasMyRound) idle.classList.remove('hidden');
   if (search) search.classList.add('hidden');
 }
 </script>
