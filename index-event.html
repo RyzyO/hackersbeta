@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Hackers Cup</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Shared site navigation styling -->
+  <link rel="stylesheet" href="assets/css/site-nav.css">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* .glass / .liquid-glass now live in assets/css/site-nav.css */
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Video Container Styles */
+    .video-thumb {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+    
+    .video-thumb::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .video-thumb:hover::after {
+      opacity: 1;
+    }
+    
+    .video-thumb video {
+      transition: transform 0.5s ease;
+    }
+    
+    .video-thumb:hover video {
+      transform: scale(1.05);
+    }
+    
+    .play-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+    
+    .video-thumb:hover .play-icon {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    
+    /* Countdown Styling */
+    .countdown-box {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    
+    .countdown-number {
+      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Sponsor Animation */
+    .sponsor-fade {
+      transition: opacity 0.35s ease-in-out;
+    }
+
+    .sponsor-fade.is-fading {
+      opacity: 0;
+    }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Modal */
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(8px);
+    }
+    
+    /* Hero Gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+    
+    /* Loading Spinner */
+    .loader {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Event Day Tabs */
+    .day-tab.active {
+      background: rgba(14, 165, 233, 0.15);
+      color: #ffffff;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+  </style>
+<link rel="manifest" href="site.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hackers Cup">
+
+<!-- OneSignal Push Notifications -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "6b6e57f8-1b0d-4441-ad62-14a1df3546cd",
+      serviceWorkerPath: "/OneSignalSDKWorker.js",
+    });
+  });
+</script>
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  
+  <!-- Preloader -->
+  <div id="preloader" class="fixed inset-0 z-[100] bg-golf-dark flex items-center justify-center transition-opacity duration-500">
+    <div class="text-center">
+      <div class="loader mx-auto mb-4"></div>
+      <p class="text-gray-400 text-sm tracking-wider uppercase">Loading Hackers Cup...</p>
+    </div>
+  </div>
+  <!-- Deliberately its own plain, non-module script run immediately here — not deferred
+       to the bottom of the page and not dependent on the big Firebase module script below.
+       That module script can throw for all sorts of reasons unrelated to the preloader
+       (a bad response, a race condition, a future edit) and previously the preloader-removal
+       logic lived inside it — one error there and the preloader would hang forever with no
+       fallback ever getting scheduled. This can't be blocked by that. -->
+  <script>
+    (function handlePreloader() {
+      const preloader = document.getElementById('preloader');
+      if (!preloader) return;
+      const hasVisited = localStorage.getItem('hc_preloaded') === '1';
+      let removed = false;
+      const hidePreloader = () => {
+        if (removed) return;
+        removed = true;
+        preloader.style.opacity = '0';
+        setTimeout(() => preloader.remove(), 300);
+        localStorage.setItem('hc_preloaded', '1');
+      };
+      if (hasVisited) {
+        preloader.style.opacity = '0';
+        preloader.remove();
+        return;
+      }
+      window.addEventListener('load', hidePreloader, { once: true });
+      setTimeout(hidePreloader, 3000);
+    })();
+  </script>
+
+  <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
+  <div id="site-nav-root"></div>
+  <script src="assets/js/site-nav.js"></script>
+
+  <!-- Hero Section -->
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden hero-gradient">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <!-- Left Content -->
+        <div class="space-y-6 animate-slide-up">
+          <!-- User Info Badge -->
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="user" class="w-4 h-4 text-hackers-sky"></i>
+            <span id="hacker-number" class="text-sm font-medium text-gray-300">Loading...</span>
+          </div>
+          
+          <h1 id="user-name" class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+            Welcome to the<br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">26th Annual</span><br>
+            Road Trip
+          </h1>
+          
+          <p class="text-lg md:text-xl text-gray-300 max-w-lg">
+            This year we head back south to <span class="text-white font-semibold">Worrigee Links</span> for an unforgettable weekend of golf, camaraderie, and competition.
+          </p>
+          
+          <!-- Event Date Badge -->
+          <div class="flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">
+            <i data-lucide="calendar" class="w-5 h-5 text-hackers-sky"></i>
+            <span id="dates" class="text-lg font-bold tracking-wide">AUGUST 21ST - 23RD 2026</span>
+          </div>
+          
+          <!-- Countdown Timer -->
+          <div class="countdown-box rounded-2xl p-4 md:p-6 w-full md:w-auto md:inline-block">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-sm font-semibold uppercase tracking-wider">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span>T-Minus Launch</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 md:gap-4 text-center">
+              <div class="space-y-1">
+                <div id="days" class="countdown-number text-2xl md:text-4xl font-bold font-mono">00</div>
+                <div class="text-xs text-gray-400 uppercase tracking-wider">Days</div>
+              </div>
+              <div class="space-y-1">
+                <div id="hours" class="countdown-number text-2xl md:text-4xl font-bold font-mono">00</div>
+                <div class="text-xs text-gray-400 uppercase tracking-wider">Hours</div>
+              </div>
+              <div class="space-y-1">
+                <div id="minutes" class="countdown-number text-2xl md:text-4xl font-bold font-mono">00</div>
+                <div class="text-xs text-gray-400 uppercase tracking-wider">Mins</div>
+              </div>
+              <div class="space-y-1">
+                <div id="seconds" class="countdown-number text-2xl md:text-4xl font-bold font-mono">00</div>
+                <div class="text-xs text-gray-400 uppercase tracking-wider">Secs</div>
+              </div>
+            </div>
+            <div id="untilRyderCup" class="hidden text-center text-hackers-sky text-xs font-semibold uppercase tracking-wider mt-3">Until Ryder Cup</div>
+            <div id="eternalGlory" class="hidden text-center text-hackers-sky text-xs font-semibold mt-2">YOU ARE <span id="eternalGloryDays">0</span> DAYS AWAY FROM ETERNAL GLORY</div>
+          </div>
+        </div>
+        
+        <!-- Right Content - Hero Image/Graphic -->
+        <div class="relative animate-fade-in mt-8 md:mt-0">
+          <div class="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+            <img src="assets/images/banner-image.jpg" alt="Worrigee Links Golf Course" class="w-full h-64 md:h-auto object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-hackers-dark/80 via-transparent to-transparent"></div>
+            <div class="absolute bottom-4 left-4 right-4">
+              <div class="glass rounded-xl p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-hackers-sky/20 flex items-center justify-center">
+                  <i data-lucide="map-pin" class="w-5 h-5 text-hackers-sky"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-white">Worrigee Links</p>
+                  <p class="text-xs text-gray-300">New South Wales, Australia</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Event Day Panel — core details (tee time/hole, group, roommates, scoring) per day -->
+  <section class="py-8 md:py-10 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-5 md:p-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="flag" class="w-5 h-5 text-hackers-sky"></i>
+              <span class="text-hackers-sky font-semibold text-sm uppercase tracking-wider">Event Day</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-white">Your Day at a Glance</h2>
+          </div>
+          <!-- Day Selector: full-width dropdown on mobile, tab pills from md: up -->
+          <select id="daySelect" class="day-select md:hidden w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white text-sm font-semibold focus:outline-none focus:border-hackers-sky/50">
+            <option id="thursdayOption" class="hidden" value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+            <option value="saturday">Saturday</option>
+            <option value="sunday">Sunday</option>
+          </select>
+          <div class="hidden md:flex items-center gap-1 bg-black/20 rounded-xl p-1 self-start md:self-auto" id="dayTabs">
+            <button id="thursdayTab" class="day-tab hidden px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="thursday">Thursday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="friday">Friday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="saturday">Saturday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="sunday">Sunday</button>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- Tee Time / Hole / Group -->
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span id="teeTimeLabel">Start</span>
+            </div>
+            <div id="teeTimeValue" class="text-2xl font-bold text-white mb-1">—</div>
+            <div id="teeHoleValue" class="text-sm text-gray-400 mb-4">No group posted yet</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Check In Opens </div>
+            <div id="groupPlayers" class="space-y-1.5 text-sm text-gray-300">—</div>
+          </div>
+
+          <!-- Roommates -->
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="bed-double" class="w-4 h-4"></i>
+              <span>Accommodation</span>
+            </div>
+            <div id="roomNumberValue" class="text-2xl font-bold text-white mb-1">Room —</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-2 mt-4">Sharing With</div>
+            <div id="roommatesValue" class="text-sm text-gray-300">—</div>
+          </div>
+
+          <!-- Scoring -->
+          <div id="scoringCard" class="rounded-2xl bg-white/5 border border-white/10 p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+              <span>Live Scoring</span>
+            </div>
+            <p class="text-sm text-gray-400 mb-4 flex-1">Post your scores as you play and follow the leaderboard live.</p>
+            <a id="scoringLink" href="scoring.html" class="inline-flex items-center justify-center gap-2 rounded-xl bg-hackers-sky hover:bg-sky-600 text-white font-semibold px-4 py-3 text-sm transition-colors">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span id="scoringLinkLabel">Open Scoring</span>
+            </a>
+            <a href="tee-sheet-public.html" class="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 text-sm transition-colors">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+              <span>Full Tee Sheet</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Actions Grid -->
+  <section class="py-12 md:py-16 relative -mt-8 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="register.html" class="glass-card rounded-2xl p-6 flex flex-col items-center text-center group">
+          <div class="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <i data-lucide="user-plus" class="w-7 h-7 text-blue-400"></i>
+          </div>
+          <h3 class="font-bold text-white mb-1">Register</h3>
+          <p class="text-xs text-gray-400">Join the event</p>
+        </a>
+        
+        <a href="payment.html" class="glass-card rounded-2xl p-6 flex flex-col items-center text-center group">
+          <div class="w-14 h-14 rounded-2xl bg-green-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <i data-lucide="credit-card" class="w-7 h-7 text-green-400"></i>
+          </div>
+          <h3 class="font-bold text-white mb-1">Payment</h3>
+          <p class="text-xs text-gray-400">Pay fees</p>
+        </a>
+        
+        <a href="podcast.html" class="glass-card rounded-2xl p-6 flex flex-col items-center text-center group">
+          <div class="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <i data-lucide="mic" class="w-7 h-7 text-purple-400"></i>
+          </div>
+          <h3 class="font-bold text-white mb-1">Podcast</h3>
+          <p class="text-xs text-gray-400">Listen in</p>
+        </a>
+        
+        <a href="honour-roll.html" class="glass-card rounded-2xl p-6 flex flex-col items-center text-center group">
+          <div class="w-14 h-14 rounded-2xl bg-hackers-gold/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <i data-lucide="award" class="w-7 h-7 text-hackers-gold"></i>
+          </div>
+          <h3 class="font-bold text-white mb-1">Honour Roll</h3>
+          <p class="text-xs text-gray-400">Hall of fame</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sponsor Section -->
+  <section class="py-10 border-y border-white/5 bg-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+        <div class="text-center md:text-left">
+          <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Proudly Supported By</p>
+          <h3 class="text-xl font-bold text-white">Our Sponsors</h3>
+        </div>
+        <div class="w-52 h-36 md:w-64 md:h-40 rounded-2xl bg-white flex items-center justify-center p-3 shadow-lg shadow-black/20 border border-white/30" id="sponsor-container">
+          <img id="sponsor-slide-img" src="" alt="Sponsor" class="w-full h-full object-contain sponsor-fade">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Course Flyovers Section -->
+  <section class="py-16 md:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="video" class="w-5 h-5 text-hackers-sky"></i>
+            <span class="text-hackers-sky font-semibold text-sm uppercase tracking-wider">Course Preview</span>
+          </div>
+          <h2 class="text-3xl md:text-4xl font-bold text-white">Worrigee Links Flyovers</h2>
+          <p class="text-gray-400 mt-2">Preview all 18 holes before you play</p>
+        </div>
+       
+      </div>
+      
+      <!-- Holes Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="holes-grid">
+        <!-- Holes will be generated by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Notification Section -->
+  <section class="py-12 border-t border-white/10">
+    <div class="max-w-3xl mx-auto px-4 text-center">
+      <div class="glass rounded-3xl p-8 md:p-12 border border-golf-accent/20">
+        <div class="w-16 h-16 rounded-2xl bg-hackers-sky/20 flex items-center justify-center mx-auto mb-6">
+          <i data-lucide="bell" class="w-8 h-8 text-hackers-sky"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-white mb-3">Stay Updated</h3>
+        <p class="text-gray-400 mb-6 max-w-md mx-auto">Enable notifications to get real-time updates about tee times, scores, and event announcements.</p>
+        <button id="enableNotifications" class="px-8 py-3 rounded-xl bg-hackers-sky hover:bg-sky-600 text-white font-semibold transition-colors flex items-center gap-2 mx-auto">
+          <i data-lucide="bell-ring" class="w-5 h-5"></i>
+          <span>Enable Notifications</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 bg-hackers-dark py-12 mb-20 md:mb-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-hackers-sky to-hackers-navy rounded-lg flex items-center justify-center">
+            <i data-lucide="trophy" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="font-bold text-lg">Hackers Cup</span>
+        </div>
+        <p class="text-sm text-gray-500">© 2026 Hackers Cup. All rights reserved.</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i data-lucide="instagram" class="w-5 h-5"></i>
+          </a>
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i data-lucide="facebook" class="w-5 h-5"></i>
+          </a>
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i data-lucide="twitter" class="w-5 h-5"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+    <!-- Install Prompt Banner -->
+    <div id="installPrompt" class="hidden fixed bottom-24 md:bottom-0 left-0 right-0 z-40 glass border-t border-white/10 p-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
+        <div class="flex items-center gap-3 flex-1">
+          <i data-lucide="download" class="w-5 h-5 text-hackers-sky flex-shrink-0"></i>
+          <div class="text-sm">
+            <p class="font-semibold text-white">Add to Home Screen</p>
+            <p class="text-xs text-gray-400">Quick access like a native app</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="installBtn" class="px-4 py-2 bg-hackers-sky hover:bg-sky-600 text-white text-sm font-medium rounded-lg transition-colors">
+            Install
+          </button>
+          <button id="dismissInstallPrompt" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <i data-lucide="x" class="w-4 h-4 text-gray-400"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-hackers-sky">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Video Modal -->
+  <div id="videoModal" class="fixed inset-0 z-[60] hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+      <button onclick="closeVideoModal()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition-colors">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <video id="modalVideo" controls class="w-full aspect-video" playsinline>
+        <source src="" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <!-- Warms the Live Scoring welcome screens' data in the background so scoring.html /
+       scoring-friday.html / scoring-sunday.html load their My Round card instantly. -->
+  <script type="module" src="assets/js/scoring-prefetch.js"></script>
+
+  <!-- Firebase and Application Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+    const auth = getAuth(app);
+    const messaging = getMessaging(app);
+    const firestore = getFirestore(app);
+
+    const CURRENT_EVENT_ID = "HC26";
+    let isThursdayPlayer = false;
+    let isEternalGloryUser = false;
+
+    // Links an already-subscribed OneSignal push subscriber (from before external_id
+    // tracking existed, or a login on a different device) to their Firebase UID, so
+    // future sends can target them by user instead of only anonymous device.
+    async function linkOneSignalToUser(uid) {
+      let attempts = 0;
+      while (!window.OneSignal && attempts < 40) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (!window.OneSignal) return;
+      try {
+        await window.OneSignal.login(uid);
+      } catch (e) {
+        console.warn('OneSignal login error:', e);
+      }
+    }
+
+    // Auth State Management
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        loadUserData(user);
+        linkOneSignalToUser(user.uid);
+        initEventDayPanel(user);
+      }
+    });
+
+    // ── Event Day Panel ──
+    // Shows tee time/hole/group, roommates, and the right scoring link for whichever
+    // day is selected — defaults to today if the event is live, otherwise Friday.
+    const SCORING_LINKS = {
+      friday: { href: 'scoring-friday.html', label: 'Friday Scoring' },
+      saturday: { href: 'scoring.html', label: 'Saturday Scoring' },
+      sunday: { href: 'scoring-sunday.html', label: 'Sunday Scoring' },
+    };
+    const EVENT_DAY_DATES = {
+      thursday: '2026-08-20',
+      friday: '2026-08-21',
+      saturday: '2026-08-22',
+      sunday: '2026-08-23',
+    };
+    const CHECK_IN_TIME = '2:00 PM Thursday, August 20th';
+    const CHECK_IN_DATE = new Date("August 20, 2026 14:00:00 GMT+1000");
+
+    function updateCheckinCountdown() {
+      const el = document.getElementById('checkinCountdown');
+      if (!el) return;
+      const diff = CHECK_IN_DATE - new Date();
+      if (diff <= 0) {
+        el.textContent = 'Check-in is open';
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const parts = [];
+      if (days) parts.push(`${days}d`);
+      parts.push(`${hours.toString().padStart(2, '0')}h`, `${minutes.toString().padStart(2, '0')}m`, `${seconds.toString().padStart(2, '0')}s`);
+      el.textContent = parts.join(' ');
+    }
+
+    setInterval(updateCheckinCountdown, 1000);
+    let activeEventDay = (() => {
+      const today = new Date().toISOString().slice(0, 10);
+      const match = Object.entries(EVENT_DAY_DATES).find(([, d]) => d === today);
+      // Thursday is only a valid default once we know the visitor actually ticked
+      // "thursday" (confirmed later by the onSnapshot handler below) — fall back
+      // to Friday until then so non-Thursday players never briefly land on a tab
+      // that isn't shown to them.
+      return (match && match[0] !== 'thursday') ? match[0] : 'friday';
+    })();
+    let eventDayUsers = [];
+    let eventDayTeeSheets = { friday: [], saturday: [], sunday: [] };
+    let currentUid = null;
+
+    function escapeHtmlEv(v) {
+      return String(v || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    async function initEventDayPanel(user) {
+      currentUid = user.uid;
+
+      // Users list (for resolving group members' display names)
+      const usersSnap = await get(ref(database, 'users'));
+      const usersData = usersSnap.exists() ? usersSnap.val() : {};
+      eventDayUsers = Object.keys(usersData).map(uid => ({
+        uid,
+        displayName: usersData[uid]?.displayName || '',
+      }));
+
+      // Room number (live)
+      onValue(ref(database, `users/${user.uid}/roomNumber`), (snap) => {
+        const el = document.getElementById('roomNumberValue');
+        if (el) el.textContent = snap.val() ? `Room ${snap.val()}` : 'Room —';
+      });
+
+      // Roommates (live)
+      onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID, 'players', user.uid), async (snap) => {
+        const data = snap.exists() ? snap.data() : {};
+        const uids = Array.isArray(data.roommates) ? data.roommates : [];
+        const el = document.getElementById('roommatesValue');
+        if (!el) return;
+        if (!uids.length) {
+          el.textContent = 'No roommates set';
+          return;
+        }
+        const names = uids.map(uid => eventDayUsers.find(u => u.uid === uid)?.displayName).filter(Boolean);
+        el.textContent = names.length ? names.join(', ') : 'No roommates set';
+      });
+
+      // Tee sheets (live)
+      onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID), (snap) => {
+        const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
+        eventDayTeeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        renderEventDayPanel();
+      });
+
+      renderEventDayPanel();
+      setDayTabActive(activeEventDay);
+    }
+
+    function setDayTabActive(day) {
+      document.querySelectorAll('.day-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.day === day);
+      });
+      const daySelectEl = document.getElementById('daySelect');
+      if (daySelectEl) daySelectEl.value = day;
+    }
+
+    document.querySelectorAll('.day-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeEventDay = btn.dataset.day;
+        setDayTabActive(activeEventDay);
+        renderEventDayPanel();
+      });
+    });
+
+    document.getElementById('daySelect')?.addEventListener('change', (e) => {
+      activeEventDay = e.target.value;
+      setDayTabActive(activeEventDay);
+      renderEventDayPanel();
+    });
+
+    function renderEventDayPanel() {
+      const day = activeEventDay;
+      const isShotgun = day !== 'saturday';
+      const groups = eventDayTeeSheets[day] || [];
+      const myGroup = currentUid ? groups.find(g => Array.isArray(g.players) && g.players.includes(currentUid)) : null;
+
+      const teeTimeLabelEl = document.getElementById('teeTimeLabel');
+      const teeTimeValueEl = document.getElementById('teeTimeValue');
+      const teeHoleValueEl = document.getElementById('teeHoleValue');
+      const groupPlayersEl = document.getElementById('groupPlayers');
+      const scoringCardEl = document.getElementById('scoringCard');
+
+      // Thursday is an arrival day, not a golf day — swap the tee-time card for
+      // check-in details and hide the scoring card (there's no round to score yet).
+      if (day === 'thursday') {
+        if (teeTimeLabelEl) teeTimeLabelEl.textContent = 'Check-In';
+        if (teeTimeValueEl) teeTimeValueEl.textContent = CHECK_IN_TIME;
+        if (teeHoleValueEl) teeHoleValueEl.textContent = 'Head to reception to collect your room key';
+        if (groupPlayersEl) groupPlayersEl.innerHTML = '<div id="checkinCountdown" class="text-lg font-bold text-white font-mono">—</div>';
+        if (scoringCardEl) scoringCardEl.classList.add('hidden');
+        updateCheckinCountdown();
+        return;
+      }
+      if (scoringCardEl) scoringCardEl.classList.remove('hidden');
+
+      if (teeTimeLabelEl) teeTimeLabelEl.textContent = isShotgun ? 'Shotgun Hole' : 'Tee Time';
+
+      if (!myGroup) {
+        if (teeTimeValueEl) teeTimeValueEl.textContent = '—';
+        if (teeHoleValueEl) teeHoleValueEl.textContent = 'No group posted yet';
+        if (groupPlayersEl) groupPlayersEl.textContent = '—';
+      } else {
+        if (isShotgun) {
+          if (teeTimeValueEl) teeTimeValueEl.textContent = `Hole ${myGroup.hole || 1}`;
+          if (teeHoleValueEl) teeHoleValueEl.textContent = myGroup.teeTime ? `Tee time ${myGroup.teeTime}` : '';
+        } else {
+          if (teeTimeValueEl) teeTimeValueEl.textContent = myGroup.teeTime || '—';
+          if (teeHoleValueEl) teeHoleValueEl.textContent = myGroup.hole ? `Off hole ${myGroup.hole}` : '';
+        }
+        const players = Array.isArray(myGroup.players) ? myGroup.players : [];
+        if (groupPlayersEl) {
+          groupPlayersEl.innerHTML = players.map(uid => {
+            const name = eventDayUsers.find(u => u.uid === uid)?.displayName || 'Unknown';
+            const isMe = uid === currentUid;
+            return `<div class="flex items-center gap-2 ${isMe ? 'text-hackers-sky font-semibold' : ''}">
+              <i data-lucide="user" class="w-3.5 h-3.5 opacity-60"></i>
+              <span>${escapeHtmlEv(name)}${isMe ? ' (you)' : ''}</span>
+            </div>`;
+          }).join('') || '<div class="text-gray-500">No players</div>';
+          lucide.createIcons();
+        }
+      }
+
+      const scoring = SCORING_LINKS[day];
+      const scoringLinkEl = document.getElementById('scoringLink');
+      const scoringLinkLabelEl = document.getElementById('scoringLinkLabel');
+      if (scoringLinkEl && scoring) scoringLinkEl.href = scoring.href;
+      if (scoringLinkLabelEl && scoring) scoringLinkLabelEl.textContent = scoring.label;
+    }
+
+    // Nav avatar/hacker-number rendering now lives in assets/js/site-nav.js.
+    function applyNavbarAvatar(avatarUrl) {
+      window.SiteNav && window.SiteNav.setAvatar(avatarUrl);
+    }
+
+
+    // Paint the last-known name/hacker number instantly from the shared cache (see
+    // site-nav.js), before Firebase has even responded — the listeners below still
+    // run as normal afterwards and correct anything that's changed.
+    function applyCachedHeroText() {
+      if (!window.SiteNav) return;
+      const cached = window.SiteNav.getCachedProfile();
+      const nameElement = document.getElementById('user-name');
+      const hackerElement = document.getElementById('hacker-number');
+
+      if (cached.displayName) {
+        if (nameElement) {
+          nameElement.innerHTML = `Welcome,<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${cached.displayName}</span>`;
+        }
+        const eternalGloryNames = ['andrew murray', 'riley oakes'];
+        isEternalGloryUser = eternalGloryNames.includes(String(cached.displayName).trim().toLowerCase());
+        const eternalGloryEl = document.getElementById('eternalGlory');
+        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        updateCountdown();
+      }
+      if (cached.hackerNumber && hackerElement) {
+        hackerElement.textContent = `G'day, Hacker No. ${cached.hackerNumber}`;
+      }
+    }
+    applyCachedHeroText();
+
+    function loadUserData(user) {
+      // Load Display Name
+      const userRef = ref(database, `users/${user.uid}/displayName`);
+      onValue(userRef, (snapshot) => {
+        const displayName = snapshot.val();
+        const nameElement = document.getElementById('user-name');
+
+        const eternalGloryNames = ['andrew murray', 'riley oakes'];
+        isEternalGloryUser = eternalGloryNames.includes(String(displayName || '').trim().toLowerCase());
+        const eternalGloryEl = document.getElementById('eternalGlory');
+        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        updateCountdown();
+
+        if (displayName) window.SiteNav && window.SiteNav.setDisplayName(displayName);
+
+        if (displayName && nameElement) {
+          nameElement.innerHTML = `Welcome,<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">${displayName}</span>`;
+        } else if (nameElement) {
+          nameElement.textContent = 'Welcome, Hacker';
+          // Prompt for name if not set
+          const name = prompt('Please enter your display name:');
+          if (name && name.trim() !== '') {
+            set(userRef, name.trim());
+          }
+        }
+
+        // Profile doc is keyed by displayName (matches profile.html), so the
+        // avatar lookup waits until we know the name, then listens live.
+        if (displayName) {
+          const profileDocRef = doc(firestore, 'attendeeProfiles', displayName);
+          onSnapshot(profileDocRef, (snap) => {
+            const data = snap.exists() ? snap.data() : null;
+            applyNavbarAvatar(data && data.avatarUrl ? data.avatarUrl : null);
+          });
+        }
+      });
+      
+      // Load Hacker Number for both hero and navbar
+      const hackerRef = ref(database, `users/${user.uid}/hackerNumber`);
+      onValue(hackerRef, (snapshot) => {
+        const hackerNumber = snapshot.val();
+        const hackerElement = document.getElementById('hacker-number');
+        if (hackerNumber && hackerElement) {
+          hackerElement.textContent = `G'day, Hacker No. ${hackerNumber}`;
+        } else if (hackerElement) {
+          hackerElement.textContent = "G'day, Hacker";
+        }
+        // Update navbar circle (desktop + mobile menu profile row)
+        window.SiteNav && window.SiteNav.setHackerNumber(hackerNumber);
+      });
+
+      // Thursday (Ryder Cup) attendees see a countdown one day earlier, with a label
+      // clarifying it's counting to their Thursday arrival rather than the main event.
+      const thursdayDocRef = doc(firestore, 'eventYears', CURRENT_EVENT_ID, 'players', user.uid);
+      onSnapshot(thursdayDocRef, (snap) => {
+        isThursdayPlayer = snap.exists() && !!snap.data().thursday;
+        const label = document.getElementById('untilRyderCup');
+        if (label) label.classList.toggle('hidden', !isThursdayPlayer);
+        updateCountdown();
+
+        const thursdayTabEl = document.getElementById('thursdayTab');
+        if (thursdayTabEl) thursdayTabEl.classList.toggle('hidden', !isThursdayPlayer);
+        const thursdayOptionEl = document.getElementById('thursdayOption');
+        if (thursdayOptionEl) {
+          thursdayOptionEl.classList.toggle('hidden', !isThursdayPlayer);
+          thursdayOptionEl.disabled = !isThursdayPlayer;
+        }
+        // Correct the initial tab now that we know for sure: land Thursday players
+        // on the Thursday tab if today is their arrival day, and pull anyone who
+        // isn't a Thursday player off that tab if they'd somehow landed on it.
+        const today = new Date().toISOString().slice(0, 10);
+        if (isThursdayPlayer && today === EVENT_DAY_DATES.thursday && activeEventDay === 'friday') {
+          activeEventDay = 'thursday';
+          setDayTabActive(activeEventDay);
+          renderEventDayPanel();
+        } else if (!isThursdayPlayer && activeEventDay === 'thursday') {
+          activeEventDay = 'friday';
+          setDayTabActive(activeEventDay);
+          renderEventDayPanel();
+        }
+      });
+    }
+
+    // Countdown Timer
+    function updateCountdown() {
+      const targetDate = new Date("August 20, 2026 11:30:00 GMT+1000");
+      if (isThursdayPlayer) targetDate.setDate(targetDate.getDate() - 1);
+      const currentDate = new Date();
+      const diff = targetDate - currentDate;
+      
+      if (diff < 0) {
+        document.getElementById('days').textContent = '00';
+        document.getElementById('hours').textContent = '00';
+        document.getElementById('minutes').textContent = '00';
+        document.getElementById('seconds').textContent = '00';
+        if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = '0';
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('days').textContent = days.toString().padStart(2, '0');
+      document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+      document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+      document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+      if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = days;
+    }
+    
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+    
+    // Initialize Icons
+    lucide.createIcons();
+    
+    // Preloader removal now lives in its own early, non-module script right after the
+    // #preloader div — independent of this script so it can never hang on an error here.
+
+    // Mobile menu toggle/backdrop/Escape/active-link logic now lives in assets/js/site-nav.js
+
+    // Install Prompt Handler
+    let installPromptEvent = null;
+    const installPromptBanner = document.getElementById('installPrompt');
+    const installBtn = document.getElementById('installBtn');
+    const dismissBtn = document.getElementById('dismissInstallPrompt');
+
+    // Only show install prompt if not in standalone mode (PWA not installed)
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      if (!isStandalone) {
+        e.preventDefault();
+        installPromptEvent = e;
+        installPromptBanner.classList.remove('hidden');
+      }
+    });
+
+    installBtn?.addEventListener('click', async () => {
+      if (installPromptEvent) {
+        installPromptEvent.prompt();
+        const { outcome } = await installPromptEvent.userChoice;
+        if (outcome === 'accepted') {
+          installPromptBanner.classList.add('hidden');
+          installPromptEvent = null;
+          localStorage.setItem('pwa_installed', '1');
+        }
+      }
+    });
+
+    dismissBtn?.addEventListener('click', () => {
+      installPromptBanner.classList.add('hidden');
+      localStorage.setItem('pwa_dismissed', '1');
+    });
+
+    // Don't show if already dismissed in this session
+    if (localStorage.getItem('pwa_dismissed') === '1' || localStorage.getItem('pwa_installed') === '1') {
+      installPromptBanner.classList.add('hidden');
+    }
+
+    // Notifications
+    async function initNotifications() {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          const token = await getToken(messaging, {
+            vapidKey: "BO4uGOEfVg5qRKLRTapkgdZJj22xf3_CBV1TlZg_jjCkvDg0qEVB46mgewqtK9MrUy1atMjlJS4DefmX7fI-IYg"
+          });
+          
+          const user = auth.currentUser;
+          if (user && token) {
+            await set(ref(database, `fcmTokens/${user.uid}`), token);
+            
+            // Show success feedback
+            const btn = document.getElementById('enableNotifications');
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i><span>Notifications Enabled!</span>';
+            btn.classList.remove('bg-hackers-sky');
+            btn.classList.add('bg-green-600');
+            lucide.createIcons();
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Could not enable notifications. Please try again.");
+      }
+    }
+    
+    document.getElementById('enableNotifications')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      initNotifications();
+    });
+    
+    onMessage(messaging, (payload) => {
+      console.log("Message received:", payload);
+      // Show custom notification UI here if needed
+    });
+    
+    // Service Worker Registration for Notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/OneSignalSDK-v16-ServiceWorker/OneSignalSDKWorker.js', { scope: '/' })
+        .catch(err => console.log('OneSignal SW registration failed:', err));
+    }
+  </script>
+  
+  <!-- Sponsor Slideshow -->
+  <script>
+    const sponsorImages = [
+      'assets/images/sponsors/1.png',
+      'assets/images/sponsors/2.jpg',
+      'assets/images/sponsors/3.png',
+      'assets/images/sponsors/4.png',
+      'assets/images/sponsors/5.png',
+      'assets/images/sponsors/6.png',
+      'assets/images/sponsors/7.png',
+      'assets/images/sponsors/8.png',
+      'assets/images/sponsors/9.webp',
+      'assets/images/sponsors/10.png',
+      'assets/images/sponsors/11.png',
+      'assets/images/sponsors/12.png'
+    ];
+    
+    let sponsorIndex = 0;
+    
+    let sponsorTransitioning = false;
+
+    function rotateSponsor() {
+      const img = document.getElementById('sponsor-slide-img');
+      if (!img || sponsorTransitioning || sponsorImages.length === 0) {
+        return;
+      }
+
+      const nextIndex = (sponsorIndex + 1) % sponsorImages.length;
+      const nextSrc = sponsorImages[nextIndex];
+      sponsorTransitioning = true;
+
+      const preload = new Image();
+      preload.onload = () => {
+        img.classList.add('is-fading');
+        setTimeout(() => {
+          img.src = nextSrc;
+          sponsorIndex = nextIndex;
+          img.classList.remove('is-fading');
+          sponsorTransitioning = false;
+        }, 300);
+      };
+      preload.src = nextSrc;
+    }
+    
+    // Initialize sponsor
+    document.addEventListener('DOMContentLoaded', () => {
+      const img = document.getElementById('sponsor-slide-img');
+      if (img && sponsorImages.length > 0) {
+        img.src = sponsorImages[0];
+        img.classList.remove('is-fading');
+        setInterval(rotateSponsor, 3500);
+      }
+      
+      // Generate Hole Cards
+      generateHoleCards();
+    });
+  </script>
+  
+  <!-- Hole Videos Generation -->
+  <script>
+    const holes = [
+      { num: 1, par: 5, dist: '468m', video: 'hole_1-1080p.mp4' },
+      { num: 2, par: 3, dist: '202m', video: 'hole_2-1080p.mp4' },
+      { num: 3, par: 4, dist: '324m', video: 'hole_3-1080p.mp4' },
+      { num: 4, par: 5, dist: '279m', video: 'hole_4-1080p-1.mp4' },
+      { num: 5, par: 4, dist: '370m', video: 'hole_5-1080p.mp4' },
+      { num: 6, par: 3, dist: '162m', video: 'hole_6-1080p.mp4' },
+      { num: 7, par: 5, dist: '478m', video: 'hole_7-1080p.mp4' },
+      { num: 8, par: 3, dist: '157m', video: 'hole_8-1080p.mp4' },
+      { num: 9, par: 4, dist: '346m', video: 'hole_9-1080p.mp4' },
+      { num: 10, par: 4, dist: '335m', video: 'hole_10-1080p.mp4' },
+      { num: 11, par: 5, dist: '444m', video: 'hole_11-1080p.mp4' },
+      { num: 12, par: 3, dist: '185m', video: 'hole_12-1080p.mp4' },
+      { num: 13, par: 4, dist: '280m', video: 'hole_13-1080p-1.mp4' },
+      { num: 14, par: 3, dist: '175m', video: 'hole_14-1080p.mp4' },
+      { num: 15, par: 4, dist: '242m', video: 'hole_15-1080p.mp4' },
+      { num: 16, par: 4, dist: '350m', video: 'hole_16-1080p.mp4' },
+      { num: 17, par: 3, dist: '132m', video: 'hole_17-1080p.mp4' },
+      { num: 18, par: 5, dist: '445m', video: 'hole_18-1080p.mp4' }
+    ];
+    
+    function generateHoleCards() {
+      const grid = document.getElementById('holes-grid');
+      if (!grid) return;
+      
+      const baseUrl = 'https://worrigeelinks.com.au/wp-content/uploads/2025/06/';
+      
+      holes.forEach(hole => {
+        const card = document.createElement('div');
+        card.className = 'glass-card rounded-2xl overflow-hidden group cursor-pointer';
+        card.onclick = () => openVideoModal(baseUrl + hole.video);
+        
+        card.innerHTML = `
+          <div class="video-thumb aspect-video relative bg-black">
+            <video preload="metadata" muted playsinline class="w-full h-full object-cover">
+              <source src="${baseUrl}${hole.video}#t=0.001" type="video/mp4">
+            </video>
+            <div class="play-icon w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white">
+              <i data-lucide="play" class="w-8 h-8 text-white fill-white ml-1"></i>
+            </div>
+            <div class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-xs font-bold text-white border border-white/20">
+              ${hole.dist}
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-lg font-bold text-white">Hole ${hole.num}</h4>
+              <span class="px-3 py-1 rounded-full bg-hackers-sky/20 text-hackers-sky text-xs font-semibold border border-hackers-sky/20">
+                Par ${hole.par}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-400">
+              <i data-lucide="video" class="w-4 h-4"></i>
+              <span>Watch Flyover</span>
+            </div>
+          </div>
+        `;
+        
+        grid.appendChild(card);
+      });
+      
+      // Initialize icons for new content
+      lucide.createIcons();
+      
+      // Add hover play effect to videos
+      document.querySelectorAll('.video-thumb video').forEach(video => {
+        video.parentElement.addEventListener('mouseenter', () => {
+          video.play().catch(() => {});
+        });
+        video.parentElement.addEventListener('mouseleave', () => {
+          video.pause();
+          video.currentTime = 0;
+        });
+      });
+    }
+    
+    // Video Modal Functions
+    window.openVideoModal = function(videoUrl) {
+      const modal = document.getElementById('videoModal');
+      const video = document.getElementById('modalVideo');
+      const source = video.querySelector('source');
+      
+      source.src = videoUrl;
+      video.load();
+      modal.classList.remove('hidden');
+      video.play();
+      
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+    };
+    
+    window.closeVideoModal = function() {
+      const modal = document.getElementById('videoModal');
+      const video = document.getElementById('modalVideo');
+      
+      video.pause();
+      video.currentTime = 0;
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    };
+    
+    // Close modal on outside click
+    document.getElementById('videoModal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeVideoModal();
+      }
+    });
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeVideoModal();
+      }
+    });
+  </script>
+</body>
+</html>
