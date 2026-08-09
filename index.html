@@ -222,6 +222,34 @@
       <p class="text-gray-400 text-sm tracking-wider uppercase">Loading Hackers Cup...</p>
     </div>
   </div>
+  <!-- Deliberately its own plain, non-module script run immediately here — not deferred
+       to the bottom of the page and not dependent on the big Firebase module script below.
+       That module script can throw for all sorts of reasons unrelated to the preloader
+       (a bad response, a race condition, a future edit) and previously the preloader-removal
+       logic lived inside it — one error there and the preloader would hang forever with no
+       fallback ever getting scheduled. This can't be blocked by that. -->
+  <script>
+    (function handlePreloader() {
+      const preloader = document.getElementById('preloader');
+      if (!preloader) return;
+      const hasVisited = localStorage.getItem('hc_preloaded') === '1';
+      let removed = false;
+      const hidePreloader = () => {
+        if (removed) return;
+        removed = true;
+        preloader.style.opacity = '0';
+        setTimeout(() => preloader.remove(), 300);
+        localStorage.setItem('hc_preloaded', '1');
+      };
+      if (hasVisited) {
+        preloader.style.opacity = '0';
+        preloader.remove();
+        return;
+      }
+      window.addEventListener('load', hidePreloader, { once: true });
+      setTimeout(hidePreloader, 3000);
+    })();
+  </script>
 
   <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
   <div id="site-nav-root"></div>
@@ -674,32 +702,9 @@
     // Initialize Icons
     lucide.createIcons();
     
-    // Remove Preloader
-    (function handlePreloader() {
-      const preloader = document.getElementById('preloader');
-      if (!preloader) return;
+    // Preloader removal now lives in its own early, non-module script right after the
+    // #preloader div — independent of this script so it can never hang on an error here.
 
-      const hasVisited = localStorage.getItem('hc_preloaded') === '1';
-      let removed = false;
-
-      const hidePreloader = () => {
-        if (removed) return;
-        removed = true;
-        preloader.style.opacity = '0';
-        setTimeout(() => preloader.remove(), 300);
-        localStorage.setItem('hc_preloaded', '1');
-      };
-
-      if (hasVisited) {
-        preloader.style.opacity = '0';
-        preloader.remove();
-        return;
-      }
-
-      window.addEventListener('load', hidePreloader, { once: true });
-      setTimeout(hidePreloader, 3000);
-    })();
-    
     // Mobile menu toggle/backdrop/Escape/active-link logic now lives in assets/js/site-nav.js
 
     // Install Prompt Handler
