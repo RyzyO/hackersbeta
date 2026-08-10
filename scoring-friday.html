@@ -489,6 +489,10 @@
     persistScoringSession();
   }
   let flushInFlight = false;
+  // How many saves this sends at once. Apps Script Web Apps handle a handful of concurrent
+  // requests fine; this is what actually cuts sync time for a burst of queued holes, without
+  // touching the debounce delay.
+  const FLUSH_CONCURRENCY = 4;
   async function flushPendingScoreUpdates() {
     if (flushInFlight) return; // single-flight: a second caller just waits for the next tick
     if (!pendingScoreUpdates.length || !navigator.onLine) return;
@@ -498,25 +502,35 @@
     const RETRY_DELAY_MS = 1200;
     try {
       while (pendingScoreUpdates.length) {
-        const update = pendingScoreUpdates[0];
-        let lastErr = null;
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-          try {
-            const resp = await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
-            applySaveResponse(update.sheetName, update.rowIndex, update.score, resp);
-            lastErr = null;
-            break;
-          } catch (err) {
-            lastErr = err;
-            if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+        const batch = pendingScoreUpdates.slice(0, FLUSH_CONCURRENCY);
+        const results = await Promise.all(batch.map(async (update) => {
+          let lastErr = null;
+          for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+              const resp = await postScoreViaProxy(update.sheetName, update.rowIndex, update.score);
+              applySaveResponse(update.sheetName, update.rowIndex, update.score, resp);
+              return { update, ok: true };
+            } catch (err) {
+              lastErr = err;
+              if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+            }
           }
-        }
-        if (lastErr) {
-          console.warn('Score save failed after retries, will retry when back online:', lastErr);
+          return { update, ok: false, err: lastErr };
+        }));
+        // Remove by reference, not index — queueScoreUpdate may have replaced an in-flight
+        // item's entry with a newer value while its save was running, in which case leaving
+        // the (now-stale) removal out is correct: the newer entry still needs its own send.
+        results.forEach(r => {
+          if (r.ok) {
+            const idx = pendingScoreUpdates.indexOf(r.update);
+            if (idx >= 0) pendingScoreUpdates.splice(idx, 1);
+          }
+        });
+        savePendingQueue();
+        if (results.some(r => !r.ok)) {
+          console.warn('Some score saves failed after retries, will retry when back online');
           break;
         }
-        pendingScoreUpdates.shift();
-        savePendingQueue();
       }
     } finally {
       flushInFlight = false;
