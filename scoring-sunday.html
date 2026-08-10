@@ -1586,7 +1586,12 @@
     updateSubmitProgress(0);
     if (overlay) overlay.classList.remove('hidden');
     try {
-      await flushAllPendingWithProgress();
+      // Scale the timeout with how much is actually queued — entering every hole in a
+      // burst right before submitting can leave dozens of sequential writes still in
+      // flight, and a flat 30s cap was firing a false "timed out" even while it was
+      // still successfully draining the queue in the background.
+      const maxWaitMs = Math.max(30000, pendingScoreUpdates.length * 4000);
+      await flushAllPendingWithProgress(maxWaitMs);
       window.location.href = 'score.html';
     } catch (err) {
       if (overlay) overlay.classList.add('hidden');
