@@ -34,7 +34,7 @@
   // Friday is Skins — same Stableford points formula as Saturday (points still shown per
   // hole and as a running total), but there's no live leaderboard for Skins.
   const SHOW_LEADERBOARD = false;
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxSFx0Ei7mHi_YvYcYP0qhslMyBaAZTMr1xiUhrs7xLBK4GzkjooePm7FP0bs5eyrD/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzC9nGJSOf5VO1AdR9NyTO2jUSsfA9PUIZkxF1Xj9OcVWMF-Fkt8h_6xNNhmp1odxWesw/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
@@ -492,7 +492,7 @@
   // How many saves this sends at once. Apps Script Web Apps handle a handful of concurrent
   // requests fine; this is what actually cuts sync time for a burst of queued holes, without
   // touching the debounce delay.
-  const FLUSH_CONCURRENCY = 4;
+  const FLUSH_CONCURRENCY = 6;
   async function flushPendingScoreUpdates() {
     if (flushInFlight) return; // single-flight: a second caller just waits for the next tick
     if (!pendingScoreUpdates.length || !navigator.onLine) return;
@@ -587,11 +587,22 @@
   function normalizeNameForMatch(v) {
     return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
+  // Fallback for names where punctuation was just deleted rather than replaced with a space
+  // (e.g. "Ed O'Sullivan" renamed to sheet tab "Ed OSullivan" instead of "Ed O Sullivan") —
+  // collapses everything to bare alphanumerics with no separators at all, so both variants
+  // still line up even when the space-normalized forms don't.
+  function normalizeNameForMatchTight(v) {
+    return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  }
   function matchSheetNameForDisplayName(displayName) {
     const target = normalizeNameForMatch(displayName);
     if (!target) return null;
     const exact = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatch(name) === target);
-    return exact || null;
+    if (exact) return exact;
+    const targetTight = normalizeNameForMatchTight(displayName);
+    if (!targetTight) return null;
+    const tight = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatchTight(name) === targetTight);
+    return tight || null;
   }
   // Normalizes a display name for matching against attendeeProfiles doc IDs (name-keyed).
   const normPlayerName = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, ' ').trim();

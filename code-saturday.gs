@@ -1,17 +1,17 @@
 // ============================================================
-// HACKERS CUP — Google Apps Script Backend
-// Spreadsheet: https://docs.google.com/spreadsheets/d/1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4/edit?gid=1849833306#gid=1849833306
+// HACKERS CUP — Google Apps Script Backend (SATURDAY)
+// Spreadsheet: https://docs.google.com/spreadsheets/d/1CDMsKXv-uxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc/edit
 // Deploy as: Web App -> Execute as: Me -> Who has access: Anyone
 // ============================================================
 
-const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
+const SPREADSHEET_ID = '1CDMsKXv-uxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc';
 const SCORE_COLUMN = 9; // Column I (1-indexed) = SCORE
 const POINTS_COLUMN = 13; // Column M (1-indexed) = Stableford points
 const TOTAL_CELL_ROW = 2, TOTAL_CELL_COL = 17; // Q2 = SUM(M:M) running total
 // Leaderboard tabs, identified by GID (not name) to match what the frontend already used —
 // GIDs survive sheet renames, so this stays correct even if someone relabels the tab.
-const LB_GID = 1551828927;      // "Sat Leaderboard" tab
-const LB_HCAP_GID = 1849833306; // "Players" tab (name + handicap)
+const LB_GID = 1050788739;      // "Leaderboard" tab
+const LB_HCAP_GID = 836199421;  // "Players" tab (name + handicap)
 
 function getSheetByGid(ss, gid) {
   return ss.getSheets().find(function (s) { return s.getSheetId() === gid; }) || null;

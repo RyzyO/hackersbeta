@@ -133,13 +133,16 @@ function doGet(e) {
 
       const cellRow = rowIndex + 1; // convert 0-based data index to 1-based sheet row
 
-      // LockService.getScriptLock() is script-wide (not per-sheet), so it briefly serializes
-      // ALL saveScore calls project-wide, not just ones touching the same row. Writes are
-      // single-cell and sub-second, so this is cheap insurance against two devices racing on
-      // the same player's sheet (e.g. a shared device, or a duplicate login), not a bottleneck.
+      // LockService.getScriptLock() is script-wide (not per-sheet), so it serializes every
+      // saveScore call project-wide while held — kept deliberately short, wrapping only the
+      // actual cell write, as cheap insurance against two devices racing on the exact same
+      // cell (e.g. a shared device, or a duplicate login). The flush + reads that follow are
+      // the slow part (recalculation, multiple getValue calls, a handicap lookup) and only
+      // need to see THIS request's own write, which is already committed by the time we get
+      // there — they don't need to serialize with other players' writes to different rows,
+      // so they run outside the lock instead of blocking everyone else behind them.
       const lock = LockService.getScriptLock();
       let gotLock = false;
-      let points, q2Total, savedScore, handicap;
       try {
         gotLock = lock.tryLock(10000);
         if (!gotLock) throw new Error('Server busy — please retry');
@@ -149,21 +152,21 @@ function doGet(e) {
         } else {
           sheet.getRange(cellRow, SCORE_COLUMN).setValue(Number(score));
         }
-
-        // Force recalculation, then read back the authoritative points for this hole and the
-        // running total, so the client can update instantly from this single round trip instead
-        // of polling getHoles afterwards.
-        SpreadsheetApp.flush();
-        const pointsRaw = sheet.getRange(cellRow, POINTS_COLUMN).getValue();
-        points = (pointsRaw === '' || pointsRaw === null || pointsRaw === undefined) ? null : Number(pointsRaw);
-        const totalRaw = sheet.getRange(TOTAL_CELL_ROW, TOTAL_CELL_COL).getValue();
-        q2Total = (totalRaw === '' || totalRaw === null || totalRaw === undefined) ? null : Number(totalRaw);
-        const savedScoreRaw = sheet.getRange(cellRow, SCORE_COLUMN).getValue();
-        savedScore = (savedScoreRaw === '' || savedScoreRaw === null || savedScoreRaw === undefined) ? null : Number(savedScoreRaw);
-        handicap = lookupHandicap(ss, sheet);
       } finally {
         if (gotLock) lock.releaseLock();
       }
+
+      // Force recalculation, then read back the authoritative points for this hole and the
+      // running total, so the client can update instantly from this single round trip instead
+      // of polling getHoles afterwards.
+      SpreadsheetApp.flush();
+      const pointsRaw = sheet.getRange(cellRow, POINTS_COLUMN).getValue();
+      const points = (pointsRaw === '' || pointsRaw === null || pointsRaw === undefined) ? null : Number(pointsRaw);
+      const totalRaw = sheet.getRange(TOTAL_CELL_ROW, TOTAL_CELL_COL).getValue();
+      const q2Total = (totalRaw === '' || totalRaw === null || totalRaw === undefined) ? null : Number(totalRaw);
+      const savedScoreRaw = sheet.getRange(cellRow, SCORE_COLUMN).getValue();
+      const savedScore = (savedScoreRaw === '' || savedScoreRaw === null || savedScoreRaw === undefined) ? null : Number(savedScoreRaw);
+      const handicap = lookupHandicap(ss, sheet);
 
       output.setContent(JSON.stringify({ success: true, rowIndex, points, q2Total, handicap, savedScore }));
       return output;
