@@ -106,11 +106,26 @@
     </details>
   </div>
 
+  <!-- ===================== HOLE DETAIL MODAL ===================== -->
+  <div id="holeModalOverlay" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-s1 border border-brd rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="flex items-start justify-between px-5 pt-5 pb-3 border-b border-brd/60 shrink-0">
+        <h3 id="holeModalTitle" class="text-lg font-bold text-white">Hole</h3>
+        <button id="holeModalClose" class="shrink-0 text-slate-500 hover:text-white transition -mt-1 -mr-1 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="holeModalBody" class="flex-1 overflow-y-auto px-5 py-4 space-y-3"></div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut }
       from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getFirestore, collection, getDocs, doc, getDoc }
+      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -122,9 +137,11 @@
       appId: "1:765736070872:web:86a51c41916e7af75631ad",
       measurementId: "G-6E1M14F510"
     };
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getDatabase(app);
+    const app       = initializeApp(firebaseConfig);
+    const auth      = getAuth(app);
+    const db        = getDatabase(app);
+    const firestore = getFirestore(app);
+    const CURRENT_EVENT_ID = 'HC26';
 
     setPersistence(auth, browserLocalPersistence).catch(err => console.warn("Auth persistence error:", err));
 
@@ -155,6 +172,7 @@
       document.getElementById("authEmail").textContent = user.email || user.uid;
       document.getElementById("mainLayout").style.opacity = "1";
       window.lucide?.createIcons?.();
+      loadTeeGroups();
       loadSkins();
       setInterval(loadSkins, 60000);
     });
@@ -168,9 +186,62 @@
       return JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
     }
 
+    // name.toLowerCase() -> [teammate names] — built from Friday's tee-sheet groups so the
+    // hole detail modal can show who each winner was playing with.
+    let teammatesMap = {};
+    async function loadTeeGroups() {
+      try {
+        const [usersSnap, eventSnap] = await Promise.all([
+          getDocs(collection(firestore, 'users')),
+          getDoc(doc(firestore, 'eventYears', CURRENT_EVENT_ID)),
+        ]);
+        const uidToName = {};
+        usersSnap.forEach(d => {
+          const n = (d.data() || {}).displayName;
+          if (n) uidToName[d.id] = n.trim();
+        });
+        const groups = eventSnap.exists() ? (eventSnap.data()?.teeSheets?.friday || []) : [];
+        const map = {};
+        groups.forEach(g => {
+          const names = (g.players || []).map(uid => uidToName[uid]).filter(Boolean);
+          names.forEach(n => { map[n.toLowerCase()] = names.filter(other => other !== n); });
+        });
+        teammatesMap = map;
+      } catch (err) {
+        console.warn('Tee groups load failed:', err);
+        teammatesMap = {};
+      }
+    }
+
+    // Each player has their own scorecard tab on this same spreadsheet (HOLE col E, SCORE
+    // col I, POINTS col M — same layout the scoring app itself reads). Cached per player so
+    // re-opening the modal, or looking up a teammate later, doesn't re-fetch.
+    const playerCardCache = new Map();
+    async function fetchPlayerHoleData(playerName, holeNum) {
+      if (!playerCardCache.has(playerName)) {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
+        playerCardCache.set(playerName, fetch(url).then(r => r.text()).then(txt => {
+          const json = parseGviz(txt);
+          const byHole = {};
+          (json.table.rows || []).forEach(r => {
+            const h = r.c[4]?.v; // column E — HOLE
+            if (h === null || h === undefined || h === '') return;
+            byHole[Number(h)] = {
+              score: r.c[8]?.v ?? null,   // column I — SCORE
+              points: r.c[12]?.v ?? null, // column M — POINTS
+            };
+          });
+          return byHole;
+        }).catch(() => ({})));
+      }
+      const byHole = await playerCardCache.get(playerName);
+      return byHole[holeNum] || { score: null, points: null };
+    }
+
     const ORDINALS = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th',
       '11th','12th','13th','14th','15th','16th','17th','18th'];
     const STAKE = 100; // per-hole stake — halved holes carry this forward to the next win
+    let latestResults = []; // most recent per-hole computation, kept so the modal can look a hole up by number
 
     // Finds a column index by matching either the gviz-detected header label, or (as a
     // fallback, since gviz doesn't always auto-detect a header row) the first data row's
@@ -275,6 +346,7 @@
           }
         }
 
+        latestResults = results;
         renderResults(results);
         skeletonWrap.classList.add('hidden');
         errorState.classList.add('hidden');
@@ -295,7 +367,7 @@
         const ord = ORDINALS[r.hole - 1];
         if (r.state === 'none') {
           return `
-            <div class="flex items-center justify-between bg-s1 border border-brd rounded-xl px-4 py-3">
+            <div class="flex items-center justify-between bg-s1 border border-brd rounded-xl px-4 py-3 cursor-pointer hover:border-slate-500/40 transition" onclick="openHoleModal(${r.hole})">
               <div class="flex items-center gap-3">
                 <span class="w-9 h-9 rounded-lg bg-s2 border border-brd flex items-center justify-center text-xs font-bold text-slate-500 mono">${r.hole}</span>
                 <span class="text-sm text-slate-500">${ord} hole — no result yet</span>
@@ -307,7 +379,7 @@
             ? `<div class="text-[10px] text-accent/70 mt-0.5">includes carryover from ${(r.amountWon / STAKE) - 1} halved hole${(r.amountWon / STAKE) - 1 > 1 ? 's' : ''}</div>`
             : '';
           return `
-            <div class="flex items-center justify-between bg-s1 border border-accent/25 rounded-xl px-4 py-3">
+            <div class="flex items-center justify-between bg-s1 border border-accent/25 rounded-xl px-4 py-3 cursor-pointer hover:border-accent/50 transition" onclick="openHoleModal(${r.hole})">
               <div class="flex items-center gap-3 min-w-0">
                 <span class="w-9 h-9 rounded-lg bg-accent-dim border border-accent/30 flex items-center justify-center text-xs font-bold text-accent mono">${r.hole}</span>
                 <div class="min-w-0">
@@ -324,7 +396,7 @@
         }
         // halved
         return `
-          <div class="flex items-center justify-between bg-s1 border border-amber-400/25 rounded-xl px-4 py-3">
+          <div class="flex items-center justify-between bg-s1 border border-amber-400/25 rounded-xl px-4 py-3 cursor-pointer hover:border-amber-400/50 transition" onclick="openHoleModal(${r.hole})">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-xs font-bold text-amber-300 mono">${r.hole}</span>
               <div class="min-w-0">
@@ -347,6 +419,68 @@
       document.getElementById('statusText').textContent = 'Refreshing…';
       loadSkins();
     });
+
+    // ── Hole detail modal ──────────────────────────────────
+    const holeModalOverlay = document.getElementById('holeModalOverlay');
+    const holeModalTitle   = document.getElementById('holeModalTitle');
+    const holeModalBody    = document.getElementById('holeModalBody');
+
+    function closeHoleModal() {
+      holeModalOverlay.classList.add('hidden');
+    }
+    document.getElementById('holeModalClose').addEventListener('click', closeHoleModal);
+    holeModalOverlay.addEventListener('click', e => { if (e.target === holeModalOverlay) closeHoleModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHoleModal(); });
+
+    function playerCardHtml(name, score, points) {
+      const teammates = teammatesMap[name.toLowerCase()] || [];
+      return `
+        <div class="bg-s2 border border-brd rounded-xl px-4 py-3">
+          <div class="text-sm font-semibold text-white">${escapeHtml(name)}</div>
+          <div class="flex items-center gap-4 mt-2">
+            <div>
+              <div class="text-[10px] uppercase tracking-wide text-slate-500">Score</div>
+              <div class="text-base font-bold text-white mono">${score ?? '—'}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wide text-slate-500">Points</div>
+              <div class="text-base font-bold text-white mono">${points ?? '—'}</div>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="text-[10px] uppercase tracking-wide text-slate-500">Teammates</div>
+            <div class="text-xs text-slate-400 mt-0.5">${teammates.length ? teammates.map(escapeHtml).join(', ') : '—'}</div>
+          </div>
+        </div>`;
+    }
+
+    // Exposed on window — inline onclick attributes run in the global scope, which a
+    // type="module" script's own top-level declarations aren't part of.
+    window.openHoleModal = async function(holeNum) {
+      const r = latestResults.find(x => x.hole === holeNum);
+      if (!r) return;
+      const ord = ORDINALS[holeNum - 1];
+      holeModalTitle.textContent = `${ord} Hole`;
+      holeModalOverlay.classList.remove('hidden');
+      window.lucide?.createIcons?.();
+
+      if (r.state === 'none') {
+        holeModalBody.innerHTML = `<p class="text-sm text-slate-500 text-center py-6">No result yet.</p>`;
+        return;
+      }
+
+      holeModalBody.innerHTML = `<div class="sc-loading text-sm text-slate-500 text-center py-6">Loading player details…</div>`;
+      const details = await Promise.all(r.winners.map(async name => {
+        const { score, points } = await fetchPlayerHoleData(name, holeNum);
+        return { name, score, points };
+      }));
+
+      const stateNote = r.state === 'won'
+        ? `<p class="text-xs text-accent font-semibold mb-1">Won — $${r.amountWon}</p>`
+        : `<p class="text-xs text-amber-300 font-semibold mb-1">Halved in ${r.max}s — carries over</p>`;
+
+      holeModalBody.innerHTML = stateNote + details.map(d => playerCardHtml(d.name, d.score, d.points)).join('');
+    };
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </body>
