@@ -1245,6 +1245,16 @@
       return (name || '').toString().toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
     }
     window.normalizePlayerName = normalizeName;
+    // Strips ALL punctuation (not just collapsing whitespace) — e.g. "Ed O'Sullivan" and a
+    // sheet-derived "Ed OSullivan" (apostrophe just dropped) both collapse to "edosullivan",
+    // so the tee-time map still matches even when the two sources disagree on punctuation.
+    function normalizeTightName(name) {
+      return (name || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    // This module script has its own isolated scope — the classic <script> below (where
+    // getTeeInfo lives) can't see this function directly, only via window, same as
+    // normalizePlayerName above.
+    window.normalizeTightName = normalizeTightName;
 
     const app = initializeApp({
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -1267,13 +1277,17 @@
           if (n && data.nickname) nicknameMap[normalizeName(n)] = data.nickname.trim();
         });
         window._nicknameMap = nicknameMap;
-        const evSnap = await getDoc(doc(db, 'eventYears', 'HC25'));
+        const evSnap = await getDoc(doc(db, 'eventYears', 'HC26'));
         const sunGroups = evSnap.data()?.teeSheets?.sunday || [];
         const teeMap = {};
         sunGroups.forEach(g => {
           (g.players || []).forEach(uid => {
             const name = uidToName[uid];
-            if (name) teeMap[name.toLowerCase()] = { teeTime: g.teeTime || '', hole: g.hole || '' };
+            if (name) {
+              const info = { teeTime: g.teeTime || '', hole: g.hole || '' };
+              teeMap[name.toLowerCase()] = info;
+              teeMap[normalizeTightName(name)] = info;
+            }
           });
         });
         window._teemap = teeMap;
@@ -1377,6 +1391,9 @@
     const parseGviz = txt => JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
 
     let prevRankMap  = {};
+    // team name -> { thru, html } — avoids re-fetching a team's scorecard every refresh
+    // cycle when their Thru count hasn't actually changed since last time.
+    const toParCache = new Map();
     let countdownVal = REFRESH_SEC;
     let countdownInterval = null;
     let headersBuilt = false;
@@ -1498,17 +1515,15 @@
 
     function buildPlayerPulseHtml(stats) {
       if (!stats) return '';
-      const { rankNum, isTie, nett, hcp, thruRaw, par } = stats;
+      const { rankNum, isTie, nett, hcp, thruRaw, grossDiff } = stats;
       const rankLabel = isTie ? `T${rankNum}` : `#${rankNum}`;
       const thruN = parseInt(thruRaw, 10) || 0;
       const thruDisplay = !thruN ? '—' : thruN >= 18 ? 'F' : String(thruN);
-      const parNum = parseFloat(par);
-      const nettNum = parseFloat(nett);
-      let toParLabel = '—';
-      if (!isNaN(nettNum) && !isNaN(parNum)) {
-        const diff = nettNum - parNum;
-        toParLabel = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`;
-      }
+      // "To par" is the gross score over/under versus holes played so far, computed from the
+      // team's actual scorecard (grossDiff) — not the nett, and not a flat sheet cell.
+      const toParLabel = (grossDiff === null || grossDiff === undefined || isNaN(grossDiff))
+        ? 'E'
+        : grossDiff === 0 ? 'E' : grossDiff > 0 ? `+${grossDiff}` : `${grossDiff}`;
       return `<div class="player-pulse">
         <div class="pp-card" style="--pp-tone:rgba(245,158,11,0.8)">
           <span class="pp-label">Rank</span>
@@ -1567,13 +1582,20 @@
       document.getElementById('sun-sc-drawer').classList.add('open');
       document.getElementById('sun-sc-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
-      const pulseHtml = stats
-        ? `<p class="sc-section-title" style="margin-top:20px">Ryzy Performance Pulse</p>${buildPlayerPulseHtml(stats)}`
-        : '';
+      // Pulse's "to par" needs the actual hole-by-hole data, so it's built after the fetch
+      // resolves (reusing the same fetch as the scorecard body) rather than eagerly from the
+      // leaderboard row's flat gross/par cells.
       fetchScData(playerName).then(data => {
+        const grossDiff = computeGrossToPar(data.holeScores, data.holePars);
+        const pulseHtml = stats
+          ? `<p class="sc-section-title" style="margin-top:20px">Ryzy Performance Pulse</p>${buildPlayerPulseHtml({ ...stats, grossDiff })}`
+          : '';
         document.getElementById('sun-sc-body').innerHTML =
           nameHtml + buildScHtml(data.holePars, data.holeScores) + pulseHtml;
       }).catch(() => {
+        const pulseHtml = stats
+          ? `<p class="sc-section-title" style="margin-top:20px">Ryzy Performance Pulse</p>${buildPlayerPulseHtml({ ...stats, grossDiff: null })}`
+          : '';
         document.getElementById('sun-sc-body').innerHTML =
           nameHtml + '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0 20px">No scorecard available.</p>' + pulseHtml;
       });
@@ -1813,10 +1835,24 @@
       return `<span class="rank-badge ${cls}">${label}</span>`;
     }
 
-    function toParHtml(nett, par) {
-      const n = parseFloat(nett), p = parseFloat(par);
-      if (isNaN(n) || isNaN(p)) return '<span style="color:rgba(148,163,184,.3)">—</span>';
-      const diff = n - p;
+    // "To par" is the gross score over/under versus the holes actually played so far — summed
+    // only over holes with a score entered (order-independent, so this is correct for a
+    // shotgun start that doesn't begin on hole 1), not derived from any single sheet cell.
+    // Returns null when no holes are entered yet.
+    function computeGrossToPar(holeScores, holePars) {
+      let grossSum = 0, parSum = 0, any = false;
+      Object.keys(holeScores || {}).forEach(h => {
+        const score = holeScores[h];
+        if (score) {
+          any = true;
+          grossSum += score;
+          parSum += (holePars && holePars[h]) || HOLE_PARS[h] || 0;
+        }
+      });
+      return any ? grossSum - parSum : null;
+    }
+    function toParHtmlFromDiff(diff) {
+      if (diff === null || diff === undefined || isNaN(diff)) return `<span class="topar-even">E</span>`;
       if (diff === 0) return `<span class="topar-even">E</span>`;
       if (diff < 0)   return `<span class="topar-under">${diff}</span>`;
       return `<span class="topar-over">+${diff}</span>`;
@@ -1842,6 +1878,8 @@
       const members = name.split('-').map(p => p.trim().toLowerCase()).filter(Boolean);
       for (const key of members.length ? members : [name.toLowerCase()]) {
         if (map[key]) return map[key];
+        const tightKey = window.normalizeTightName(key);
+        if (tightKey && map[tightKey]) return map[tightKey];
         for (const [k, v] of Object.entries(map)) {
           if (key.includes(k) || k.includes(key)) return v;
         }
@@ -1954,6 +1992,27 @@
       const rankCount = {};
       rows.forEach(r => { const rv = parseInt(r.c[1]?.v, 10); rankCount[rv] = (rankCount[rv] || 0) + 1; });
 
+      // Precompute each team's "to par" from their own scorecard before building any DOM —
+      // cached by Thru count, so a team whose round hasn't progressed since last refresh
+      // isn't re-fetched.
+      const toParHtmlByTeam = {};
+      await Promise.all(rows.map(async (row, idx) => {
+        const rawName = row.c[2]?.v ?? `Team${idx + 1}`;
+        const throughVal = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : '') : '';
+        const thruN = parseInt(throughVal, 10) || 0;
+        if (!thruN) { toParHtmlByTeam[rawName] = toParHtmlFromDiff(null); return; }
+        const cached = toParCache.get(rawName);
+        if (cached && cached.thru === thruN) { toParHtmlByTeam[rawName] = cached.html; return; }
+        try {
+          const data = await fetchScData(rawName);
+          const html = toParHtmlFromDiff(computeGrossToPar(data.holeScores, data.holePars));
+          toParCache.set(rawName, { thru: thruN, html });
+          toParHtmlByTeam[rawName] = html;
+        } catch (err) {
+          toParHtmlByTeam[rawName] = '<span style="color:rgba(148,163,184,.3)">—</span>';
+        }
+      }));
+
       if (!headersBuilt) {
         const headerRow = document.getElementById('header-row');
         ['Rank','Team','Nett','Handicap','Thru','To Par'].forEach((h, i) => {
@@ -2059,7 +2118,7 @@
 
         const tdToPar = document.createElement('td');
         tdToPar.classList.add('column-g');
-        tdToPar.innerHTML = toParHtml(nettVal, parVal);
+        tdToPar.innerHTML = (toParHtmlByTeam[name] || toParHtmlFromDiff(null));
         tr.appendChild(tdToPar);
 
         tr.addEventListener('click', () => {
@@ -2096,7 +2155,7 @@
             </div>
             <div style="text-align:right">
               <div class="leaderboard-pts" style="line-height:1">${nettVal !== '' ? nettVal : '—'}</div>
-              <div class="proj-label" style="text-align:right">${toParHtml(nettVal, parVal)}</div>
+              <div class="proj-label" style="text-align:right">${(toParHtmlByTeam[name] || toParHtmlFromDiff(null))}</div>
             </div>
           </div>
           <div class="leaderboard-sub">

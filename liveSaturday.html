@@ -337,6 +337,28 @@
       font-size: 9px; font-weight: 700; color: #38bdf8;
       letter-spacing: 0.04em;
     }
+    /* ── Tee-off countdown (scorecard drawer, not-yet-started player) ─── */
+    .tee-wait-card {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 36px 20px 30px; text-align: center;
+    }
+    .tee-wait-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.25);
+      color: #38bdf8;
+    }
+    .tee-wait-label {
+      font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(148,163,184,0.65);
+    }
+    .tee-wait-time { font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
+    .tee-wait-hole { font-size: 12px; color: rgba(148,163,184,0.8); }
+    .tee-wait-countdown {
+      margin-top: 6px; font-size: 13px; font-weight: 600;
+      color: #38bdf8; font-variant-numeric: tabular-nums;
+    }
+    .tee-wait-countdown.tee-wait-now { color: #34d399; }
 
     /* ── Hole flyover (inline) ────────────────────────── */
     .hole-clickable {
@@ -1319,6 +1341,16 @@
       return (name || '').toString().toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
     }
     window.normalizePlayerName = normalizeName;
+    // Strips ALL punctuation (not just collapsing whitespace) — e.g. "Ed O'Sullivan" and a
+    // sheet-derived "Ed OSullivan" (apostrophe just dropped) both collapse to "edosullivan",
+    // so the tee-time map still matches even when the two sources disagree on punctuation.
+    function normalizeTightName(name) {
+      return (name || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    // This module script has its own isolated scope — the classic <script> below (where
+    // getTeeInfo lives) can't see this function directly, only via window, same as
+    // normalizePlayerName above.
+    window.normalizeTightName = normalizeTightName;
 
     const app = initializeApp({
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -1341,13 +1373,17 @@
           if (n && data.nickname) nicknameMap[normalizeName(n)] = data.nickname.trim();
         });
         window._nicknameMap = nicknameMap;
-        const evSnap = await getDoc(doc(db, 'eventYears', 'HC25'));
+        const evSnap = await getDoc(doc(db, 'eventYears', 'HC26'));
         const satGroups = evSnap.data()?.teeSheets?.saturday || [];
         const teeMap = {};
         satGroups.forEach(g => {
           (g.players || []).forEach(uid => {
             const name = uidToName[uid];
-            if (name) teeMap[name.toLowerCase()] = { teeTime: g.teeTime || '', hole: g.hole || '' };
+            if (name) {
+              const info = { teeTime: g.teeTime || '', hole: g.hole || '' };
+              teeMap[name.toLowerCase()] = info;
+              teeMap[normalizeTightName(name)] = info;
+            }
           });
         });
         window._teemap = teeMap;
@@ -1595,6 +1631,7 @@
     }
 
     function openScDrawer(playerName, stats) {
+      stopScDrawerCountdown();
       _currentDrawerPlayer = playerName;
       document.getElementById('sat-sc-name').textContent = playerName;
       document.getElementById('sat-sc-body').innerHTML = `<h3 id="sat-sc-name-mobile">${playerName}</h3><div class="sc-loading">Loading scorecard…</div>`;
@@ -1615,8 +1652,17 @@
         : '';
       const nameHtml = `<h3 id="sat-sc-name-mobile">${playerName}</h3>`;
       fetchScData(playerName).then(data => {
-        document.getElementById('sat-sc-body').innerHTML =
-          nameHtml + buildScHtml(data.holePars, data.holeScores, data.holePts) + pulseHtml;
+        const hasAnyScore = Object.values(data.holeScores || {}).some(s => s);
+        const teeInfo = !hasAnyScore ? getTeeInfo(playerName) : null;
+        if (teeInfo) {
+          // Not started yet and we know their tee time — show that instead of an 18-row
+          // blank scorecard, which tells the viewer nothing useful before the round begins.
+          document.getElementById('sat-sc-body').innerHTML = nameHtml + renderTeeWaitHtml(teeInfo) + pulseHtml;
+          startScDrawerCountdown(teeInfo);
+        } else {
+          document.getElementById('sat-sc-body').innerHTML =
+            nameHtml + buildScHtml(data.holePars, data.holeScores, data.holePts) + pulseHtml;
+        }
       }).catch(() => {
         document.getElementById('sat-sc-body').innerHTML =
           nameHtml + '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0 20px">No scorecard available.</p>' + pulseHtml;
@@ -1624,6 +1670,7 @@
     }
 
     function openScDrawerCompare(p1, p2) {
+      stopScDrawerCountdown();
       document.getElementById('sat-sc-name').textContent = `${p1} vs ${p2}`;
       const nameHtml = `<h3 id="sat-sc-name-mobile">${p1} vs ${p2}</h3>`;
       document.getElementById('sat-sc-body').innerHTML = nameHtml + '<div class="sc-loading">Loading scorecards…</div>';
@@ -1640,6 +1687,7 @@
     }
 
     function closeScDrawer() {
+      stopScDrawerCountdown();
       document.getElementById('sat-sc-drawer').classList.remove('open');
       document.getElementById('sat-sc-overlay').classList.remove('open');
       document.body.style.overflow = '';
@@ -1921,10 +1969,80 @@
       return `<span class="proj-label">proj. ${Math.round(pts / n * 18)}</span>`;
     }
 
+    // Saturday's actual event date — countdowns must anchor to this, not "today", or every
+    // tee time looks like it already happened whenever this page is opened before event day.
+    const EVENT_DATE_SATURDAY = { year: 2026, month: 7, day: 22 }; // month is 0-indexed (7 = August)
+    // Turns a tee-sheet time string ("1.15pm", "13:15", "9am"...) into a Date on the actual
+    // event date at that clock time, so the drawer can show a live countdown. Returns null if
+    // unparseable.
+    function parseTeeTimeToDate(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+      if (!m) return null;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return null;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
+      const d = new Date(EVENT_DATE_SATURDAY.year, EVENT_DATE_SATURDAY.month, EVENT_DATE_SATURDAY.day);
+      d.setHours(h, min, 0, 0);
+      return d;
+    }
+    function formatCountdown(ms, teeDate) {
+      // "Teeing off now" only within a few minutes of the actual time — a tee time that's
+      // significantly in the past (scores just haven't been entered yet) isn't "now", it's
+      // already happened, so claiming "now" for hours afterward would be actively wrong.
+      const FIVE_MIN = 5 * 60 * 1000;
+      if (ms <= FIVE_MIN && ms >= -FIVE_MIN) return { label: 'Teeing off now', now: true };
+      if (ms < -FIVE_MIN) {
+        const timeStr = teeDate ? teeDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+        return { label: timeStr ? `Was due off at ${timeStr}` : 'Tee time has passed', now: false };
+      }
+      const totalMin = Math.round(ms / 60000);
+      const h = Math.floor(totalMin / 60), m = totalMin % 60;
+      const label = h > 0 ? `Tees off in ${h}h ${m}m` : `Tees off in ${m}m`;
+      return { label, now: false };
+    }
+    let scDrawerCountdownTimer = null;
+    function stopScDrawerCountdown() {
+      if (scDrawerCountdownTimer) { clearInterval(scDrawerCountdownTimer); scDrawerCountdownTimer = null; }
+    }
+    // Live countdown to a not-yet-started player's tee time, shown in place of an empty
+    // scorecard — a blank 18-row table tells the viewer nothing useful before the round begins.
+    function renderTeeWaitHtml(teeInfo) {
+      const teeDate = parseTeeTimeToDate(teeInfo.teeTime);
+      const holeSub = teeInfo.hole ? `Hole ${teeInfo.hole}` : '';
+      return `<div class="tee-wait-card">
+        <div class="tee-wait-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="tee-wait-label">Tee Time</div>
+        <div class="tee-wait-time">${teeInfo.teeTime || '—'}</div>
+        ${holeSub ? `<div class="tee-wait-hole">${holeSub}</div>` : ''}
+        ${teeDate ? `<div class="tee-wait-countdown" id="tee-wait-countdown"></div>` : ''}
+      </div>`;
+    }
+    function startScDrawerCountdown(teeInfo) {
+      stopScDrawerCountdown();
+      const teeDate = parseTeeTimeToDate(teeInfo.teeTime);
+      if (!teeDate) return;
+      const tick = () => {
+        const el = document.getElementById('tee-wait-countdown');
+        if (!el) { stopScDrawerCountdown(); return; }
+        const { label, now } = formatCountdown(teeDate - Date.now(), teeDate);
+        el.textContent = label;
+        el.classList.toggle('tee-wait-now', now);
+      };
+      tick();
+      scDrawerCountdownTimer = setInterval(tick, 1000);
+    }
     function getTeeInfo(name) {
       const map = window._teemap || {};
       const key = name.toLowerCase();
       if (map[key]) return map[key];
+      const tightKey = window.normalizeTightName(name);
+      if (tightKey && map[tightKey]) return map[tightKey];
       // fuzzy: check if any map key is contained in the name or vice versa
       for (const [k, v] of Object.entries(map)) {
         if (key.includes(k) || k.includes(key)) return v;
@@ -2014,6 +2132,27 @@
         if (ra !== rb) return ra - rb;
         return (parseFloat(b.c[3]?.v) || 0) - (parseFloat(a.c[3]?.v) || 0);
       });
+
+      // Players with no holes resulted yet sort by tee time (earliest first) instead of just
+      // sitting in whatever order the sheet happens to list them.
+      const notStartedRows = [], restRows = [];
+      rows.forEach(r => {
+        const thruRaw = r.c[6]?.v ?? '';
+        const n = parseInt(thruRaw, 10);
+        (!thruRaw || n === 0 ? notStartedRows : restRows).push(r);
+      });
+      notStartedRows.sort((a, b) => {
+        const teeA = getTeeInfo(a.c[2]?.v ?? '');
+        const teeB = getTeeInfo(b.c[2]?.v ?? '');
+        const dateA = teeA ? parseTeeTimeToDate(teeA.teeTime) : null;
+        const dateB = teeB ? parseTeeTimeToDate(teeB.teeTime) : null;
+        if (dateA && dateB) return dateA - dateB;
+        if (dateA) return -1; // known tee time sorts ahead of unknown
+        if (dateB) return 1;
+        return 0;
+      });
+      rows.length = 0;
+      rows.push(...restRows, ...notStartedRows);
 
       const rankCount = {};
       rows.forEach(r => { const rv = parseInt(r.c[1]?.v, 10); rankCount[rv] = (rankCount[rv] || 0) + 1; });
@@ -2138,13 +2277,22 @@
         card.dataset.player = name;
         card.dataset.hcp    = hcp;
 
+        // A not-yet-started player with a known tee time gets that shown up front instead of
+        // "—" points and a blank proj/thru — no need to click into the drawer just to learn
+        // when they're due off.
+        const notStartedWithTee = thru.notStarted && !!teeInfo?.teeTime;
+
         const thruLabel = thru.done
           ? `<span class="thru-finished" style="font-size:11px">F</span>`
-          : teeInfo?.teeTime
-            ? `<span class="tee-badge-mobile">⏱ ${teeInfo.teeTime}</span>`
+          : notStartedWithTee
+            ? ''
             : `<span class="leaderboard-mini">${thru.mobile}</span>`;
 
         const projNum = (() => { const n = parseInt(thruRaw, 10); return n > 0 && n < 18 ? Math.round(pts / n * 18) : null; })();
+
+        const ptsBlockHtml = notStartedWithTee
+          ? `<div class="leaderboard-pts" style="line-height:1">${teeInfo.teeTime}</div>${teeInfo.hole ? `<div class="proj-label" style="text-align:right">Hole ${teeInfo.hole}</div>` : ''}`
+          : `<div class="leaderboard-pts" style="line-height:1">${pts || '—'}</div>${projNum ? `<div class="proj-label" style="text-align:right">proj. ${projNum}</div>` : ''}`;
 
         const isStarredCard = (window._satFavs || new Set()).has(name);
         card.innerHTML = `
@@ -2160,8 +2308,7 @@
               </div>
             </div>
             <div style="text-align:right">
-              <div class="leaderboard-pts" style="line-height:1">${pts || '—'}</div>
-              ${projNum ? `<div class="proj-label" style="text-align:right">proj. ${projNum}</div>` : ''}
+              ${ptsBlockHtml}
             </div>
           </div>
           <div class="leaderboard-sub">

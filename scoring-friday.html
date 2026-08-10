@@ -99,6 +99,18 @@
   let currentHoleIndex = 0;
   let startHoleNumber = null;
   let sessionStage = 'draft';
+  let sessionStartedAt = null;
+  // A session older than this is never auto- or manually-resumed — treated as if it doesn't
+  // exist — but it's never deleted, from local storage or Firebase, so the Sheet data it
+  // wrote stays intact either way.
+  const SESSION_MAX_AGE_MS = 10 * 60 * 60 * 1000;
+  function isSessionExpired(session) {
+    if (!session) return false;
+    // No recorded start time (a session saved before this existed) is ignored too, same as
+    // one that's aged past the cutoff.
+    if (!session.startedAt) return true;
+    return (Date.now() - session.startedAt) > SESSION_MAX_AGE_MS;
+  }
   let saveTimer = null;
   let sessionSyncTimer = null;
   let firebaseUid = null;
@@ -170,7 +182,8 @@
       selectedSheetNames: [...selectedSheetNames],
       players: players.map(p => ({ sheetName: p.sheetName, name: p.name, scores: { ...(p.scores || {}) }, holes: p.holes ? [...p.holes] : [], sheetTotal: p.sheetTotal, handicap: p.handicap ?? null })),
       holeData: holeData ? [...holeData] : [],
-      scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now()
+      scores: { ...scores }, currentHoleIndex, startHoleNumber, savedAt: Date.now(),
+      startedAt: sessionStartedAt
     };
   }
   function saveLocalSession(snapshot) {
@@ -211,6 +224,7 @@
   function isResumeEligibleSession(session) {
     if (!session) return false;
     if (session.stage !== 'active') return false;
+    if (isSessionExpired(session)) return false;
     if (!Array.isArray(session.selectedSheetNames) || !session.selectedSheetNames.length) return false;
     const playersWithScores = Array.isArray(session.players) ? session.players : [];
     return playersWithScores.some(p => Object.values(p?.scores || {}).some(s => s !== null && s !== undefined && s !== ''));
@@ -354,6 +368,7 @@
   function restoreSessionSnapshot(snapshot) {
     if (!snapshot) return;
     sessionStage = snapshot.stage || 'draft';
+    sessionStartedAt = snapshot.startedAt ?? null;
     selectedSheetNames = Array.isArray(snapshot.selectedSheetNames) ? [...snapshot.selectedSheetNames] : [];
     players = Array.isArray(snapshot.players) && snapshot.players.length
       ? snapshot.players.map(p => ({ sheetName: p.sheetName, name: p.name || p.sheetName, holes: p.holes ? [...p.holes] : [], scores: { ...(p.scores || {}) }, sheetTotal: p.sheetTotal, handicap: p.handicap ?? null }))
@@ -427,7 +442,7 @@
   function resetCurrentSession(keepSavedSnapshot = false) {
     stopSheetPolling();
     selectedSheetNames = []; holeData = []; roundHoles = []; currentHoleIndex = 0;
-    startHoleNumber = null; sessionStage = 'draft'; players = []; scores = {}; pendingRemoteSession = null;
+    startHoleNumber = null; sessionStage = 'draft'; sessionStartedAt = null; players = []; scores = {}; pendingRemoteSession = null;
     selectedGroupIndex = null;
     $('sheet-label').textContent = '';
     $('teesheet-groups').innerHTML = '';
@@ -861,6 +876,7 @@
     });
     const groupStartHole = selectedGroup && selectedGroup.hole ? Number(selectedGroup.hole) : null;
     scores = {}; roundHoles = []; currentHoleIndex = 0; startHoleNumber = groupStartHole; sessionStage = 'active';
+    sessionStartedAt = Date.now();
     persistScoringSession();
     hide('screen-login'); show('screen-loading');
     loadHoles();
@@ -1654,7 +1670,7 @@
     updateConnectionStatus();
     loadWeather();
     const localSession = loadLocalSession();
-    if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession)) {
+    if (localSession && localSession.stage === 'active' && sessionHasCachedHoles(localSession) && !isSessionExpired(localSession)) {
       continueSavedSession(localSession);
     } else {
       loadSheetNames();
