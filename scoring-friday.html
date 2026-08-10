@@ -1085,8 +1085,10 @@
     const total = roundHoles.length;
     const current = currentHoleIndex + 1;
     const progressPct = Math.round((current / total) * 100);
-    const prevHole = currentHoleIndex > 0 ? roundHoles[currentHoleIndex - 1] : null;
-    const nextHole = currentHoleIndex < roundHoles.length - 1 ? roundHoles[currentHoleIndex + 1] : null;
+    // Shotgun start: the round loops, so Prev/Next always have a hole to point to —
+    // wrap the index rather than stopping at the array ends.
+    const prevHole = roundHoles[(currentHoleIndex - 1 + roundHoles.length) % roundHoles.length];
+    const nextHole = roundHoles[(currentHoleIndex + 1) % roundHoles.length];
     const playerCards = players.map((player, pidx) => buildPlayerCardHtml(player, pidx, hole)).join('');
     // Course guide panel — video uses preload="none" and no src until expanded (see
     // toggleCourseGuide), so switching holes never triggers 18 background video fetches.
@@ -1156,8 +1158,8 @@
     courseGuideOpen = false; // collapse on every hole change so the video never autoplays/loads
     const prevBtn = $('prev-hole-btn');
     const nextBtn = $('next-hole-btn');
-    if (prevBtn) { prevBtn.disabled = currentHoleIndex === 0; prevBtn.textContent = prevHole ? `← Hole ${prevHole.hole}` : '← Prev'; }
-    if (nextBtn) { nextBtn.disabled = currentHoleIndex === roundHoles.length - 1; nextBtn.textContent = nextHole ? `Hole ${nextHole.hole} →` : 'Next →'; }
+    if (prevBtn) { prevBtn.disabled = false; prevBtn.textContent = prevHole ? `← Hole ${prevHole.hole}` : '← Prev'; }
+    if (nextBtn) { nextBtn.disabled = false; nextBtn.textContent = nextHole ? `Hole ${nextHole.hole} →` : 'Next →'; }
     updateTotals();
   }
   window.toggleCourseGuide = function() {
@@ -1189,9 +1191,10 @@
   };
   window.moveHole = function(delta) {
     if (!roundHoles.length) return;
-    const next = currentHoleIndex + delta;
-    if (next < 0 || next >= roundHoles.length) return;
-    currentHoleIndex = next;
+    // Shotgun start: groups begin on whatever hole they're assigned and play the course as a
+    // loop, so the "last" hole in the round isn't a dead end — Next from it should wrap back
+    // to the group's first hole (and Prev from the first hole back to the last).
+    currentHoleIndex = ((currentHoleIndex + delta) % roundHoles.length + roundHoles.length) % roundHoles.length;
     renderCurrentHole(); persistScoringSession();
   };
   function updateConnectionStatus() {

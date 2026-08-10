@@ -1928,9 +1928,15 @@
       const headerLabels = lbJson.table.cols.map(col => (col && col.label ? col.label.toString().toLowerCase() : ''));
       const sliceOffset = 1; // columns B..I
       const displayedLabels = headerLabels.slice(sliceOffset, sliceOffset + 8);
+      // Try candidates in priority order (not "first column matching ANY candidate") — a
+      // sheet with both a "Gross"/"Score" column and a "Nett" column would otherwise match
+      // "score" against the wrong one just because it happens to come first left-to-right.
       const findDisplayedIndex = candidates => {
-        const lowerCandidates = candidates.map(c => c.toLowerCase());
-        return displayedLabels.findIndex(label => lowerCandidates.some(c => label.includes(c)));
+        for (const c of candidates) {
+          const idx = displayedLabels.findIndex(label => label.includes(c.toLowerCase()));
+          if (idx !== -1) return idx;
+        }
+        return -1;
       };
 
       const nettIdx     = findDisplayedIndex(['nett', 'net', 'score']);
