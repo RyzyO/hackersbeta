@@ -1800,9 +1800,18 @@
       flushPendingScoreUpdates().then(() => pollSheetsOnce()).catch(() => {});
     });
     window.addEventListener('offline', () => { updateConnectionStatus(); });
-    window.addEventListener('beforeunload', () => { persistScoringSession(); savePendingQueue(); });
+    window.addEventListener('beforeunload', () => { flushDebouncedSavesNow(); persistScoringSession(); savePendingQueue(); });
+    // pagehide fires reliably on mobile (screen lock, app switch, tab close) even when
+    // beforeunload doesn't — push anything still sitting behind a debounce timer right now
+    // rather than waiting for it to fire on its own after the page may already be suspended.
+    window.addEventListener('pagehide', () => { flushDebouncedSavesNow(); savePendingQueue(); });
     // Flush pending scores + resync whenever the player returns to the tab/app
     document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        flushDebouncedSavesNow();
+        savePendingQueue();
+        return;
+      }
       if (document.visibilityState === 'visible') {
         updateConnectionStatus();
         if (navigator.onLine && pendingScoreUpdates.length) flushPendingScoreUpdates().catch(() => {});
