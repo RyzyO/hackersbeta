@@ -35,7 +35,7 @@
   // Sunday is a shotgun start — every group tees off at once, so this is the fallback shown
   // when a group's own teeTime isn't set in the tee sheet, not a per-group staggered time.
   const DEFAULT_SHOTGUN_TIME = '8:30 AM';
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsIpFLV6y4b-Bct4NnQ624Mdx6glCUfg7nbazbMhsNGuUpJSmqNfTUz1e5XK3SjIQX/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxiNjoHLPx8_Kk-RSLS5_OtLv-dSC7JpaTM_lp5_yTTJE5op9TSTmjRTvuzyKUevhll/exec';
   const SPREADSHEET_ID = '1jMtL6JsfOuL9C3ZjBlhJFnZ01DkAxBrBpYP604S7ua4';
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk',
@@ -603,9 +603,18 @@
     const exact = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatch(name) === target);
     if (exact) return exact;
     const targetTight = normalizeNameForMatchTight(displayName);
-    if (!targetTight) return null;
-    const tight = allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatchTight(name) === targetTight);
-    return tight || null;
+    const tight = targetTight ? allSheetNames.find(name => isSelectableSheetName(name) && normalizeNameForMatchTight(name) === targetTight) : null;
+    if (tight) return tight;
+    // Sunday's Ambrose sheets are one tab per TEAM, named "PlayerA-PlayerB" — order not
+    // guaranteed either direction ("Jeff Hawkins-Brad Grant" or "Brad Grant-Jeff Hawkins").
+    // Fall back to matching either half of a hyphen-joined tab name against this player.
+    const teamMatch = allSheetNames.find(name => {
+      if (!isSelectableSheetName(name)) return false;
+      const parts = String(name).split('-').map(s => s.trim()).filter(Boolean);
+      if (parts.length < 2) return false;
+      return parts.some(part => normalizeNameForMatch(part) === target || (targetTight && normalizeNameForMatchTight(part) === targetTight));
+    });
+    return teamMatch || null;
   }
   // Ambrose team pairing lives in the per-player event record (eventYears/{id}/players/{uid}),
   // same source tee-sheet.html reads for its Ambrose grouping — not in the tee sheet groups
