@@ -1,10 +1,10 @@
 // ============================================================
 // HACKERS CUP — Google Apps Script Backend (SATURDAY)
-// Spreadsheet: https://docs.google.com/spreadsheets/d/1CDMsKXv-uxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc/edit
+// Spreadsheet: https://docs.google.com/spreadsheets/d/1CDMsKXv-CuxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc/edit
 // Deploy as: Web App -> Execute as: Me -> Who has access: Anyone
 // ============================================================
 
-const SPREADSHEET_ID = '1CDMsKXv-uxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc';
+const SPREADSHEET_ID = '1CDMsKXv-CuxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc';
 const SCORE_COLUMN = 9; // Column I (1-indexed) = SCORE
 const POINTS_COLUMN = 13; // Column M (1-indexed) = Stableford points
 const TOTAL_CELL_ROW = 2, TOTAL_CELL_COL = 17; // Q2 = SUM(M:M) running total
