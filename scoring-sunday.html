@@ -1357,7 +1357,7 @@
       autosaveScoreForPlayer(playerIndex, rowIndex).then(() => {
         scoreUpdateTimers.delete(key);
       });
-    }, 200);
+    }, 600);
     scoreUpdateTimers.set(key, timerId);
   }
   // Skips the debounce wait entirely — used when the page is about to be hidden/backgrounded
