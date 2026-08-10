@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Hackers Cup — Friday Skins Admin</title>
+  <meta name="theme-color" content="#0f172a">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            s0: '#060911',
+            s1: '#0c1019',
+            s2: '#111725',
+            s3: '#182030',
+            s4: '#1f2a3e',
+            accent: '#06d6a4',
+            'accent-dim': 'rgba(6,214,164,0.12)',
+            'accent-glow': 'rgba(6,214,164,0.25)',
+            brd: '#1c2640',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a4a70; }
+
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .skeleton {
+      background: linear-gradient(90deg, #182030 25%, #1f2a3e 50%, #182030 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+    body { font-family: 'Inter', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-s0 text-slate-200 min-h-screen">
+
+  <!-- ===================== AUTH LOADING SCREEN ===================== -->
+  <div id="authLoadingScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-s0">
+    <i data-lucide="loader-2" class="w-8 h-8 text-accent animate-spin"></i>
+  </div>
+
+  <!-- ===================== AUTH STATUS BAR ===================== -->
+  <div id="authBar" class="hidden fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 bg-s1 border border-brd rounded-xl shadow-xl text-xs">
+    <i data-lucide="user-check" class="w-3.5 h-3.5 text-accent"></i>
+    <span id="authEmail" class="text-slate-300"></span>
+    <button id="signOutBtn" class="ml-1 text-slate-500 hover:text-red-400 transition">
+      <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <div id="mainLayout" class="max-w-3xl mx-auto px-4 sm:px-6 py-8 opacity-0 transition-opacity duration-300">
+    <header class="flex items-center justify-between mb-6">
+      <div>
+        <a href="admin-event.html" class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-accent transition mb-2">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Event Admin
+        </a>
+        <h1 class="text-2xl font-extrabold text-white tracking-tight">Friday — TP Skins</h1>
+        <p class="text-sm text-slate-500 mt-1">Hole-by-hole skin result, computed live from the Leaderboard sheet.</p>
+      </div>
+      <button id="refreshBtn" class="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-s2 border border-brd text-xs font-semibold text-slate-300 hover:border-accent/40 hover:text-accent transition">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+      </button>
+    </header>
+
+    <div id="statusLine" class="text-xs text-slate-500 mb-4 flex items-center gap-2">
+      <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+      <span id="statusText">Loading…</span>
+    </div>
+
+    <div id="skeletonWrap" class="space-y-2">
+      <div class="skeleton h-14"></div>
+      <div class="skeleton h-14"></div>
+      <div class="skeleton h-14"></div>
+      <div class="skeleton h-14"></div>
+      <div class="skeleton h-14"></div>
+    </div>
+
+    <div id="errorState" class="hidden bg-s1 border border-red-500/30 rounded-xl p-6 text-center text-sm text-red-300">
+      Couldn't load the sheet. Check the Friday spreadsheet is shared as "Anyone with the link can view", then hit Refresh.
+    </div>
+
+    <div id="holeList" class="hidden space-y-2"></div>
+
+    <!-- Column-detection debug panel — collapsed by default, here so a mismatch in the
+         sheet's layout can be diagnosed at a glance instead of guessing blind. -->
+    <details id="debugPanel" class="hidden mt-8 bg-s1 border border-brd rounded-xl p-4 text-xs">
+      <summary class="cursor-pointer text-slate-400 font-semibold select-none">Column detection (debug)</summary>
+      <pre id="debugContent" class="mono text-slate-500 mt-3 whitespace-pre-wrap"></pre>
+    </details>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut }
+      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getDatabase(app);
+
+    setPersistence(auth, browserLocalPersistence).catch(err => console.warn("Auth persistence error:", err));
+
+    async function verifyAdmin(user) {
+      const adminSnap = await get(ref(db, `admins/${user.uid}`));
+      return !!adminSnap.val();
+    }
+    function goToLogin() {
+      window.location.href = "admin-login.html?redirect=" + encodeURIComponent("admin-skins-friday.html");
+    }
+
+    document.getElementById("signOutBtn").addEventListener("click", async () => {
+      try { await signOut(auth); goToLogin(); } catch (err) { console.error(err); }
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { goToLogin(); return; }
+      try {
+        const allowed = await verifyAdmin(user);
+        if (!allowed) { goToLogin(); return; }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("statusText").textContent = "Failed to verify admin access.";
+        return;
+      }
+      document.getElementById("authLoadingScreen").style.display = "none";
+      document.getElementById("authBar").classList.remove("hidden");
+      document.getElementById("authEmail").textContent = user.email || user.uid;
+      document.getElementById("mainLayout").style.opacity = "1";
+      window.lucide?.createIcons?.();
+      loadSkins();
+      setInterval(loadSkins, 60000);
+    });
+
+    // ── Friday's spreadsheet + Leaderboard tab (Rank / Player / Points / holes 1-18 / Skins) ──
+    const SHEET_ID     = '1xuhgK7jM4WhcrBhQSGhHVpsUHuAbE4N0DHn5WF0r308';
+    const LEADERBOARD_GID = '1278119700';
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${LEADERBOARD_GID}`;
+
+    function parseGviz(txt) {
+      return JSON.parse(txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/)[1]);
+    }
+
+    const ORDINALS = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th',
+      '11th','12th','13th','14th','15th','16th','17th','18th'];
+    const STAKE = 100; // per-hole stake — halved holes carry this forward to the next win
+
+    // Finds a column index by matching either the gviz-detected header label, or (as a
+    // fallback, since gviz doesn't always auto-detect a header row) the first data row's
+    // own cell text — so this keeps working even if the sheet's header row isn't being
+    // recognized as a header by the chart API.
+    function findColIndex(cols, headerRow, candidates) {
+      const norm = s => String(s ?? '').trim().toLowerCase();
+      const wanted = candidates.map(norm);
+      for (let i = 0; i < cols.length; i++) {
+        if (wanted.includes(norm(cols[i]?.label))) return i;
+      }
+      if (headerRow) {
+        for (let i = 0; i < headerRow.c.length; i++) {
+          if (wanted.includes(norm(headerRow.c[i]?.v))) return i;
+        }
+      }
+      return -1;
+    }
+
+    async function loadSkins() {
+      const statusText  = document.getElementById('statusText');
+      const skeletonWrap = document.getElementById('skeletonWrap');
+      const errorState  = document.getElementById('errorState');
+      const holeList    = document.getElementById('holeList');
+
+      try {
+        const txt = await fetch(SHEET_URL).then(r => r.text());
+        const json = parseGviz(txt);
+        const cols = json.table.cols || [];
+        const rows = json.table.rows || [];
+
+        // Try gviz's own detected column labels first...
+        let headerRow = null, dataRows = rows;
+        let rankIdx   = findColIndex(cols, null, ['rank']);
+        let playerIdx = findColIndex(cols, null, ['player', 'name']);
+        let holeIdx = {};
+        for (let h = 1; h <= 18; h++) holeIdx[h] = findColIndex(cols, null, [String(h)]);
+
+        // ...but on this sheet, decorative title text ("TP Skins", "Hole by Hole") lands in
+        // cols[].label instead of the real headers, and the actual header ("PLAYER", 1..18)
+        // is the sheet's own first row — so if the label-based pass didn't find PLAYER + all
+        // 18 hole columns, fall back to treating row 0 as the header and excluding it from
+        // the data rows, regardless of whether some other cols[].label happened to be non-empty.
+        const foundEnough = playerIdx !== -1 && Object.values(holeIdx).every(i => i !== -1);
+        if (!foundEnough && rows.length) {
+          headerRow = rows[0];
+          dataRows = rows.slice(1);
+          rankIdx   = findColIndex([], headerRow, ['rank']);
+          playerIdx = findColIndex([], headerRow, ['player', 'name']);
+          for (let h = 1; h <= 18; h++) holeIdx[h] = findColIndex([], headerRow, [String(h)]);
+        }
+
+        const debugLines = [
+          `rank column: ${rankIdx}`,
+          `player column: ${playerIdx}`,
+          ...Object.entries(holeIdx).map(([h, i]) => `hole ${h} column: ${i}`),
+        ];
+        document.getElementById('debugContent').textContent = debugLines.join('\n');
+        document.getElementById('debugPanel').classList.remove('hidden');
+
+        if (playerIdx === -1 || Object.values(holeIdx).some(i => i === -1)) {
+          throw new Error('Could not locate all expected columns — see debug panel.');
+        }
+
+        // Player rows only — the sheet's own MAX / COUNT MAX summary rows (and any row
+        // without a real player name) are excluded here rather than relied upon, so this
+        // works regardless of whether those rows happen to line up where expected.
+        const players = dataRows
+          .map(r => {
+            const name = r.c[playerIdx]?.v;
+            if (!name) return null;
+            const nameStr = String(name).trim();
+            if (!nameStr || /^(max|count max)$/i.test(nameStr)) return null;
+            const rank = rankIdx >= 0 ? r.c[rankIdx]?.v : null;
+            const holes = {};
+            for (let h = 1; h <= 18; h++) {
+              const raw = r.c[holeIdx[h]]?.v;
+              holes[h] = (raw === null || raw === undefined || raw === '') ? 0 : Number(raw) || 0;
+            }
+            return { name: nameStr, rank, holes };
+          })
+          .filter(Boolean);
+
+        if (!players.length) throw new Error('No player rows found.');
+
+        // For each hole: highest points value wins that hole's skin. Nobody above 0 means no
+        // skin has been earned yet (either genuinely unplayed, or everyone scored 0 — this
+        // scoring format can't tell those apart, and functionally neither awards a skin).
+        const results = [];
+        let pot = 0;
+        for (let h = 1; h <= 18; h++) {
+          const max = Math.max(...players.map(p => p.holes[h]));
+          if (max <= 0) { results.push({ hole: h, state: 'none', max: 0, winners: [], amountWon: null, pot: null }); continue; }
+          const winners = players.filter(p => p.holes[h] === max).map(p => p.name);
+          pot += STAKE;
+          if (winners.length > 1) {
+            // Halved — the stake carries over to accumulate on the next hole that's won outright.
+            results.push({ hole: h, state: 'halved', max, winners, amountWon: null, pot });
+          } else {
+            results.push({ hole: h, state: 'won', max, winners, amountWon: pot, pot: null });
+            pot = 0;
+          }
+        }
+
+        renderResults(results);
+        skeletonWrap.classList.add('hidden');
+        errorState.classList.add('hidden');
+        holeList.classList.remove('hidden');
+        statusText.textContent = `Last updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · ${players.length} players`;
+      } catch (err) {
+        console.error('Skins load error:', err);
+        skeletonWrap.classList.add('hidden');
+        holeList.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        statusText.textContent = 'Failed to load.';
+      }
+    }
+
+    function renderResults(results) {
+      const holeList = document.getElementById('holeList');
+      holeList.innerHTML = results.map(r => {
+        const ord = ORDINALS[r.hole - 1];
+        if (r.state === 'none') {
+          return `
+            <div class="flex items-center justify-between bg-s1 border border-brd rounded-xl px-4 py-3">
+              <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-lg bg-s2 border border-brd flex items-center justify-center text-xs font-bold text-slate-500 mono">${r.hole}</span>
+                <span class="text-sm text-slate-500">${ord} hole — no result yet</span>
+              </div>
+            </div>`;
+        }
+        if (r.state === 'won') {
+          const carriedNote = r.amountWon > STAKE
+            ? `<div class="text-[10px] text-accent/70 mt-0.5">includes carryover from ${(r.amountWon / STAKE) - 1} halved hole${(r.amountWon / STAKE) - 1 > 1 ? 's' : ''}</div>`
+            : '';
+          return `
+            <div class="flex items-center justify-between bg-s1 border border-accent/25 rounded-xl px-4 py-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-9 h-9 rounded-lg bg-accent-dim border border-accent/30 flex items-center justify-center text-xs font-bold text-accent mono">${r.hole}</span>
+                <div class="min-w-0">
+                  <div class="text-sm font-semibold text-white">${ord} hole — Won</div>
+                  <div class="text-xs text-slate-400 truncate">${escapeHtml(r.winners[0])}</div>
+                  ${carriedNote}
+                </div>
+              </div>
+              <div class="shrink-0 text-right">
+                <div class="text-sm font-extrabold text-accent mono">$${r.amountWon}</div>
+                <div class="text-[10px] text-slate-500 mono">${r.max} pts</div>
+              </div>
+            </div>`;
+        }
+        // halved
+        return `
+          <div class="flex items-center justify-between bg-s1 border border-amber-400/25 rounded-xl px-4 py-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-xs font-bold text-amber-300 mono">${r.hole}</span>
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-white">${ord} hole — Halved in ${r.max}s</div>
+                <div class="text-xs text-slate-400 truncate">${r.winners.map(escapeHtml).join(', ')}</div>
+              </div>
+            </div>
+            <div class="shrink-0 text-right">
+              <div class="text-xs font-semibold text-amber-300">carries over</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      document.getElementById('statusText').textContent = 'Refreshing…';
+      loadSkins();
+    });
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</body>
+</html>
