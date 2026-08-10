@@ -1433,8 +1433,8 @@
     const handicapUrl    = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${handicapGid}`;
 
     const SAT_SC = {
-      sheetId, front: [1,2,3,4,5,6,7,8,24],
-      back: [25,9,19,20,21,17,18,10,27],
+      sheetId, front: [1,2,3,4,5,6,7,8,9],
+      back: [10,11,12,13,14,15,16,17,18],
       showPoints: true, byHoleNum: true
     };
 
@@ -1647,6 +1647,11 @@
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeScDrawer(); });
 
+    // Worrigee Links par per hole — hardcoded rather than read from the sheet's own par
+    // column, which has disagreed with the verified course card in testing (see COURSE_HOLES
+    // note above).
+    const HOLE_PARS = { 1: 5, 2: 3, 3: 4, 4: 4, 5: 4, 6: 3, 7: 5, 8: 3, 9: 4,
+      10: 4, 11: 5, 12: 3, 13: 4, 14: 3, 15: 4, 16: 4, 17: 3, 18: 5 };
     function fetchScData(playerName) {
       const url = `https://docs.google.com/spreadsheets/d/${SAT_SC.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
       return fetch(url).then(r => r.text()).then(txt => {
@@ -1656,7 +1661,7 @@
         rows.forEach(r => {
           const h = r.c[4]?.v ? parseInt(r.c[4].v, 10) : 0;
           if (h > 0) {
-            holePars[h]   = parseInt(r.c[5]?.v  ?? 0, 10) || 0;
+            holePars[h]   = HOLE_PARS[h] || 0;
             holeScores[h] = parseInt(r.c[8]?.v  ?? 0, 10) || 0;
             holePts[h]    = parseInt(r.c[12]?.v ?? 0, 10) || 0;
           }
@@ -1682,7 +1687,7 @@
           <tbody>
             <tr><td class="row-lbl">Par</td>${holes.map(h => `<td>${holePars[h] || ''}</td>`).join('')}<td class="tot">${parSum || ''}</td></tr>
             <tr><td class="row-lbl">Score</td>${holes.map(h => `<td class="hole-clickable ${strCls(holeScores[h], holePars[h])}" onclick="showHoleDetail(${h}, ${holeScores[h] || 0}, ${holePars[h] || 0}, ${holePts[h] || 0}, '${detailId}')">${holeScores[h] || ''}</td>`).join('')}<td class="tot">${scrSum || ''}</td></tr>
-            <tr><td class="row-lbl">Pts</td>${holes.map(h => `<td>${holePts[h] || ''}</td>`).join('')}<td class="tot">${ptsSum || ''}</td></tr>
+            <tr><td class="row-lbl">Pts</td>${holes.map(h => `<td>${holeScores[h] ? holePts[h] : ''}</td>`).join('')}<td class="tot">${ptsSum || ''}</td></tr>
           </tbody>
         </table></div>`;
       };

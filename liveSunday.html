@@ -1369,7 +1369,7 @@
     // Per-team scorecard sheets use the same hole ordering as scorecardSun.html
     const SUN_SC = {
       sheetId,
-      displayOrder: [1, 2, 3, 4, 5, 6, 7, 8, 24, 25, 9, 19, 20, 21, 17, 18, 10, 27],
+      displayOrder: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
     };
     SUN_SC.front = SUN_SC.displayOrder.slice(0, 9);
     SUN_SC.back  = SUN_SC.displayOrder.slice(9);
@@ -1604,8 +1604,12 @@
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeScDrawer(); });
 
+    // Worrigee Links par per hole — hardcoded rather than read from the sheet's own par
+    // column, which has disagreed with the verified course card in testing.
+    const HOLE_PARS = { 1: 5, 2: 3, 3: 4, 4: 4, 5: 4, 6: 3, 7: 5, 8: 3, 9: 4,
+      10: 4, 11: 5, 12: 3, 13: 4, 14: 3, 15: 4, 16: 4, 17: 3, 18: 5 };
     // Per-team sheet — rows are in the same order as SUN_SC.displayOrder,
-    // score in column I (index 8), par in column F (index 5). No stableford points on Sunday.
+    // score in column I (index 8). No stableford points on Sunday.
     function fetchScData(playerName) {
       const url = `https://docs.google.com/spreadsheets/d/${SUN_SC.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerName)}`;
       return fetch(url).then(r => r.text()).then(txt => {
@@ -1615,7 +1619,7 @@
         SUN_SC.displayOrder.forEach((holeNumber, i) => {
           const row = rows[i] && rows[i].c ? rows[i].c : [];
           holeScores[holeNumber] = row[8] && row[8].v != null ? parseInt(row[8].v, 10) : 0;
-          holePars[holeNumber]   = row[5] && row[5].v != null ? parseInt(row[5].v, 10) : 0;
+          holePars[holeNumber]   = HOLE_PARS[holeNumber] || 0;
         });
         return { holePars, holeScores };
       });
