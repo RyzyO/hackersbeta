@@ -463,7 +463,10 @@
     // other connected devices; this client never writes scores to Firebase directly.
     const url = `${APPS_SCRIPT_URL}?action=saveScore&sheet=${encodeURIComponent(sheetName)}&rowIndex=${encodeURIComponent(rowIndex)}&score=${encodeURIComponent(score)}`;
     // priority=true: score writes jump ahead of any queued full-sheet reads.
-    const resp = await enqueueRequest(() => fetchJsonViaProxy(url), true);
+    // keepalive: true lets the browser finish this request even if the page is being
+    // backgrounded/torn down right after the call starts (e.g. the user locks their phone
+    // mid-save) — without it such requests are liable to be killed in flight.
+    const resp = await enqueueRequest(() => fetchJsonViaProxy(url, { keepalive: true }), true);
     if (!resp || resp.success === false) {
       throw new Error((resp && resp.error) || 'saveScore returned failure');
     }
@@ -1054,6 +1057,7 @@
     if (value === undefined) delete partner.scores[rowIndex];
     else partner.scores[rowIndex] = value;
     debouncedAutosave(player.partnerIndex, rowIndex);
+    updateSubmitButtonVisibility();
   }
   // Compute the player's running Stableford total as a per-hole hybrid sum:
   // each hole uses the Sheet's confirmed points when the Sheet's score matches what this
@@ -1328,6 +1332,7 @@
     if (!isNaN(n) && n >= 1 && n <= 9) player.scores[rowIndex] = n;
     else delete player.scores[rowIndex];
     updatePlayerCardDom(playerIndex);
+    updateSubmitButtonVisibility();
     debouncedAutosave(playerIndex, rowIndex);
     mirrorAmbroseScore(playerIndex, rowIndex);
   };
@@ -1339,6 +1344,7 @@
     const next = Math.max(1, Math.min(9, current + delta));
     player.scores[rowIndex] = next;
     updatePlayerCardDom(playerIndex);
+    updateSubmitButtonVisibility();
     debouncedAutosave(playerIndex, rowIndex);
     mirrorAmbroseScore(playerIndex, rowIndex);
   };
@@ -1351,13 +1357,23 @@
       autosaveScoreForPlayer(playerIndex, rowIndex).then(() => {
         scoreUpdateTimers.delete(key);
       });
-    }, 600);
+    }, 200);
     scoreUpdateTimers.set(key, timerId);
+  }
+  // Skips the debounce wait entirely — used when the page is about to be hidden/backgrounded
+  // (screen lock, app switch) so a tap doesn't just sit queued behind an unfired timer.
+  function flushDebouncedSavesNow() {
+    scoreUpdateTimers.forEach((timerId, key) => {
+      clearTimeout(timerId);
+      const [playerIndex, rowIndex] = key.split('|').map(Number);
+      autosaveScoreForPlayer(playerIndex, rowIndex);
+    });
+    scoreUpdateTimers.clear();
   }
   async function autosaveScoreForPlayer(playerIndex, rowIndex) {
     const player = players[playerIndex];
     if (!player || !player.sheetName) return;
-    const score = player.scores[rowIndex];
+    const score = player.scores[rowIndex] ?? '';
     setSaveStatus('Saving…', 'saving');
     try {
       // This is the canonical write: queueScoreUpdate -> Apps Script saveScore -> the Sheet.
@@ -1377,6 +1393,59 @@
       setSaveStatus('Queued — will retry', 'saving');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => setSaveStatus(''), 3000);
+    }
+  }
+  window.confirmClearAllScores = function() {
+    if (!confirm('Clear ALL scores for every player in this round?')) return;
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+    clearAllScores();
+  };
+  async function clearAllScores() {
+    setSaveStatus('Clearing…', 'saving');
+    const overlay = $('submit-overlay');
+    const titleEl = overlay ? overlay.querySelector('.submit-title') : null;
+    if (titleEl) titleEl.textContent = 'Clearing scores… this may take a while';
+    updateSubmitProgress(0);
+    if (overlay) overlay.classList.remove('hidden');
+    try {
+      // The Sheet is the source of truth and has no bulk-clear endpoint, so each hole still
+      // needs its own write. The local/Firebase session, though, is just a resume cache —
+      // rather than hand-patching every player/hole object we wipe it wholesale afterward
+      // and reload fresh state from the now-cleared Sheet, which also can't drift out of sync.
+      let totalHoles = 0;
+      players.forEach(p => {
+        if (p && p.sheetName) totalHoles += ((p.holes && p.holes.length) ? p.holes : holeData).length;
+      });
+      let done = 0;
+      for (const player of players) {
+        if (!player || !player.sheetName) continue;
+        const holes = (player.holes && player.holes.length) ? player.holes : holeData;
+        for (const hole of (holes || [])) {
+          try {
+            await postScoreViaProxy(player.sheetName, hole.rowIndex, '');
+          } catch (err) {
+            console.warn('Clear failed for', player.sheetName, hole.rowIndex, err);
+          }
+          done++;
+          updateSubmitProgress(totalHoles ? Math.min(99, Math.round((done / totalHoles) * 100)) : 99);
+        }
+      }
+      pendingScoreUpdates = [];
+      savePendingQueue();
+      clearLocalSession();
+      if (firebaseUid) { try { await remove(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`)); } catch (err) {} }
+      updateSubmitProgress(100);
+      setSaveStatus('Cleared ✓', 'saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => setSaveStatus(''), 2000);
+      if (overlay) overlay.classList.add('hidden');
+      if (titleEl) titleEl.textContent = 'Syncing scores…';
+      await loadHoles();
+    } catch (err) {
+      console.error('Clear all scores error:', err);
+      setSaveStatus('Clear failed', 'error');
+      if (overlay) overlay.classList.add('hidden');
+      if (titleEl) titleEl.textContent = 'Syncing scores…';
     }
   }
   // Compute Stableford points for a hole.
@@ -1467,7 +1536,63 @@
       cell.appendChild(infoEl);
       bar.appendChild(cell);
     });
+    updateSubmitButtonVisibility();
   }
+  // ── SUBMIT ROUND ─────────────────────────────────────────────
+  function isRoundComplete() {
+    if (!players.length) return false;
+    return players.every(player => {
+      const holes = (player.holes && player.holes.length) ? player.holes : holeData;
+      if (!holes.length) return false;
+      return holes.every(h => {
+        const s = player.scores[h.rowIndex];
+        return s !== undefined && s !== null && s !== '';
+      });
+    });
+  }
+  function updateSubmitButtonVisibility() {
+    const btn = $('submit-round-btn');
+    if (!btn) return;
+    btn.classList.toggle('hidden', !isRoundComplete());
+  }
+  function updateSubmitProgress(pct) {
+    const fill = $('submit-progress-fill');
+    const label = $('submit-progress-pct');
+    if (fill) fill.style.width = `${pct}%`;
+    if (label) label.textContent = `${pct}%`;
+  }
+  // Forces any still-unsynced holes through before handing off to the scorecard page.
+  // Repeatedly (re)invokes the shared flush loop — which is a no-op while already
+  // in-flight — and polls the queue length for the progress bar, so this also recovers
+  // a flush that stalled out after exhausting its own retries.
+  async function flushAllPendingWithProgress(maxWaitMs = 30000) {
+    const startTotal = pendingScoreUpdates.length;
+    if (startTotal === 0) { updateSubmitProgress(100); return; }
+    const start = Date.now();
+    while (pendingScoreUpdates.length > 0) {
+      if (!navigator.onLine) throw new Error('Offline — connect and try again');
+      if (Date.now() - start > maxWaitMs) throw new Error('Sync timed out — please try again');
+      flushPendingScoreUpdates();
+      const remaining = pendingScoreUpdates.length;
+      const done = startTotal - remaining;
+      updateSubmitProgress(Math.max(0, Math.min(99, Math.round((done / startTotal) * 100))));
+      if (pendingScoreUpdates.length > 0) await new Promise(r => setTimeout(r, 400));
+    }
+    updateSubmitProgress(100);
+  }
+  window.submitRound = async function() {
+    if (!isRoundComplete()) return;
+    const overlay = $('submit-overlay');
+    updateSubmitProgress(0);
+    if (overlay) overlay.classList.remove('hidden');
+    try {
+      await flushAllPendingWithProgress();
+      window.location.href = 'score.html';
+    } catch (err) {
+      if (overlay) overlay.classList.add('hidden');
+      alert(err.message || 'Some scores failed to sync. Please check your connection and try again.');
+    }
+  };
   // ── LEADERBOARD ───────────────────────────────────────────────
   // Reads through the same Apps Script Web App as everything else (action=getLeaderboard),
   // which does the rank/name/points/handicap lookup server-side in one call. This used to read
@@ -2314,6 +2439,39 @@ body{
 }
 .hole-nav-btn:disabled{opacity:.3;cursor:not-allowed}
 .hole-nav-btn:not(:disabled):active{background:var(--surface2)}
+/* ── SUBMIT ROUND ─────────────────────────────── */
+.submit-round-btn{
+  display:block;width:calc(100% - 28px);margin:0 14px 14px;
+  background:var(--sky);color:#04121f;
+  border:none;border-radius:var(--radius-sm);
+  padding:14px 10px;font-size:14px;font-weight:700;
+  letter-spacing:.3px;cursor:pointer;
+}
+.submit-round-btn:active{opacity:.85}
+.submit-overlay{
+  position:fixed;inset:0;z-index:40;
+  background:rgba(2,6,18,0.92);
+  backdrop-filter:blur(14px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  animation:fadeIn .2s ease-out;
+}
+.submit-card{
+  width:100%;max-width:320px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:32px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.5);
+}
+.submit-title{font-size:13px;color:var(--muted);letter-spacing:.5px}
+.submit-progress-track{
+  width:100%;height:6px;border-radius:99px;
+  background:var(--surface2);overflow:hidden;
+}
+.submit-progress-fill{height:100%;background:var(--sky);transition:width .3s ease}
+.submit-progress-pct{font-size:20px;font-weight:700;color:var(--text)}
 /* ── COURSE GUIDE PANEL ──────────────────────── */
 .course-guide-panel{
   border-top:1px solid var(--border);
@@ -2596,6 +2754,7 @@ body{
         <!-- The shared getLeaderboard endpoint ranks by Stableford points, which don't exist
              for Sunday's NETT team format — peek button omitted rather than show wrong data.
              Revisit if/when the Apps Script backend gets a NETT-aware leaderboard action. -->
+        <button class="signout-btn" onclick="confirmClearAllScores()">Clear scores</button>
         <button class="signout-btn" onclick="handleSignOut()">Change</button>
       </div>
     </div>
@@ -2608,6 +2767,15 @@ body{
   <div id="round-nav" class="hidden" style="display:none;gap:8px;padding:0 14px 14px">
     <button id="prev-hole-btn" class="hole-nav-btn" onclick="moveHole(-1)">← Prev</button>
     <button id="next-hole-btn" class="hole-nav-btn" onclick="moveHole(1)">Next →</button>
+  </div>
+  <button id="submit-round-btn" class="submit-round-btn hidden" onclick="submitRound()">Submit Round</button>
+  <div id="submit-overlay" class="submit-overlay hidden">
+    <div class="submit-card">
+      <div class="spinner"></div>
+      <div class="submit-title">Syncing scores…</div>
+      <div class="submit-progress-track"><div class="submit-progress-fill" id="submit-progress-fill" style="width:0%"></div></div>
+      <div class="submit-progress-pct" id="submit-progress-pct">0%</div>
+    </div>
   </div>
   <div id="start-hole-overlay" class="start-hole-overlay hidden">
     <div class="start-hole-card">
