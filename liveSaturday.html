@@ -339,26 +339,46 @@
     }
     /* ── Tee-off countdown (scorecard drawer, not-yet-started player) ─── */
     .tee-wait-card {
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
-      padding: 36px 20px 30px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 44px 20px 36px; text-align: center;
     }
     .tee-wait-icon {
-      width: 44px; height: 44px; border-radius: 50%;
+      width: 56px; height: 56px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.25);
       color: #38bdf8;
     }
+    .tee-wait-icon svg { width: 26px; height: 26px; }
     .tee-wait-label {
-      font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+      font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
       color: rgba(148,163,184,0.65);
     }
-    .tee-wait-time { font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
-    .tee-wait-hole { font-size: 12px; color: rgba(148,163,184,0.8); }
+    .tee-wait-time { font-size: 38px; font-weight: 700; color: #fff; line-height: 1; }
+    .tee-wait-hole { font-size: 15px; color: rgba(148,163,184,0.8); }
     .tee-wait-countdown {
-      margin-top: 6px; font-size: 13px; font-weight: 600;
+      margin-top: 6px; font-size: 15px; font-weight: 600;
       color: #38bdf8; font-variant-numeric: tabular-nums;
     }
     .tee-wait-countdown.tee-wait-now { color: #34d399; }
+    .tee-wait-group {
+      margin-top: 10px; width: 100%; max-width: 260px;
+      border-top: 1px solid rgba(148,163,184,0.15); padding-top: 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .tee-wait-group-label {
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(148,163,184,0.55); margin-bottom: 2px; text-align: center;
+    }
+    .tee-wait-group-row {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-size: 14px;
+    }
+    .tee-wait-group-name { color: #e2e8f0; }
+    .tee-wait-group-hcp {
+      font-size: 11px; font-weight: 600; color: rgba(148,163,184,0.8);
+      background: rgba(255,255,255,0.06); border-radius: 999px; padding: 2px 8px;
+      white-space: nowrap;
+    }
 
     /* ── Hole flyover (inline) ────────────────────────── */
     .hole-clickable {
@@ -585,15 +605,16 @@
     tr.compare-selected { outline: 2px solid rgba(168,85,247,0.6); outline-offset: -2px; }
     .leaderboard-card.compare-selected { border-color: rgba(168,85,247,0.6); }
     #compare-bar {
-      position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(80px);
+      position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(20px);
+      opacity: 0; pointer-events: none;
       background: rgba(15,23,42,0.95); border: 1px solid rgba(168,85,247,0.4);
       border-radius: 999px; padding: 10px 16px;
       display: flex; align-items: center; gap: 12px;
       z-index: 80; box-shadow: 0 8px 30px rgba(2,6,23,0.5);
-      transition: transform .3s cubic-bezier(0.34,1.56,0.64,1);
+      transition: transform .3s cubic-bezier(0.34,1.56,0.64,1), opacity .2s ease;
       white-space: nowrap;
     }
-    #compare-bar.visible { transform: translateX(-50%) translateY(0); }
+    #compare-bar.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     .compare-bar-names { font-size: 12px; color: rgba(148,163,184,0.9); }
     .compare-bar-names strong { color: #fff; }
     #compare-go {
@@ -1377,13 +1398,15 @@
         const satGroups = evSnap.data()?.teeSheets?.saturday || [];
         const teeMap = {};
         satGroups.forEach(g => {
-          (g.players || []).forEach(uid => {
-            const name = uidToName[uid];
-            if (name) {
-              const info = { teeTime: g.teeTime || '', hole: g.hole || '' };
-              teeMap[name.toLowerCase()] = info;
-              teeMap[normalizeTightName(name)] = info;
-            }
+          const groupNames = (g.players || []).map(uid => uidToName[uid]).filter(Boolean);
+          groupNames.forEach(name => {
+            const info = {
+              teeTime: g.teeTime || '',
+              hole: g.hole || '',
+              group: groupNames
+            };
+            teeMap[name.toLowerCase()] = info;
+            teeMap[normalizeTightName(name)] = info;
           });
         });
         window._teemap = teeMap;
@@ -1442,7 +1465,7 @@
       });
     });
 
-    loadTeeSheet();
+    window._teeSheetPromise = loadTeeSheet();
 
     window.avatarMapReady = (async () => {
       const map = {};
@@ -1460,6 +1483,21 @@
   </script>
 
   <script type="text/javascript">
+    // Defined here (a plain classic script) rather than only in the type="module" script below —
+    // modules always execute after the whole document has parsed, so if only the module set these,
+    // this script's own loadData() call at the bottom would race ahead and crash on a missing
+    // window.normalizeTightName every single first load, killing the whole render (tee times included).
+    if (!window.normalizePlayerName) {
+      window.normalizePlayerName = function(name) {
+        return (name || '').toString().toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+      };
+    }
+    if (!window.normalizeTightName) {
+      window.normalizeTightName = function(name) {
+        return (name || '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      };
+    }
+
     const sheetId        = '1CDMsKXv-CuxnYcJMipyo5GEsIHdtFmRSwXlq1jaKvdc';
     const leaderboardGid = '1050788739';
     const handicapGid    = '836199421';
@@ -1657,7 +1695,8 @@
         if (teeInfo) {
           // Not started yet and we know their tee time — show that instead of an 18-row
           // blank scorecard, which tells the viewer nothing useful before the round begins.
-          document.getElementById('sat-sc-body').innerHTML = nameHtml + renderTeeWaitHtml(teeInfo) + pulseHtml;
+          // No pulse stats either: there's no round data yet for them to summarize.
+          document.getElementById('sat-sc-body').innerHTML = nameHtml + renderTeeWaitHtml(teeInfo);
           startScDrawerCountdown(teeInfo);
         } else {
           document.getElementById('sat-sc-body').innerHTML =
@@ -2013,6 +2052,19 @@
     function renderTeeWaitHtml(teeInfo) {
       const teeDate = parseTeeTimeToDate(teeInfo.teeTime);
       const holeSub = teeInfo.hole ? `Hole ${teeInfo.hole}` : '';
+      const hcpMap = window._handicapMap || {};
+      const groupHtml = (teeInfo.group && teeInfo.group.length)
+        ? `<div class="tee-wait-group">
+            <div class="tee-wait-group-label">Group</div>
+            ${teeInfo.group.map(n => {
+              const hcp = hcpMap[n] ?? '';
+              return `<div class="tee-wait-group-row">
+                <span class="tee-wait-group-name">${n}</span>
+                ${hcp !== '' ? `<span class="tee-wait-group-hcp">HC ${hcp}</span>` : ''}
+              </div>`;
+            }).join('')}
+          </div>`
+        : '';
       return `<div class="tee-wait-card">
         <div class="tee-wait-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2021,6 +2073,7 @@
         <div class="tee-wait-time">${teeInfo.teeTime || '—'}</div>
         ${holeSub ? `<div class="tee-wait-hole">${holeSub}</div>` : ''}
         ${teeDate ? `<div class="tee-wait-countdown" id="tee-wait-countdown"></div>` : ''}
+        ${groupHtml}
       </div>`;
     }
     function startScDrawerCountdown(teeInfo) {
@@ -2124,6 +2177,7 @@
         const hcp  = row.c[1]?.v;
         if (name) handicapMap[name] = hcp ?? '';
       });
+      window._handicapMap = handicapMap;
 
       const rows = lbJson.table.rows.filter(r => parseInt(r.c[1]?.v, 10) !== 0);
       rows.sort((a, b) => {
@@ -2220,7 +2274,6 @@
         const tdName = document.createElement('td');
         tdName.classList.add('column-c');
         tdName.style.textAlign = 'left';
-        const teeBadge = teeInfo?.teeTime ? `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>` : '';
         const nickname = (window._nicknameMap || {})[window.normalizePlayerName(name)] || '';
         const nicknameHtml = nickname ? `<span class="player-nickname">“${nickname}”</span>` : '';
         const isStarred = (window._satFavs || new Set()).has(name);
@@ -2230,38 +2283,46 @@
             <span class="player-name">${name}</span>${nicknameHtml}
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
               ${hcp !== '' ? `<span class="player-hcp">HC ${hcp}</span>` : ''}
-              ${teeBadge}
             </div>
           </div>
           <button class="star-btn${isStarred ? ' starred' : ''}" data-player="${name}" onclick="event.stopPropagation();window._toggleFav&&window._toggleFav('${name.replace(/'/g,"\\'")}')">★</button>
         </div>`;
         tr.appendChild(tdName);
 
-        const tdPts = document.createElement('td');
-        tdPts.classList.add('column-d');
-        tdPts.innerHTML = `${pts || '—'}${proj}`;
-        tr.appendChild(tdPts);
+        const notStartedWithTeeDesktop = thru.notStarted && !!teeInfo?.teeTime;
 
-        const tdFront = document.createElement('td');
-        tdFront.classList.add('column-e');
-        tdFront.textContent = front !== '' ? front : '—';
-        tr.appendChild(tdFront);
+        if (notStartedWithTeeDesktop) {
+          const tdTee = document.createElement('td');
+          tdTee.colSpan = 5;
+          tdTee.innerHTML = `<span class="tee-badge">⏱ ${teeInfo.teeTime}${teeInfo.hole ? ` · H${teeInfo.hole}` : ''}</span>`;
+          tr.appendChild(tdTee);
+        } else {
+          const tdPts = document.createElement('td');
+          tdPts.classList.add('column-d');
+          tdPts.innerHTML = `${pts || '—'}${proj}`;
+          tr.appendChild(tdPts);
 
-        const tdBack = document.createElement('td');
-        tdBack.classList.add('column-f');
-        tdBack.textContent = back !== '' ? back : '—';
-        tr.appendChild(tdBack);
+          const tdFront = document.createElement('td');
+          tdFront.classList.add('column-e');
+          tdFront.textContent = front !== '' ? front : '—';
+          tr.appendChild(tdFront);
 
-        const tdThru = document.createElement('td');
-        tdThru.classList.add('column-g');
-        if (thru.done) tdThru.innerHTML = `<span class="thru-finished">F</span>`;
-        else tdThru.textContent = thru.desktop;
-        tr.appendChild(tdThru);
+          const tdBack = document.createElement('td');
+          tdBack.classList.add('column-f');
+          tdBack.textContent = back !== '' ? back : '—';
+          tr.appendChild(tdBack);
 
-        const tdBE = document.createElement('td');
-        tdBE.classList.add('column-h');
-        tdBE.innerHTML = beBadgesHtml(birdies, eagles);
-        tr.appendChild(tdBE);
+          const tdThru = document.createElement('td');
+          tdThru.classList.add('column-g');
+          if (thru.done) tdThru.innerHTML = `<span class="thru-finished">F</span>`;
+          else tdThru.textContent = thru.desktop;
+          tr.appendChild(tdThru);
+
+          const tdBE = document.createElement('td');
+          tdBE.classList.add('column-h');
+          tdBE.innerHTML = beBadgesHtml(birdies, eagles);
+          tr.appendChild(tdBE);
+        }
 
         tr.addEventListener('click', () => {
           if (compareMode) { toggleComparePlayer(name, tr, null); return; }
@@ -2356,6 +2417,12 @@
     loadData(false).then(() => {
       const urlPlayer = new URLSearchParams(location.search).get('player');
       if (urlPlayer) openScDrawer(decodeURIComponent(urlPlayer));
+
+      // Tee times come from a separate Firestore fetch (loadTeeSheet) that isn't awaited by the
+      // first loadData() call, so if it's still in flight the first paint has no tee times/sorting.
+      // Once it lands, quietly re-render (isRefresh=true skips the loading skeleton) so tee data
+      // shows up without waiting on the 60s auto-refresh.
+      if (window._teeSheetPromise) window._teeSheetPromise.then(() => loadData(true));
     });
   </script>
 </body>
