@@ -670,8 +670,9 @@
 
     // Countdown Timer
     function updateCountdown() {
-      const targetDate = new Date("August 20, 2026 11:30:00 GMT+1000");
-      if (isThursdayPlayer) targetDate.setDate(targetDate.getDate() - 1);
+      const targetDate = isThursdayPlayer
+        ? new Date("August 20, 2026 09:26:00 GMT+1000")
+        : new Date("August 21, 2026 10:00:00 GMT+1000");
       const currentDate = new Date();
       const diff = targetDate - currentDate;
       
