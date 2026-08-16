@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Tee Sheet | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="assets/css/site-nav.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* .glass now lives in assets/css/site-nav.css */
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(14, 165, 233, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav {
+        display: none;
+      }
+    }
+
+    .ts-day-tab { position: relative; }
+    .ts-day-tab::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: #0ea5e9; transform: scaleX(0); transition: transform 0.2s;
+      border-radius: 2px;
+    }
+    .ts-day-tab.active { color: #ffffff; }
+    .ts-day-tab.active::after { transform: scaleX(1); }
+
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+  </style>
+<link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
+  <div id="site-nav-root"></div>
+  <script src="assets/js/site-nav.js"></script>
+
+  <section class="relative pt-24 pb-8 md:pt-32 md:pb-10 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-4 animate-slide-up">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+            <i data-lucide="flag" class="w-4 h-4 text-hackers-sky"></i>
+            <span id="eventLabel" class="text-sm font-medium text-gray-300">Loading…</span>
+          </div>
+          <span class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium px-3 py-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span> Live
+          </span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+          Tee Sheet
+        </h1>
+        <p class="text-lg text-gray-300">See who's out with you and when you're teeing off.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Day Tabs -->
+  <div class="sticky top-16 md:top-20 z-20 border-b border-white/10 bg-hackers-dark/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto">
+      <button class="ts-day-tab active flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="friday">
+        Friday <span id="tab-badge-friday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400"></span>
+      </button>
+      <button class="ts-day-tab flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="saturday">
+        Saturday <span id="tab-badge-saturday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400"></span>
+      </button>
+      <button class="ts-day-tab flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white transition-colors whitespace-nowrap" data-ts-day="sunday">
+        Sunday <span id="tab-badge-sunday" class="hidden text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-400"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <section class="py-8 md:py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="tsGroupsDisplay" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+      <div id="tsEmpty" class="hidden flex-col items-center justify-center py-24 text-center gap-4">
+        <div class="w-14 h-14 rounded-2xl glass-card flex items-center justify-center mx-auto">
+          <i data-lucide="layout-grid" class="w-7 h-7 text-gray-500"></i>
+        </div>
+        <div class="text-gray-400 text-sm font-medium">No groups posted yet for this day</div>
+      </div>
+      <div class="text-center text-xs text-gray-500 pt-8">
+        Updated automatically · <span id="lastUpdated">—</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      getFirestore, collection, getDocs, doc, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+      authDomain: "hackers-cup.firebaseapp.com",
+      databaseURL: "https://hackers-cup-default-rtdb.firebaseio.com",
+      projectId: "hackers-cup",
+      storageBucket: "hackers-cup.appspot.com",
+      messagingSenderId: "765736070872",
+      appId: "1:765736070872:web:86a51c41916e7af75631ad",
+      measurementId: "G-6E1M14F510"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+    const db = getDatabase(app);
+    const firestore = getFirestore(app);
+    const auth = getAuth(app);
+
+    const CURRENT_EVENT_ID = "HC26";
+    const CURRENT_EVENT_YEAR = 2026;
+
+    const params = new URLSearchParams(location.search);
+    let activeTeeDay = ['friday','saturday','sunday'].includes(params.get('day')) ? params.get('day') : 'friday';
+
+    let users = [];
+    let eventPlayers = new Map();
+    let teeSheets = { friday: [], saturday: [], sunday: [] };
+    let unsubTeeSheets = null;
+
+    const $ = s => document.querySelector(s);
+
+    function asString(v) { return v == null ? '' : String(v); }
+    function escapeHtml(v) {
+      return String(v || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    }
+
+    function toHcNumber(v) {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function normalizeEventRecord(uid, data = {}) {
+      const hc = toHcNumber(data.handicap);
+      return {
+        ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        handicap: hc !== null ? hc : '',
+        coming: !!data.coming,
+      };
+    }
+
+    function getEventRecord(uid) {
+      return eventPlayers.get(uid) || { ambrosePartnerUid: '', handicap: '', coming: false };
+    }
+
+    function numericHandicapFor(uid, record) {
+      const raw = record.handicap !== '' && record.handicap != null ? Number(record.handicap) : NaN;
+      return Number.isFinite(raw) ? raw : null;
+    }
+
+    function isShotgun(day) { return day !== 'saturday'; }
+
+    function parseHoleLabel(s) {
+      const m = String(s||'').trim().toUpperCase().match(/^(\d{1,2})([A-Z]?)$/);
+      return m ? { num: Math.min(18,Math.max(1,parseInt(m[1],10))), letter: m[2] } : { num:1, letter:'' };
+    }
+
+    function parseTeeTime(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+      if (!m) return 8 * 60;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return 8 * 60;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
+      return h * 60 + min;
+    }
+
+    function sortTeeSheetGroups(day) {
+      const arr = teeSheets[day];
+      if (!Array.isArray(arr)) return;
+      if (isShotgun(day)) {
+        arr.sort((a, b) => {
+          const ha = parseHoleLabel(a.hole), hb = parseHoleLabel(b.hole);
+          return ha.num - hb.num || ha.letter.localeCompare(hb.letter);
+        });
+      } else {
+        arr.sort((a, b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime));
+      }
+    }
+
+    // ── Data loading ──
+    async function loadUsersAndEventPlayers() {
+      const [rtdbSnap, firestoreUsersSnap, eventPlayersSnap] = await Promise.all([
+        get(ref(db, "users")),
+        getDocs(collection(firestore, "users")),
+        getDocs(collection(firestore, "eventYears", CURRENT_EVENT_ID, "players")),
+      ]);
+      const rtdbData = rtdbSnap.exists() ? rtdbSnap.val() : {};
+      const firestoreUsers = {};
+      firestoreUsersSnap.forEach(d => { firestoreUsers[d.id] = d.data() || {}; });
+
+      users = Object.keys(rtdbData).map(uid => {
+        const r = rtdbData[uid] || {};
+        const f = firestoreUsers[uid] || {};
+        return {
+          uid,
+          displayName: r.displayName || f.displayName || "",
+          hackerNumber: f.hackerNumber || r.hackerNumber || "",
+        };
+      });
+
+      const dataByUid = {};
+      eventPlayersSnap.forEach(d => { dataByUid[d.id] = d.data() || {}; });
+      eventPlayers = new Map();
+      users.forEach(u => {
+        eventPlayers.set(u.uid, normalizeEventRecord(u.uid, dataByUid[u.uid] || {}));
+      });
+    }
+
+    function watchTeeSheet() {
+      if (unsubTeeSheets) unsubTeeSheets();
+      unsubTeeSheets = onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID), snap => {
+        const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
+        teeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        render();
+        $('#lastUpdated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }, err => {
+        console.error('Tee sheet stream failed:', err);
+        $('#tsGroupsDisplay').innerHTML = `
+          <div class="col-span-full text-center py-16 text-red-400 text-sm">
+            Couldn't load the tee sheet right now.
+          </div>`;
+      });
+    }
+
+    // ── Render ──
+    function render() {
+      $('#eventLabel').textContent = `${CURRENT_EVENT_YEAR} · ${CURRENT_EVENT_ID}`;
+
+      sortTeeSheetGroups(activeTeeDay);
+      const groups = teeSheets[activeTeeDay];
+      const display = $('#tsGroupsDisplay');
+      const empty = $('#tsEmpty');
+
+      ['friday','saturday','sunday'].forEach(day => {
+        const badge = $(`#tab-badge-${day}`);
+        if (!badge) return;
+        const n = teeSheets[day].length;
+        badge.textContent = n;
+        badge.classList.toggle('hidden', n === 0);
+      });
+
+      if (!groups.length) {
+        display.innerHTML = '';
+        display.classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        return;
+      }
+      display.classList.remove('hidden');
+      empty.classList.add('hidden');
+      empty.classList.remove('flex');
+
+      display.innerHTML = groups.map((group, gi) => {
+        const players = Array.isArray(group.players) ? group.players : [];
+
+        let playersHtml = '';
+        if (activeTeeDay === 'sunday') {
+          const done = new Set();
+          for (const uid of players) {
+            if (done.has(uid)) continue;
+            const rec = getEventRecord(uid);
+            const pid = rec.ambrosePartnerUid;
+            const prec = pid ? getEventRecord(pid) : null;
+            const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
+            if (confirmed) {
+              done.add(uid); done.add(pid);
+              const u1 = users.find(x => x.uid === uid), u2 = users.find(x => x.uid === pid);
+              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
+              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
+              playersHtml += `
+                <div class="rounded-lg border border-hackers-sky/25 bg-hackers-sky/5 px-2.5 py-2 mb-1.5 last:mb-0">
+                  <div class="text-[9px] font-bold text-hackers-light uppercase tracking-widest mb-1.5">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+                  <div class="flex items-center justify-between py-0.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u1?.displayName || '?')}</span>
+                    ${h1 !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${h1}</span>` : ''}
+                  </div>
+                  <div class="flex items-center justify-between py-0.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u2?.displayName || '?')}</span>
+                    ${h2 !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${h2}</span>` : ''}
+                  </div>
+                </div>`;
+            } else {
+              done.add(uid);
+              const u = users.find(x => x.uid === uid), hc = numericHandicapFor(uid, rec);
+              playersHtml += `
+                <div class="flex items-center justify-between py-1.5 border-b border-white/10 last:border-b-0">
+                  <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName || uid.slice(0,8))}</span>
+                  ${hc !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${hc}</span>` : ''}
+                  <span class="text-[10px] text-amber-400 shrink-0 ml-1.5">no pair</span>
+                </div>`;
+            }
+          }
+        } else {
+          playersHtml = players.map(uid => {
+            const u = users.find(x => x.uid === uid), rec = getEventRecord(uid), hc = numericHandicapFor(uid, rec);
+            return `
+              <div class="flex items-center justify-between py-1.5 border-b border-white/10 last:border-b-0">
+                <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName || uid.slice(0,8))}</span>
+                ${hc !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${hc}</span>` : ''}
+              </div>`;
+          }).join('');
+        }
+
+        return `
+          <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-3 pt-3 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-hackers-sky/15 border border-hackers-sky/20 flex items-center justify-center text-[10px] font-bold text-hackers-sky shrink-0">${gi+1}</span>
+                <span class="text-[11px] font-semibold text-gray-300">Group ${gi+1}</span>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full border border-white/10 font-mono text-gray-300 bg-white/5">${players.length}/4</span>
+            </div>
+            <div class="flex items-center gap-3 px-3 pb-2.5 border-b border-white/10 text-xs text-gray-400">
+              <span>Hole <span class="text-white font-mono">${escapeHtml(asString(group.hole || 1))}</span></span>
+              <span class="text-white/20">·</span>
+              <span>Time <span class="text-white font-mono">${escapeHtml(asString(group.teeTime || ''))}</span></span>
+            </div>
+            <div class="px-3 py-2 flex-1">
+              ${playersHtml || '<div class="text-xs text-gray-600 py-2">No players</div>'}
+            </div>
+          </div>`;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function setActiveDay(day) {
+      activeTeeDay = day;
+      document.querySelectorAll('.ts-day-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tsDay === day));
+      updateUrl();
+      render();
+    }
+
+    function updateUrl() {
+      const url = new URL(location.href);
+      url.searchParams.set('day', activeTeeDay);
+      history.replaceState(null, '', url);
+    }
+
+    document.querySelectorAll('.ts-day-tab').forEach(btn => {
+      btn.addEventListener('click', () => setActiveDay(btn.dataset.tsDay));
+      if (btn.dataset.tsDay === activeTeeDay) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+
+    // ── Init ──
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      lucide.createIcons();
+      try {
+        await loadUsersAndEventPlayers();
+      } catch (err) {
+        console.error('Failed to load players:', err);
+      }
+      watchTeeSheet();
+      setInterval(() => {
+        loadUsersAndEventPlayers().then(() => {
+          render();
+        }).catch(() => {});
+      }, 5 * 60 * 1000);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
