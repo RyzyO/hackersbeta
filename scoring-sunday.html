@@ -76,6 +76,19 @@
   function getCourseHole(holeNumber) {
     return COURSE_HOLES.find(h => h.num === Number(holeNumber)) || null;
   }
+  // Worrigee Links par per hole — always prefer the hardcoded course card over whatever
+  // par the sheet itself reports, which has disagreed with the verified course card in
+  // testing (same fix as liveSaturday.html's HOLE_PARS).
+  function parForHole(h) {
+    const ch = getCourseHole(h && h.hole);
+    return ch ? ch.par : (h ? h.par : undefined);
+  }
+  // Worrigee Links only has holes 1-18 — any other hole number reported by the sheet
+  // (blank rows, stray "0"/"20" values, typos) is dropped rather than shown.
+  function isValidHoleNumber(n) {
+    const num = Number(n);
+    return Number.isInteger(num) && num >= 1 && num <= 18;
+  }
   // ── FIREBASE ─────────────────────────────────────────────────
   const firebaseApp = initializeApp(FIREBASE_CONFIG);
   const firebaseAuth = getAuth(firebaseApp);
@@ -380,7 +393,7 @@
     startHoleNumber = snapshot.startHoleNumber ?? null;
     if (Array.isArray(snapshot.holeData) && snapshot.holeData.length) {
       holeData = [...snapshot.holeData];
-      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+      roundHoles = holeData.filter(h => isValidHoleNumber(h.hole)).sort((a, b) => Number(a.hole) - Number(b.hole));
     }
     $('login-error').textContent = '';
     renderSelectedList();
@@ -432,7 +445,7 @@
       });
       if (results[0]) {
         holeData = results[0].holes;
-        roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+        roundHoles = holeData.filter(h => isValidHoleNumber(h.hole)).sort((a, b) => Number(a.hole) - Number(b.hole));
         updateTotals();
         persistScoringSession();
       }
@@ -989,7 +1002,7 @@
       });
       await ensureAmbrosePairing();
       holeData = results[0].holes;
-      roundHoles = [...holeData].sort((a, b) => Number(a.hole) - Number(b.hole));
+      roundHoles = holeData.filter(h => isValidHoleNumber(h.hole)).sort((a, b) => Number(a.hole) - Number(b.hole));
       hide('scorecard-loading'); hide('screen-loading'); show('screen-scoring');
       startSheetPolling();
       if (sessionStage === 'active' && startHoleNumber !== null) startRoundAtHole(startHoleNumber);
@@ -1132,7 +1145,7 @@
           localTotal += Number(h.points ?? h.sheetPoints);
         } else {
           allConfirmed = false;
-          const local = computeLocalStablefordPoints(h.par, scored, index1, index2, index3, player.handicap ?? null);
+          const local = computeLocalStablefordPoints(parForHole(h), scored, index1, index2, index3, player.handicap ?? null);
           if (local !== null) localTotal += local;
           else if ((h.points ?? h.sheetPoints) !== null && (h.points ?? h.sheetPoints) !== undefined) localTotal += Number(h.points ?? h.sheetPoints);
         }
@@ -1178,7 +1191,7 @@
     // The bracketed number next to the name is the TEAM handicap used for NETT, not the
     // individual's own handicap — (hc1+hc2)/4 for a confirmed pair, solo fallback otherwise.
     const teamHandicap = computeAmbroseNett(pidx).teamHandicap;
-    const rel = getRelLabel(hole.par, existing);
+    const rel = getRelLabel(parForHole(hole), existing);
     const relHtml = rel
       ? `<span class="rel-badge ${rel.cls}">${rel.label}</span>`
       : `<span class="rel-badge rel-empty">—</span>`;
@@ -1218,7 +1231,7 @@
       return;
     }
     const existing = player.scores[hole.rowIndex] ?? '';
-    const rel = getRelLabel(hole.par, existing);
+    const rel = getRelLabel(parForHole(hole), existing);
     const runningEl = $(`prunning-${pidx}`);
     if (runningEl) runningEl.textContent = ambroseRunningLabel(pidx);
     const relEl = $(`prel-${pidx}`);
@@ -1300,7 +1313,7 @@
           <div class="hole-right">
             <div class="hole-par-block">
               <span class="hole-par-label">Par</span>
-              <span class="hole-par-val">${hole.par}</span>
+              <span class="hole-par-val">${parForHole(hole)}</span>
             </div>
             <div class="hole-progress-label">${current} / ${total}</div>
           </div>
@@ -1393,7 +1406,7 @@
     const player = players[playerIndex];
     if (!player) return;
     const hole = holeData.find(h => h.rowIndex === rowIndex);
-    const current = player.scores[rowIndex] ?? hole?.par ?? 4;
+    const current = player.scores[rowIndex] ?? (hole ? parForHole(hole) : undefined) ?? 4;
     const next = Math.max(1, Math.min(9, current + delta));
     player.scores[rowIndex] = next;
     updatePlayerCardDom(playerIndex);
