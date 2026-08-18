@@ -107,7 +107,7 @@
       if (playersSnap) {
         playersSnap.forEach(docSnap => {
           const d = docSnap.data() || {};
-          if (d.ambrosePartnerUid) ambrosePartnerMap[docSnap.id] = String(d.ambrosePartnerUid);
+          if (d.ambrosePartnerUid) ambrosePartnerMap[docSnap.id] = { p1: String(d.ambrosePartnerUid), p2: d.ambrosePartnerUid2 ? String(d.ambrosePartnerUid2) : null };
         });
       }
 

@@ -584,13 +584,17 @@
             .join(", ");
           const partner = record.ambrosePartnerUid ? usersByUid.get(record.ambrosePartnerUid) : null;
           const partnerRecord = record.ambrosePartnerUid ? (recordsByUid.get(record.ambrosePartnerUid) || {}) : {};
+          const partner2 = record.ambrosePartnerUid2 ? usersByUid.get(record.ambrosePartnerUid2) : null;
           const partnerHandicap = partner
             ? Number(partnerRecord.handicap !== undefined && partnerRecord.handicap !== null && partnerRecord.handicap !== "" ? partnerRecord.handicap : partner.handicap)
             : null;
           const myHandicapNum = Number(handicap);
-          const teamHandicap = partner && Number.isFinite(myHandicapNum) && Number.isFinite(partnerHandicap)
-            ? personalizedFormatTeamHandicap((myHandicapNum + partnerHandicap) / 4)
-            : "";
+          const teamHandicap = partner2
+            ? personalizedFormatTeamHandicap(0)
+            : (partner && Number.isFinite(myHandicapNum) && Number.isFinite(partnerHandicap)
+              ? personalizedFormatTeamHandicap((myHandicapNum + partnerHandicap) / 4)
+              : "");
+          const ambrosePartnerNames = [partner, partner2].filter(Boolean).map(p => asString(p.displayName).trim()).join(" & ");
 
           const teeDayMeta = PERSONALIZED_TEE_DAYS.find(d => d.id === personalizedTeeDay);
           const teeGroup = findPersonalizedTeeGroup(personalizedTeeDay, u.uid, usersByUid);
@@ -611,7 +615,7 @@
               pantSize: asString(record.pantSize),
               roomNumber: asString(record.roomNumber),
               roommates: roommateNames,
-              ambrosePartner: partner ? asString(partner.displayName).trim() : "",
+              ambrosePartner: ambrosePartnerNames,
               teamHandicap,
               coming: record.coming ? "Yes" : "No",
               paidStatus: personalizedPaidStatusLabel(u),

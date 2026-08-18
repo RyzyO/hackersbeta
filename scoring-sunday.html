@@ -28,10 +28,12 @@
   // The countdown needs the actual competition date, not "today" — a tee time like "3:14 PM"
   // is meaningless as a target without pinning it to this specific day.
   const SCORING_DAY_DATE = '2026-08-23';
-  // Sunday is Ambrose pairs, NETT stroke — not Stableford. Each partner still scores their
-  // own row (kept identical, mirrored — see mirrorAmbroseScore), but the team's combined
-  // NETT (gross total minus combined team handicap) is what's shown, not individual points.
-  const AMBROSE_NETT_DIVISOR = 4; // team handicap = (player1 hc + player2 hc) / 4, matches tee-sheet.html label export
+  // Sunday is Ambrose teams (pairs, or occasionally three-balls), NETT stroke — not Stableford.
+  // Each teammate still scores their own row (kept identical, mirrored — see mirrorAmbroseScore),
+  // but the team's combined NETT (gross total minus combined team handicap) is what's shown, not
+  // individual points.
+  const AMBROSE_NETT_DIVISOR = 4; // pair handicap = (player1 hc + player2 hc) / 4, matches tee-sheet.html label export
+  const AMBROSE_TRIO_HANDICAP = 0; // three-balls play off scratch, no handicap deduction
   // Sunday is a shotgun start — every group tees off at once, so this is the fallback shown
   // when a group's own teeTime isn't set in the tee sheet, not a per-group staggered time.
   const DEFAULT_SHOTGUN_TIME = '8:30 AM';
@@ -108,7 +110,7 @@
   let myGroupIndex = null;
   let holeData = [];
   let players = [];
-  let ambrosePartnerMap = new Map(); // uid -> partnerUid, from eventYears/{id}/players (ambrosePartnerUid)
+  let ambrosePartnerMap = new Map(); // uid -> {p1, p2}, from eventYears/{id}/players (ambrosePartnerUid/2)
   let scores = {};
   let roundHoles = [];
   let currentHoleIndex = 0;
@@ -653,7 +655,10 @@
       const map = new Map();
       snap.forEach(d => {
         const data = d.data() || {};
-        if (data.ambrosePartnerUid) map.set(d.id, String(data.ambrosePartnerUid));
+        // p1 is the mutually-confirmed primary partner (same rule as before). p2 is an optional
+        // second teammate a "captain" can name to form a three-ball — see admin-event.html's
+        // second partner dropdown, the only place ambrosePartnerUid2 gets written.
+        if (data.ambrosePartnerUid) map.set(d.id, { p1: String(data.ambrosePartnerUid), p2: data.ambrosePartnerUid2 ? String(data.ambrosePartnerUid2) : null });
       });
       return map;
     } catch (err) {
@@ -819,20 +824,50 @@
     if (panel && panel.classList.contains('has-my-round')) return; // a match was already found
     if (idle && (!search || search.classList.contains('hidden'))) idle.classList.remove('hidden');
   }
-  // Splits a shotgun group's raw player list into Ambrose teams of 2, using the same mutual-
-  // confirmation rule as pairAmbroseTeams() (both must name each other back). Anyone left
-  // over renders as a solo entry rather than being silently dropped.
+  // Splits a shotgun group's raw player list into Ambrose teams (pairs, or three-balls), using
+  // the same mutual-confirmation rule as pairAmbroseTeams(). Works no matter which of a trio's
+  // three members is visited first — a third teammate's own p1 points at the captain too, but
+  // the captain's own p1 is someone else, so that role is resolved separately (previously fell
+  // through to solo, rendering the third player twice: once alone, once inside their team, when
+  // visited before their captain). Anyone left over renders as a solo entry rather than being
+  // silently dropped.
   function groupIntoAmbroseTeams(groupPlayers) {
     const used = new Set();
     const teams = [];
+    const entryFor = uid => ambrosePartnerMap.get(uid) || null;
     groupPlayers.forEach(p => {
       if (used.has(p.uid)) return;
-      const partnerUid = ambrosePartnerMap.get(p.uid);
-      const partner = partnerUid
-        ? groupPlayers.find(q => q.uid === partnerUid && ambrosePartnerMap.get(q.uid) === p.uid)
-        : null;
-      if (partner) { used.add(p.uid); used.add(partner.uid); teams.push([p, partner]); }
-      else { used.add(p.uid); teams.push([p]); }
+      const entry = entryFor(p.uid);
+      const pid = entry?.p1;
+      const partner = pid ? groupPlayers.find(q => q.uid === pid) : null;
+      const pEntry = partner ? entryFor(partner.uid) : null;
+      if (partner && pEntry?.p1 === p.uid) {
+        // Mutual primary pair. Whichever side named a second teammate is the "captain".
+        const team = [p, partner];
+        used.add(p.uid); used.add(partner.uid);
+        const thirdUid = entry?.p2 || pEntry?.p2;
+        const thirdOwnerUid = entry?.p2 ? p.uid : (pEntry?.p2 ? partner.uid : null);
+        if (thirdUid) {
+          const third = groupPlayers.find(q => q.uid === thirdUid && entryFor(q.uid)?.p1 === thirdOwnerUid);
+          if (third) { team.push(third); used.add(third.uid); }
+        }
+        teams.push(team);
+        return;
+      }
+      if (partner && pEntry?.p2 === p.uid) {
+        // p is the named second teammate ("third") of captain `partner`.
+        const team = [partner, p];
+        used.add(partner.uid); used.add(p.uid);
+        const p1Uid = pEntry?.p1;
+        if (p1Uid) {
+          const p1 = groupPlayers.find(q => q.uid === p1Uid && entryFor(q.uid)?.p1 === partner.uid);
+          if (p1) { team.splice(1, 0, p1); used.add(p1.uid); }
+        }
+        teams.push(team);
+        return;
+      }
+      used.add(p.uid);
+      teams.push([p]);
     });
     return teams;
   }
@@ -876,10 +911,12 @@
       return `<div class="myround-player${isMe ? ' me' : ''}">${myroundAvatarHtml(p)}<span>${p.displayName}${isMe ? ' (You)' : ''}</span></div>`;
     };
     teams.forEach(team => {
-      if (team.length === 2) {
+      if (team.length >= 2) {
         const wrap = document.createElement('div');
         wrap.className = 'myround-team';
-        wrap.innerHTML = `${playerRowHtml(team[0])}<div class="myround-team-divider"><span>&amp;</span></div>${playerRowHtml(team[1])}`;
+        const divider = `<div class="myround-team-divider"><span>&amp;</span></div>`;
+        wrap.innerHTML = team.map(playerRowHtml).join(divider);
+        if (team.length === 3) wrap.classList.add('myround-team-trio');
         playersEl.appendChild(wrap);
       } else {
         const wrap = document.createElement('div');
@@ -1069,27 +1106,42 @@
     if (!ambrosePartnerMap.size) ambrosePartnerMap = await loadAmbrosePartners();
     pairAmbroseTeams();
   }
+  // Builds each player's `teamIndices` — the indices (in `players`) of their confirmed Ambrose
+  // teammates, not including themselves. Usually just one (a pair). A three-ball adds a second:
+  // whichever side of the mutually-confirmed primary pair also named a `p2` is the "captain",
+  // and that named player is pulled in as the third teammate if they're in this round and their
+  // own primary partner points back at the captain.
   function pairAmbroseTeams() {
-    players.forEach(p => { p.partnerIndex = null; });
+    players.forEach(p => { p.teamIndices = []; });
     players.forEach((p, i) => {
-      if (p.partnerIndex !== null || !p.uid) return;
-      const partnerUid = ambrosePartnerMap.get(p.uid);
-      if (!partnerUid) return;
-      const j = players.findIndex((q, qi) => qi !== i && q.uid === partnerUid);
+      if (!p.uid || p.teamIndices.length) return;
+      const entry = ambrosePartnerMap.get(p.uid);
+      const pid = entry?.p1;
+      if (!pid) return;
+      const j = players.findIndex((q, qi) => qi !== i && q.uid === pid);
       if (j === -1) return;
-      if (ambrosePartnerMap.get(players[j].uid) !== p.uid) return; // not mutually confirmed
-      p.partnerIndex = j;
-      players[j].partnerIndex = i;
+      const pEntry = ambrosePartnerMap.get(pid);
+      if (pEntry?.p1 !== p.uid) return; // not mutually confirmed
+      const team = [i, j];
+      const thirdUid = entry?.p2 || pEntry?.p2;
+      const thirdOwnerUid = entry?.p2 ? p.uid : (pEntry?.p2 ? pid : null);
+      if (thirdUid) {
+        const k = players.findIndex((q, qi) => qi !== i && qi !== j && q.uid === thirdUid);
+        if (k !== -1 && ambrosePartnerMap.get(thirdUid)?.p1 === thirdOwnerUid) team.push(k);
+      }
+      team.forEach(idx => { players[idx].teamIndices = team.filter(x => x !== idx); });
     });
   }
   // Ambrose is NETT stroke, not Stableford: gross strokes entered so far, minus the team's
-  // combined handicap (player1 hc + player2 hc) / 4 — same formula as the tee-sheet label
-  // export. Unpaired players (no confirmed partner in this round) fall back to their own
-  // handicap alone so they still get a usable number, clearly flagged as solo in the UI.
+  // combined handicap. Pairs use (player1 hc + player2 hc) / 4 — same formula as the tee-sheet
+  // label export. Three-balls play off scratch (0 handicap), no calculation needed. Unpaired
+  // players (no confirmed teammate in this round) fall back to their own handicap alone so they
+  // still get a usable number, clearly flagged as solo in the UI.
   function computeAmbroseNett(pidx) {
     const player = players[pidx];
-    if (!player) return { grossTotal: 0, nett: null, teamHandicap: null, isSolo: true };
-    const partner = player.partnerIndex != null ? players[player.partnerIndex] : null;
+    if (!player) return { grossTotal: 0, nett: null, teamHandicap: null, isSolo: true, teamSize: 1 };
+    const teammates = (player.teamIndices || []).map(idx => players[idx]).filter(Boolean);
+    const teamSize = 1 + teammates.length;
     let grossTotal = 0, anyScored = false;
     (player.holes || []).forEach(h => {
       const s = player.scores[h.rowIndex];
@@ -1097,29 +1149,37 @@
       anyScored = true;
       grossTotal += Number(s);
     });
-    const h1 = player.handicap != null ? Number(player.handicap) : null;
-    const h2 = partner && partner.handicap != null ? Number(partner.handicap) : null;
-    const teamHandicap = (h1 != null && h2 != null)
-      ? (h1 + h2) / AMBROSE_NETT_DIVISOR
-      : (h1 != null ? h1 / (AMBROSE_NETT_DIVISOR / 2) : null);
+    let teamHandicap;
+    if (teamSize >= 3) {
+      teamHandicap = AMBROSE_TRIO_HANDICAP;
+    } else if (teamSize === 2) {
+      const h1 = player.handicap != null ? Number(player.handicap) : null;
+      const h2 = teammates[0].handicap != null ? Number(teammates[0].handicap) : null;
+      teamHandicap = (h1 != null && h2 != null) ? (h1 + h2) / AMBROSE_NETT_DIVISOR : null;
+    } else {
+      const h1 = player.handicap != null ? Number(player.handicap) : null;
+      teamHandicap = h1 != null ? h1 / (AMBROSE_NETT_DIVISOR / 2) : null;
+    }
     const nett = anyScored && teamHandicap != null ? grossTotal - teamHandicap : (anyScored ? grossTotal : null);
-    return { grossTotal, nett, teamHandicap, isSolo: !partner };
+    return { grossTotal, nett, teamHandicap, isSolo: teamSize === 1, teamSize };
   }
-  // Ambrose is one shared ball — both partners should always carry the same score for a hole.
+  // Ambrose is one shared ball — every teammate should always carry the same score for a hole.
   // Rather than restructure score saving into a single team-level write (which would touch the
-  // save/queue/resume pipeline everywhere), each partner still saves their own row exactly like
-  // Saturday/Friday, but entering a score for one mirrors it onto the other's queued write too.
-  // Only one partner's card is ever rendered (see renderCurrentHole's dedup) — the other has no
+  // save/queue/resume pipeline everywhere), each teammate still saves their own row exactly like
+  // Saturday/Friday, but entering a score for one mirrors it onto every teammate's queued write.
+  // Only one teammate's card is ever rendered (see renderCurrentHole's dedup) — the others have no
   // DOM to update, so this only needs to touch data + the save queue, not updatePlayerCardDom.
   function mirrorAmbroseScore(playerIndex, rowIndex) {
     const player = players[playerIndex];
-    if (!player || player.partnerIndex == null) return;
-    const partner = players[player.partnerIndex];
-    if (!partner) return;
+    if (!player || !player.teamIndices || !player.teamIndices.length) return;
     const value = player.scores[rowIndex];
-    if (value === undefined) delete partner.scores[rowIndex];
-    else partner.scores[rowIndex] = value;
-    debouncedAutosave(player.partnerIndex, rowIndex);
+    player.teamIndices.forEach(idx => {
+      const teammate = players[idx];
+      if (!teammate) return;
+      if (value === undefined) delete teammate.scores[rowIndex];
+      else teammate.scores[rowIndex] = value;
+      debouncedAutosave(idx, rowIndex);
+    });
     updateSubmitButtonVisibility();
   }
   // Compute the player's running Stableford total as a per-hole hybrid sum:
@@ -1186,10 +1246,11 @@
   }
   function buildPlayerCardHtml(player, pidx, hole) {
     const existing = player.scores[hole.rowIndex] ?? '';
-    const partner = player.partnerIndex != null ? players[player.partnerIndex] : null;
-    const teamLabel = partner ? ` &amp; ${shortName(partner.name)}` : '';
+    const teammates = (player.teamIndices || []).map(idx => players[idx]).filter(Boolean);
+    const teamLabel = teammates.length ? ' &amp; ' + teammates.map(t => shortName(t.name)).join(' &amp; ') : '';
     // The bracketed number next to the name is the TEAM handicap used for NETT, not the
-    // individual's own handicap — (hc1+hc2)/4 for a confirmed pair, solo fallback otherwise.
+    // individual's own handicap — (hc1+hc2)/4 for a confirmed pair, 0 for a three-ball
+    // (scratch), solo fallback otherwise.
     const teamHandicap = computeAmbroseNett(pidx).teamHandicap;
     const rel = getRelLabel(parForHole(hole), existing);
     const relHtml = rel
@@ -1254,13 +1315,13 @@
     // wrap the index rather than stopping at the array ends.
     const prevHole = roundHoles[(currentHoleIndex - 1 + roundHoles.length) % roundHoles.length];
     const nextHole = roundHoles[(currentHoleIndex + 1) % roundHoles.length];
-    // One card per Ambrose team, not per player — a pair shares a single ball/score, so
-    // showing both partners as separate editable cards let them drift out of sync (the bug
-    // this fixes). Same dedup rule as updateTotals(): skip whichever partner has the higher
-    // index, since pairAmbroseTeams() already linked them both ways.
+    // One card per Ambrose team, not per player — a team shares a single ball/score, so
+    // showing every teammate as separate editable cards let them drift out of sync (the bug
+    // this fixes). Same dedup rule as updateTotals(): skip anyone with a teammate at a lower
+    // index, since pairAmbroseTeams() already linked them all together.
     const playerCards = players
       .map((player, pidx) => ({ player, pidx }))
-      .filter(({ player, pidx }) => !(player.partnerIndex != null && player.partnerIndex < pidx))
+      .filter(({ player, pidx }) => !(player.teamIndices || []).some(idx => idx < pidx))
       .map(({ player, pidx }) => buildPlayerCardHtml(player, pidx, hole))
       .join('');
     // Course guide panel — video uses preload="none" and no src until expanded (see
@@ -1570,13 +1631,15 @@
     const bar = $('player-summary-bar');
     if (!bar) return;
     bar.innerHTML = '';
-    // One chip per team (not per player) — a pair shares one NETT, showing it twice is noise.
-    // A player whose partnerIndex is a lower pidx than their own has already been rendered
+    // One chip per team (not per player) — a team shares one NETT, showing it twice is noise.
+    // A player with a teammate at a lower pidx than their own has already been rendered
     // as part of that earlier chip, so skip them here.
     players.forEach((player, pidx) => {
-      if (player.partnerIndex != null && player.partnerIndex < pidx) return;
-      const partner = player.partnerIndex != null ? players[player.partnerIndex] : null;
-      const teamName = partner ? `${shortName(player.name)} & ${shortName(partner.name)}` : shortName(player.name);
+      if ((player.teamIndices || []).some(idx => idx < pidx)) return;
+      const teammates = (player.teamIndices || []).map(idx => players[idx]).filter(Boolean);
+      const teamName = teammates.length
+        ? [shortName(player.name), ...teammates.map(t => shortName(t.name))].join(' & ')
+        : shortName(player.name);
       const info = computeAmbroseNett(pidx);
       const cell = document.createElement('div');
       cell.className = 'total-chip';

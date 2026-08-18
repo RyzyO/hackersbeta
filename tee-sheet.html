@@ -368,6 +368,7 @@
       const hc = toHcNumber(data.handicap) ?? toHcNumber(fallbackUser?.handicap);
       return {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        ambrosePartnerUid2: asString(data.ambrosePartnerUid2),
         skins: !!data.skins,
         coming: !!data.coming,
         saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
@@ -377,7 +378,46 @@
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { ambrosePartnerUid:'', skins:false, coming:false, handicap:'' };
+      return eventPlayers.get(uid) || { ambrosePartnerUid:'', ambrosePartnerUid2:'', skins:false, coming:false, handicap:'' };
+    }
+
+    // Resolves the confirmed Ambrose team for `uid` among `pool` (a uid array — usually a tee
+    // group or the whole eligible list). Mirrors the mutual-confirmation rule scoring-sunday.html
+    // uses: uid and its primary ambrosePartnerUid must name each other back. Whichever side of
+    // that confirmed pair also named an ambrosePartnerUid2 is the "captain" of a three-ball —
+    // that named player joins as a third teammate if they're in `pool` and their own primary
+    // partner points back at the captain. Works no matter which of the three members `uid` is —
+    // a third teammate's own ambrosePartnerUid points at the captain too, but the captain's
+    // primary partner is someone else, so that case is resolved separately (previously this
+    // fell through to "no pair", which rendered the third player twice — once alone, once in
+    // their team, when they were visited before their captain). Returns [uid] alone when
+    // unpaired.
+    function resolveAmbroseTeamUids(uid, pool) {
+      const rec = getEventRecord(uid);
+      const pid = rec.ambrosePartnerUid;
+      if (!pid || !pool.includes(pid)) return [uid];
+      const prec = getEventRecord(pid);
+      if (prec.ambrosePartnerUid === uid) {
+        const team = [uid, pid];
+        const thirdUid = rec.ambrosePartnerUid2 || prec.ambrosePartnerUid2;
+        const thirdOwnerUid = rec.ambrosePartnerUid2 ? uid : (prec.ambrosePartnerUid2 ? pid : null);
+        if (thirdUid && pool.includes(thirdUid)) {
+          const trec = getEventRecord(thirdUid);
+          if (trec.ambrosePartnerUid === thirdOwnerUid) team.push(thirdUid);
+        }
+        return team;
+      }
+      if (prec.ambrosePartnerUid2 === uid) {
+        // uid is the named second teammate ("third") of captain `pid`.
+        const team = [pid, uid];
+        const p1Uid = prec.ambrosePartnerUid;
+        if (p1Uid && pool.includes(p1Uid)) {
+          const p1rec = getEventRecord(p1Uid);
+          if (p1rec.ambrosePartnerUid === pid) team.splice(1, 0, p1Uid);
+        }
+        return team;
+      }
+      return [uid];
     }
 
     function numericHandicapFor(uid, record) {
@@ -482,25 +522,28 @@
     }
 
     function formGroupsAmbrose(players) {
+      const pool = players.map(u=>u.uid);
       const paired = new Set();
-      const validPairs = [];
+      const validTeams = [];
       for (const u of players) {
         if (paired.has(u.uid)) continue;
-        const rec = getEventRecord(u.uid);
-        const pid = rec.ambrosePartnerUid;
-        if (!pid) continue;
-        const pUser = players.find(p=>p.uid===pid);
-        if (!pUser) continue;
-        if (getEventRecord(pid).ambrosePartnerUid !== u.uid) continue;
-        validPairs.push([u.uid, pid]);
-        paired.add(u.uid); paired.add(pid);
+        const team = resolveAmbroseTeamUids(u.uid, pool);
+        if (team.length < 2) continue;
+        validTeams.push(team);
+        team.forEach(m=>paired.add(m));
       }
-      validPairs.sort((a,b)=>(tsGetHC(a[0])+tsGetHC(a[1]))/2-(tsGetHC(b[0])+tsGetHC(b[1]))/2);
+      validTeams.sort((a,b)=>{
+        const avg = t => t.reduce((s,uid)=>s+tsGetHC(uid),0)/t.length;
+        return avg(a)-avg(b);
+      });
       const groups = [];
-      let lo=0, hi=validPairs.length-1;
+      // A shotgun slot holds up to 4 players, so a three-ball fills its own slot with room
+      // for one single, while two pairs share a slot (highest+lowest combined handicap).
+      let lo=0, hi=validTeams.length-1;
       while (lo<=hi) {
-        if (lo===hi) { groups.push([...validPairs[lo]]); lo++; }
-        else { groups.push([...validPairs[lo],...validPairs[hi]]); lo++; hi--; }
+        if (lo===hi) { groups.push([...validTeams[lo]]); lo++; }
+        else if (validTeams[lo].length + validTeams[hi].length <= 4) { groups.push([...validTeams[lo],...validTeams[hi]]); lo++; hi--; }
+        else { groups.push([...validTeams[lo]]); lo++; }
       }
       const singles = players.filter(u=>!paired.has(u.uid))
         .sort((a,b)=>tsGetHC(a.uid)-tsGetHC(b.uid)).map(u=>u.uid);
@@ -553,6 +596,7 @@
         const hc = numericHandicapFor(user.uid, rec);
         const partner = rec.ambrosePartnerUid ? users.find(u=>u.uid===rec.ambrosePartnerUid) : null;
         const pairOk = partner && getEventRecord(partner.uid).ambrosePartnerUid===user.uid;
+        const third = rec.ambrosePartnerUid2 ? users.find(u=>u.uid===rec.ambrosePartnerUid2) : null;
         return `
           <button type="button" class="w-full flex items-center justify-between px-3 py-2.5 text-left border-b border-brd last:border-b-0 transition
             ${isSel ? 'bg-accent/10' : isAsgn ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'}"
@@ -561,7 +605,7 @@
               <div class="text-xs font-medium text-white truncate">${escapeHtml(userLabel(user))}</div>
               <div class="flex items-center gap-2 mt-0.5">
                 ${hc!==null ? `<span class="text-[10px] text-slate-500 font-mono">HC ${hc}</span>` : ''}
-                ${partner ? `<span class="text-[10px] ${pairOk?'text-accent':'text-amber-400'}">${pairOk?'⇄':'→'} ${escapeHtml(partner.displayName||'?')}</span>` : ''}
+                ${partner ? `<span class="text-[10px] ${pairOk?'text-accent':'text-amber-400'}">${pairOk?'⇄':'→'} ${escapeHtml(partner.displayName||'?')}${third?' & '+escapeHtml(third.displayName||'?'):''}</span>` : ''}
                 ${isAsgn ? '<span class="text-[10px] text-slate-600">In group</span>' : ''}
               </div>
             </div>
@@ -639,32 +683,30 @@
             for (const uid of players) {
               if (done.has(uid)) continue;
               const rec = getEventRecord(uid);
-              const pid = rec.ambrosePartnerUid;
-              const prec = pid ? getEventRecord(pid) : null;
-              const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid===uid;
-              if (confirmed) {
-                done.add(uid); done.add(pid);
-                const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
-                const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
-                const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
-                const pi1=players.indexOf(uid), pi2=players.indexOf(pid);
+              const team = resolveAmbroseTeamUids(uid, players);
+              if (team.length>=2) {
+                team.forEach(m=>done.add(m));
+                const isTrio = team.length>=3;
+                const teamHc = isTrio ? 0 : (() => {
+                  const h1=numericHandicapFor(team[0],getEventRecord(team[0])), h2=numericHandicapFor(team[1],getEventRecord(team[1]));
+                  return h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
+                })();
+                const label = isTrio ? 'Three-ball · Scratch (HC 0)' : `Pair${teamHc?' · Team HC '+teamHc:''}`;
+                const rowsHtml = team.map(m => {
+                  const u=users.find(x=>x.uid===m), h=numericHandicapFor(m,getEventRecord(m)), pi=players.indexOf(m);
+                  return `
+                    <div class="flex items-center justify-between py-0.5">
+                      <div class="min-w-0 flex items-center gap-1.5">
+                        <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName||'?')}</span>
+                        ${h!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h}</span>`:''}
+                      </div>
+                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi}">✕</button>
+                    </div>`;
+                }).join('');
                 playersHtml += `
-                  <div class="rounded-lg border border-blue-500/25 bg-blue-500/5 px-2.5 py-2 mb-1.5 last:mb-0">
-                    <div class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1.5">Pair${teamHc?' · Team HC '+teamHc:''}</div>
-                    <div class="flex items-center justify-between py-0.5">
-                      <div class="min-w-0 flex items-center gap-1.5">
-                        <span class="text-xs font-medium text-white truncate">${escapeHtml(u1?.displayName||'?')}</span>
-                        ${h1!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h1}</span>`:''}
-                      </div>
-                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi1}">✕</button>
-                    </div>
-                    <div class="flex items-center justify-between py-0.5">
-                      <div class="min-w-0 flex items-center gap-1.5">
-                        <span class="text-xs font-medium text-white truncate">${escapeHtml(u2?.displayName||'?')}</span>
-                        ${h2!==null?`<span class="text-[10px] text-slate-500 font-mono shrink-0">HC ${h2}</span>`:''}
-                      </div>
-                      <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition ml-2 shrink-0 w-4 h-4 flex items-center justify-center" data-ts-rem-player="${gi},${pi2}">✕</button>
-                    </div>
+                  <div class="rounded-lg border ${isTrio?'border-purple-500/25 bg-purple-500/5':'border-blue-500/25 bg-blue-500/5'} px-2.5 py-2 mb-1.5 last:mb-0">
+                    <div class="text-[9px] font-bold ${isTrio?'text-purple-400':'text-blue-400'} uppercase tracking-widest mb-1.5">${label}</div>
+                    ${rowsHtml}
                   </div>`;
               } else {
                 done.add(uid);
@@ -906,24 +948,27 @@
           const done=new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
-            const rec=getEventRecord(uid), pid=rec.ambrosePartnerUid, prec=pid?getEventRecord(pid):null;
-            const confirmed = pid&&players.includes(pid)&&prec?.ambrosePartnerUid===uid;
-            if (confirmed) {
-              done.add(uid); done.add(pid);
-              const u1=users.find(x=>x.uid===uid), u2=users.find(x=>x.uid===pid);
-              const h1=numericHandicapFor(uid,rec), h2=numericHandicapFor(pid,prec);
-              const teamHc = h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
-              playersHtml += `
-                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
-                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc?' · Team HC '+teamHc:''}</div>
+            const team = resolveAmbroseTeamUids(uid, players);
+            if (team.length>=2) {
+              team.forEach(m=>done.add(m));
+              const isTrio = team.length>=3;
+              const teamHc = isTrio ? 0 : (() => {
+                const h1=numericHandicapFor(team[0],getEventRecord(team[0])), h2=numericHandicapFor(team[1],getEventRecord(team[1]));
+                return h1!==null&&h2!==null ? ((h1+h2)/4).toFixed(2) : null;
+              })();
+              const label = isTrio ? 'Three-ball · Scratch (HC 0)' : `Pair${teamHc?' · Team HC '+teamHc:''}`;
+              const rowsHtml = team.map(m => {
+                const u=users.find(x=>x.uid===m), h=numericHandicapFor(m,getEventRecord(m));
+                return `
                   <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName||'?')}</span>
-                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1!==null?'HC '+h1:'—'}</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;">
-                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u2?.displayName||'?')}</span>
-                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h2!==null?'HC '+h2:'—'}</span>
-                  </div>
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u?.displayName||'?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h!==null?'HC '+h:'—'}</span>
+                  </div>`;
+              }).join('');
+              playersHtml += `
+                <div style="background:${isTrio?'#faf5ff':'#eff6ff'};border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid ${isTrio?'#a855f7':'#3b82f6'};">
+                  <div style="font-size:9px;font-weight:700;color:${isTrio?'#7e22ce':'#1d4ed8'};letter-spacing:.08em;margin-bottom:5px;text-transform:uppercase;">${label}</div>
+                  ${rowsHtml}
                 </div>`;
             } else { done.add(uid); playersHtml+=pRow(uid); }
           }
@@ -1159,29 +1204,28 @@
           }
         }
 
-        // Sunday — Ambrose pairs
+        // Sunday — Ambrose teams (pairs, or three-balls off scratch)
         for (const g of (teeSheets.sunday || [])) {
           const teeInfo = g.hole ? `Ambrose: Tee ${g.hole}` : 'Ambrose';
           const players = g.players || [];
           const done = new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
-            const rec = getEventRecord(uid);
-            const pid = rec.ambrosePartnerUid;
-            const prec = pid ? getEventRecord(pid) : null;
-            const paired = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
-            if (paired) {
-              done.add(uid); done.add(pid);
-              const u1 = users.find(x => x.uid === uid);
-              const u2 = users.find(x => x.uid === pid);
-              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
-              const teamHc = h1 != null && h2 != null ? (h1 + h2) / 4 : null;
+            const team = resolveAmbroseTeamUids(uid, players);
+            if (team.length >= 2) {
+              team.forEach(m => done.add(m));
+              const teamUsers = team.map(m => users.find(x => x.uid === m));
+              const teamHc = team.length >= 3 ? 0 : (() => {
+                const h1 = numericHandicapFor(team[0], getEventRecord(team[0]));
+                const h2 = numericHandicapFor(team[1], getEventRecord(team[1]));
+                return h1 != null && h2 != null ? (h1 + h2) / 4 : null;
+              })();
               const fmt = u => { const p = (u?.displayName || '?').trim().split(/\s+/); return p.length >= 2 ? `${p[0][0]} ${p[p.length-1]}` : p[0]; };
-              labels.push({ name: `${fmt(u1)} / ${fmt(u2)}`, hc: teamHc, teeInfo, day: 'sunday' });
+              labels.push({ name: teamUsers.map(fmt).join(' / '), hc: teamHc, teeInfo, day: 'sunday' });
             } else if (!done.has(uid)) {
               done.add(uid);
               const u = users.find(x => x.uid === uid);
-              labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo, day: 'sunday' });
+              labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, getEventRecord(uid)), teeInfo, day: 'sunday' });
             }
           }
         }
@@ -1431,24 +1475,24 @@
 
     // ── Event listeners ──
 
-    // On Sunday, confirmed Ambrose partners stage and unstage together
-    function confirmedPartnerUid(uid) {
-      if (activeTeeDay !== 'sunday') return null;
-      const pid = getEventRecord(uid).ambrosePartnerUid;
-      if (!pid || getEventRecord(pid).ambrosePartnerUid !== uid) return null;
-      return pid;
+    // On Sunday, confirmed Ambrose teammates (a pair, or all three of a three-ball) stage and
+    // unstage together.
+    function confirmedTeammateUids(uid) {
+      if (activeTeeDay !== 'sunday') return [];
+      const eligibleUids = getEligibleForDay(activeTeeDay).map(u => u.uid);
+      return resolveAmbroseTeamUids(uid, eligibleUids).filter(m => m !== uid);
     }
     function stagePartner(uid) {
-      const pid = confirmedPartnerUid(uid);
-      if (!pid || tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
-      if (!getEligibleForDay(activeTeeDay).some(u => u.uid === pid)) return;
-      tsSelectedPlayers.push(pid);
+      confirmedTeammateUids(uid).forEach(pid => {
+        if (tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
+        tsSelectedPlayers.push(pid);
+      });
     }
     function unstagePartner(uid) {
-      const pid = confirmedPartnerUid(uid);
-      if (!pid) return;
-      const i = tsSelectedPlayers.indexOf(pid);
-      if (i >= 0) tsSelectedPlayers.splice(i, 1);
+      confirmedTeammateUids(uid).forEach(pid => {
+        const i = tsSelectedPlayers.indexOf(pid);
+        if (i >= 0) tsSelectedPlayers.splice(i, 1);
+      });
     }
 
     // Pool click

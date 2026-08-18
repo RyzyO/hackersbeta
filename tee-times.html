@@ -251,13 +251,48 @@
       const hc = toHcNumber(data.handicap);
       return {
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        ambrosePartnerUid2: asString(data.ambrosePartnerUid2),
         handicap: hc !== null ? hc : '',
         coming: !!data.coming,
       };
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { ambrosePartnerUid: '', handicap: '', coming: false };
+      return eventPlayers.get(uid) || { ambrosePartnerUid: '', ambrosePartnerUid2: '', handicap: '', coming: false };
+    }
+
+    // Resolves the confirmed Ambrose team for `uid` among `pool` (a uid array). Mirrors the
+    // mutual-confirmation rule scoring-sunday.html/tee-sheet.html use — see those files for the
+    // full rationale. Works no matter which of the three members `uid` is — a third teammate's
+    // own ambrosePartnerUid points at the captain too, but the captain's primary partner is
+    // someone else, so that case is resolved separately (previously fell through to "no pair",
+    // rendering the third player twice when visited before their captain). Returns [uid] alone
+    // when unpaired.
+    function resolveAmbroseTeamUids(uid, pool) {
+      const rec = getEventRecord(uid);
+      const pid = rec.ambrosePartnerUid;
+      if (!pid || !pool.includes(pid)) return [uid];
+      const prec = getEventRecord(pid);
+      if (prec.ambrosePartnerUid === uid) {
+        const team = [uid, pid];
+        const thirdUid = rec.ambrosePartnerUid2 || prec.ambrosePartnerUid2;
+        const thirdOwnerUid = rec.ambrosePartnerUid2 ? uid : (prec.ambrosePartnerUid2 ? pid : null);
+        if (thirdUid && pool.includes(thirdUid)) {
+          const trec = getEventRecord(thirdUid);
+          if (trec.ambrosePartnerUid === thirdOwnerUid) team.push(thirdUid);
+        }
+        return team;
+      }
+      if (prec.ambrosePartnerUid2 === uid) {
+        const team = [pid, uid];
+        const p1Uid = prec.ambrosePartnerUid;
+        if (p1Uid && pool.includes(p1Uid)) {
+          const p1rec = getEventRecord(p1Uid);
+          if (p1rec.ambrosePartnerUid === pid) team.splice(1, 0, p1Uid);
+        }
+        return team;
+      }
+      return [uid];
     }
 
     function numericHandicapFor(uid, record) {
@@ -383,29 +418,31 @@
           const done = new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
-            const rec = getEventRecord(uid);
-            const pid = rec.ambrosePartnerUid;
-            const prec = pid ? getEventRecord(pid) : null;
-            const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
-            if (confirmed) {
-              done.add(uid); done.add(pid);
-              const u1 = users.find(x => x.uid === uid), u2 = users.find(x => x.uid === pid);
-              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
-              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
+            const team = resolveAmbroseTeamUids(uid, players);
+            if (team.length >= 2) {
+              team.forEach(m => done.add(m));
+              const isTrio = team.length >= 3;
+              const teamHc = isTrio ? 0 : (() => {
+                const h1 = numericHandicapFor(team[0], getEventRecord(team[0])), h2 = numericHandicapFor(team[1], getEventRecord(team[1]));
+                return h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
+              })();
+              const label = isTrio ? 'Three-ball · Scratch (HC 0)' : `Pair${teamHc ? ' · Team HC ' + teamHc : ''}`;
+              const rowsHtml = team.map(m => {
+                const u = users.find(x => x.uid === m), h = numericHandicapFor(m, getEventRecord(m));
+                return `
+                  <div class="flex items-center justify-between py-0.5">
+                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u?.displayName || '?')}</span>
+                    ${h !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${h}</span>` : ''}
+                  </div>`;
+              }).join('');
               playersHtml += `
-                <div class="rounded-lg border border-hackers-sky/25 bg-hackers-sky/5 px-2.5 py-2 mb-1.5 last:mb-0">
-                  <div class="text-[9px] font-bold text-hackers-light uppercase tracking-widest mb-1.5">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
-                  <div class="flex items-center justify-between py-0.5">
-                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u1?.displayName || '?')}</span>
-                    ${h1 !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${h1}</span>` : ''}
-                  </div>
-                  <div class="flex items-center justify-between py-0.5">
-                    <span class="text-xs font-medium text-white truncate">${escapeHtml(u2?.displayName || '?')}</span>
-                    ${h2 !== null ? `<span class="text-[10px] text-gray-500 font-mono shrink-0">HC ${h2}</span>` : ''}
-                  </div>
+                <div class="rounded-lg border ${isTrio ? 'border-purple-400/25 bg-purple-400/5' : 'border-hackers-sky/25 bg-hackers-sky/5'} px-2.5 py-2 mb-1.5 last:mb-0">
+                  <div class="text-[9px] font-bold text-hackers-light uppercase tracking-widest mb-1.5">${label}</div>
+                  ${rowsHtml}
                 </div>`;
             } else {
               done.add(uid);
+              const rec = getEventRecord(uid);
               const u = users.find(x => x.uid === uid), hc = numericHandicapFor(uid, rec);
               playersHtml += `
                 <div class="flex items-center justify-between py-1.5 border-b border-white/10 last:border-b-0">

@@ -546,9 +546,13 @@
         <select id="editPartner" class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
           <option value="">No partner</option>
         </select>
+        <label class="block text-[11px] uppercase tracking-widest text-slate-500 font-semibold mt-3 mb-2">Second Partner <span class="text-slate-600 font-normal normal-case">(three-ball, off scratch)</span></label>
+        <select id="editPartner2" class="w-full px-3 py-2.5 rounded-xl bg-s2 border border-brd text-white text-sm focus:outline-none focus:border-accent transition appearance-none cursor-pointer">
+          <option value="">No second partner</option>
+        </select>
         <div class="mt-2 rounded-xl border border-brd bg-s2/70 px-3 py-2">
           <div id="editTeamHandicap" class="text-sm font-medium text-slate-200">Team handicap: —</div>
-          <div class="text-[11px] text-slate-500 mt-0.5">Uses only the current player and selected partner.</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">Uses only the current player and selected partner(s). Adding a second partner makes this a three-ball, played off scratch (0 handicap).</div>
         </div>
       </section>
 
@@ -1489,6 +1493,7 @@
     const editDisplayName = $("#editDisplayName");
     const editGolfAustraliaNumber = $("#editGolfAustraliaNumber");
     const editPartner = $("#editPartner");
+    const editPartner2 = $("#editPartner2");
     const editTeamHandicap = $("#editTeamHandicap");
     const editFinancialStatus = $("#editFinancialStatus");
     const editAmtOutstanding = $("#editAmtOutstanding");
@@ -1638,6 +1643,7 @@ function downloadFullComingSpreadsheetCsv() {
   const rows = getComingPlayersForExport().map(user => {
     const record = eventPlayers.get(user.uid) || {};
     const partner = users.find(candidate => candidate.uid === record.ambrosePartnerUid);
+    const partner2 = users.find(candidate => candidate.uid === record.ambrosePartnerUid2);
     const roommateNames = (record.roommates || [])
       .map(roommateUid => {
         const roommate = users.find(candidate => candidate.uid === roommateUid);
@@ -1655,6 +1661,7 @@ function downloadFullComingSpreadsheetCsv() {
       asString(record.shirtSize).trim(),
       roommateNames,
       partner ? asString(partner.displayName).trim() : "",
+      partner2 ? asString(partner2.displayName).trim() : "",
       record.coming ? "Yes" : "No",
       paidStatusFor(user).label,
       record.skins ? "Yes" : "No",
@@ -1668,7 +1675,7 @@ function downloadFullComingSpreadsheetCsv() {
   }
 
   const csv = [
-    ["Name", "Handicap", "Mobile", "Email", "Hackers No.", "Shirt Siz", "Room", "Ambrose", "Coming", "Paid", "Skins", "UID"].map(csvEscape).join(","),
+    ["Name", "Handicap", "Mobile", "Email", "Hackers No.", "Shirt Siz", "Room", "Ambrose", "Ambrose 2", "Coming", "Paid", "Skins", "UID"].map(csvEscape).join(","),
     ...rows.map(row => row.map(csvEscape).join(","))
   ].join("\n");
 
@@ -1703,6 +1710,7 @@ function downloadAllMembersCsv() {
     .map(user => {
       const record = eventPlayers.get(user.uid) || {};
       const partner = users.find(c => c.uid === record.ambrosePartnerUid);
+      const partner2 = users.find(c => c.uid === record.ambrosePartnerUid2);
       const roommateNames = (record.roommates || [])
         .map(uid => { const r = users.find(c => c.uid === uid); return r ? asString(r.displayName).trim() : ""; })
         .filter(Boolean).join(", ");
@@ -1722,6 +1730,7 @@ function downloadAllMembersCsv() {
         asString(record.roomNumber).trim(),
         roommateNames,
         partner ? asString(partner.displayName).trim() : "",
+        partner2 ? asString(partner2.displayName).trim() : "",
         asString(record.handicap !== "" && record.handicap != null ? record.handicap : user.handicap).trim(),
       ];
     });
@@ -1729,7 +1738,7 @@ function downloadAllMembersCsv() {
   if (!rows.length) { showToast("No members to export", "warn"); return; }
 
   const csv = [
-    ["Name","Hacker No.","Handicap","Mobile","Email","GA Number","Paid Status","Amt Outstanding","Coming","Skins","Shirt","Pants","Room No.","Roommates","Ambrose Partner","Event HC"].map(csvEscape).join(","),
+    ["Name","Hacker No.","Handicap","Mobile","Email","GA Number","Paid Status","Amt Outstanding","Coming","Skins","Shirt","Pants","Room No.","Roommates","Ambrose Partner","Ambrose Partner 2","Event HC"].map(csvEscape).join(","),
     ...rows.map(row => row.map(csvEscape).join(","))
   ].join("\n");
 
@@ -2608,6 +2617,7 @@ async function downloadRoomsSpreadsheet() {
         roomNumber: asString(data.roomNumber),
         roommates: Array.isArray(data.roommates) ? uniqueSorted(data.roommates.filter(roommateUid => roommateUid && roommateUid !== uid)) : [],
         ambrosePartnerUid: asString(data.ambrosePartnerUid),
+        ambrosePartnerUid2: asString(data.ambrosePartnerUid2),
         skins: !!data.skins,
         coming: !!data.coming,
         saturdayAttendance: data.saturdayAttendance == null ? true : !!data.saturdayAttendance,
@@ -2671,6 +2681,7 @@ async function downloadRoomsSpreadsheet() {
           roommates: current.roommates,
           roomNumber: current.roomNumber,
           ambrosePartnerUid: current.ambrosePartnerUid,
+          ambrosePartnerUid2: current.ambrosePartnerUid2,
           handicap: current.handicap,
         });
       });
@@ -2717,7 +2728,44 @@ async function downloadRoomsSpreadsheet() {
     }
 
     function getEventRecord(uid) {
-      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", skins: false, coming: false, saturdayAttendance: true, sundayAttendance: true, thursday: false, sponsorNotes: "", handicap: "" };
+      return eventPlayers.get(uid) || { shirtSize: "", pantSize: "", roommates: [], ambrosePartnerUid: "", ambrosePartnerUid2: "", skins: false, coming: false, saturdayAttendance: true, sundayAttendance: true, thursday: false, sponsorNotes: "", handicap: "" };
+    }
+
+    // Resolves the confirmed Ambrose team for `uid` among `pool` (a uid array). Mirrors the
+    // mutual-confirmation rule scoring-sunday.html/tee-sheet.html use: uid and its primary
+    // ambrosePartnerUid must name each other back. Whichever side of that confirmed pair also
+    // named an ambrosePartnerUid2 is the "captain" of a three-ball — that named player joins as
+    // a third teammate if they're in `pool` and their own primary partner points back at the
+    // captain. Works no matter which of the three members `uid` is — a third teammate's own
+    // ambrosePartnerUid points at the captain too, but the captain's primary partner is someone
+    // else, so that case is resolved separately (previously fell through to "no pair", rendering
+    // the third player twice when visited before their captain). Returns [uid] alone when
+    // unpaired.
+    function resolveAmbroseTeamUids(uid, pool) {
+      const rec = getEventRecord(uid);
+      const pid = rec.ambrosePartnerUid;
+      if (!pid || !pool.includes(pid)) return [uid];
+      const prec = getEventRecord(pid);
+      if (prec.ambrosePartnerUid === uid) {
+        const team = [uid, pid];
+        const thirdUid = rec.ambrosePartnerUid2 || prec.ambrosePartnerUid2;
+        const thirdOwnerUid = rec.ambrosePartnerUid2 ? uid : (prec.ambrosePartnerUid2 ? pid : null);
+        if (thirdUid && pool.includes(thirdUid)) {
+          const trec = getEventRecord(thirdUid);
+          if (trec.ambrosePartnerUid === thirdOwnerUid) team.push(thirdUid);
+        }
+        return team;
+      }
+      if (prec.ambrosePartnerUid2 === uid) {
+        const team = [pid, uid];
+        const p1Uid = prec.ambrosePartnerUid;
+        if (p1Uid && pool.includes(p1Uid)) {
+          const p1rec = getEventRecord(p1Uid);
+          if (p1rec.ambrosePartnerUid === pid) team.splice(1, 0, p1Uid);
+        }
+        return team;
+      }
+      return [uid];
     }
 
     function roomGroupMembers(uid, record) { return uniqueSorted([uid, ...(record.roommates || [])]); }
@@ -2739,9 +2787,15 @@ async function downloadRoomsSpreadsheet() {
 
       const record = getEventRecord(currentEditUid);
       const partnerUid = asString(editPartner.value || record.ambrosePartnerUid).trim();
+      const partner2Uid = asString(editPartner2.value || record.ambrosePartnerUid2).trim();
 
       if (!partnerUid) {
         editTeamHandicap.textContent = "Team handicap: —";
+        return;
+      }
+
+      if (partner2Uid) {
+        editTeamHandicap.textContent = "Team handicap: 0 (three-ball, scratch)";
         return;
       }
 
@@ -2829,28 +2883,29 @@ async function downloadRoomsSpreadsheet() {
     }
 
     function formGroupsAmbrose(players) {
+      const pool = players.map(u => u.uid);
       const paired = new Set();
-      const validPairs = [];
+      const validTeams = [];
       for (const u of players) {
         if (paired.has(u.uid)) continue;
-        const rec = getEventRecord(u.uid);
-        const pid = rec.ambrosePartnerUid;
-        if (!pid) continue;
-        const pUser = players.find(p => p.uid === pid);
-        if (!pUser) continue;
-        const pRec = getEventRecord(pid);
-        if (pRec.ambrosePartnerUid !== u.uid) continue;
-        validPairs.push([u.uid, pid]);
-        paired.add(u.uid);
-        paired.add(pid);
+        const team = resolveAmbroseTeamUids(u.uid, pool);
+        if (team.length < 2) continue;
+        validTeams.push(team);
+        team.forEach(m => paired.add(m));
       }
-      // Sort pairs by average handicap ascending, then snake-interleave low+high
-      validPairs.sort((a, b) => (tsGetHC(a[0]) + tsGetHC(a[1])) / 2 - (tsGetHC(b[0]) + tsGetHC(b[1])) / 2);
+      // Sort teams by average handicap ascending, then snake-interleave low+high
+      validTeams.sort((a, b) => {
+        const avg = t => t.reduce((s, uid) => s + tsGetHC(uid), 0) / t.length;
+        return avg(a) - avg(b);
+      });
       const groups = [];
-      let lo = 0, hi = validPairs.length - 1;
+      // A shotgun slot holds up to 4 players, so a three-ball fills its own slot with room
+      // for one single, while two pairs share a slot (highest+lowest combined handicap).
+      let lo = 0, hi = validTeams.length - 1;
       while (lo <= hi) {
-        if (lo === hi) { groups.push([...validPairs[lo]]); lo++; }
-        else { groups.push([...validPairs[lo], ...validPairs[hi]]); lo++; hi--; }
+        if (lo === hi) { groups.push([...validTeams[lo]]); lo++; }
+        else if (validTeams[lo].length + validTeams[hi].length <= 4) { groups.push([...validTeams[lo], ...validTeams[hi]]); lo++; hi--; }
+        else { groups.push([...validTeams[lo]]); lo++; }
       }
       // Append unpaired singles via snake draft into existing groups first, then overflow
       const singles = players.filter(u => !paired.has(u.uid))
@@ -2933,6 +2988,7 @@ async function downloadRoomsSpreadsheet() {
         // Check if partner is confirmed (bidirectional)
         const partnerRec = partner ? getEventRecord(partner.uid) : null;
         const pairConfirmed = partner && partnerRec && partnerRec.ambrosePartnerUid === user.uid;
+        const third = rec.ambrosePartnerUid2 ? users.find(u => u.uid === rec.ambrosePartnerUid2) : null;
         return `
           <button type="button" class="w-full flex items-center justify-between px-3 py-2.5 text-left border-b border-brd last:border-b-0 transition
             ${isSelected ? 'bg-accent/10' : isAssigned ? 'opacity-40 cursor-not-allowed' : 'hover:bg-s2'}"
@@ -2941,7 +2997,7 @@ async function downloadRoomsSpreadsheet() {
               <div class="text-sm font-medium text-white truncate">${escapeHtml(userLabel(user))}</div>
               <div class="flex items-center gap-2 mt-0.5">
                 ${hc !== null ? `<span class="text-[10px] text-slate-500 font-mono">HC ${hc}</span>` : ''}
-                ${partnerName ? `<span class="text-[10px] ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partnerName)}</span>` : ''}
+                ${partnerName ? `<span class="text-[10px] ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partnerName)}${third ? ' & ' + escapeHtml(third.displayName || '?') : ''}</span>` : ''}
                 ${isAssigned ? '<span class="text-[10px] text-slate-600">In group</span>' : ''}
               </div>
             </div>
@@ -3008,12 +3064,13 @@ async function downloadRoomsSpreadsheet() {
                   const hc = numericHandicapFor(uid, rec);
                   const partner = rec.ambrosePartnerUid ? users.find(x => x.uid === rec.ambrosePartnerUid) : null;
                   const pairConfirmed = partner && getEventRecord(partner.uid).ambrosePartnerUid === uid;
+                  const third = rec.ambrosePartnerUid2 ? users.find(x => x.uid === rec.ambrosePartnerUid2) : null;
                   return `
                     <div class="flex items-center justify-between gap-2 py-1 border-b border-brd/40 last:border-b-0">
                       <div class="min-w-0">
                         <span class="text-sm text-white font-medium">${escapeHtml(u ? (u.displayName || '(no name)') : uid.slice(0, 8))}</span>
                         ${hc !== null ? `<span class="text-[10px] text-slate-500 ml-1.5 font-mono">HC ${hc}</span>` : ''}
-                        ${partner && activeTeeDay === 'sunday' ? `<span class="text-[10px] ml-1.5 ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partner.displayName || 'Unknown')}</span>` : ''}
+                        ${partner && activeTeeDay === 'sunday' ? `<span class="text-[10px] ml-1.5 ${pairConfirmed ? 'text-accent' : 'text-amber-400'}">${pairConfirmed ? '⇄' : '→'} ${escapeHtml(partner.displayName || 'Unknown')}${third ? ' & ' + escapeHtml(third.displayName || 'Unknown') : ''}</span>` : ''}
                       </div>
                       <button type="button" class="text-[10px] text-slate-600 hover:text-red-400 transition shrink-0" data-ts-rem-player="${gi},${pi}">✕</button>
                     </div>`;
@@ -3212,28 +3269,27 @@ async function downloadRoomsSpreadsheet() {
           const done = new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
-            const rec = getEventRecord(uid);
-            const pid = rec.ambrosePartnerUid;
-            const prec = pid ? getEventRecord(pid) : null;
-            const confirmed = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
-            if (confirmed) {
-              done.add(uid); done.add(pid);
-              const u1 = users.find(x => x.uid === uid);
-              const u2 = users.find(x => x.uid === pid);
-              const h1 = numericHandicapFor(uid, rec);
-              const h2 = numericHandicapFor(pid, prec);
-              const teamHc = h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
-              playersHtml += `
-                <div style="background:#eff6ff;border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #3b82f6;">
-                  <div style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Pair${teamHc ? ' · Team HC ' + teamHc : ''}</div>
+            const team = resolveAmbroseTeamUids(uid, players);
+            if (team.length >= 2) {
+              team.forEach(m => done.add(m));
+              const isTrio = team.length >= 3;
+              const teamHc = isTrio ? 0 : (() => {
+                const h1 = numericHandicapFor(team[0], getEventRecord(team[0])), h2 = numericHandicapFor(team[1], getEventRecord(team[1]));
+                return h1 !== null && h2 !== null ? ((h1 + h2) / 4).toFixed(2) : null;
+              })();
+              const label = isTrio ? 'Three-ball · Scratch (HC 0)' : `Pair${teamHc ? ' · Team HC ' + teamHc : ''}`;
+              const rowsHtml = team.map(m => {
+                const u = users.find(x => x.uid === m), h = numericHandicapFor(m, getEventRecord(m));
+                return `
                   <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u1?.displayName || '?')}</span>
-                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h1 !== null ? 'HC ' + h1 : '—'}</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;">
-                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u2?.displayName || '?')}</span>
-                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h2 !== null ? 'HC ' + h2 : '—'}</span>
-                  </div>
+                    <span style="font-size:13px;font-weight:600;color:#111827;">${escapeHtml(u?.displayName || '?')}</span>
+                    <span style="font-size:11px;color:#6b7280;font-family:monospace,sans-serif;">${h !== null ? 'HC ' + h : '—'}</span>
+                  </div>`;
+              }).join('');
+              playersHtml += `
+                <div style="background:${isTrio ? '#faf5ff' : '#eff6ff'};border-radius:6px;padding:8px 10px;margin-bottom:6px;border-left:3px solid ${isTrio ? '#a855f7' : '#3b82f6'};">
+                  <div style="font-size:9px;font-weight:700;color:${isTrio ? '#7e22ce' : '#1d4ed8'};letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">${label}</div>
+                  ${rowsHtml}
                 </div>`;
             } else {
               done.add(uid);
@@ -3455,29 +3511,27 @@ async function downloadRoomsSpreadsheet() {
           }
         }
 
-        // Sunday — Ambrose pairs
+        // Sunday — Ambrose teams (pairs, or three-balls off scratch)
         for (const g of (teeSheets.sunday || [])) {
           const teeInfo = g.hole ? `Ambrose: Tee ${g.hole}` : 'Ambrose';
           const players = g.players || [];
           const done = new Set();
           for (const uid of players) {
             if (done.has(uid)) continue;
-            const rec = getEventRecord(uid);
-            const pid = rec.ambrosePartnerUid;
-            const prec = pid ? getEventRecord(pid) : null;
-            const paired = pid && players.includes(pid) && prec?.ambrosePartnerUid === uid;
-            if (paired) {
-              done.add(uid); done.add(pid);
-              const u1 = users.find(x => x.uid === uid);
-              const u2 = users.find(x => x.uid === pid);
-              const h1 = numericHandicapFor(uid, rec), h2 = numericHandicapFor(pid, prec);
-              const teamHc = h1 != null && h2 != null ? (h1 + h2) / 4 : null;
+            const team = resolveAmbroseTeamUids(uid, players);
+            if (team.length >= 2) {
+              team.forEach(m => done.add(m));
+              const teamUsers = team.map(m => users.find(x => x.uid === m));
+              const teamHc = team.length >= 3 ? 0 : (() => {
+                const h1 = numericHandicapFor(team[0], getEventRecord(team[0])), h2 = numericHandicapFor(team[1], getEventRecord(team[1]));
+                return h1 != null && h2 != null ? (h1 + h2) / 4 : null;
+              })();
               const initSurname = u => { const p = (u?.displayName || '?').trim().split(/\s+/); return p.length >= 2 ? `${p[0][0]} ${p[p.length-1]}` : p[0]; };
-              labels.push({ name: `${initSurname(u1)} / ${initSurname(u2)}`, hc: teamHc, teeInfo, day: 'sunday' });
+              labels.push({ name: teamUsers.map(initSurname).join(' / '), hc: teamHc, teeInfo, day: 'sunday' });
             } else if (!done.has(uid)) {
               done.add(uid);
               const u = users.find(x => x.uid === uid);
-              labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, rec), teeInfo, day: 'sunday' });
+              labels.push({ name: u?.displayName || '?', hc: numericHandicapFor(uid, getEventRecord(uid)), teeInfo, day: 'sunday' });
             }
           }
         }
@@ -4226,6 +4280,8 @@ async function downloadRoomsSpreadsheet() {
         }).join(", ");
         const partner = users.find(u => u.uid === record.ambrosePartnerUid);
         const partnerName = partner ? (partner.displayName || "Unknown") : null;
+        const partner2 = users.find(u => u.uid === record.ambrosePartnerUid2);
+        const partner2Name = partner2 ? (partner2.displayName || "Unknown") : null;
 
         // Desktop row
         const tr = document.createElement("tr");
@@ -4253,7 +4309,7 @@ async function downloadRoomsSpreadsheet() {
             </div>
           </td>
           <td class="px-3 py-3">
-            <span class="text-sm text-slate-300">${partnerName ? escapeHtml(partnerName) : '<span class="text-slate-600">—</span>'}</span>
+            <span class="text-sm text-slate-300">${partnerName ? escapeHtml(partnerName) + (partner2Name ? ' &amp; ' + escapeHtml(partner2Name) : '') : '<span class="text-slate-600">—</span>'}</span>
           </td>
           <td class="text-right px-4 py-3">
             <button class="edit-row-btn inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-white bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-lg px-3 py-1.5 transition" data-edit-uid="${user.uid}">
@@ -4281,6 +4337,8 @@ async function downloadRoomsSpreadsheet() {
         }).join(", ");
         const partner = users.find(u => u.uid === record.ambrosePartnerUid);
         const partnerName = partner ? (partner.displayName || "Unknown") : null;
+        const partner2 = users.find(u => u.uid === record.ambrosePartnerUid2);
+        const partner2Name = partner2 ? (partner2.displayName || "Unknown") : null;
         return `
           <div class="bg-s1 border border-brd rounded-xl p-4 cursor-pointer hover:border-accent/30 transition${isDirty ? " !border-amber-500/40 !bg-amber-500/[0.04]" : ""}" data-edit-uid="${user.uid}" onclick="document.dispatchEvent(new CustomEvent('editPlayer',{detail:'${user.uid}'}))">
             <div class="flex items-start justify-between mb-2">
@@ -4300,7 +4358,7 @@ async function downloadRoomsSpreadsheet() {
             </div>
             <div class="mt-2 text-xs text-slate-500 flex flex-col gap-0.5">
               ${roomNames ? `<span>🏠 ${escapeHtml(roomNames)}</span>` : ""}
-              ${partnerName ? `<span>👥 ${escapeHtml(partnerName)}</span>` : ""}
+              ${partnerName ? `<span>👥 ${escapeHtml(partnerName)}${partner2Name ? ' & ' + escapeHtml(partner2Name) : ''}</span>` : ""}
             </div>
           </div>
         `;
@@ -4343,10 +4401,12 @@ async function downloadRoomsSpreadsheet() {
         }).join(" ");
         const partner = users.find(u => u.uid === record.ambrosePartnerUid);
         const partnerName = partner ? (partner.displayName || "") : "";
+        const partner2 = users.find(u => u.uid === record.ambrosePartnerUid2);
+        const partner2Name = partner2 ? (partner2.displayName || "") : "";
         const textMatch = !q || [
           user.displayName, user.nickname, user.hackerNumber, user.uid,
           record.shirtSize, record.pantSize, roomNames,
-          partnerName, record.sponsorNotes, record.handicap,
+          partnerName, partner2Name, record.sponsorNotes, record.handicap,
           paid.label, record.skins ? "yes" : "no",
           record.coming ? "yes" : "no"
         ].some(v => normalize(v).includes(q));
@@ -4492,6 +4552,7 @@ async function downloadRoomsSpreadsheet() {
 
       // Validate
       if ((nextRecord.roommates || []).length > 2) throw new Error("Max 2 roommates.");
+      if (nextRecord.ambrosePartnerUid2 && nextRecord.ambrosePartnerUid2 === nextRecord.ambrosePartnerUid) throw new Error("Second partner must be different from the first.");
       const skipHandicapWrite = fieldValues.handicap === HANDICAP_UNCHANGED;
       if (skipHandicapWrite) {
         // Admin never touched the handicap field this edit — keep the
@@ -4517,7 +4578,11 @@ async function downloadRoomsSpreadsheet() {
 
       const previousPartner = asString(previous.ambrosePartnerUid).trim();
       const ambrosePartnerUid = asString(nextRecord.ambrosePartnerUid).trim();
-      const partnerAffected = uniqueSorted([uid, previousPartner, ambrosePartnerUid]);
+      // Second partner: naming one here makes this player the "captain" of a three-ball —
+      // both named teammates get their own ambrosePartnerUid confirmed back to the captain.
+      const previousPartner2 = asString(previous.ambrosePartnerUid2).trim();
+      const ambrosePartnerUid2 = asString(nextRecord.ambrosePartnerUid2).trim();
+      const partnerAffected = uniqueSorted([uid, previousPartner, ambrosePartnerUid, previousPartner2, ambrosePartnerUid2]);
 
       const writes = [];
       const eventPayload = { ...nextRecord };
@@ -4555,14 +4620,18 @@ async function downloadRoomsSpreadsheet() {
         writes.push(set(ref(db, `users/${playerUid}/roomNumber`), updatedRoomNumber || null));
       });
 
-      // Partner cascading updates
+      // Partner cascading updates. uid's own ambrosePartnerUid/ambrosePartnerUid2 are already
+      // covered by the room-cascade write above (nextRoomGroup always includes uid), so this
+      // only needs to confirm/clear the *other* side(s) — both named teammates when this player
+      // is a three-ball captain, or just the one partner for a pair.
       partnerAffected.forEach(playerUid => {
-        if (!playerUid) return;
-        const targetRecord = getEventRecord(playerUid);
+        if (!playerUid || playerUid === uid) return;
         let nextPartner;
-        if (playerUid === uid) { nextPartner = ambrosePartnerUid; }
-        else if (playerUid === ambrosePartnerUid) { nextPartner = uid; }
-        else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) { nextPartner = ""; }
+        if (playerUid === ambrosePartnerUid || playerUid === ambrosePartnerUid2) { nextPartner = uid; }
+        else if (
+          (playerUid === previousPartner && previousPartner !== ambrosePartnerUid && previousPartner !== ambrosePartnerUid2) ||
+          (playerUid === previousPartner2 && previousPartner2 !== ambrosePartnerUid && previousPartner2 !== ambrosePartnerUid2)
+        ) { nextPartner = ""; }
         else return;
 
         writes.push(setDoc(doc(firestore, "eventYears", currentEventId, "players", playerUid), {
@@ -4614,9 +4683,12 @@ async function downloadRoomsSpreadsheet() {
       partnerAffected.forEach(playerUid => {
         if (!playerUid) return;
         const rec = getEventRecord(playerUid);
-        if (playerUid === uid) { rec.ambrosePartnerUid = ambrosePartnerUid; }
-        else if (playerUid === ambrosePartnerUid) { rec.ambrosePartnerUid = uid; }
-        else if (playerUid === previousPartner && previousPartner !== ambrosePartnerUid) { rec.ambrosePartnerUid = ""; }
+        if (playerUid === uid) { rec.ambrosePartnerUid = ambrosePartnerUid; rec.ambrosePartnerUid2 = ambrosePartnerUid2; }
+        else if (playerUid === ambrosePartnerUid || playerUid === ambrosePartnerUid2) { rec.ambrosePartnerUid = uid; }
+        else if (
+          (playerUid === previousPartner && previousPartner !== ambrosePartnerUid && previousPartner !== ambrosePartnerUid2) ||
+          (playerUid === previousPartner2 && previousPartner2 !== ambrosePartnerUid && previousPartner2 !== ambrosePartnerUid2)
+        ) { rec.ambrosePartnerUid = ""; }
         eventPlayers.set(playerUid, rec);
       });
 
@@ -4690,11 +4762,15 @@ async function downloadRoomsSpreadsheet() {
       editFinancialStatus.value = asString(user.financialStatus);
       editAmtOutstanding.value = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined ? asString(user.amtOutstanding) : "";
 
-      // Partner dropdown
+      // Partner dropdowns
       const sortedUsers = [...users].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
       editPartner.innerHTML = '<option value="">No partner</option>' +
         sortedUsers.filter(u => u.uid !== uid).map(u =>
           `<option value="${escapeHtml(u.uid)}" ${u.uid === record.ambrosePartnerUid ? "selected" : ""}>${escapeHtml(userLabel(u))}</option>`
+        ).join("");
+      editPartner2.innerHTML = '<option value="">No second partner</option>' +
+        sortedUsers.filter(u => u.uid !== uid).map(u =>
+          `<option value="${escapeHtml(u.uid)}" ${u.uid === record.ambrosePartnerUid2 ? "selected" : ""}>${escapeHtml(userLabel(u))}</option>`
         ).join("");
 
       // Paid badge (read-only)
@@ -5039,7 +5115,7 @@ async function downloadRoomsSpreadsheet() {
     });
 
     // Edit panel field changes mark dirty
-    [editComing, editSkins, editSaturdayAttendance, editSundayAttendance, editThursday, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
+    [editComing, editSkins, editSaturdayAttendance, editSundayAttendance, editThursday, editShirtSize, editPantSize, editHandicap, editHackerNumber, editGolfAustraliaNumber, editPartner, editPartner2, editNotes, editFinancialStatus, editAmtOutstanding, editEmail, editMobile].forEach(el => {
       el.addEventListener("change", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
       el.addEventListener("input", () => { if (currentEditUid) { markDirty(currentEditUid); updateAmbroseTeamHandicap(); updatePaidBadgePreview(); } });
     });
@@ -5113,6 +5189,7 @@ async function downloadRoomsSpreadsheet() {
           thursday: editThursday.checked,
           handicap: handicapTouched ? editHandicap.value : HANDICAP_UNCHANGED,
           ambrosePartnerUid: editPartner.value,
+          ambrosePartnerUid2: editPartner.value ? editPartner2.value : "",
           roomNumber: editRoomNumber.value.trim(),
           roommates: [...editPanelExistingRoommates],
           sponsorNotes: editNotes.value,
@@ -5346,25 +5423,25 @@ async function downloadRoomsSpreadsheet() {
     // Pool search live filter
     document.getElementById('tsPoolSearch')?.addEventListener('input', renderTsPool);
 
-    // On Sunday, confirmed Ambrose partners stage and unstage together
-    function tsConfirmedPartnerUid(uid) {
-      if (activeTeeDay !== 'sunday') return null;
-      const pid = getEventRecord(uid).ambrosePartnerUid;
-      if (!pid || getEventRecord(pid).ambrosePartnerUid !== uid) return null;
-      return pid;
+    // On Sunday, confirmed Ambrose teammates (a pair, or all three of a three-ball) stage and
+    // unstage together.
+    function tsConfirmedTeammateUids(uid) {
+      if (activeTeeDay !== 'sunday') return [];
+      const eligibleUids = getEligibleForDay(activeTeeDay).map(u => u.uid);
+      return resolveAmbroseTeamUids(uid, eligibleUids).filter(m => m !== uid);
     }
     function tsStagePartner(uid) {
-      const pid = tsConfirmedPartnerUid(uid);
-      if (!pid || tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
-      if (tsSelectedPlayers.length >= 4) return;
-      if (!getEligibleForDay(activeTeeDay).some(u => u.uid === pid)) return;
-      tsSelectedPlayers.push(pid);
+      tsConfirmedTeammateUids(uid).forEach(pid => {
+        if (tsSelectedPlayers.includes(pid) || tsAssignedSet().has(pid)) return;
+        if (tsSelectedPlayers.length >= 4) return;
+        tsSelectedPlayers.push(pid);
+      });
     }
     function tsUnstagePartner(uid) {
-      const pid = tsConfirmedPartnerUid(uid);
-      if (!pid) return;
-      const i = tsSelectedPlayers.indexOf(pid);
-      if (i >= 0) tsSelectedPlayers.splice(i, 1);
+      tsConfirmedTeammateUids(uid).forEach(pid => {
+        const i = tsSelectedPlayers.indexOf(pid);
+        if (i >= 0) tsSelectedPlayers.splice(i, 1);
+      });
     }
 
     // Delegated clicks within the tee sheet section
@@ -5569,11 +5646,13 @@ async function downloadRoomsSpreadsheet() {
       if (!user) return null;
       const record = getEventRecord(uid);
       const partner = record.ambrosePartnerUid ? users.find(u => u.uid === record.ambrosePartnerUid) : null;
+      const partner2 = record.ambrosePartnerUid2 ? users.find(u => u.uid === record.ambrosePartnerUid2) : null;
       const myHc = numericHandicapFor(uid, record);
       const partnerHc = partner ? numericHandicapFor(partner.uid, getEventRecord(partner.uid)) : null;
-      const teamHandicap = partner && myHc !== null && partnerHc !== null
-        ? formatTeamHandicap((myHc + partnerHc) / 4)
-        : "";
+      const teamHandicap = partner2
+        ? formatTeamHandicap(0)
+        : (partner && myHc !== null && partnerHc !== null ? formatTeamHandicap((myHc + partnerHc) / 4) : "");
+      const ambrosePartnerNames = [partner, partner2].filter(Boolean).map(p => asString(p.displayName).trim()).join(" & ");
       const roommateNames = (record.roommates || [])
         .map(rid => users.find(u => u.uid === rid))
         .filter(Boolean)
@@ -5593,7 +5672,7 @@ async function downloadRoomsSpreadsheet() {
         pantSize: asString(record.pantSize),
         roomNumber: asString(record.roomNumber),
         roommates: roommateNames,
-        ambrosePartner: partner ? asString(partner.displayName).trim() : "",
+        ambrosePartner: ambrosePartnerNames,
         teamHandicap,
         coming: record.coming ? "Yes" : "No",
         paidStatus: paidStatusFor(user).label,
