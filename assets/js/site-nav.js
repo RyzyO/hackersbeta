@@ -51,6 +51,7 @@
     { href: 'payment.html', label: 'Payment', icon: 'credit-card', group: 'Event' },
     { href: 'schedule.html', label: 'Schedule', icon: 'calendar-days', group: 'Event' },
     { href: 'weather.html', label: 'Weather', icon: 'cloud-sun', group: 'Event' },
+    { href: 'map-worrigee.html', label: 'Course Map', icon: 'map', group: 'Event' },
     { href: 'podcast.html', label: 'Podcast', icon: 'mic', group: 'More' },
     { href: 'score.html', label: 'Score', icon: 'trending-up', group: 'More' },
     { href: 'honour-roll.html', label: 'Honour Roll', icon: 'trophy', group: 'More' },

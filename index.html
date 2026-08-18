@@ -340,6 +340,83 @@
     </div>
   </section>
 
+  <!-- Event Day Panel — tee time/hole, group, roommates, and scoring link for today.
+       Hidden by default; only unhidden by computeEventPanelVisibility() (see script below)
+       when today is actually one of the event dates, so it never shows the rest of the year. -->
+  <section id="eventDayPanel" class="py-8 md:py-10 relative hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass-card rounded-3xl p-5 md:p-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="flag" class="w-5 h-5 text-hackers-sky"></i>
+              <span class="text-hackers-sky font-semibold text-sm uppercase tracking-wider">Event Day</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-white">Your Day at a Glance</h2>
+          </div>
+          <!-- Day Selector: full-width dropdown on mobile, tab pills from md: up -->
+          <select id="daySelect" class="day-select md:hidden w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white text-sm font-semibold focus:outline-none focus:border-hackers-sky/50">
+            <option id="thursdayOption" class="hidden" value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+            <option value="saturday">Saturday</option>
+            <option value="sunday">Sunday</option>
+          </select>
+          <div class="hidden md:flex items-center gap-1 bg-black/20 rounded-xl p-1 self-start md:self-auto" id="dayTabs">
+            <button id="thursdayTab" class="day-tab hidden px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="thursday">Thursday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="friday">Friday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="saturday">Saturday</button>
+            <button class="day-tab px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors" data-day="sunday">Sunday</button>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- Tee Time / Hole / Group -->
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span id="teeTimeLabel">Start</span>
+            </div>
+            <div id="teeTimeValue" class="text-2xl font-bold text-white mb-1">—</div>
+            <div id="teeHoleValue" class="text-sm text-gray-400 mb-4">No group posted yet</div>
+            <div id="groupPlayers" class="space-y-1.5 text-sm text-gray-300">—</div>
+          </div>
+
+          <!-- Roommates -->
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-5">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="bed-double" class="w-4 h-4"></i>
+              <span>Accommodation</span>
+            </div>
+            <div id="roomNumberValue" class="text-2xl font-bold text-white mb-1">Room —</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wider mb-2 mt-4">Sharing With</div>
+            <div id="roommatesValue" class="text-sm text-gray-300">—</div>
+          </div>
+
+          <!-- Scoring -->
+          <div id="scoringCard" class="rounded-2xl bg-white/5 border border-white/10 p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-3 text-hackers-sky text-xs font-semibold uppercase tracking-wider">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+              <span>Live Scoring</span>
+            </div>
+            <p class="text-sm text-gray-400 mb-4 flex-1">Post your scores as you play and follow the leaderboard live.</p>
+            <a id="scoringLink" href="scoring.html" class="inline-flex items-center justify-center gap-2 rounded-xl bg-hackers-sky hover:bg-sky-600 text-white font-semibold px-4 py-3 text-sm transition-colors">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+              <span id="scoringLinkLabel">Open Scoring</span>
+            </a>
+            <a href="tee-sheet-public.html" class="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 text-sm transition-colors">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+              <span>Full Tee Sheet</span>
+            </a>
+            <a href="map-worrigee.html" class="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 text-sm transition-colors">
+              <i data-lucide="map" class="w-4 h-4"></i>
+              <span>Course Map</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Quick Actions Grid -->
   <section class="py-12 md:py-16 relative -mt-8 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -521,7 +598,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -548,6 +625,205 @@
     let isThursdayPlayer = false;
     let isEternalGloryUser = false;
 
+    // ── Event Day Panel ──
+    // Shows tee time/hole/group, roommates, and the right scoring link for whichever
+    // day is selected — defaults to today, and the whole panel only appears on an
+    // actual event date (see computeEventPanelVisibility).
+    const SCORING_LINKS = {
+      friday: { href: 'scoring-friday.html', label: 'Friday Scoring' },
+      saturday: { href: 'scoring.html', label: 'Saturday Scoring' },
+      sunday: { href: 'scoring-sunday.html', label: 'Sunday Scoring' },
+    };
+    const EVENT_DAY_DATES = {
+      thursday: '2026-08-20',
+      friday: '2026-08-21',
+      saturday: '2026-08-22',
+      sunday: '2026-08-23',
+    };
+    const CHECK_IN_TIME = '2:00 PM Thursday, August 20th';
+    const CHECK_IN_DATE = new Date("August 20, 2026 14:00:00 GMT+1000");
+
+    function updateCheckinCountdown() {
+      const el = document.getElementById('checkinCountdown');
+      if (!el) return;
+      const diff = CHECK_IN_DATE - new Date();
+      if (diff <= 0) {
+        el.textContent = 'Check-in is open';
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const parts = [];
+      if (days) parts.push(`${days}d`);
+      parts.push(`${hours.toString().padStart(2, '0')}h`, `${minutes.toString().padStart(2, '0')}m`, `${seconds.toString().padStart(2, '0')}s`);
+      el.textContent = parts.join(' ');
+    }
+    setInterval(updateCheckinCountdown, 1000);
+
+    let activeEventDay = (() => {
+      const today = new Date().toISOString().slice(0, 10);
+      const match = Object.entries(EVENT_DAY_DATES).find(([, d]) => d === today);
+      // Thursday is only a valid default once we know the visitor actually ticked
+      // "thursday" (confirmed later by the thursdayDocRef snapshot below) — fall back
+      // to Friday until then so non-Thursday players never briefly land on a tab
+      // that isn't shown to them.
+      return (match && match[0] !== 'thursday') ? match[0] : 'friday';
+    })();
+    let eventDayUsers = [];
+    let eventDayTeeSheets = { friday: [], saturday: [], sunday: [] };
+    let currentUid = null;
+
+    function escapeHtmlEv(v) {
+      return String(v || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    // The panel only makes sense to show on an actual event date — everyone sees
+    // Fri/Sat/Sun once we hit those dates, and Thursday only shows for attendees who've
+    // ticked the Thursday (Ryder Cup) option, since it's an arrival day just for them.
+    // Called once immediately (covers Fri/Sat/Sun, known synchronously from the date) and
+    // again once isThursdayPlayer resolves from Firestore (covers the Thursday case).
+    function computeEventPanelVisibility() {
+      const panel = document.getElementById('eventDayPanel');
+      if (!panel) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const isEventDate = today === EVENT_DAY_DATES.friday
+        || today === EVENT_DAY_DATES.saturday
+        || today === EVENT_DAY_DATES.sunday
+        || (today === EVENT_DAY_DATES.thursday && isThursdayPlayer);
+      panel.classList.toggle('hidden', !isEventDate);
+    }
+
+    async function initEventDayPanel(user) {
+      currentUid = user.uid;
+      computeEventPanelVisibility();
+
+      // Users list (for resolving group members' display names)
+      const usersSnap = await get(ref(database, 'users'));
+      const usersData = usersSnap.exists() ? usersSnap.val() : {};
+      eventDayUsers = Object.keys(usersData).map(uid => ({
+        uid,
+        displayName: usersData[uid]?.displayName || '',
+      }));
+
+      // Room number (live)
+      onValue(ref(database, `users/${user.uid}/roomNumber`), (snap) => {
+        const el = document.getElementById('roomNumberValue');
+        if (el) el.textContent = snap.val() ? `Room ${snap.val()}` : 'Room —';
+      });
+
+      // Roommates (live)
+      onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID, 'players', user.uid), async (snap) => {
+        const data = snap.exists() ? snap.data() : {};
+        const uids = Array.isArray(data.roommates) ? data.roommates : [];
+        const el = document.getElementById('roommatesValue');
+        if (!el) return;
+        if (!uids.length) {
+          el.textContent = 'No roommates set';
+          return;
+        }
+        const names = uids.map(uid => eventDayUsers.find(u => u.uid === uid)?.displayName).filter(Boolean);
+        el.textContent = names.length ? names.join(', ') : 'No roommates set';
+      });
+
+      // Tee sheets (live)
+      onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID), (snap) => {
+        const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
+        eventDayTeeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        renderEventDayPanel();
+      });
+
+      renderEventDayPanel();
+      setDayTabActive(activeEventDay);
+    }
+
+    function setDayTabActive(day) {
+      document.querySelectorAll('.day-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.day === day);
+      });
+      const daySelectEl = document.getElementById('daySelect');
+      if (daySelectEl) daySelectEl.value = day;
+    }
+
+    document.querySelectorAll('.day-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeEventDay = btn.dataset.day;
+        setDayTabActive(activeEventDay);
+        renderEventDayPanel();
+      });
+    });
+
+    document.getElementById('daySelect')?.addEventListener('change', (e) => {
+      activeEventDay = e.target.value;
+      setDayTabActive(activeEventDay);
+      renderEventDayPanel();
+    });
+
+    function renderEventDayPanel() {
+      const day = activeEventDay;
+      const isShotgun = day !== 'saturday';
+      const groups = eventDayTeeSheets[day] || [];
+      const myGroup = currentUid ? groups.find(g => Array.isArray(g.players) && g.players.includes(currentUid)) : null;
+
+      const teeTimeLabelEl = document.getElementById('teeTimeLabel');
+      const teeTimeValueEl = document.getElementById('teeTimeValue');
+      const teeHoleValueEl = document.getElementById('teeHoleValue');
+      const groupPlayersEl = document.getElementById('groupPlayers');
+      const scoringCardEl = document.getElementById('scoringCard');
+
+      // Thursday is an arrival day, not a golf day — swap the tee-time card for
+      // check-in details and hide the scoring card (there's no round to score yet).
+      if (day === 'thursday') {
+        if (teeTimeLabelEl) teeTimeLabelEl.textContent = 'Check-In';
+        if (teeTimeValueEl) teeTimeValueEl.textContent = CHECK_IN_TIME;
+        if (teeHoleValueEl) teeHoleValueEl.textContent = 'Head to reception to collect your room key';
+        if (groupPlayersEl) groupPlayersEl.innerHTML = '<div class="text-xs text-gray-500 uppercase tracking-wider mb-2">Check-in opens in</div><div id="checkinCountdown" class="text-lg font-bold text-white font-mono">—</div>';
+        if (scoringCardEl) scoringCardEl.classList.add('hidden');
+        updateCheckinCountdown();
+        return;
+      }
+      if (scoringCardEl) scoringCardEl.classList.remove('hidden');
+
+      if (teeTimeLabelEl) teeTimeLabelEl.textContent = isShotgun ? 'Shotgun Hole' : 'Tee Time';
+
+      if (!myGroup) {
+        if (teeTimeValueEl) teeTimeValueEl.textContent = '—';
+        if (teeHoleValueEl) teeHoleValueEl.textContent = 'No group posted yet';
+        if (groupPlayersEl) groupPlayersEl.textContent = '—';
+      } else {
+        if (isShotgun) {
+          if (teeTimeValueEl) teeTimeValueEl.textContent = `Hole ${myGroup.hole || 1}`;
+          if (teeHoleValueEl) teeHoleValueEl.textContent = myGroup.teeTime ? `Tee time ${myGroup.teeTime}` : '';
+        } else {
+          if (teeTimeValueEl) teeTimeValueEl.textContent = myGroup.teeTime || '—';
+          if (teeHoleValueEl) teeHoleValueEl.textContent = myGroup.hole ? `Off hole ${myGroup.hole}` : '';
+        }
+        const players = Array.isArray(myGroup.players) ? myGroup.players : [];
+        if (groupPlayersEl) {
+          groupPlayersEl.innerHTML = players.map(uid => {
+            const name = eventDayUsers.find(u => u.uid === uid)?.displayName || 'Unknown';
+            const isMe = uid === currentUid;
+            return `<div class="flex items-center gap-2 ${isMe ? 'text-hackers-sky font-semibold' : ''}">
+              <i data-lucide="user" class="w-3.5 h-3.5 opacity-60"></i>
+              <span>${escapeHtmlEv(name)}${isMe ? ' (you)' : ''}</span>
+            </div>`;
+          }).join('') || '<div class="text-gray-500">No players</div>';
+          lucide.createIcons();
+        }
+      }
+
+      const scoring = SCORING_LINKS[day];
+      const scoringLinkEl = document.getElementById('scoringLink');
+      const scoringLinkLabelEl = document.getElementById('scoringLinkLabel');
+      if (scoringLinkEl && scoring) scoringLinkEl.href = scoring.href;
+      if (scoringLinkLabelEl && scoring) scoringLinkLabelEl.textContent = scoring.label;
+    }
+
     // Links an already-subscribed OneSignal push subscriber (from before external_id
     // tracking existed, or a login on a different device) to their Firebase UID, so
     // future sends can target them by user instead of only anonymous device.
@@ -572,6 +848,7 @@
       } else {
         loadUserData(user);
         linkOneSignalToUser(user.uid);
+        initEventDayPanel(user);
       }
     });
 
@@ -665,6 +942,31 @@
         const label = document.getElementById('untilRyderCup');
         if (label) label.classList.toggle('hidden', !isThursdayPlayer);
         updateCountdown();
+
+        const thursdayTabEl = document.getElementById('thursdayTab');
+        if (thursdayTabEl) thursdayTabEl.classList.toggle('hidden', !isThursdayPlayer);
+        const thursdayOptionEl = document.getElementById('thursdayOption');
+        if (thursdayOptionEl) {
+          thursdayOptionEl.classList.toggle('hidden', !isThursdayPlayer);
+          thursdayOptionEl.disabled = !isThursdayPlayer;
+        }
+        // Thursday's panel visibility depends on isThursdayPlayer, which we only just
+        // learned — recompute now (Fri/Sat/Sun were already correct from the date alone).
+        computeEventPanelVisibility();
+
+        // Correct the initial tab now that we know for sure: land Thursday players
+        // on the Thursday tab if today is their arrival day, and pull anyone who
+        // isn't a Thursday player off that tab if they'd somehow landed on it.
+        const today = new Date().toISOString().slice(0, 10);
+        if (isThursdayPlayer && today === EVENT_DAY_DATES.thursday && activeEventDay === 'friday') {
+          activeEventDay = 'thursday';
+          setDayTabActive(activeEventDay);
+          renderEventDayPanel();
+        } else if (!isThursdayPlayer && activeEventDay === 'thursday') {
+          activeEventDay = 'friday';
+          setDayTabActive(activeEventDay);
+          renderEventDayPanel();
+        }
       });
     }
 

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Course Map - Worrigee Links | Hackers Cup</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="assets/css/site-nav.css">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Hero Gradient */
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    /* Loading Spinner */
+    .loader {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Map viewer — a bounded, clipped stage. The image inside is transformed (translate +
+       scale) by JS in response to wheel/drag/pinch, never resized/reflowed by the browser,
+       so panning and zooming stay smooth at 60fps instead of relying on native image
+       zoom (which doesn't exist for a plain <img> — pinch on a bare <img> just zooms the
+       whole page on mobile, which is what we're avoiding here). */
+    .map-stage {
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      /* Plain white — matches the map image's own background so its edge is seamless
+         against the stage instead of a visible checkered/dark border. */
+      background: #ffffff;
+    }
+
+    .map-stage.grabbing {
+      cursor: grabbing;
+    }
+
+    .map-stage img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      max-width: none;
+      transform-origin: 0 0;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .map-zoom-controls {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 5;
+    }
+
+    .map-zoom-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+      transition: background 0.2s ease;
+    }
+
+    .map-zoom-btn:hover {
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    .map-zoom-btn:active {
+      background: rgba(14, 165, 233, 0.3);
+    }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+
+  <!-- Preloader -->
+  <div id="preloader" class="fixed inset-0 z-[100] bg-hackers-dark flex items-center justify-center transition-opacity duration-500">
+    <div class="text-center">
+      <div class="loader mx-auto mb-4"></div>
+      <p class="text-gray-400 text-sm tracking-wider uppercase">Loading Map...</p>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
+  <div id="site-nav-root"></div>
+  <script src="assets/js/site-nav.js"></script>
+
+  <!-- Main Content -->
+  <main class="pt-20 px-4 pb-8 max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-6 md:mb-8 animate-fade-in">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30 mb-3">
+            <i data-lucide="map" class="w-4 h-4 text-hackers-sky"></i>
+            <span class="text-sm font-medium text-gray-300">Course Map</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white">Worrigee Links</h1>
+          <p class="text-gray-400 mt-1">Pinch or scroll to zoom, drag to pan around the course.</p>
+        </div>
+        <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-semibold text-white self-start">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          Back to Home
+        </a>
+      </div>
+    </div>
+
+    <!-- Map Viewer -->
+    <div class="glass-card rounded-3xl p-3 md:p-4">
+      <div id="mapStage" class="map-stage rounded-2xl border border-white/10 h-[60vh] md:h-[75vh]">
+        <img id="mapImage" src="map-worrigee.png" alt="Worrigee Links course map" draggable="false">
+
+        <div class="map-zoom-controls">
+          <button type="button" id="zoomInBtn" class="map-zoom-btn" aria-label="Zoom in">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+          </button>
+          <button type="button" id="zoomOutBtn" class="map-zoom-btn" aria-label="Zoom out">
+            <i data-lucide="minus" class="w-4 h-4"></i>
+          </button>
+          <button type="button" id="zoomResetBtn" class="map-zoom-btn" aria-label="Reset view">
+            <i data-lucide="maximize" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-3 px-1">Double-tap or double-click to zoom in on a spot.</p>
+    </div>
+
+  </main>
+
+  <!-- Bottom Mobile Navigation -->
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="line-chart" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Hide preloader
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+          preloader.style.opacity = '0';
+          setTimeout(() => { preloader.style.display = 'none'; }, 500);
+        }
+      }, 300);
+    });
+
+    // ── Pan/zoom viewer ──
+    // A small self-contained implementation (no external map/panzoom library) driving a
+    // CSS transform (translate + scale) on the image in response to wheel, drag, and
+    // multi-touch pinch — real zoom/pan like a map app, not the browser's native pinch
+    // (which just zooms the whole page for a plain <img>, and doesn't pan at all on desktop).
+    (function initMapViewer() {
+      const stage = document.getElementById('mapStage');
+      const img = document.getElementById('mapImage');
+      if (!stage || !img) return;
+
+      const MIN_SCALE = 0.5;
+      const MAX_SCALE = 6;
+      let scale = 1;
+      let originX = 0;
+      let originY = 0;
+      let naturalW = 0;
+      let naturalH = 0;
+
+      // Pointers currently down, keyed by pointerId — drives both single-finger/mouse
+      // drag and two-finger pinch (distance between the two active pointers).
+      const pointers = new Map();
+      let dragLast = null;
+      let pinchStartDist = null;
+      let pinchStartScale = 1;
+      let pinchStartMid = null;
+
+      // Keeps the image from being panned/zoomed entirely out of view: when it's smaller
+      // than the stage on an axis it gets centered on that axis (no free-floating gap to
+      // drag it into); when it's bigger, panning is capped so an edge can't be pulled
+      // past the stage boundary, leaving nothing but blank space on screen.
+      function clampOrigin() {
+        const rect = stage.getBoundingClientRect();
+        if (!naturalW || !naturalH || !rect.width || !rect.height) return;
+        const scaledW = naturalW * scale;
+        const scaledH = naturalH * scale;
+
+        if (scaledW <= rect.width) {
+          originX = (rect.width - scaledW) / 2;
+        } else {
+          originX = Math.min(0, Math.max(rect.width - scaledW, originX));
+        }
+        if (scaledH <= rect.height) {
+          originY = (rect.height - scaledH) / 2;
+        } else {
+          originY = Math.min(0, Math.max(rect.height - scaledH, originY));
+        }
+      }
+
+      function applyTransform() {
+        clampOrigin();
+        img.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+      }
+
+      // Fits the image inside the stage on load ("contain"), then centers it — the
+      // sensible default zoom level rather than showing it at native 1200x1200 px.
+      function resetView() {
+        const stageRect = stage.getBoundingClientRect();
+        if (!naturalW || !naturalH || !stageRect.width || !stageRect.height) return;
+        const fitScale = Math.min(stageRect.width / naturalW, stageRect.height / naturalH);
+        scale = fitScale;
+        originX = (stageRect.width - naturalW * scale) / 2;
+        originY = (stageRect.height - naturalH * scale) / 2;
+        applyTransform();
+      }
+
+      function clampScale(next) {
+        return Math.min(MAX_SCALE, Math.max(MIN_SCALE, next));
+      }
+
+      // Zooms around a fixed point (in stage-local pixel coordinates) — the point under
+      // the cursor/pinch-midpoint stays put, which is what makes zoom feel anchored
+      // instead of the image jumping around as the scale changes.
+      function zoomAt(pointX, pointY, nextScale) {
+        const clamped = clampScale(nextScale);
+        const factor = clamped / scale;
+        originX = pointX - (pointX - originX) * factor;
+        originY = pointY - (pointY - originY) * factor;
+        scale = clamped;
+        applyTransform();
+      }
+
+      function stagePoint(clientX, clientY) {
+        const rect = stage.getBoundingClientRect();
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      }
+
+      if (img.complete && img.naturalWidth) {
+        naturalW = img.naturalWidth;
+        naturalH = img.naturalHeight;
+        resetView();
+      } else {
+        img.addEventListener('load', () => {
+          naturalW = img.naturalWidth;
+          naturalH = img.naturalHeight;
+          resetView();
+        });
+      }
+      window.addEventListener('resize', resetView);
+
+      // Mouse wheel — zoom anchored at the cursor.
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const p = stagePoint(e.clientX, e.clientY);
+        const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        zoomAt(p.x, p.y, scale * delta);
+      }, { passive: false });
+
+      // Pointer-based drag (mouse or single touch) and pinch (two touches). Using the
+      // Pointer Events API unifies mouse/touch/pen for the single-drag case; pinch needs
+      // its own two-pointer distance tracking since Pointer Events don't expose gestures.
+      stage.addEventListener('pointerdown', (e) => {
+        stage.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        stage.classList.add('grabbing');
+
+        if (pointers.size === 1) {
+          dragLast = { x: e.clientX, y: e.clientY };
+        } else if (pointers.size === 2) {
+          dragLast = null;
+          const pts = Array.from(pointers.values());
+          pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          pinchStartScale = scale;
+          pinchStartMid = stagePoint((pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2);
+        }
+      });
+
+      stage.addEventListener('pointermove', (e) => {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size === 1 && dragLast) {
+          const dx = e.clientX - dragLast.x;
+          const dy = e.clientY - dragLast.y;
+          originX += dx;
+          originY += dy;
+          dragLast = { x: e.clientX, y: e.clientY };
+          applyTransform();
+        } else if (pointers.size === 2 && pinchStartDist) {
+          const pts = Array.from(pointers.values());
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          const nextScale = pinchStartScale * (dist / pinchStartDist);
+          zoomAt(pinchStartMid.x, pinchStartMid.y, nextScale);
+        }
+      });
+
+      function endPointer(e) {
+        pointers.delete(e.pointerId);
+        stage.releasePointerCapture?.(e.pointerId);
+        if (pointers.size === 0) {
+          stage.classList.remove('grabbing');
+          dragLast = null;
+        } else if (pointers.size === 1) {
+          // Dropped from pinch (two fingers) to a single finger — resume as a drag
+          // instead of jumping (avoids a snap when a pinch gesture ends one finger first).
+          pinchStartDist = null;
+          const [remaining] = pointers.values();
+          dragLast = { x: remaining.x, y: remaining.y };
+        }
+      }
+      stage.addEventListener('pointerup', endPointer);
+      stage.addEventListener('pointercancel', endPointer);
+      stage.addEventListener('pointerleave', (e) => {
+        // Only treat as "up" if this pointer wasn't captured (capture keeps delivering
+        // move/up events even once the cursor leaves the element's bounds).
+        if (!stage.hasPointerCapture?.(e.pointerId)) endPointer(e);
+      });
+
+      // Double-click / double-tap to zoom in (and back out if already zoomed in a lot).
+      let lastTapTime = 0;
+      function handleDoubleZoom(clientX, clientY) {
+        const p = stagePoint(clientX, clientY);
+        const target = scale < MAX_SCALE * 0.6 ? scale * 2 : 1;
+        zoomAt(p.x, p.y, target);
+      }
+      stage.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        handleDoubleZoom(e.clientX, e.clientY);
+      });
+      stage.addEventListener('pointerdown', (e) => {
+        const now = Date.now();
+        if (now - lastTapTime < 300 && pointers.size <= 1) {
+          handleDoubleZoom(e.clientX, e.clientY);
+        }
+        lastTapTime = now;
+      });
+
+      // Zoom control buttons.
+      document.getElementById('zoomInBtn')?.addEventListener('click', () => {
+        const rect = stage.getBoundingClientRect();
+        zoomAt(rect.width / 2, rect.height / 2, scale * 1.4);
+      });
+      document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
+        const rect = stage.getBoundingClientRect();
+        zoomAt(rect.width / 2, rect.height / 2, scale / 1.4);
+      });
+      document.getElementById('zoomResetBtn')?.addEventListener('click', resetView);
+    })();
+  </script>
+</body>
+</html>
