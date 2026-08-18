@@ -262,17 +262,6 @@
     const firestore = getFirestore(app);
     const CURRENT_EVENT_ID = "HC26";
 
-    function bindText(path, elementId, fallback) {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        return;
-      }
-
-      onValue(ref(database, path), (snapshot) => {
-        element.textContent = snapshot.val() || fallback;
-      });
-    }
-
     // ── Personal .ics export ──
     // Builds a calendar file from this specific user's own assignments (their Friday/Sunday
     // hole, their Saturday tee time) rather than a single static file shared by everyone.
@@ -326,6 +315,8 @@
     const ROUND_DURATION_HOURS = 5; // rough estimate for a full round, used as each round's DTEND
 
     function buildPersonalIcs() {
+      // fri-data/sun-data already render as the full "Hole N" string (or "Not Assigned") —
+      // see the onSnapshot handler below — so these are used as-is, not re-wrapped.
       const friHole = document.getElementById('fri-data')?.textContent?.trim();
       const satTimeText = document.getElementById('sat-time-data')?.textContent?.trim();
       const sunHole = document.getElementById('sun-data')?.textContent?.trim();
@@ -348,8 +339,8 @@
         start: friStart,
         end: new Date(friStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
         summary: 'Hackers Cup — Troll Plate Skins (Friday)',
-        location: hasHole(friHole) ? `${VENUE} — Hole ${friHole}` : VENUE,
-        description: hasHole(friHole) ? `Shotgun start, hole ${friHole}.` : 'Shotgun start — check the tee sheet for your hole.',
+        location: hasHole(friHole) ? `${VENUE} — ${friHole}` : VENUE,
+        description: hasHole(friHole) ? `Shotgun start, ${friHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
       }));
 
       // Saturday — breakfast, then the round at this player's own tee time.
@@ -389,8 +380,8 @@
         start: sunStart,
         end: new Date(sunStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
         summary: 'Hackers Cup — Ambrose (Sunday)',
-        location: hasHole(sunHole) ? `${VENUE} — Hole ${sunHole}` : VENUE,
-        description: hasHole(sunHole) ? `Shotgun start, hole ${sunHole}.` : 'Shotgun start — check the tee sheet for your hole.',
+        location: hasHole(sunHole) ? `${VENUE} — ${sunHole}` : VENUE,
+        description: hasHole(sunHole) ? `Shotgun start, ${sunHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
       }));
 
       return [
@@ -436,20 +427,31 @@
         });
       }
 
-      bindText(`users/${user.uid}/fri`, 'fri-data', 'Not Assigned');
-      // Saturday is a traditional (non-shotgun) start — every player tees off from hole 1,
-      // so that's a fixed value, not per-user Firebase data like Friday/Sunday's hole. Their
-      // actual tee TIME still varies by group though, so that's still pulled live below.
-      bindText(`users/${user.uid}/sun`, 'sun-data', 'Not Assigned');
-
-      // Saturday tee time: found by locating this player inside the saved tee sheet groups
-      // (eventYears/{id}.teeSheets.saturday), same source tee-times.html/index.html read.
+      // Friday/Saturday/Sunday tee info: found by locating this player inside the actual
+      // saved tee sheet groups (eventYears/{id}.teeSheets.{day}) — the same source
+      // tee-sheet.html writes to and tee-times.html/index.html read from. The old
+      // users/{uid}/fri and /sun RTDB fields were a separate, unmaintained value that had
+      // drifted out of sync with the real tee sheet, which is why they were showing wrong.
       onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID), (snap) => {
         const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
-        const groups = Array.isArray(saved.saturday) ? saved.saturday : [];
-        const myGroup = groups.find(g => Array.isArray(g.players) && g.players.includes(user.uid));
-        const el = document.getElementById('sat-time-data');
-        if (el) el.textContent = (myGroup && myGroup.teeTime) ? myGroup.teeTime : 'Not Assigned';
+        const findMyGroup = (day) => {
+          const groups = Array.isArray(saved[day]) ? saved[day] : [];
+          return groups.find(g => Array.isArray(g.players) && g.players.includes(user.uid));
+        };
+
+        const friGroup = findMyGroup('friday');
+        const friEl = document.getElementById('fri-data');
+        if (friEl) friEl.textContent = (friGroup && friGroup.hole) ? `Hole ${friGroup.hole}` : 'Not Assigned';
+
+        // Saturday is a traditional (non-shotgun) start — every player tees off from hole 1,
+        // so that half is a fixed value; their actual tee TIME still varies by group though.
+        const satGroup = findMyGroup('saturday');
+        const satTimeEl = document.getElementById('sat-time-data');
+        if (satTimeEl) satTimeEl.textContent = (satGroup && satGroup.teeTime) ? satGroup.teeTime : 'Not Assigned';
+
+        const sunGroup = findMyGroup('sunday');
+        const sunEl = document.getElementById('sun-data');
+        if (sunEl) sunEl.textContent = (sunGroup && sunGroup.hole) ? `Hole ${sunGroup.hole}` : 'Not Assigned';
       });
     });
   </script>
