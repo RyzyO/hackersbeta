@@ -158,6 +158,42 @@
       transform: translateY(-8px);
     }
 
+    /* Highlight for tournament days — a soft top-down wash and warmer border, not a loud
+       outline, so the card still reads as part of the same set at a glance. */
+    .forecast-day-event {
+      border-color: rgba(245, 158, 11, 0.35) !important;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 41, 59, 0.6) 55%) !important;
+    }
+
+    .forecast-day-event:hover {
+      border-color: rgba(245, 158, 11, 0.55) !important;
+    }
+
+    /* Tag sits in its own reserved header row above the weather content (see the
+       forecast-day-tag-row wrapper), not floated over it — an absolutely-positioned version
+       collided with the rain/wind/UV details column on narrow layouts. The row is rendered
+       for every card, event or not, so heights stay identical across a grid row. */
+    .event-day-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #1e1305;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border-radius: 9999px;
+      padding: 3px 8px 3px 6px;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+      white-space: nowrap;
+    }
+
+    .event-day-tag svg {
+      width: 10px;
+      height: 10px;
+    }
+
     /* Weather background effects */
     .weather-bg {
       position: relative;
@@ -454,6 +490,16 @@
     
     // Mobile menu toggle now lives in assets/js/site-nav.js
 
+    // Hackers Cup event dates (matches scoring-friday.html/scoring.html/scoring-sunday.html's
+    // own SCORING_DAY_DATE constants and index-event.html's countdown targets) — used to flag
+    // tournament days on the 7-day forecast.
+    const EVENT_DAYS = {
+     
+      '2026-08-21': { label: 'Friday · Skins', short: 'Skins' },
+      '2026-08-22': { label: 'Saturday · Stableford', short: 'Stableford' },
+      '2026-08-23': { label: 'Sunday · Ambrose', short: 'Ambrose' },
+    };
+
     // Weather Icons mapping based on WMO Weather codes
     function getWeatherIcon(weatherCode, isDay = true) {
       const weatherIcons = {
@@ -624,46 +670,55 @@
         const windSpeed = daily.wind_speed_10m_max[i];
         const windDir = getWindDirection(daily.wind_direction_10m_dominant[i]);
         const uvIndex = daily.uv_index_max[i];
-        
+        const eventLabel = EVENT_DAYS[daily.time[i]];
+
         forecastHTML += `
-          <div class="forecast-day glass-card rounded-2xl p-4">
-            <div class="flex md:flex-col items-center md:items-center gap-4 md:gap-0">
-              <!-- Day Info -->
-              <div class="flex-shrink-0 md:w-full md:text-center md:mb-3">
-                <p class="font-bold text-white text-lg">${dayName}</p>
-                <p class="text-xs text-gray-400">${dateStr}</p>
-              </div>
-              
-              <!-- Icon -->
-              <div class="flex-shrink-0 md:mb-3">
-                <i data-lucide="${iconName}" class="w-12 h-12 md:w-14 md:h-14 text-hackers-light"></i>
-              </div>
-              
-              <!-- Temperature -->
-              <div class="flex-1 md:w-full md:text-center md:mb-3">
-                <div class="flex items-baseline justify-start md:justify-center gap-2">
-                  <span class="text-2xl md:text-3xl font-bold text-white">${maxTemp}°</span>
-                  <span class="text-lg md:text-xl text-gray-400">${minTemp}°</span>
+          <div class="forecast-day glass-card rounded-2xl p-4${eventLabel ? ' forecast-day-event' : ''}">
+            <div class="flex justify-end items-center h-4 mb-1.5">
+              ${eventLabel ? `<span class="event-day-tag" title="${eventLabel.label}"><i data-lucide="flag"></i>${eventLabel.short}</span>` : ''}
+            </div>
+            <div class="flex flex-col gap-3 md:items-center md:gap-0">
+              <!-- Summary row: day/date, icon, temp. On mobile these three share one row;
+                   on tablet+ they stack (md:flex-col below). -->
+              <div class="flex items-center gap-4 w-full md:flex-col md:gap-0">
+                <!-- Day Info -->
+                <div class="flex-shrink-0 md:w-full md:text-center md:mb-3">
+                  <p class="font-bold text-white text-lg">${dayName}</p>
+                  <p class="text-xs text-gray-400">${dateStr}</p>
+                </div>
+
+                <!-- Icon -->
+                <div class="flex-shrink-0 md:mb-3">
+                  <i data-lucide="${iconName}" class="w-12 h-12 md:w-14 md:h-14 text-hackers-light"></i>
+                </div>
+
+                <!-- Temperature -->
+                <div class="flex-1 md:w-full md:text-center md:mb-3">
+                  <div class="flex items-baseline justify-start md:justify-center gap-2">
+                    <span class="text-2xl md:text-3xl font-bold text-white">${maxTemp}°</span>
+                    <span class="text-lg md:text-xl text-gray-400">${minTemp}°</span>
+                  </div>
                 </div>
               </div>
-              
-              <!-- Details -->
-              <div class="flex-shrink-0 md:w-full space-y-1">
+
+              <!-- Details: own row below the summary on mobile (wraps instead of getting
+                   clipped on narrow phones), stacked full-width on tablet+ as before. -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-white/5 md:flex-col md:items-stretch md:gap-y-1 md:w-full md:pt-0 md:border-t-0 md:space-y-1">
                 ${rainChance > 0 ? `
-                  <div class="flex items-center ${i > 0 ? 'justify-end md:justify-center' : 'justify-center'} gap-1.5 text-xs text-blue-400">
+                  <div class="flex items-center gap-1.5 text-xs text-blue-400 md:justify-center">
                     <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
                     <span>${rainChance}%</span>
                     ${precipitation > 0 ? `<span class="text-gray-500">•</span><span>${precipitation.toFixed(1)}mm</span>` : ''}
                   </div>
                 ` : ''}
                 ${windSpeed ? `
-                  <div class="flex items-center ${i > 0 ? 'justify-end md:justify-center' : 'justify-center'} gap-1.5 text-xs text-gray-400">
+                  <div class="flex items-center gap-1.5 text-xs text-gray-400 md:justify-center">
                     <i data-lucide="wind" class="w-3.5 h-3.5"></i>
                     <span>${Math.round(windSpeed)} km/h ${windDir}</span>
                   </div>
                 ` : ''}
                 ${uvIndex > 0 ? `
-                  <div class="flex items-center ${i > 0 ? 'justify-end md:justify-center' : 'justify-center'} gap-1.5 text-xs text-yellow-400">
+                  <div class="flex items-center gap-1.5 text-xs text-yellow-400 md:justify-center">
                     <i data-lucide="sun" class="w-3.5 h-3.5"></i>
                     <span>UV ${uvIndex.toFixed(0)}</span>
                   </div>
