@@ -141,6 +141,13 @@
         </h1>
         <p class="text-lg text-gray-300">See who's out with you and when you're teeing off.</p>
       </div>
+      <!-- Shown only if sign-in or the initial data load is taking unusually long (flaky
+           connection, blocked storage in some in-app browsers, etc.) — see the stall
+           timeouts in the script below. Hidden the moment either one actually resolves. -->
+      <div id="tsStallBanner" class="hidden mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+        <span id="tsStallMessage">This is taking longer than usual…</span>
+        <button type="button" onclick="location.reload()" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 font-semibold text-white transition-colors">Retry</button>
+      </div>
     </div>
   </section>
 
@@ -506,16 +513,53 @@
     });
 
     // ── Init ──
+    // Rejects after `ms` if `promise` hasn't settled — used so a stalled network call
+    // (no built-in timeout on Firebase's own promises) can't leave the page hanging
+    // forever. The underlying promise keeps running in the background regardless; this
+    // only stops *us* from waiting on it indefinitely.
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+      ]);
+    }
+
+    function showStallBanner(message) {
+      const banner = $('#tsStallBanner');
+      const msgEl = $('#tsStallMessage');
+      if (msgEl) msgEl.textContent = message;
+      if (banner) banner.classList.remove('hidden');
+    }
+    function hideStallBanner() {
+      $('#tsStallBanner')?.classList.add('hidden');
+    }
+
+    // Firebase Auth normally resolves onAuthStateChanged quickly, but some in-app/embedded
+    // browsers block the storage it relies on and it can simply never fire — previously
+    // that left this page stuck on "Loading…" forever with no way out but to leave.
+    const authStallTimer = setTimeout(() => {
+      showStallBanner("Still signing you in — this shouldn't take this long.");
+    }, 8000);
+
     onAuthStateChanged(auth, async (user) => {
+      clearTimeout(authStallTimer);
+      hideStallBanner();
       if (!user) {
         window.location.href = 'login.html';
         return;
       }
       lucide.createIcons();
       try {
-        await loadUsersAndEventPlayers();
+        // A stalled Firestore/RTDB request has no built-in timeout — without this,
+        // one slow/dropped request on a poor connection would block watchTeeSheet()
+        // (and the rest of the page) from ever starting.
+        await withTimeout(loadUsersAndEventPlayers(), 10000);
       } catch (err) {
         console.error('Failed to load players:', err);
+        showStallBanner("Player names/handicaps are taking a while to load — tee times below will still update live.");
+        // Keep trying in the background; apply it whenever it actually lands instead
+        // of leaving names permanently blank for the rest of the session.
+        loadUsersAndEventPlayers().then(() => { hideStallBanner(); render(); }).catch(() => {});
       }
       watchTeeSheet();
       setInterval(() => {

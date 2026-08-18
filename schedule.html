@@ -116,19 +116,18 @@
     }
   </style>
 </head>
-<body class="bg-hackers-dark text-white font-sans antialiased min-h-screen overflow-x-hidden pb-24">
-  <div class="fixed inset-0 pointer-events-none opacity-70">
-    <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-hackers-sky/20 blur-3xl"></div>
-    <div class="absolute top-1/3 -left-24 w-80 h-80 rounded-full bg-hackers-gold/10 blur-3xl"></div>
-  </div>
-
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
   <!-- Shared site navigation (desktop nav + mobile menu) — see assets/js/site-nav.js -->
   <div id="site-nav-root"></div>
   <script src="assets/js/site-nav.js"></script>
 
-  <main class="relative pt-16 min-h-screen">
-    <section class="hero-gradient border-b border-white/10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  <section class="relative pt-24 pb-8 md:pt-32 md:pb-10 overflow-hidden hero-gradient border-b border-white/10">
+    <!-- Background Pattern — same dotted grid used in the hero on index.html/venue.html,
+         replacing this page's own (inconsistent) blurred-orb decoration. -->
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="glass-card rounded-3xl p-6 sm:p-8 animate-fade-in">
           <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
@@ -138,10 +137,10 @@
               <p id="user-name" class="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">Loading your profile...</p>
             </div>
             <div class="flex flex-wrap gap-3">
-              <!-- <a href="hackers.ics" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-gold/40 bg-hackers-gold/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-hackers-gold/25 transition-colors">
+              <button type="button" id="calendarBtn" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-gold/40 bg-hackers-gold/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-hackers-gold/25 transition-colors">
                 <i data-lucide="calendar-plus" class="w-4 h-4"></i>
                 Save to Calendar
-              </a> -->
+              </button>
               <a href="score.html" class="inline-flex items-center justify-center gap-2 rounded-full border border-hackers-sky/40 bg-hackers-sky/15 px-4 py-2 text-sm font-semibold text-sky-200 hover:bg-hackers-sky/25 transition-colors">
                 <i data-lucide="chart-column" class="w-4 h-4"></i>
                 View Scores
@@ -162,63 +161,53 @@
                 <h2 class="mt-2 text-2xl font-bold text-white">Troll Plate Skins</h2>
               </div>
               <div class="rounded-2xl bg-hackers-sky/15 border border-hackers-sky/30 p-3 text-hackers-sky">
-                <i data-lucide="sunrise" class="w-5 h-5"></i>
+                <i data-lucide="banknote" class="w-5 h-5"></i>
               </div>
             </div>
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Registration:</span> 9:00am (Collect Memorabilia Packs and Scorecards)</p>
               <p><span class="font-semibold text-white">Shotgun Start:</span> 10:00am</p>
-              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="fri-data">Loading...</span></p> -->
+              <p><span class="font-semibold text-white">Tee:</span> <span id="fri-data">Loading...</span></p>
             </div>
           </article>
 
           <article class="glass-card schedule-card rounded-3xl p-6 animate-slide-up" style="animation-delay: 0.08s;">
             <div class="flex items-start justify-between gap-4 mb-4">
               <div>
-                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-hackers-gold">Saturday 22nd August</p>
+                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-hackers-sky">Saturday 22nd August</p>
                 <h2 class="mt-2 text-2xl font-bold text-white">Stableford & Team Pink Ball</h2>
               </div>
-              <div class="rounded-2xl bg-hackers-gold/15 border border-hackers-gold/30 p-3 text-amber-300">
-                <i data-lucide="cloud-sun" class="w-5 h-5"></i>
+              <div class="rounded-2xl bg-hackers-sky/15 border border-hackers-sky/30 p-3 text-hackers-sky">
+                <i data-lucide="circle-dot" class="w-5 h-5"></i>
               </div>
             </div>
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
-              <p><span class="font-semibold text-white">Tee Window:</span> 6:30am - 10:30am</p>
-              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="sat-data">Loading...</span></p> -->
+              <p><span class="font-semibold text-white">Tee Time:</span> <span id="sat-time-data">Loading...</span></p>
+              <p><span class="font-semibold text-white">Tee:</span> <span id="sat-data">1</span></p>
             </div>
           </article>
 
           <article class="glass-card schedule-card rounded-3xl p-6 animate-slide-up" style="animation-delay: 0.16s;">
             <div class="flex items-start justify-between gap-4 mb-4">
               <div>
-                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-emerald-300">Sunday 23rd August</p>
+                <p class="text-xs font-semibold tracking-[0.28em] uppercase text-hackers-sky">Sunday 23rd August</p>
                 <h2 class="mt-2 text-2xl font-bold text-white">Ambrose</h2>
               </div>
-              <div class="rounded-2xl bg-emerald-400/10 border border-emerald-400/25 p-3 text-emerald-300">
-                <i data-lucide="flag-triangle-right" class="w-5 h-5"></i>
+              <div class="rounded-2xl bg-hackers-sky/15 border border-hackers-sky/30 p-3 text-hackers-sky">
+                <i data-lucide="users" class="w-5 h-5"></i>
               </div>
             </div>
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
               <p><span class="font-semibold text-white">Shotgun Start:</span> 8:30am</p>
-              <!-- <p><span class="font-semibold text-white">Tee:</span> <span id="sun-data">Loading...</span></p> -->
+              <p><span class="font-semibold text-white">Tee:</span> <span id="sun-data">Loading...</span></p>
             </div>
           </article>
         </div>
 
-        <div class="mt-6 glass-card rounded-3xl p-6 sm:p-8">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm font-semibold tracking-[0.24em] uppercase text-slate-400">Attendance</p>
-              <h3 class="mt-1 text-xl font-bold text-white">Keep your profile synced</h3>
-            </div>
-            <p class="text-sm text-slate-300 max-w-2xl">If your name or tee assignment is still loading, refresh after signing in so we can pull the latest entry for your account.</p>
-          </div>
-        </div>
-      </div>
+       
     </section>
-  </main>
 
   <div class="bottom-nav md:hidden">
     <div class="flex justify-around items-center h-16 pb-safe">
@@ -253,6 +242,7 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
@@ -269,6 +259,8 @@
     getAnalytics(app);
     const database = getDatabase(app);
     const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    const CURRENT_EVENT_ID = "HC26";
 
     function bindText(path, elementId, fallback) {
       const element = document.getElementById(elementId);
@@ -280,6 +272,149 @@
         element.textContent = snapshot.val() || fallback;
       });
     }
+
+    // ── Personal .ics export ──
+    // Builds a calendar file from this specific user's own assignments (their Friday/Sunday
+    // hole, their Saturday tee time) rather than a single static file shared by everyone.
+
+    // All event times are fixed AEST wall-clock times — constructing via an explicit
+    // GMT+1000 offset string (same approach index.html's countdown targets use) gives the
+    // correct absolute UTC instant regardless of the visitor's own device timezone.
+    function aestDate(monthDay, hour, minute) {
+      return new Date(`${monthDay}, 2026 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00 GMT+1000`);
+    }
+
+    // Saturday's tee time comes from Firebase as free text (e.g. "6:45 AM", "14:05") — this
+    // mirrors tee-sheet.html's own parseTeeTime so an .ics event lines up with what the tee
+    // sheet actually shows, rather than a second, differently-behaved parser drifting from it.
+    function parseTeeTimeToHm(s) {
+      const str = String(s || '').trim().toUpperCase();
+      const m = str.match(/^(\d{1,2})(?:[:.;,\-\s]?(\d{2}))?\s*(AM|PM|A|P)?\.?$/);
+      if (!m) return null;
+      let h = Number(m[1]);
+      const min = Number(m[2] || 0);
+      if (h > 23 || min > 59) return null;
+      const mer = m[3] ? m[3][0] : '';
+      if (mer === 'P' && h < 12) h += 12;
+      if (mer === 'A' && h === 12) h = 0;
+      return { hour: h, minute: min };
+    }
+
+    function toIcsUtc(date) {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    }
+
+    function icsEscape(text) {
+      return String(text || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    }
+
+    function buildIcsEvent({ uid, start, end, summary, location, description }) {
+      return [
+        'BEGIN:VEVENT',
+        `UID:${uid}@hackerscup.live`,
+        `DTSTAMP:${toIcsUtc(new Date())}`,
+        `DTSTART:${toIcsUtc(start)}`,
+        `DTEND:${toIcsUtc(end)}`,
+        `SUMMARY:${icsEscape(summary)}`,
+        `LOCATION:${icsEscape(location)}`,
+        `DESCRIPTION:${icsEscape(description)}`,
+        'END:VEVENT',
+      ].join('\r\n');
+    }
+
+    const VENUE = 'Worrigee Links Golf Course';
+    const ROUND_DURATION_HOURS = 5; // rough estimate for a full round, used as each round's DTEND
+
+    function buildPersonalIcs() {
+      const friHole = document.getElementById('fri-data')?.textContent?.trim();
+      const satTimeText = document.getElementById('sat-time-data')?.textContent?.trim();
+      const sunHole = document.getElementById('sun-data')?.textContent?.trim();
+      const hasHole = (v) => v && v !== 'Not Assigned' && v !== 'Loading...';
+
+      const events = [];
+
+      // Friday — registration, then the round itself.
+      events.push(buildIcsEvent({
+        uid: 'hc26-fri-rego',
+        start: aestDate('August 21', 9, 0),
+        end: aestDate('August 21', 10, 0),
+        summary: 'Hackers Cup — Friday Registration',
+        location: VENUE,
+        description: 'Collect your memorabilia pack and scorecard.',
+      }));
+      const friStart = aestDate('August 21', 10, 0);
+      events.push(buildIcsEvent({
+        uid: 'hc26-fri-round',
+        start: friStart,
+        end: new Date(friStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
+        summary: 'Hackers Cup — Troll Plate Skins (Friday)',
+        location: hasHole(friHole) ? `${VENUE} — Hole ${friHole}` : VENUE,
+        description: hasHole(friHole) ? `Shotgun start, hole ${friHole}.` : 'Shotgun start — check the tee sheet for your hole.',
+      }));
+
+      // Saturday — breakfast, then the round at this player's own tee time.
+      events.push(buildIcsEvent({
+        uid: 'hc26-sat-breakfast',
+        start: aestDate('August 22', 6, 0),
+        end: aestDate('August 22', 8, 0),
+        summary: 'Hackers Cup — Saturday Breakfast',
+        location: VENUE,
+        description: 'Captains collect envelopes.',
+      }));
+      const satHm = parseTeeTimeToHm(satTimeText) || { hour: 6, minute: 30 };
+      const satStart = aestDate('August 22', satHm.hour, satHm.minute);
+      events.push(buildIcsEvent({
+        uid: 'hc26-sat-round',
+        start: satStart,
+        end: new Date(satStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
+        summary: 'Hackers Cup — Stableford & Team Pink Ball (Saturday)',
+        location: `${VENUE} — Tee 1`,
+        description: parseTeeTimeToHm(satTimeText)
+          ? `Traditional start off tee 1, ${satTimeText}.`
+          : 'Traditional start off tee 1 — check the tee sheet for your tee time.',
+      }));
+
+      // Sunday — breakfast, then the round.
+      events.push(buildIcsEvent({
+        uid: 'hc26-sun-breakfast',
+        start: aestDate('August 23', 6, 0),
+        end: aestDate('August 23', 8, 0),
+        summary: 'Hackers Cup — Sunday Breakfast',
+        location: VENUE,
+        description: 'Captains collect envelopes.',
+      }));
+      const sunStart = aestDate('August 23', 8, 30);
+      events.push(buildIcsEvent({
+        uid: 'hc26-sun-round',
+        start: sunStart,
+        end: new Date(sunStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
+        summary: 'Hackers Cup — Ambrose (Sunday)',
+        location: hasHole(sunHole) ? `${VENUE} — Hole ${sunHole}` : VENUE,
+        description: hasHole(sunHole) ? `Shotgun start, hole ${sunHole}.` : 'Shotgun start — check the tee sheet for your hole.',
+      }));
+
+      return [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Hackers Cup//Schedule//EN',
+        'CALSCALE:GREGORIAN',
+        ...events,
+        'END:VCALENDAR',
+      ].join('\r\n');
+    }
+
+    document.getElementById('calendarBtn')?.addEventListener('click', () => {
+      const ics = buildPersonalIcs();
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'hackers-cup-2026.ics';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -302,8 +437,20 @@
       }
 
       bindText(`users/${user.uid}/fri`, 'fri-data', 'Not Assigned');
-      bindText(`users/${user.uid}/sat`, 'sat-data', 'Not Assigned');
+      // Saturday is a traditional (non-shotgun) start — every player tees off from hole 1,
+      // so that's a fixed value, not per-user Firebase data like Friday/Sunday's hole. Their
+      // actual tee TIME still varies by group though, so that's still pulled live below.
       bindText(`users/${user.uid}/sun`, 'sun-data', 'Not Assigned');
+
+      // Saturday tee time: found by locating this player inside the saved tee sheet groups
+      // (eventYears/{id}.teeSheets.saturday), same source tee-times.html/index.html read.
+      onSnapshot(doc(firestore, 'eventYears', CURRENT_EVENT_ID), (snap) => {
+        const saved = (snap.exists() ? snap.data() || {} : {}).teeSheets || {};
+        const groups = Array.isArray(saved.saturday) ? saved.saturday : [];
+        const myGroup = groups.find(g => Array.isArray(g.players) && g.players.includes(user.uid));
+        const el = document.getElementById('sat-time-data');
+        if (el) el.textContent = (myGroup && myGroup.teeTime) ? myGroup.teeTime : 'Not Assigned';
+      });
     });
   </script>
 </body>
