@@ -313,7 +313,7 @@
               </div>
             </div>
             <div id="untilRyderCup" class="hidden text-center text-hackers-sky text-xs font-semibold uppercase tracking-wider mt-3">Until Ryder Cup</div>
-            <div id="eternalGlory" class="hidden text-center text-hackers-sky text-xs font-semibold mt-2">YOU ARE <span id="eternalGloryDays">0</span> DAYS AWAY FROM ETERNAL GLORY</div>
+            <div id="eternalGlory" class="hidden text-center text-hackers-sky text-xs font-semibold mt-2">YOU ARE <span id="eternalGloryDays">0</span> <span id="eternalGloryDayWord">DAYS</span> AWAY FROM ETERNAL GLORY</div>
           </div>
         </div>
         
@@ -622,7 +622,12 @@
     const firestore = getFirestore(app);
 
     const CURRENT_EVENT_ID = "HC26";
-    let isThursdayPlayer = false;
+    // Seeded from the last-known value (see site-nav.js) so the very first paint — the
+    // "T-Minus Launch" countdown target, the Event Day Panel's default tab, and its
+    // visibility — is already correct for a returning Thursday player, instead of
+    // defaulting to non-Thursday for the few seconds it takes Firestore's onSnapshot
+    // (in loadUserData, below) to resolve on every single app open.
+    let isThursdayPlayer = window.SiteNav ? window.SiteNav.getCachedThursdayPlayer() === true : false;
     let isEternalGloryUser = false;
 
     // ── Event Day Panel ──
@@ -665,11 +670,13 @@
     let activeEventDay = (() => {
       const today = new Date().toISOString().slice(0, 10);
       const match = Object.entries(EVENT_DAY_DATES).find(([, d]) => d === today);
-      // Thursday is only a valid default once we know the visitor actually ticked
-      // "thursday" (confirmed later by the thursdayDocRef snapshot below) — fall back
-      // to Friday until then so non-Thursday players never briefly land on a tab
-      // that isn't shown to them.
-      return (match && match[0] !== 'thursday') ? match[0] : 'friday';
+      if (!match) return 'friday';
+      if (match[0] !== 'thursday') return match[0];
+      // Thursday's default depends on isThursdayPlayer, which is now seeded from cache
+      // above — correct immediately for a returning Thursday player. A first-ever visit
+      // (no cache yet) still falls back to Friday until the real snapshot resolves, same
+      // as before; the thursdayDocRef handler below corrects it either way once it lands.
+      return isThursdayPlayer ? 'thursday' : 'friday';
     })();
     let eventDayUsers = [];
     let eventDayTeeSheets = { friday: [], saturday: [], sunday: [] };
@@ -873,8 +880,8 @@
         }
         const eternalGloryNames = ['andrew murray', 'riley oakes'];
         isEternalGloryUser = eternalGloryNames.includes(String(cached.displayName).trim().toLowerCase());
-        const eternalGloryEl = document.getElementById('eternalGlory');
-        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        // Visibility (hidden inside the final day, shown 1+ days out) is decided by
+        // updateCountdown -> updateEternalGlory, not here.
         updateCountdown();
       }
       if (cached.hackerNumber && hackerElement) {
@@ -892,8 +899,8 @@
 
         const eternalGloryNames = ['andrew murray', 'riley oakes'];
         isEternalGloryUser = eternalGloryNames.includes(String(displayName || '').trim().toLowerCase());
-        const eternalGloryEl = document.getElementById('eternalGlory');
-        if (eternalGloryEl) eternalGloryEl.classList.toggle('hidden', !isEternalGloryUser);
+        // Visibility (hidden inside the final day, shown 1+ days out) is decided by
+        // updateCountdown -> updateEternalGlory, not here.
         updateCountdown();
 
         if (displayName) window.SiteNav && window.SiteNav.setDisplayName(displayName);
@@ -939,6 +946,7 @@
       const thursdayDocRef = doc(firestore, 'eventYears', CURRENT_EVENT_ID, 'players', user.uid);
       onSnapshot(thursdayDocRef, (snap) => {
         isThursdayPlayer = snap.exists() && !!snap.data().thursday;
+        window.SiteNav && window.SiteNav.setThursdayPlayer(isThursdayPlayer);
         const label = document.getElementById('untilRyderCup');
         if (label) label.classList.toggle('hidden', !isThursdayPlayer);
         updateCountdown();
@@ -970,6 +978,21 @@
       });
     }
 
+    // "YOU ARE N DAYS AWAY..." only reads sensibly at 1+ whole days out — inside the
+    // final day it's hidden entirely (rather than showing a confusing "0 DAYS"), and
+    // exactly 1 day is singular ("1 DAY", not "1 DAYS").
+    function updateEternalGlory(days) {
+      const el = document.getElementById('eternalGlory');
+      if (!el) return;
+      if (!isEternalGloryUser || days < 1) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.classList.remove('hidden');
+      document.getElementById('eternalGloryDays').textContent = days;
+      document.getElementById('eternalGloryDayWord').textContent = days === 1 ? 'DAY' : 'DAYS';
+    }
+
     // Countdown Timer
     function updateCountdown() {
       const targetDate = isThursdayPlayer
@@ -977,13 +1000,13 @@
         : new Date("August 21, 2026 10:00:00 GMT+1000");
       const currentDate = new Date();
       const diff = targetDate - currentDate;
-      
+
       if (diff < 0) {
         document.getElementById('days').textContent = '00';
         document.getElementById('hours').textContent = '00';
         document.getElementById('minutes').textContent = '00';
         document.getElementById('seconds').textContent = '00';
-        if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = '0';
+        updateEternalGlory(0);
         return;
       }
 
@@ -996,7 +1019,7 @@
       document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
       document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
       document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
-      if (isEternalGloryUser) document.getElementById('eternalGloryDays').textContent = days;
+      updateEternalGlory(days);
     }
     
     setInterval(updateCountdown, 1000);

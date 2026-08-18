@@ -282,6 +282,18 @@
       applyAvatar('mobileProfileAvatarWrap', 'mobileNavbarHackerNumber', avatarUrl);
       writeCache({ avatarUrl: avatarUrl || '' });
     },
+    // Whether this attendee has ticked the Thursday (Ryder Cup arrival day) option —
+    // cached so pages that gate content on it (e.g. index.html's Event Day Panel and
+    // countdown) can paint the right state instantly on load instead of showing the
+    // non-Thursday default for a moment while Firestore's onSnapshot is still in flight.
+    // Returns null when never cached (i.e. we genuinely don't know yet), true/false once we do.
+    getCachedThursdayPlayer() {
+      const cached = readCache();
+      return typeof cached.isThursdayPlayer === 'boolean' ? cached.isThursdayPlayer : null;
+    },
+    setThursdayPlayer(isThursdayPlayer) {
+      writeCache({ isThursdayPlayer: !!isThursdayPlayer });
+    },
   };
 
   function applyCachedProfile() {
