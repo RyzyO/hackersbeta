@@ -274,7 +274,7 @@
   }
   async function flushRemoteSession(snapshot = pendingRemoteSession) {
     if (!firebaseUid || !snapshot || !navigator.onLine) return;
-    try { await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/friday`), snapshot); pendingRemoteSession = null; } catch (err) {}
+    try { await set(ref(firebaseDb, `users/${firebaseUid}/scoringSession/current`), snapshot); pendingRemoteSession = null; } catch (err) {}
   }
   async function loadRemoteSession() {
     if (!firebaseUid) return null;
