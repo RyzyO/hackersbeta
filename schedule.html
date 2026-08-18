@@ -167,7 +167,7 @@
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Registration:</span> 9:00am (Collect Memorabilia Packs and Scorecards)</p>
               <p><span class="font-semibold text-white">Shotgun Start:</span> 10:00am</p>
-              <p><span class="font-semibold text-white">Tee:</span> <span id="fri-data">Loading...</span></p>
+              <p><span class="font-semibold text-white"></span> <span id="fri-data">Loading...</span></p>
             </div>
           </article>
 
@@ -184,7 +184,7 @@
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
               <p><span class="font-semibold text-white">Tee Time:</span> <span id="sat-time-data">Loading...</span></p>
-              <p><span class="font-semibold text-white">Tee:</span> <span id="sat-data">1</span></p>
+              <p><span class="font-semibold text-white">Hole</span> <span id="sat-data">1</span></p>
             </div>
           </article>
 
@@ -201,7 +201,7 @@
             <div class="space-y-3 text-sm text-slate-300">
               <p><span class="font-semibold text-white">Breakfast:</span> 6:00am - 8:00am (Captains collect envelopes)</p>
               <p><span class="font-semibold text-white">Shotgun Start:</span> 8:30am</p>
-              <p><span class="font-semibold text-white">Tee:</span> <span id="sun-data">Loading...</span></p>
+              <p><span class="font-semibold text-white"></span> <span id="sun-data">Loading...</span></p>
             </div>
           </article>
         </div>
@@ -240,7 +240,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -261,6 +261,13 @@
     const auth = getAuth(app);
     const firestore = getFirestore(app);
     const CURRENT_EVENT_ID = "HC26";
+
+    // Populated once on sign-in (see onAuthStateChanged below) so teammate names can be
+    // resolved from the uids in each day's tee sheet group without a lookup per name.
+    let usersByUid = {};
+    // This player's own group-mates for each day (display names, self excluded) — filled
+    // in by the teeSheets onSnapshot handler below, read by buildPersonalIcs() on click.
+    let dayTeammates = { friday: [], saturday: [], sunday: [] };
 
     // ── Personal .ics export ──
     // Builds a calendar file from this specific user's own assignments (their Friday/Sunday
@@ -322,6 +329,14 @@
       const sunHole = document.getElementById('sun-data')?.textContent?.trim();
       const hasHole = (v) => v && v !== 'Not Assigned' && v !== 'Loading...';
 
+      // Appends a "Playing with: ..." line when this player has confirmed group-mates for
+      // the day (dayTeammates, filled in by the teeSheets onSnapshot handler above).
+      function withTeammates(description, day) {
+        const names = dayTeammates[day];
+        if (!names || !names.length) return description;
+        return `${description} Playing with: ${names.join(', ')}.`;
+      }
+
       const events = [];
 
       // Friday — registration, then the round itself.
@@ -340,7 +355,10 @@
         end: new Date(friStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
         summary: 'Hackers Cup — Troll Plate Skins (Friday)',
         location: hasHole(friHole) ? `${VENUE} — ${friHole}` : VENUE,
-        description: hasHole(friHole) ? `Shotgun start, ${friHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
+        description: withTeammates(
+          hasHole(friHole) ? `Shotgun start, ${friHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
+          'friday'
+        ),
       }));
 
       // Saturday — breakfast, then the round at this player's own tee time.
@@ -360,9 +378,12 @@
         end: new Date(satStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
         summary: 'Hackers Cup — Stableford & Team Pink Ball (Saturday)',
         location: `${VENUE} — Tee 1`,
-        description: parseTeeTimeToHm(satTimeText)
-          ? `Traditional start off tee 1, ${satTimeText}.`
-          : 'Traditional start off tee 1 — check the tee sheet for your tee time.',
+        description: withTeammates(
+          parseTeeTimeToHm(satTimeText)
+            ? `Traditional start off tee 1, ${satTimeText}.`
+            : 'Traditional start off tee 1 — check the tee sheet for your tee time.',
+          'saturday'
+        ),
       }));
 
       // Sunday — breakfast, then the round.
@@ -381,7 +402,10 @@
         end: new Date(sunStart.getTime() + ROUND_DURATION_HOURS * 3600 * 1000),
         summary: 'Hackers Cup — Ambrose (Sunday)',
         location: hasHole(sunHole) ? `${VENUE} — ${sunHole}` : VENUE,
-        description: hasHole(sunHole) ? `Shotgun start, ${sunHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
+        description: withTeammates(
+          hasHole(sunHole) ? `Shotgun start, ${sunHole.toLowerCase()}.` : 'Shotgun start — check the tee sheet for your hole.',
+          'sunday'
+        ),
       }));
 
       return [
@@ -407,7 +431,7 @@
       URL.revokeObjectURL(url);
     });
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = 'login.html';
         return;
@@ -427,6 +451,16 @@
         });
       }
 
+      // Needed to turn each group's player uids into names for dayTeammates below — awaited
+      // before the teeSheets listener attaches so the very first snapshot already has names
+      // to resolve against, instead of racing it and only backfilling on the next update.
+      try {
+        const usersSnap = await get(ref(database, 'users'));
+        usersByUid = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+      } catch (err) {
+        console.error('Failed to load users for teammate names:', err);
+      }
+
       // Friday/Saturday/Sunday tee info: found by locating this player inside the actual
       // saved tee sheet groups (eventYears/{id}.teeSheets.{day}) — the same source
       // tee-sheet.html writes to and tee-times.html/index.html read from. The old
@@ -438,20 +472,27 @@
           const groups = Array.isArray(saved[day]) ? saved[day] : [];
           return groups.find(g => Array.isArray(g.players) && g.players.includes(user.uid));
         };
+        const teammateNames = (group) => (Array.isArray(group?.players) ? group.players : [])
+          .filter(uid => uid !== user.uid)
+          .map(uid => usersByUid[uid]?.displayName)
+          .filter(Boolean);
 
         const friGroup = findMyGroup('friday');
         const friEl = document.getElementById('fri-data');
         if (friEl) friEl.textContent = (friGroup && friGroup.hole) ? `Hole ${friGroup.hole}` : 'Not Assigned';
+        dayTeammates.friday = teammateNames(friGroup);
 
         // Saturday is a traditional (non-shotgun) start — every player tees off from hole 1,
         // so that half is a fixed value; their actual tee TIME still varies by group though.
         const satGroup = findMyGroup('saturday');
         const satTimeEl = document.getElementById('sat-time-data');
         if (satTimeEl) satTimeEl.textContent = (satGroup && satGroup.teeTime) ? satGroup.teeTime : 'Not Assigned';
+        dayTeammates.saturday = teammateNames(satGroup);
 
         const sunGroup = findMyGroup('sunday');
         const sunEl = document.getElementById('sun-data');
         if (sunEl) sunEl.textContent = (sunGroup && sunGroup.hole) ? `Hole ${sunGroup.hole}` : 'Not Assigned';
+        dayTeammates.sunday = teammateNames(sunGroup);
       });
     });
   </script>
