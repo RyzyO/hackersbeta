@@ -310,37 +310,25 @@
       }
     }
 
-    /* Notify modal — mobile bottom sheet */
+    /* Notify modal — full-screen takeover on mobile */
     @media (max-width: 639px) {
       #notifyOverlay {
         padding: 0;
-        align-items: flex-end;
+        align-items: stretch;
+        justify-content: stretch;
       }
       #notifyOverlay .notify-sheet {
         max-width: none;
-        max-height: calc(100dvh - 2.5rem);
-        border-radius: 1.25rem 1.25rem 0 0;
-        border-left: 0;
-        border-right: 0;
-        border-bottom: 0;
-        animation: notifySheetUp 0.22s ease-out;
+        width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border-radius: 0;
+        border: 0;
+        animation: notifySheetIn 0.18s ease-out;
       }
       #notifyOverlay .notify-sheet-header {
-        padding: 1rem 1.25rem 0.75rem;
+        padding: calc(0.75rem + env(safe-area-inset-top)) 1.25rem 0.75rem;
       }
-      /* Grab handle */
-      #notifyOverlay .notify-sheet-header::before {
-        content: '';
-        position: absolute;
-        top: 0.4rem;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 2.25rem;
-        height: 0.25rem;
-        border-radius: 999px;
-        background: #2a3654;
-      }
-      #notifyOverlay .notify-sheet-header { position: relative; }
       #notifyOverlay .notify-sheet-body {
         padding: 1rem 1.25rem;
         -webkit-overflow-scrolling: touch;
@@ -349,7 +337,7 @@
       #notifyOverlay .notify-sheet-footer {
         padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
       }
-      /* 16px inputs prevent iOS focus-zoom jumping the sheet around */
+      /* 16px inputs prevent iOS focus-zoom jumping the page around */
       #notifyOverlay input,
       #notifyOverlay textarea,
       #notifyOverlay select {
@@ -372,9 +360,9 @@
         width: 100%;
       }
     }
-    @keyframes notifySheetUp {
-      from { transform: translateY(2rem); opacity: 0.5; }
-      to   { transform: none; opacity: 1; }
+    @keyframes notifySheetIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     body { background: #060911; }
@@ -5624,8 +5612,10 @@ async function downloadRoomsSpreadsheet() {
     const notifyStatusEl = document.getElementById('notifyStatus');
     const notifySendBtn = document.getElementById('notifySendBtn');
 
+    let notifyTeeSheets = null; // fresh-from-Firestore copy, fetched each time the modal opens
+
     function findNotifyTeeGroup(day, uid) {
-      const groups = teeSheets[day] || [];
+      const groups = (notifyTeeSheets || teeSheets)[day] || [];
       for (const group of groups) {
         const players = group.players || [];
         if (players.includes(uid)) {
@@ -5798,19 +5788,19 @@ async function downloadRoomsSpreadsheet() {
       renderNotifyVariableChips();
       loadNotifyTemplates();
 
-      // Tee-time/hole/playing-with variables read from the in-memory teeSheets.
-      // Any day still empty in memory gets filled from the saved Firestore copy
-      // (days with unsaved in-memory groups are left untouched).
-      const emptyDays = ['friday', 'saturday', 'sunday'].filter(d => (teeSheets[d] || []).length === 0);
-      if (emptyDays.length) {
-        getDoc(doc(firestore, 'eventYears', currentEventId)).then(snap => {
-          const saved = (snap.exists() ? snap.data().teeSheets : null) || {};
-          emptyDays.forEach(d => {
-            if (Array.isArray(saved[d]) && saved[d].length) teeSheets[d] = saved[d];
-          });
-          updateNotifyPreview();
-        }).catch(err => console.error('Tee sheet load for notify failed:', err));
-      }
+      // Tee-time/hole/playing-with variables always read from a fresh Firestore fetch,
+      // so unsaved edits in the Tee Sheet tab (or edits made on another device/tab)
+      // never leave the notify composer showing stale or blank tee times.
+      notifyTeeSheets = null;
+      getDoc(doc(firestore, 'eventYears', currentEventId)).then(snap => {
+        const saved = (snap.exists() ? snap.data().teeSheets : null) || {};
+        notifyTeeSheets = {
+          friday: Array.isArray(saved.friday) ? saved.friday : [],
+          saturday: Array.isArray(saved.saturday) ? saved.saturday : [],
+          sunday: Array.isArray(saved.sunday) ? saved.sunday : [],
+        };
+        updateNotifyPreview();
+      }).catch(err => console.error('Tee sheet load for notify failed:', err));
 
       notifyTeeDaySelect.value = teeSheets[activeTeeDay] ? activeTeeDay : "saturday";
 
@@ -5926,6 +5916,15 @@ async function downloadRoomsSpreadsheet() {
       }
     }
 
+    // Guesses the intended Tee Day from a template's name/title/message so the
+    // {{teeTime}}/{{startHole}}/{{playingWith}} variables resolve against the right day
+    // without the admin having to remember to flip the selector manually.
+    const NOTIFY_TEE_DAY_KEYS = ['friday', 'saturday', 'sunday'];
+    function detectNotifyTeeDay(...texts) {
+      const combined = texts.join(' ').toLowerCase();
+      return NOTIFY_TEE_DAY_KEYS.find(day => combined.includes(day)) || null;
+    }
+
     function applySelectedNotifyTemplate() {
       const id = document.getElementById('notifyTemplateSelect').value;
       const statusEl = document.getElementById('notifyTemplateStatus');
@@ -5936,8 +5935,12 @@ async function downloadRoomsSpreadsheet() {
       notifyMessageInput.value = t.message || '';
       notifyImageUrlInput.value = t.imageUrl || '';
       notifyActionUrlInput.value = t.actionUrl || '';
+      const detectedDay = detectNotifyTeeDay(t.name || '', t.title || '', t.message || '');
+      if (detectedDay) notifyTeeDaySelect.value = detectedDay;
       updateNotifyPreview();
-      statusEl.textContent = `Loaded "${t.name}".`;
+      statusEl.textContent = detectedDay
+        ? `Loaded "${t.name}" — Tee Day set to ${NOTIFY_TEE_DAY_LABELS[detectedDay]}.`
+        : `Loaded "${t.name}".`;
     }
 
     async function saveNotifyTemplate() {
