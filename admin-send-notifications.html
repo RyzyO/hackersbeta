@@ -526,6 +526,46 @@
 
     function asString(v) { return v === null || v === undefined ? "" : String(v); }
 
+    // === DELIVERY CONFIRMATION ===
+    // OneSignal's POST response only confirms the API *accepted* the send — `recipients`
+    // tells us immediately how many subscribed devices matched, and a follow-up GET
+    // (after OneSignal's pipeline settles) reports actual delivered/failed/errored counts.
+    // Both get written back onto the notification's Firebase record.
+    async function recordDeliveryReceipt(dbPath, oneSignalResult, extraMeta) {
+      const oneSignalId = oneSignalResult.id || null;
+      const recipients = typeof oneSignalResult.recipients === 'number' ? oneSignalResult.recipients : null;
+      await set(ref(database, `${dbPath}/oneSignalId`), oneSignalId);
+      await set(ref(database, `${dbPath}/recipients`), recipients);
+      if (extraMeta) {
+        for (const [key, value] of Object.entries(extraMeta)) {
+          await set(ref(database, `${dbPath}/${key}`), value);
+        }
+      }
+      if (oneSignalId) scheduleDeliveryStatusCheck(dbPath, oneSignalId);
+      return { oneSignalId, recipients };
+    }
+
+    function scheduleDeliveryStatusCheck(dbPath, oneSignalId) {
+      setTimeout(async () => {
+        try {
+          const idToken = await currentUser.getIdToken();
+          const res = await fetch(`${ONESIGNAL_PROXY_URL}?id=${encodeURIComponent(oneSignalId)}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` },
+          });
+          if (!res.ok) return;
+          const status = await res.json();
+          await set(ref(database, `${dbPath}/deliveryStatus`), {
+            successful: status.successful ?? null,
+            failed: status.failed ?? null,
+            errored: status.errored ?? null,
+            checkedAt: Date.now(),
+          });
+        } catch (err) {
+          console.error('Delivery status check failed for', oneSignalId, err);
+        }
+      }, 90000); // give OneSignal's delivery pipeline time to settle
+    }
+
     function personalizedPaidStatusLabel(user) {
       const status = asString(user.financialStatus).toLowerCase();
       const hasOutstanding = user.amtOutstanding !== "" && user.amtOutstanding !== null && user.amtOutstanding !== undefined;
@@ -860,6 +900,11 @@
             const errText = await res.text().catch(() => '');
             throw new Error(errText || res.statusText);
           }
+          const result = await res.json();
+          const { recipients } = await recordDeliveryReceipt(`notifications/${player.uid}/${newNotifKey}`, result);
+          if (recipients === 0) {
+            throw new Error('no subscribed device (recipients: 0)');
+          }
           sent++;
         } catch (err) {
           console.error(`Failed to send to ${player.displayName} (${player.uid}):`, err);
@@ -1084,7 +1129,23 @@
           throw new Error('OneSignal API error: ' + onesignalResponse.statusText + (errText ? ` — ${errText}` : ''));
         }
 
-        window.showStatus('✓ Notification sent and logged successfully!', 'success');
+        // Record the OneSignal id + recipient count, and schedule a delivery-status
+        // check — one shared record per broadcast, since "all"/"specific"/"segment"
+        // sends are a single OneSignal call, not one per Firebase notification row.
+        const onesignalResult = await onesignalResponse.json();
+        const { recipients } = await recordDeliveryReceipt(`notificationSends/${onesignalResult.id}`, onesignalResult, {
+          target: selectedTarget,
+          title,
+          message,
+          sentAt: timestamp,
+          admin: currentUser.uid,
+        });
+
+        if (recipients === 0) {
+          window.showStatus('⚠ Sent, but 0 recipients matched (no subscribed devices for this target)', 'error');
+        } else {
+          window.showStatus('✓ Notification sent and logged successfully!', 'success');
+        }
         window.clearForm();
       } catch (error) {
         console.error('Error:', error);

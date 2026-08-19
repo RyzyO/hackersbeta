@@ -16,10 +16,25 @@ const ALLOWED_ORIGINS = new Set([
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin",
   };
+}
+
+async function verifyToken(request) {
+  const authHeader = request.headers.get("Authorization") || "";
+  const idToken = authHeader.replace(/^Bearer\s+/i, "");
+  if (!idToken) return false;
+  try {
+    await jwtVerify(idToken, JWKS, {
+      issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
+      audience: FIREBASE_PROJECT_ID,
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function json(body, status, headers) {
@@ -38,24 +53,37 @@ export default {
       return new Response(null, { status: 204, headers });
     }
 
+    // Delivery-status lookup: GET /?id=<onesignal_notification_id>
+    // Lets the admin page poll a sent notification's delivered/failed/errored counts
+    // after OneSignal's pipeline has had time to catch up.
+    if (request.method === "GET") {
+      if (!(await verifyToken(request))) {
+        return json({ error: "Missing or invalid Authorization bearer token" }, 401, headers);
+      }
+      const url = new URL(request.url);
+      const notificationId = url.searchParams.get("id");
+      if (!notificationId) {
+        return json({ error: "Missing id query parameter" }, 400, headers);
+      }
+      const statusRes = await fetch(
+        `https://api.onesignal.com/notifications/${encodeURIComponent(notificationId)}?app_id=${encodeURIComponent(env.ONESIGNAL_APP_ID)}`,
+        { headers: { "Authorization": `Key ${env.ONESIGNAL_REST_API_KEY}` } }
+      );
+      const statusText = await statusRes.text();
+      return new Response(statusText, {
+        status: statusRes.status,
+        headers: { ...headers, "Content-Type": "application/json" },
+      });
+    }
+
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, headers);
     }
 
     // Require the caller to be a signed-in Firebase user (same bar as the admin page's
     // own auth gate) — verifies the ID token's signature, issuer and expiry.
-    const authHeader = request.headers.get("Authorization") || "";
-    const idToken = authHeader.replace(/^Bearer\s+/i, "");
-    if (!idToken) {
-      return json({ error: "Missing Authorization bearer token" }, 401, headers);
-    }
-    try {
-      await jwtVerify(idToken, JWKS, {
-        issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
-        audience: FIREBASE_PROJECT_ID,
-      });
-    } catch (err) {
-      return json({ error: "Invalid or expired token" }, 401, headers);
+    if (!(await verifyToken(request))) {
+      return json({ error: "Missing or invalid Authorization bearer token" }, 401, headers);
     }
 
     let payload;

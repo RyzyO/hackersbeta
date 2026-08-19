@@ -5677,6 +5677,41 @@ async function downloadRoomsSpreadsheet() {
       };
     }
 
+    // === DELIVERY CONFIRMATION ===
+    // OneSignal's POST response only confirms the API *accepted* the send — `recipients`
+    // tells us immediately how many subscribed devices matched, and a follow-up GET
+    // (after OneSignal's pipeline settles) reports actual delivered/failed/errored counts.
+    // Both get written back onto the notification's Firebase record.
+    async function recordNotifyDeliveryReceipt(dbPath, oneSignalResult) {
+      const oneSignalId = oneSignalResult.id || null;
+      const recipients = typeof oneSignalResult.recipients === 'number' ? oneSignalResult.recipients : null;
+      await set(ref(db, `${dbPath}/oneSignalId`), oneSignalId);
+      await set(ref(db, `${dbPath}/recipients`), recipients);
+      if (oneSignalId) scheduleNotifyDeliveryStatusCheck(dbPath, oneSignalId);
+      return { oneSignalId, recipients };
+    }
+
+    function scheduleNotifyDeliveryStatusCheck(dbPath, oneSignalId) {
+      setTimeout(async () => {
+        try {
+          const idToken = await auth.currentUser.getIdToken();
+          const res = await fetch(`${ONESIGNAL_PROXY_URL}?id=${encodeURIComponent(oneSignalId)}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` },
+          });
+          if (!res.ok) return;
+          const status = await res.json();
+          await set(ref(db, `${dbPath}/deliveryStatus`), {
+            successful: status.successful ?? null,
+            failed: status.failed ?? null,
+            errored: status.errored ?? null,
+            checkedAt: Date.now(),
+          });
+        } catch (err) {
+          console.error('Delivery status check failed for', oneSignalId, err);
+        }
+      }, 90000); // give OneSignal's delivery pipeline time to settle
+    }
+
     function resolveNotifyText(text, vars) {
       if (!vars) return text;
       return asString(text).replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) =>
@@ -5872,6 +5907,11 @@ async function downloadRoomsSpreadsheet() {
               body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+            const result = await res.json();
+            const { recipients } = await recordNotifyDeliveryReceipt(`notifications/${uid}/${newKey}`, result);
+            if (recipients === 0) {
+              throw new Error('no subscribed device (recipients: 0)');
+            }
             sent++;
           } catch (err) {
             console.error(`Notify failed for ${uid}:`, err);
