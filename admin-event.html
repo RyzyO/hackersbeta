@@ -985,6 +985,14 @@
             <button data-award-milestone="24" class="award-pill px-3 py-1.5 rounded-lg bg-s2 border border-brd text-slate-300 text-xs font-medium transition">24 cups</button>
           </div>
         </div>
+        <div class="bg-s2 border border-brd rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Bulk attendance</div>
+            <div class="text-sm text-white mt-1">Add <span id="bulkAttendanceEventLabel">this event</span> as an attended year for every player currently marked Coming, and recalculate their total/consecutive attendance awards.</div>
+            <div id="bulkAttendanceStatus" class="text-xs text-slate-500 mt-1 min-h-[16px]"></div>
+          </div>
+          <button id="bulkAttendanceBtn" type="button" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">Apply this year to Coming players</button>
+        </div>
         <div class="relative">
           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"></i>
           <input id="awardSearchInput" type="text" placeholder="Search attendee name..."
@@ -1924,6 +1932,112 @@ async function downloadRoomsSpreadsheet() {
       return asString(value).replace(/\s+/g, ' ').trim();
     }
 
+    // Mirrors attendee-seeder.html's calculateBadges so bulk-applied years produce
+    // the same "N Year" / "N Consecutive" labels as the original seed.
+    function calculateAttendanceBadges(years) {
+      const sorted = Array.from(new Set(years)).sort((a, b) => a - b);
+      const total = sorted.length;
+      const totalBadges = [];
+      [5, 10, 15, 20, 25].forEach(n => { if (total >= n) totalBadges.push(`${n} Year`); });
+
+      let maxConsec = sorted.length ? 1 : 0, current = 1;
+      for (let i = 1; i < sorted.length; i++) {
+        current = sorted[i] === sorted[i - 1] + 1 ? current + 1 : 1;
+        if (current > maxConsec) maxConsec = current;
+      }
+      const consecutiveBadges = [];
+      [3, 5, 10, 15, 20, 25].forEach(n => { if (maxConsec >= n) consecutiveBadges.push(`${n} Consecutive`); });
+
+      return { totalBadges, consecutiveBadges };
+    }
+
+    function currentAttendanceEventNumber() {
+      const match = String(currentEventId || '').match(/^HC(\d+)$/i);
+      return match ? Number(match[1]) : null;
+    }
+
+    function updateBulkAttendanceLabel() {
+      const label = document.getElementById('bulkAttendanceEventLabel');
+      if (!label) return;
+      const cfg = currentEventConfig();
+      const eventNumber = currentAttendanceEventNumber();
+      label.textContent = eventNumber ? `${cfg.id} (${cfg.year})` : 'this event';
+    }
+
+    async function applyBulkAttendanceForCurrentEvent() {
+      const btn = document.getElementById('bulkAttendanceBtn');
+      const eventNumber = currentAttendanceEventNumber();
+      if (!eventNumber) {
+        setBulkAttendanceStatus(`Can't parse an event number from "${currentEventId}".`, 'error');
+        return;
+      }
+
+      const comingUids = Array.from(eventPlayers.entries()).filter(([, record]) => !!record.coming).map(([uid]) => uid);
+      const comingUsers = comingUids.map(uid => users.find(u => u.uid === uid)).filter(u => u && u.displayName);
+      if (!comingUsers.length) {
+        setBulkAttendanceStatus('No players are currently marked Coming.', 'error');
+        return;
+      }
+
+      const cfg = currentEventConfig();
+      if (!confirm(`Add ${cfg.id} (${cfg.year}) as an attended year to ${comingUsers.length} player${comingUsers.length === 1 ? '' : 's'} marked Coming, and recalculate their attendance awards?`)) {
+        return;
+      }
+
+      btn.disabled = true;
+      setBulkAttendanceStatus(`Applying to ${comingUsers.length} player${comingUsers.length === 1 ? '' : 's'}...`);
+
+      let applied = 0, alreadyHad = 0, errors = 0;
+      for (const user of comingUsers) {
+        try {
+          const docRef = doc(firestore, 'attendeeProfiles', user.displayName);
+          const snap = await getDoc(docRef);
+          const data = snap.exists() ? snap.data() || {} : {};
+          const existingYears = Array.isArray(data.attendedYears) ? data.attendedYears.map(Number).filter(Number.isFinite) : [];
+
+          if (existingYears.includes(eventNumber)) {
+            alreadyHad++;
+            continue;
+          }
+
+          const attendedYears = Array.from(new Set([...existingYears, eventNumber])).sort((a, b) => a - b);
+          const { totalBadges, consecutiveBadges } = calculateAttendanceBadges(attendedYears);
+
+          await setDoc(docRef, {
+            displayName: data.displayName || user.displayName,
+            attendedYears,
+            totalBadges,
+            consecutiveBadges,
+            eventsAttended: attendedYears.length,
+            lastAttended: attendedYears[attendedYears.length - 1],
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+          applied++;
+        } catch (err) {
+          console.error(`Failed to apply bulk attendance for ${user.displayName}:`, err);
+          errors++;
+        }
+      }
+
+      btn.disabled = false;
+      const parts = [`${applied} updated`];
+      if (alreadyHad) parts.push(`${alreadyHad} already had ${cfg.id}`);
+      if (errors) parts.push(`${errors} failed`);
+      setBulkAttendanceStatus(parts.join(' · '), errors ? 'error' : 'success');
+      showToast(`Bulk attendance: ${parts.join(', ')}`, errors ? 'error' : 'success');
+
+      await loadAwardProfiles(true);
+      refreshAwardProfilesFromEvent();
+    }
+
+    function setBulkAttendanceStatus(message, type = '') {
+      const el = document.getElementById('bulkAttendanceStatus');
+      if (!el) return;
+      el.textContent = message || '';
+      el.classList.remove('text-emerald-400', 'text-red-400', 'text-slate-500');
+      el.classList.add(type === 'success' ? 'text-emerald-400' : type === 'error' ? 'text-red-400' : 'text-slate-500');
+    }
+
     // Keep this in sync with profile.html so the admin module counts and displays
     // the same awards the player profile shows.
     function isAttendanceString(s) {
@@ -2459,6 +2573,9 @@ async function downloadRoomsSpreadsheet() {
       await loadAwardProfiles(true);
       refreshAwardProfilesFromEvent();
     });
+
+    document.getElementById('bulkAttendanceBtn')?.addEventListener('click', applyBulkAttendanceForCurrentEvent);
+    updateBulkAttendanceLabel();
 
     document.getElementById('awardForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -5438,6 +5555,7 @@ async function downloadRoomsSpreadsheet() {
       selectedUids.clear();
       dirty.clear();
       updateDirtyUI();
+      updateBulkAttendanceLabel();
       await loadEventPlayers();
     });
 
