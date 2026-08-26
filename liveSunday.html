@@ -1830,6 +1830,7 @@
     // ── Helpers ───────────────────────────────────────────
 
     function rankBadgeHtml(rankNum, isTie) {
+      if (!rankNum) return `<span class="rank-badge rank-norm">-</span>`;
       const label = isTie ? `T${rankNum}` : `${rankNum}`;
       let cls = rankNum === 1 ? 'rank-1' : rankNum === 2 ? 'rank-2' : rankNum === 3 ? 'rank-3' : isTie ? 'rank-tie' : 'rank-norm';
       return `<span class="rank-badge ${cls}">${label}</span>`;
@@ -1983,14 +1984,53 @@
       const parIdx      = findDisplayedIndex(['par']);
 
       const rows = lbJson.table.rows.filter(r => r.c[2] && r.c[2].v);
+      // Sort by nett (lower is better); teams not yet thru 18 drop to the bottom
+      // regardless of nett, since their score isn't final yet.
+      const rowThru = row => {
+        const v = throughIdx >= 0 ? (row.c[throughIdx + sliceOffset] ? row.c[throughIdx + sliceOffset].v : 0) : 0;
+        return parseInt(v, 10) || 0;
+      };
+      const rowNett = row => {
+        const v = nettIdx >= 0 ? (row.c[nettIdx + sliceOffset] ? row.c[nettIdx + sliceOffset].v : NaN) : NaN;
+        return parseFloat(v);
+      };
       rows.sort((a, b) => {
-        const ra = parseInt(a.c[1]?.v, 10) || 9999;
-        const rb = parseInt(b.c[1]?.v, 10) || 9999;
-        return ra - rb;
+        const finishedA = rowThru(a) >= 18;
+        const finishedB = rowThru(b) >= 18;
+        if (finishedA !== finishedB) return finishedA ? -1 : 1;
+        if (finishedA) {
+          const nettA = rowNett(a), nettB = rowNett(b);
+          if (!isNaN(nettA) && !isNaN(nettB) && nettA !== nettB) return nettA - nettB;
+          const ra = parseInt(a.c[1]?.v, 10) || 9999;
+          const rb = parseInt(b.c[1]?.v, 10) || 9999;
+          return ra - rb;
+        }
+        // Both still in progress — show further-along rounds first.
+        return rowThru(b) - rowThru(a);
       });
 
+      // Ranks are computed here from the sorted (nett) order rather than read from the
+      // sheet's rank column — teams not yet thru 18 have no rank (shown as '-').
+      const computedRank = {}; // team name -> rank number, or 0 if unranked
+      {
+        let place = 0;
+        let prevNett = null;
+        rows.forEach((r, i) => {
+          const rawName = r.c[2]?.v ?? `Team${i + 1}`;
+          if (rowThru(r) < 18) { computedRank[rawName] = 0; return; }
+          const nett = rowNett(r);
+          if (prevNett === null || nett !== prevNett) {
+            place = i + 1;
+            prevNett = nett;
+          }
+          computedRank[rawName] = place;
+        });
+      }
       const rankCount = {};
-      rows.forEach(r => { const rv = parseInt(r.c[1]?.v, 10); rankCount[rv] = (rankCount[rv] || 0) + 1; });
+      rows.forEach(r => {
+        const rv = computedRank[r.c[2]?.v];
+        if (rv) rankCount[rv] = (rankCount[rv] || 0) + 1;
+      });
 
       // Precompute each team's "to par" from their own scorecard before building any DOM —
       // cached by Thru count, so a team whose round hasn't progressed since last refresh
@@ -2034,8 +2074,8 @@
       const newRankMap = {};
 
       rows.forEach((row, idx) => {
-        const rankNum = parseInt(row.c[1]?.v, 10) || 0;
         const rawName = row.c[2]?.v ?? `Team${idx+1}`;
+        const rankNum = computedRank[rawName] || 0;
         const name    = rawName; // keep raw (hyphenated) for URLs / sheet lookups
         const displayName = typeof rawName === 'string' ? rawName.replace(/-/g, ' & ') : rawName;
 

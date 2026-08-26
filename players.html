@@ -486,7 +486,17 @@
       const merged = filtered.concat(filteredOther);
       const map = new Map();
       for (const h of merged) {
-        const key = makeKey(h.category, h.text);
+        let key = makeKey(h.category, h.text);
+        // Same category+text can legitimately belong to different awards (e.g. a
+        // typo'd/copy-pasted text field). If the years disagree, treat them as
+        // distinct awards instead of silently collapsing one into the other.
+        if (map.has(key)) {
+          const existingYear = Number(map.get(key).year);
+          const newYear = Number(h.year);
+          if (Number.isFinite(existingYear) && Number.isFinite(newYear) && existingYear !== newYear) {
+            key = `${key}|y${newYear}`;
+          }
+        }
         if (map.has(key)) {
           const ex = map.get(key);
           ['eventId', 'year', 'location'].forEach(f => { if (h[f] && !ex[f]) ex[f] = h[f]; });

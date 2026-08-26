@@ -1013,10 +1013,12 @@
             <div class="border-t border-brd pt-3 space-y-3">
               <div class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Add Award</div>
               <form id="awardForm" class="space-y-3">
-                <input id="awardCategory" type="text" placeholder="Category, e.g. Stableford"
+                <input id="awardCategory" type="text" placeholder="Category, e.g. Stableford" list="awardCategoryList"
                   class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
-                <input id="awardText" type="text" placeholder="Award text, e.g. Best Dress"
+                <datalist id="awardCategoryList"></datalist>
+                <input id="awardText" type="text" placeholder="Award text, e.g. Best Dress" list="awardTextList"
                   class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
+                <datalist id="awardTextList"></datalist>
                 <div class="grid grid-cols-2 gap-2">
                   <input id="awardEventId" type="text" placeholder="HC26 or 26"
                     class="w-full px-3 py-2.5 rounded-xl bg-s1 border border-brd text-white text-sm focus:outline-none focus:border-accent transition" />
@@ -1028,6 +1030,7 @@
                 <div class="flex gap-2">
                   <button id="awardSaveBtn" type="submit" class="px-3 py-2 rounded-lg bg-accent text-s0 font-semibold text-xs uppercase tracking-wide hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed">Add award</button>
                   <button id="awardClearBtn" type="button" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition">Clear</button>
+                  <button id="awardCancelEditBtn" type="button" class="px-3 py-2 rounded-lg bg-s3 border border-brd text-slate-300 text-xs hover:bg-s4 transition hidden">Cancel edit</button>
                 </div>
                 <div id="awardStatus" class="text-xs text-slate-500 min-h-[16px]"></div>
               </form>
@@ -1325,7 +1328,7 @@
     import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
    
     import {
-      getFirestore, collection, getDocs, doc, setDoc, getDoc, deleteDoc, serverTimestamp, arrayUnion
+      getFirestore, collection, getDocs, doc, setDoc, getDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // === FIREBASE CONFIG ===
@@ -1434,6 +1437,9 @@
     let awardSearchValue = '';
     let awardComingOnly = true;
     let awardMilestone = 'all';
+    let awardCurrentEntries = [];
+    let awardEditingEntry = null;
+    let awardCategoryTaxonomy = new Map(); // category (lowercased) -> { label, texts: Set }
     let dupProfilesCache = null;
     let dupProfilesPromise = null;
     let dupPairs = [];
@@ -1976,22 +1982,36 @@ async function downloadRoomsSpreadsheet() {
       const honours = Array.isArray(profile?.honours) ? profile.honours.slice() : [];
       const otherAwards = Array.isArray(profile?.otherAwards) ? profile.otherAwards.slice() : [];
 
-      const filteredHonours = honours.filter(h => {
-        const txt = (h?.category || h?.text || '').toString();
-        return !isAwardFilteredByAttendance(txt, attendanceNumbers);
-      });
+      const filteredHonours = honours
+        .filter(h => {
+          const txt = (h?.category || h?.text || '').toString();
+          return !isAwardFilteredByAttendance(txt, attendanceNumbers);
+        })
+        .map(h => Object.assign({}, h, { _honourRef: h }));
       const filteredOtherAwards = otherAwards
         .filter(a => !isAwardFilteredByAttendance(a, attendanceNumbers))
-        .map(a => ({ category: a, text: a }));
+        .map(a => ({ category: a, text: a, _otherAwardRef: a }));
 
       const dedupedMap = new Map();
       filteredHonours.concat(filteredOtherAwards).forEach(entry => {
-        const key = makeKey(entry.category, entry.text);
+        let key = makeKey(entry.category, entry.text);
+        // Same category+text can legitimately belong to different awards (e.g. a
+        // typo'd/copy-pasted text field). If the years disagree, treat them as
+        // distinct awards instead of silently collapsing one into the other.
+        if (dedupedMap.has(key)) {
+          const existingYear = Number(dedupedMap.get(key).year);
+          const newYear = Number(entry.year);
+          if (Number.isFinite(existingYear) && Number.isFinite(newYear) && existingYear !== newYear) {
+            key = `${key}|y${newYear}`;
+          }
+        }
         if (dedupedMap.has(key)) {
           const existing = dedupedMap.get(key);
           ['eventId', 'year', 'location'].forEach(field => {
             if (entry[field] && !existing[field]) existing[field] = entry[field];
           });
+          if (entry._honourRef && !existing._honourRef) existing._honourRef = entry._honourRef;
+          if (entry._otherAwardRef && !existing._otherAwardRef) existing._otherAwardRef = entry._otherAwardRef;
         } else {
           dedupedMap.set(key, Object.assign({}, entry));
         }
@@ -2071,13 +2091,14 @@ async function downloadRoomsSpreadsheet() {
       }
 
       const awardEntries = getAwardEntries(profile);
+      awardCurrentEntries = awardEntries;
       nameEl.textContent = profile.displayName || profile.nickname || 'Selected attendee';
       metaEl.textContent = `${getAwardEventsAttended(profile)} cups attended · ${awardEntries.length} award${awardEntries.length === 1 ? '' : 's'} recorded`;
       if (!awardEntries.length) {
         awardsEl.innerHTML = '<div class="text-sm text-slate-500">No awards recorded yet.</div>';
         return;
       }
-      awardsEl.innerHTML = awardEntries.map(entry => {
+      awardsEl.innerHTML = awardEntries.map((entry, idx) => {
         const year = entry.year ? escapeHtml(entry.year) : '';
         const eventId = formatAwardEventId(entry.eventId);
         const category = entry.category || entry.text || 'Award';
@@ -2095,6 +2116,10 @@ async function downloadRoomsSpreadsheet() {
               </div>
               <div class="title">${escapeHtml(text)}</div>
               ${location}
+              <div class="flex gap-2 mt-2">
+                <button type="button" data-award-edit-idx="${idx}" class="text-[11px] px-2 py-1 rounded-md bg-s3 border border-brd text-slate-300 hover:bg-s4 transition">Edit</button>
+                <button type="button" data-award-delete-idx="${idx}" class="text-[11px] px-2 py-1 rounded-md bg-s3 border border-red-900/60 text-red-400 hover:bg-red-900/30 transition">Delete</button>
+              </div>
             </div>
           </article>
         `;
@@ -2152,6 +2177,7 @@ async function downloadRoomsSpreadsheet() {
 
     function selectAwardProfile(profile, uid) {
       awardSelectedDocId = uid || '';
+      clearAwardForm();
       const normalized = profile ? Object.assign({}, profile) : null;
       renderSelectedAwards(normalized);
       renderAwardResults();
@@ -2203,6 +2229,7 @@ async function downloadRoomsSpreadsheet() {
         return awardProfilesCache;
       }).finally(() => {
         awardProfilesPromise = null;
+        buildAwardTaxonomy();
         renderAwardResults();
         if (awardSelectedDocId) {
           const selected = awardProfilesCache.find(entry => entry.id === awardSelectedDocId);
@@ -2211,6 +2238,52 @@ async function downloadRoomsSpreadsheet() {
       });
 
       return awardProfilesPromise;
+    }
+
+    // Scans every loaded profile's actual honours/otherAwards so the Add Award
+    // form can suggest categories and texts already in use, instead of admins
+    // retyping free text that drifts from the existing structure each time.
+    function buildAwardTaxonomy() {
+      awardCategoryTaxonomy = new Map();
+      (awardProfilesCache || []).forEach(profile => {
+        getAwardEntries(profile).forEach(entry => {
+          const category = cleanAwardText(entry.category || entry.text);
+          if (!category) return;
+          const key = category.toLowerCase();
+          if (!awardCategoryTaxonomy.has(key)) {
+            awardCategoryTaxonomy.set(key, { label: category, texts: new Set() });
+          }
+          const bucket = awardCategoryTaxonomy.get(key);
+          const text = cleanAwardText(entry.text);
+          if (text && text.toLowerCase() !== key) bucket.texts.add(text);
+        });
+      });
+      renderAwardCategoryDatalist();
+      renderAwardTextDatalist();
+    }
+
+    function renderAwardCategoryDatalist() {
+      const list = document.getElementById('awardCategoryList');
+      if (!list) return;
+      const labels = Array.from(awardCategoryTaxonomy.values()).map(b => b.label).sort((a, b) => a.localeCompare(b));
+      list.innerHTML = labels.map(label => `<option value="${escapeHtml(label)}"></option>`).join('');
+    }
+
+    function renderAwardTextDatalist() {
+      const list = document.getElementById('awardTextList');
+      if (!list) return;
+      const categoryValue = cleanAwardText(document.getElementById('awardCategory')?.value).toLowerCase();
+      const bucket = awardCategoryTaxonomy.get(categoryValue);
+      let texts;
+      if (bucket && bucket.texts.size) {
+        texts = Array.from(bucket.texts);
+      } else {
+        // No exact category match yet (or category has no distinct text values) -
+        // fall back to every known award text so typing still gets suggestions.
+        texts = Array.from(awardCategoryTaxonomy.values()).flatMap(b => Array.from(b.texts));
+      }
+      texts = Array.from(new Set(texts)).sort((a, b) => a.localeCompare(b));
+      list.innerHTML = texts.map(text => `<option value="${escapeHtml(text)}"></option>`).join('');
     }
 
     function refreshAwardProfilesFromEvent() {
@@ -2271,19 +2344,29 @@ async function downloadRoomsSpreadsheet() {
       if (location) honour.location = location;
 
       saveBtn.disabled = true;
-      setAwardStatus('Saving award...');
+      setAwardStatus(awardEditingEntry ? 'Updating award...' : 'Saving award...');
 
       try {
-        await setDoc(doc(firestore, 'attendeeProfiles', profileId), {
+        const docRef = doc(firestore, 'attendeeProfiles', profileId);
+
+        if (awardEditingEntry) {
+          // Remove the old value(s) first (arrayRemove needs an exact match),
+          // then add the edited value(s) in a second write.
+          const removeUpdate = {};
+          if (awardEditingEntry._honourRef) removeUpdate.honours = arrayRemove(awardEditingEntry._honourRef);
+          if (awardEditingEntry._otherAwardRef) removeUpdate.otherAwards = arrayRemove(awardEditingEntry._otherAwardRef);
+          if (Object.keys(removeUpdate).length) {
+            await setDoc(docRef, removeUpdate, { merge: true });
+          }
+        }
+
+        await setDoc(docRef, {
           otherAwards: arrayUnion(awardLabel),
           honours: arrayUnion(honour),
         }, { merge: true });
-        setAwardStatus('Award saved.', 'success');
-        document.getElementById('awardCategory').value = '';
-        document.getElementById('awardText').value = '';
-        document.getElementById('awardEventId').value = '';
-        document.getElementById('awardYear').value = '';
-        document.getElementById('awardLocation').value = '';
+
+        setAwardStatus(awardEditingEntry ? 'Award updated.' : 'Award saved.', 'success');
+        clearAwardForm();
         await loadAwardProfiles(true);
       } catch (err) {
         console.error('Failed to save award:', err);
@@ -2291,6 +2374,59 @@ async function downloadRoomsSpreadsheet() {
       } finally {
         saveBtn.disabled = false;
       }
+    }
+
+    async function deleteAwardEntry(entry) {
+      if (!entry || !awardSelectedDocId) return;
+      const awardDoc = awardProfilesCache && awardProfilesCache.find(e => e.id === awardSelectedDocId);
+      const profileId = awardDoc ? awardDoc.id : null;
+      if (!profileId) {
+        setAwardStatus('Could not resolve the selected attendee profile.', 'error');
+        return;
+      }
+      const label = entry.category || entry.text || 'this award';
+      if (!confirm(`Delete "${label}" from this player's awards?`)) return;
+
+      const removeUpdate = {};
+      if (entry._honourRef) removeUpdate.honours = arrayRemove(entry._honourRef);
+      if (entry._otherAwardRef) removeUpdate.otherAwards = arrayRemove(entry._otherAwardRef);
+      if (!Object.keys(removeUpdate).length) return;
+
+      setAwardStatus('Deleting award...');
+      try {
+        await setDoc(doc(firestore, 'attendeeProfiles', profileId), removeUpdate, { merge: true });
+        setAwardStatus('Award deleted.', 'success');
+        if (awardEditingEntry === entry) clearAwardForm();
+        await loadAwardProfiles(true);
+      } catch (err) {
+        console.error('Failed to delete award:', err);
+        setAwardStatus('Could not delete award. Try again.', 'error');
+      }
+    }
+
+    function beginEditAwardEntry(entry) {
+      if (!entry) return;
+      awardEditingEntry = entry;
+      document.getElementById('awardCategory').value = entry.category || '';
+      document.getElementById('awardText').value = entry.text || '';
+      document.getElementById('awardEventId').value = entry.eventId ? formatAwardEventId(entry.eventId) : '';
+      document.getElementById('awardYear').value = entry.year || '';
+      document.getElementById('awardLocation').value = entry.location || '';
+      const saveBtn = document.getElementById('awardSaveBtn');
+      if (saveBtn) saveBtn.textContent = 'Update award';
+      document.getElementById('awardCancelEditBtn')?.classList.remove('hidden');
+      setAwardStatus('Editing award — update the fields and save.');
+    }
+
+    function clearAwardForm() {
+      ['awardCategory', 'awardText', 'awardEventId', 'awardYear', 'awardLocation'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+      });
+      awardEditingEntry = null;
+      const saveBtn = document.getElementById('awardSaveBtn');
+      if (saveBtn) saveBtn.textContent = 'Add award';
+      document.getElementById('awardCancelEditBtn')?.classList.add('hidden');
     }
 
     document.getElementById('awardSearchInput')?.addEventListener('input', (e) => {
@@ -2330,11 +2466,31 @@ async function downloadRoomsSpreadsheet() {
     });
 
     document.getElementById('awardClearBtn')?.addEventListener('click', () => {
-      ['awardCategory', 'awardText', 'awardEventId', 'awardYear', 'awardLocation'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input) input.value = '';
-      });
+      clearAwardForm();
       setAwardStatus('');
+    });
+
+    document.getElementById('awardCategory')?.addEventListener('input', () => {
+      renderAwardTextDatalist();
+    });
+
+    document.getElementById('awardCancelEditBtn')?.addEventListener('click', () => {
+      clearAwardForm();
+      setAwardStatus('');
+    });
+
+    document.getElementById('awardSelectedAwards')?.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('[data-award-edit-idx]');
+      if (editBtn) {
+        const entry = awardCurrentEntries[Number(editBtn.dataset.awardEditIdx)];
+        if (entry) beginEditAwardEntry(entry);
+        return;
+      }
+      const deleteBtn = e.target.closest('[data-award-delete-idx]');
+      if (deleteBtn) {
+        const entry = awardCurrentEntries[Number(deleteBtn.dataset.awardDeleteIdx)];
+        if (entry) deleteAwardEntry(entry);
+      }
     });
 
     // === DUPLICATE PROFILES ===

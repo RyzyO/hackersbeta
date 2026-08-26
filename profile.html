@@ -890,7 +890,14 @@
       const otherAwardsArray = Array.isArray(profile.otherAwards) ? profile.otherAwards.filter(a => !isAttendanceString(a)) : [];
       const deduped = new Map();
       honoursArray.forEach(h => {
-        const key = makeKey(h.category, h.text);
+        let key = makeKey(h.category, h.text);
+        if (deduped.has(key)) {
+          const existingYear = Number(deduped.get(key).year);
+          const newYear = Number(h.year);
+          if (Number.isFinite(existingYear) && Number.isFinite(newYear) && existingYear !== newYear) {
+            key = `${key}|y${newYear}`;
+          }
+        }
         if (!deduped.has(key)) deduped.set(key, h);
       });
       otherAwardsArray.forEach(a => {
@@ -930,7 +937,18 @@
       const merged = filteredHonours.concat(filteredOtherAwards);
       const dedupedMap = new Map();
       for (const h of merged) {
-        const key = makeKey(h.category, h.text);
+        let key = makeKey(h.category, h.text);
+        // Same category+text can legitimately belong to different awards (e.g. a
+        // typo'd/copy-pasted text field). If the years disagree, treat them as
+        // distinct awards instead of silently collapsing one into the other.
+        if (dedupedMap.has(key)) {
+          const existing = dedupedMap.get(key);
+          const existingYear = Number(existing.year);
+          const newYear = Number(h.year);
+          if (Number.isFinite(existingYear) && Number.isFinite(newYear) && existingYear !== newYear) {
+            key = `${key}|y${newYear}`;
+          }
+        }
         if (dedupedMap.has(key)) {
           const existing = dedupedMap.get(key);
           ['eventId','year','location'].forEach(field => {
