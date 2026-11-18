@@ -897,6 +897,7 @@
     // Classifies a hole result against par, matching the liveSaturday
     // scorecard colour coding (eagle/birdie/par/bogey/double+).
     function strokeClassFromDiff(score, par) {
+      if (score === "P") return "str-double";
       const s = Number(score), p = Number(par);
       if (!s || !p) return "";
       const d = s - p;
