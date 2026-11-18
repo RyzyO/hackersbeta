@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>MiClub Leaderboards | Hackers Cup</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            hackers: {
+              dark: '#0f172a',
+              navy: '#1e3a5f',
+              sky: '#0ea5e9',
+              light: '#38bdf8',
+              gold: '#f59e0b',
+              surface: '#1e293b',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.6s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+      min-width: 520px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    #data-table thead tr {
+      background-color: rgba(30, 41, 59, 0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    #data-table th,
+    #data-table td {
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    #data-table tbody tr:nth-child(even) {
+      background-color: rgba(30, 41, 59, 0.45);
+    }
+
+    #data-table tbody tr:nth-child(odd) {
+      background-color: rgba(15, 23, 42, 0.6);
+    }
+
+    #data-table tbody tr:hover {
+      background-color: rgba(56, 189, 248, 0.2);
+      cursor: pointer;
+    }
+
+    #data-table tbody tr.row-registered td {
+      background-color: rgba(56, 189, 248, 0.12);
+      border-left: 2px solid #38bdf8;
+    }
+    #data-table tbody tr.row-registered:hover td {
+      background-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .mobile-leaderboard {
+      display: none;
+      gap: 8px;
+    }
+
+    .leaderboard-card {
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .leaderboard-card.row-registered {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 40px 56px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .leaderboard-rank {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .leaderboard-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaderboard-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    @media screen and (max-width: 767px) {
+      body { overflow-x: hidden; }
+      #data-table th, #data-table td { padding: 8px 8px; font-size: 12px; }
+      .table-wrap { display: none; }
+      .mobile-leaderboard { display: grid; }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-nav { display: none; }
+    }
+
+    select option {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    /* ── Scorecard drawer (same pattern as liveSaturday) ──────────── */
+    #sc-overlay {
+      position: fixed; inset: 0;
+      background: rgba(2,6,23,0.6);
+      z-index: 90;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    #sc-overlay.open { opacity: 1; pointer-events: auto; }
+
+    #sc-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(100vw, 720px);
+      z-index: 91;
+      background: #0f172a;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #sc-drawer.open { transform: translateX(0); }
+
+    #sc-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: rgba(15,23,42,0.98);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    #sc-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+      color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    #sc-back:hover { background: rgba(255,255,255,0.13); }
+    #sc-name {
+      flex: 1; font-size: 15px; font-weight: 700; color: #fff;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      min-width: 0;
+    }
+
+    #sc-body {
+      flex: 1; overflow-y: auto; padding: 20px 16px 32px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    #sc-body > * { flex-shrink: 0; }
+    .sc-loading { display: flex; align-items: center; justify-content: center; height: 120px; color: rgba(148,163,184,0.7); font-size: 14px; }
+    .sc-tbl-wrap { overflow-x: auto; }
+    .sc-tbl { width: 100%; border-collapse: collapse; color: #fff; font-size: 13px; }
+    .sc-tbl thead tr { background: rgba(30,41,59,0.9); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+    .sc-tbl th, .sc-tbl td { padding: 9px 8px; text-align: center; border: 1px solid rgba(148,163,184,0.15); }
+    .sc-tbl .row-lbl { text-align: left; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(148,163,184,0.75); white-space: nowrap; min-width: 52px; }
+    .sc-tbl td.tot { font-weight: 700; background: rgba(30,41,59,0.6); }
+    .str-eagle  { background: #1d4ed8; color: #fff; font-weight: 700; }
+    .str-birdie { background: #add8e6; color: #0f172a; font-weight: 700; }
+    .str-par    { background: #fff; color: #0f172a; }
+    .str-bogey  { background: #f97316; color: #fff; }
+    .str-double { background: #ef4444; color: #fff; }
+    .sc-totals { display: grid; grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); gap: 10px; }
+    .sc-total-card { background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; text-align: center; }
+    .sc-total-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(148,163,184,0.8); display: block; margin-bottom: 4px; }
+    .sc-total-value { font-size: 18px; font-weight: 700; color: #fff; }
+    .sc-section-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.7); margin: 0 0 10px 0; }
+    @media (max-width: 520px) {
+      .sc-tbl .row-lbl { display: none; }
+      .sc-tbl { font-size: 11px; }
+      .sc-tbl th, .sc-tbl td { padding: 6px 4px; }
+    }
+  </style>
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body class="bg-hackers-dark text-white font-sans antialiased pb-24">
+  <nav class="fixed top-0 w-full z-40 glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-hackers-navy">
+            <img src="assets/images/logo.png" alt="Hackers Cup Logo" class="w-8 h-8 object-contain">
+          </div>
+          <span class="font-bold text-xl tracking-tight">Hackers Cup</span>
+        </div>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Home</a>
+          <a href="register.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Register</a>
+          <a href="venue.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Venue</a>
+          <a href="payment.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Payment</a>
+          <a href="podcast.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Podcast</a>
+          <a href="schedule.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Schedule</a>
+          <a href="honour-roll.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Honour Roll</a>
+          <a href="notifications-center.html" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors">Notifications</a>
+        </div>
+
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden glass border-t border-white/10">
+      <div class="px-4 pt-2 pb-3 space-y-1">
+        <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+        <a href="register.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Register</a>
+        <a href="venue.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Venue</a>
+        <a href="payment.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Payment</a>
+        <a href="podcast.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Podcast</a>
+        <a href="schedule.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Schedule</a>
+        <a href="honour-roll.html" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Honour Roll</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative pt-24 pb-12 md:pt-32 md:pb-16 overflow-hidden hero-gradient">
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.18) 1px, transparent 0); background-size: 40px 40px;"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="space-y-4 animate-slide-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-hackers-sky/30">
+          <i data-lucide="flag" class="w-4 h-4 text-hackers-sky"></i>
+          <span class="text-sm font-medium text-gray-300">MiClub Competitions</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight" id="clubHeading">Golf Club <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Leaderboards</span></h1>
+        <p class="text-lg text-gray-300">Browse live MiClub competitions and player scorecards for any club.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14 -mt-8 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div class="flex-1">
+            <h2 class="text-xl font-semibold">Find a club</h2>
+            <p class="text-sm text-gray-400 mb-2" id="clubStatus">Type the club's name to find its leaderboards.</p>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+              <input id="clubInput" type="text" placeholder="e.g. Oatlands Golf Club" class="w-full sm:flex-1 sm:min-w-[160px] px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-hackers-sky/50" />
+              <button id="loadClubButton" type="button" class="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 transition-colors">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                Find club
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-2">
+          <div>
+            <h2 class="text-xl font-semibold">Select a competition</h2>
+            <p class="text-sm text-gray-400" id="status" role="status">Find a club above first.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <select id="competitionSelect" class="w-full sm:w-auto sm:min-w-[220px] px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-hackers-sky/50">
+              <option value="">Loading competitions…</option>
+            </select>
+            <button id="loadCompetitionButton" type="button" disabled class="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-hackers-sky text-hackers-dark text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+              <i data-lucide="trophy" class="w-4 h-4"></i>
+              Load leaderboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-3xl p-6 md:p-8" id="leaderboardSection" hidden>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold" id="leaderboardTitle">Leaderboard</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Player</th>
+                <th>Handicap</th>
+                <th>Score</th>
+                <th>Thru</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+        <div id="leaderboardCards" class="mobile-leaderboard"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Scorecard drawer -->
+  <div id="sc-overlay" onclick="closeScDrawer()"></div>
+  <div id="sc-drawer">
+    <div id="sc-header">
+      <button id="sc-back" onclick="closeScDrawer()">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back
+      </button>
+      <span id="sc-name"></span>
+    </div>
+    <div id="sc-body"></div>
+  </div>
+
+  <div class="bottom-nav md:hidden">
+    <div class="flex justify-around items-center h-16 pb-safe">
+      <a href="index.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Home</span>
+      </a>
+      <a href="payment.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Payment</span>
+      </a>
+      <a href="podcast.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="mic" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Podcast</span>
+      </a>
+      <a href="score.html" class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white">
+        <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-medium">Score</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+
+  <script>
+    /*
+      Generic MiClub public leaderboard pages (any club on this platform):
+        Competition list: /show-leaderboards?club=<slug>
+        Leaderboard:      /display-leaderboard?club=<slug>&leaderboardId=...
+        Scorecard:        /scorecard?club=<slug>&leaderboardId=...&player=...
+
+      Users don't know their club's MiClub "slug", so this page is loosely
+      coupled to it: it accepts a plain club name, a pasted MiClub leaderboard
+      link, or the slug itself, and resolves the slug itself by trying a few
+      likely guesses against the public site before giving up.
+    */
+    const BASE = "https://leaderboard.miclub.com.au";
+    let CLUB = "";
+
+    // Hackers Cup players (players.html) get bumped to the top of any
+    // leaderboard table so friends can find themselves at a glance.
+    const normName = s => (s || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
+    let registeredPlayerNames = new Set();
+    const registeredNamesReady = (async () => {
+      try {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+        const { getFirestore, collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const app = initializeApp({
+          apiKey: "AIzaSyAYat6m3-Lv46vfm6xcHLjTjRDq7NdCxAk",
+          authDomain: "hackers-cup.firebaseapp.com",
+          projectId: "hackers-cup",
+          storageBucket: "hackers-cup.appspot.com",
+          messagingSenderId: "765736070872",
+          appId: "1:765736070872:web:86a51c41916e7af75631ad"
+        });
+        const snap = await getDocs(collection(getFirestore(app), "attendeeProfiles"));
+        snap.forEach(doc => registeredPlayerNames.add(normName(doc.id)));
+      } catch (_) {
+        // No Hackers Cup player list available — leaderboards just render unsorted.
+      }
+    })();
+
+    function isRegisteredPlayer(name) {
+      return registeredPlayerNames.has(normName(name));
+    }
+
+    // Stable sort that moves Hackers Cup players to the top without
+    // disturbing the relative order within each group.
+    function sortRegisteredFirst(items, nameOf) {
+      return items
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => {
+          const diff = (isRegisteredPlayer(nameOf(b.item)) ? 1 : 0) - (isRegisteredPlayer(nameOf(a.item)) ? 1 : 0);
+          return diff !== 0 ? diff : a.index - b.index;
+        })
+        .map(({ item }) => item);
+    }
+
+    const clubInput = document.getElementById("clubInput");
+    const loadClubButton = document.getElementById("loadClubButton");
+    const clubStatusEl = document.getElementById("clubStatus");
+    const clubHeading = document.getElementById("clubHeading");
+    const competitionSelect = document.getElementById("competitionSelect");
+    const loadCompetitionButton = document.getElementById("loadCompetitionButton");
+    const statusEl = document.getElementById("status");
+    const leaderboardSection = document.getElementById("leaderboardSection");
+    const leaderboardTitle = document.getElementById("leaderboardTitle");
+    const leaderboardBody = document.getElementById("leaderboardBody");
+    const leaderboardCards = document.getElementById("leaderboardCards");
+    const scOverlay = document.getElementById("sc-overlay");
+    const scDrawer = document.getElementById("sc-drawer");
+    const scName = document.getElementById("sc-name");
+    const scBody = document.getElementById("sc-body");
+
+    let competitions = [];
+    let selectedCompetition = null;
+    let currentPlayers = [];
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function setClubStatus(message) {
+      clubStatusEl.textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    }
+
+    function absoluteUrl(url) {
+      return new URL(url, BASE).href;
+    }
+
+    async function fetchText(url) {
+      const response = await fetch(url, { credentials: "omit" });
+      if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+      return response.text();
+    }
+
+    function competitionsUrl(slug) {
+      return `${BASE}/show-leaderboards?club=${encodeURIComponent(slug)}`;
+    }
+
+    // Builds a list of likely MiClub slugs from a free-text club name, since
+    // the real slug isn't predictable from the name alone (e.g. "Oatlands
+    // Golf Club" -> "oatlands", but "The Vines Golf Club" -> "vinesgc").
+    function candidateSlugsFromName(name) {
+      const words = name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+
+      const stopWords = new Set(["the", "golf", "club", "country", "cc", "gc", "inc", "ltd", "resort"]);
+      const meaningfulWords = words.filter(w => !stopWords.has(w));
+
+      const candidates = [];
+      const add = slug => { if (slug && !candidates.includes(slug)) candidates.push(slug); };
+
+      add(meaningfulWords.join(""));
+      add(meaningfulWords.join("") + "gc");
+      add(words.join(""));
+      add(meaningfulWords[0]);
+      add((meaningfulWords[0] || "") + "gc");
+      add(words[0]);
+
+      return candidates.filter(Boolean);
+    }
+
+    // A pasted MiClub link already contains the real slug — pull it out
+    // directly instead of guessing (?club=<slug> or /leaderboards/<slug>/...).
+    function slugFromMiClubUrl(value) {
+      try {
+        const url = new URL(value);
+        if (!/miclub\.com\.au$/i.test(url.hostname)) return null;
+        const queryClub = url.searchParams.get("club");
+        if (queryClub) return queryClub;
+        const match = url.pathname.match(/\/leaderboards\/([^/]+)/i);
+        return match ? match[1] : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function probeClubSlug(slug) {
+      const html = await fetchText(competitionsUrl(slug));
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      if (/doesn.t exist/i.test(doc.title) || /doesn.t exist/i.test(doc.body.textContent)) {
+        return null;
+      }
+      const competitions = extractCompetitions(doc, slug);
+      if (!competitions.length) return null;
+      const clubName = doc.title.split(/[-–]\s*Leaderboards/i)[0].trim() || slug;
+      return { slug, doc, competitions, clubName };
+    }
+
+    async function resolveAndLoadClub() {
+      const input = clubInput.value.trim();
+      if (!input) {
+        setClubStatus("Enter a club name first.");
+        return;
+      }
+
+      loadClubButton.disabled = true;
+      leaderboardSection.hidden = true;
+      closeScDrawer();
+
+      const directSlug = slugFromMiClubUrl(input);
+      const candidates = directSlug ? [directSlug] : candidateSlugsFromName(input);
+
+      if (!candidates.length) {
+        setClubStatus("Couldn't work out which club that is — try a different spelling of its name.");
+        loadClubButton.disabled = false;
+        return;
+      }
+
+      for (const slug of candidates) {
+        setClubStatus(`Looking for "${slug}" on MiClub…`);
+        try {
+          const found = await probeClubSlug(slug);
+          if (found) {
+            CLUB = found.slug;
+            clubHeading.innerHTML = `${escapeHtml(found.clubName)} <span class="text-transparent bg-clip-text bg-gradient-to-r from-hackers-sky to-hackers-light">Leaderboards</span>`;
+            setClubStatus(`Showing ${found.clubName}.`);
+            applyCompetitions(found.competitions);
+            loadClubButton.disabled = false;
+            return;
+          }
+        } catch (_) {
+          // network/CORS error on this guess — try the next candidate
+        }
+      }
+
+      setClubStatus(
+        `Couldn't find that club automatically. Try a different spelling of its name.`
+      );
+      loadClubButton.disabled = false;
+    }
+
+    function applyCompetitions(found) {
+      competitions = found;
+      competitionSelect.replaceChildren(new Option("Choose a competition…", ""));
+      competitions.forEach((competition, index) => {
+        const label = [competition.date, competition.name].filter(Boolean).join(" — ");
+        competitionSelect.add(new Option(label || `Competition ${index + 1}`, String(index)));
+      });
+      loadCompetitionButton.disabled = false;
+      setStatus(`Loaded ${competitions.length} competitions.`);
+    }
+
+    function extractCompetitions(doc, slug) {
+      const found = new Map();
+
+      // MiClub pages have changed markup over time; inspect every link for a
+      // leaderboardId and retain links that point to a leaderboard page.
+      for (const link of doc.querySelectorAll("a[href]")) {
+        const href = link.getAttribute("href");
+        if (!href) continue;
+        const url = new URL(href, BASE);
+        const id = url.searchParams.get("leaderboardId") || url.searchParams.get("id");
+        const pathLooksRelevant = /leaderboard/i.test(url.pathname);
+        if (!id || !pathLooksRelevant) continue;
+
+        const row = link.closest("tr");
+        const rowText = row?.innerText?.trim().replace(/\s+/g, " ");
+        const linkText = link.textContent.trim().replace(/\s+/g, " ");
+        const name = rowText || linkText || `Competition ${id}`;
+        found.set(id, {
+          id,
+          name,
+          date: "",
+          leaderboardUrl: `${BASE}/display-leaderboard?club=${encodeURIComponent(slug)}&leaderboardId=${encodeURIComponent(id)}`
+        });
+      }
+
+      // Some versions place IDs in data attributes rather than anchor hrefs.
+      for (const node of doc.querySelectorAll("[data-leaderboard-id], [data-id]")) {
+        const id = node.getAttribute("data-leaderboard-id") || node.getAttribute("data-id");
+        if (!id || found.has(id)) continue;
+        const rowText = node.closest("tr")?.innerText?.trim().replace(/\s+/g, " ") || node.textContent.trim();
+        found.set(id, {
+          id,
+          name: rowText || `Competition ${id}`,
+          date: "",
+          leaderboardUrl: `${BASE}/display-leaderboard?club=${encodeURIComponent(slug)}&leaderboardId=${encodeURIComponent(id)}`
+        });
+      }
+
+      return [...found.values()];
+    }
+
+    function findLikelyJson(text) {
+      const trimmed = text.trim();
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        try { return JSON.parse(trimmed); } catch (_) {}
+      }
+      // Handle JSON embedded in a script or HTML response.
+      const startArray = trimmed.indexOf("[");
+      const startObject = trimmed.indexOf("{");
+      const start = [startArray, startObject].filter(n => n >= 0).sort((a, b) => a - b)[0];
+      if (start !== undefined) {
+        for (let end = trimmed.length; end > start; end--) {
+          const candidate = trimmed.slice(start, end).trim();
+          try { return JSON.parse(candidate); } catch (_) {}
+        }
+      }
+      return null;
+    }
+
+    function normalisePlayers(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.players)) return data.players;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.leaderboard)) return data.leaderboard;
+      return null;
+    }
+
+    async function loadLeaderboard() {
+      const index = competitionSelect.value;
+      if (index === "") return;
+      selectedCompetition = competitions[Number(index)];
+      leaderboardSection.hidden = false;
+      closeScDrawer();
+      leaderboardTitle.textContent = selectedCompetition.name;
+      leaderboardBody.replaceChildren();
+      setStatus("Loading leaderboard…");
+
+      const candidateUrls = [
+        `${BASE}/guests/golf/competition/TournamentLeaderboardData?id=${encodeURIComponent(selectedCompetition.id)}`,
+        selectedCompetition.leaderboardUrl
+      ];
+
+      let lastError;
+      for (const url of candidateUrls) {
+        try {
+          const text = await fetchText(url);
+          const json = findLikelyJson(text);
+          if (json) {
+            const players = normalisePlayers(json);
+            if (players) {
+              await registeredNamesReady;
+              currentPlayers = players;
+              renderLeaderboard(sortRegisteredFirst(players, getPlayerDisplayName));
+              setStatus(`Loaded ${players.length} player records from ${url}`);
+              return;
+            }
+          }
+
+          const doc = new DOMParser().parseFromString(text, "text/html");
+          const rows = extractLeaderboardRows(doc);
+          if (rows.length) {
+            await registeredNamesReady;
+            renderLeaderboardRows(sortRegisteredFirst(rows, row => row.name));
+            setStatus(`Loaded ${rows.length} player records.`);
+            return;
+          }
+          lastError = new Error("Response received, but its leaderboard format was not recognised.");
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      setStatus(
+        `Unable to load the leaderboard in-page. MiClub may block browser fetch requests (CORS), ` +
+        `or this club may use a different data endpoint. Open it directly: ${selectedCompetition.leaderboardUrl}. ` +
+        `Details: ${lastError?.message || "Unknown error"}`
+      );
+    }
+
+    function extractLeaderboardRows(doc) {
+      // MiClub's actual leaderboard table is identified by its player-name
+      // cells (class "lbName"); other tables on the page (course/venue/grade
+      // summary) are metadata and must be ignored.
+      const table = [...doc.querySelectorAll("table")].find(t => t.querySelector("td.lbName, th.lbName"));
+      if (!table) return [];
+
+      const rows = [];
+      for (const tr of table.querySelectorAll("tr")) {
+        const nameCell = tr.querySelector("td.lbName");
+        if (!nameCell) continue;
+
+        const rawName = nameCell.textContent.replace(/\s+/g, " ").trim();
+        const match = rawName.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+        const name = match ? match[1].trim() : rawName;
+        const handicap = match ? match[2].trim() : "—";
+
+        const rankCell = tr.querySelector("td.nonGraded, td.graded:not(.hideColumn)") || tr.querySelector("td");
+        const rank = rankCell ? rankCell.textContent.trim() : "—";
+
+        const cells = [...tr.querySelectorAll("td")];
+        const score = cells.length ? cells[cells.length - 1].textContent.trim() : "—";
+
+        const link = tr.querySelector('a[href*="scorecard"], a[href*="player="]');
+        rows.push({
+          rank: rank || "—",
+          name: name || "—",
+          handicap,
+          score: score || "—",
+          scorecardUrl: link ? absoluteUrl(link.getAttribute("href")) : null
+        });
+      }
+      return rows;
+    }
+
+    // Same card markup/classes as liveSaturday's mobile leaderboard, used
+    // below 768px instead of the horizontally-scrolling table.
+    function buildLeaderboardCard(rank, name, handicap, score, registered) {
+      const card = document.createElement("div");
+      card.className = "leaderboard-card" + (registered ? " row-registered" : "");
+      card.innerHTML = `<div class="leaderboard-row">
+        <span class="leaderboard-rank">${escapeHtml(String(rank ?? "—"))}</span>
+        <span class="leaderboard-name">${escapeHtml(String(name ?? "—"))}</span>
+        <span class="leaderboard-value">${escapeHtml(String(handicap ?? "—"))}</span>
+        <span class="leaderboard-value">${escapeHtml(String(score ?? "—"))}</span>
+      </div>`;
+      return card;
+    }
+
+    function renderLeaderboardRows(rows) {
+      leaderboardBody.replaceChildren();
+      leaderboardCards.replaceChildren();
+      rows.forEach((row, index) => {
+        const registered = isRegisteredPlayer(row.name);
+        const onClick = row.scorecardUrl
+          ? () => showScorecardPage(row.scorecardUrl, row.name || `Player ${index + 1}`)
+          : null;
+
+        const tr = document.createElement("tr");
+        if (registered) tr.classList.add("row-registered");
+        [row.rank, row.name, row.handicap, row.score, "—"].forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        if (onClick) tr.addEventListener("click", onClick);
+        leaderboardBody.appendChild(tr);
+
+        const card = buildLeaderboardCard(row.rank, row.name, row.handicap, row.score, registered);
+        if (onClick) card.addEventListener("click", onClick);
+        leaderboardCards.appendChild(card);
+      });
+    }
+
+    function getPlayerDisplayName(entry, index) {
+      const player = entry.players?.[0] || entry.player || entry;
+      return entry.playerDisplay ||
+        [player.firstName, player.lastname].filter(Boolean).join(" ").trim() ||
+        player.name || `Player ${(index ?? 0) + 1}`;
+    }
+
+    function renderLeaderboard(players) {
+      leaderboardBody.replaceChildren();
+      leaderboardCards.replaceChildren();
+      players.forEach((entry, index) => {
+        const player = entry.players?.[0] || entry.player || entry;
+        const name = getPlayerDisplayName(entry, index);
+        const handicap = player.hc?.playingHandicap ?? player.playingHandicap ?? player.handicap ?? "—";
+        const score = entry.score ?? entry.latestNett ?? entry.grossScore ?? entry.roundScores?.[0] ?? "—";
+        const position = entry.pos ?? entry.position ?? (index + 1);
+        const thru = entry.thruHole ?? entry.cumulativeThruHole ?? "—";
+        const playerId = player.participantId ?? player.playerId ?? player.id;
+        const recordId = player.recordId ?? entry.recordId;
+        const registered = isRegisteredPlayer(name);
+        const onClick = (playerId != null || recordId != null) ? () => showScorecard(entry, index) : null;
+
+        const tr = document.createElement("tr");
+        if (registered) tr.classList.add("row-registered");
+        [position, name, handicap, score, thru].forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value ?? "—";
+          tr.appendChild(td);
+        });
+        if (onClick) tr.addEventListener("click", onClick);
+        leaderboardBody.appendChild(tr);
+
+        const card = buildLeaderboardCard(position, name, handicap, score, registered);
+        if (onClick) card.addEventListener("click", onClick);
+        leaderboardCards.appendChild(card);
+      });
+    }
+
+    function openScDrawer(name) {
+      scName.textContent = name;
+      scBody.innerHTML = '<div class="sc-loading">Loading scorecard…</div>';
+      scDrawer.classList.add("open");
+      scOverlay.classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeScDrawer() {
+      scDrawer.classList.remove("open");
+      scOverlay.classList.remove("open");
+      document.body.style.overflow = "";
+    }
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeScDrawer();
+    });
+
+    // Classifies a hole result against par, matching the liveSaturday
+    // scorecard colour coding (eagle/birdie/par/bogey/double+).
+    function strokeClassFromDiff(score, par) {
+      const s = Number(score), p = Number(par);
+      if (!s || !p) return "";
+      const d = s - p;
+      if (d <= -2) return "str-eagle";
+      if (d === -1) return "str-birdie";
+      if (d === 0) return "str-par";
+      if (d === 1) return "str-bogey";
+      return "str-double";
+    }
+
+    // MiClub's JSON scoreTypeLabel is already a category label (e.g. "Birdie").
+    function strokeClassFromLabel(label) {
+      const text = String(label ?? "").toLowerCase();
+      if (text.includes("eagle")) return "str-eagle";
+      if (text.includes("birdie")) return "str-birdie";
+      if (text === "par") return "str-par";
+      if (text.includes("double") || text.includes("triple") || text.includes("+")) return "str-double";
+      if (text.includes("bogey")) return "str-bogey";
+      return "";
+    }
+
+    function buildTotalsHtml(totals) {
+      return `<div class="sc-totals">${totals.map(t =>
+        `<div class="sc-total-card"><span class="sc-total-label">${escapeHtml(t.label)}</span><span class="sc-total-value">${escapeHtml(String(t.value ?? "—"))}</span></div>`
+      ).join("")}</div>`;
+    }
+
+    // Builds a front/back-nine style table, matching the liveSaturday scorecard
+    // drawer: one row per hole number, one row per stat.
+    function buildNineTableHtml(label, holeNumbers, statRows) {
+      const theadHoles = holeNumbers.map(h => `<th>${escapeHtml(String(h))}</th>`).join("");
+      const bodyRows = statRows.map(row => {
+        const cells = row.values.map((v, i) => {
+          const cls = row.cellClasses?.[i] ? ` class="${row.cellClasses[i]}"` : "";
+          return `<td${cls}>${escapeHtml(String(v ?? ""))}</td>`;
+        }).join("");
+        return `<tr><td class="row-lbl">${escapeHtml(row.label)}</td>${cells}<td class="tot">${escapeHtml(String(row.total ?? ""))}</td></tr>`;
+      }).join("");
+      return `<div class="sc-tbl-wrap"><table class="sc-tbl">
+        <thead><tr><th class="row-lbl"></th>${theadHoles}<th class="tot">${escapeHtml(label)}</th></tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table></div>`;
+    }
+
+    function showScorecard(entry, index) {
+      const player = entry.players?.[0] || entry.player || entry;
+      const name = entry.playerDisplay ||
+        [player.firstName, player.lastname].filter(Boolean).join(" ").trim() ||
+        player.name || `Player ${index + 1}`;
+      const handicap = player.hc?.playingHandicap ?? player.playingHandicap ?? "—";
+
+      openScDrawer(name);
+
+      // The TournamentLeaderboardData payload already contains each player's
+      // scorecard. Use its hole data rather than making another network call.
+      const round = entry.allRoundHoleScores?.[0];
+      const holes = round?.holeScores || entry.latestRoundHoleScores || [];
+      const front = holes.slice(0, 9);
+      const back = holes.slice(9, 18);
+
+      const nine = (set, offset, label) => buildNineTableHtml(label, set.map((_, i) => offset + i + 1), [
+        {
+          label: "Gross",
+          values: set.map(h => h.grossScoreLabel ?? "—"),
+          cellClasses: set.map(h => strokeClassFromLabel(h.scoreTypeLabel))
+        },
+        { label: "Nett", values: set.map(h => h.nettScoreLabel ?? "—") },
+        { label: "Scoring", values: set.map(h => h.scoreTypeLabel ?? "—") }
+      ]);
+
+      const metaHtml = `<p class="sc-section-title">Handicap ${escapeHtml(String(handicap))} · Position ${escapeHtml(String(entry.pos ?? "—"))} · Thru ${escapeHtml(String(entry.thruHole ?? "—"))}</p>`;
+      const tablesHtml = (front.length ? nine(front, 0, "Out") : "") + (back.length ? nine(back, 9, "In") : "");
+      const totalsHtml = round
+        ? buildTotalsHtml([
+            { label: "Front gross", value: round.frontTotal },
+            { label: "Back gross", value: round.backTotal },
+            { label: "Front nett", value: round.nettFrontTotal },
+            { label: "Back nett", value: round.nettBackTotal }
+          ])
+        : "";
+
+      scBody.innerHTML = metaHtml + (tablesHtml || '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0">No hole-by-hole scores available.</p>') + totalsHtml;
+    }
+
+    // Parses MiClub's own scorecard page (Par / Strokes / Score rows, split
+    // into an "out" and "in" nine) into the same drawer table style used
+    // for the JSON-sourced scorecards above.
+    function parseMiClubScorecard(doc) {
+      const table = [...doc.querySelectorAll("table")].find(t => {
+        const text = t.textContent;
+        return /\bPar\b/.test(text) && /\bStrokes\b/.test(text);
+      });
+      if (!table) return null;
+
+      const rows = [...table.querySelectorAll("tr")].map(tr =>
+        [...tr.querySelectorAll("th,td")].map(cell => cell.textContent.replace(/\s+/g, " ").trim())
+      );
+
+      const nines = [];
+      for (let i = 0; i < rows.length - 3; i++) {
+        const [label, ...rest] = rows[i];
+        if (!/^(out|in)$/i.test(label)) continue;
+        const holeNumbers = rest.slice(0, -1);
+        const par = rows[i + 1];
+        const strokes = rows[i + 2];
+        const score = rows[i + 3];
+        if (par[0] !== "Par" || strokes[0] !== "Strokes" || score[0] !== "Score") continue;
+
+        const parValues = par.slice(1, -1);
+        const strokeValues = strokes.slice(1, -1);
+        nines.push({
+          label: label.toLowerCase() === "out" ? "Out" : "In",
+          holeNumbers,
+          statRows: [
+            { label: "Par", values: parValues, total: par[par.length - 1] },
+            {
+              label: "Strokes",
+              values: strokeValues,
+              total: strokes[strokes.length - 1],
+              cellClasses: strokeValues.map((s, i) => strokeClassFromDiff(s, parValues[i]))
+            },
+            { label: "Points", values: score.slice(1, -1), total: score[score.length - 1] }
+          ]
+        });
+        i += 3;
+      }
+      return nines.length ? nines : null;
+    }
+
+    async function showScorecardPage(url, playerName) {
+      openScDrawer(playerName);
+
+      try {
+        const html = await fetchText(url);
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const nines = parseMiClubScorecard(doc);
+
+        if (!nines) {
+          scBody.innerHTML = '<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0">No hole-by-hole scorecard could be read from MiClub.</p>' +
+            `<p style="text-align:center"><a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:#38bdf8">Open on MiClub directly</a></p>`;
+          return;
+        }
+
+        const tablesHtml = nines.map(n => buildNineTableHtml(n.label, n.holeNumbers, n.statRows)).join("");
+        const strokesTotal = nines.reduce((sum, n) => sum + (parseInt(n.statRows[1].total, 10) || 0), 0);
+        const pointsTotal = nines.reduce((sum, n) => sum + (parseInt(n.statRows[2].total, 10) || 0), 0);
+        const totalsHtml = buildTotalsHtml([
+          { label: "Strokes", value: strokesTotal },
+          { label: "Points", value: pointsTotal }
+        ]);
+
+        scBody.innerHTML = tablesHtml + totalsHtml;
+      } catch (error) {
+        scBody.innerHTML = `<p style="color:rgba(148,163,184,0.7);text-align:center;padding:40px 0">Could not load this scorecard. MiClub may block the request with CORS.<br>${escapeHtml(error.message)}</p>` +
+          `<p style="text-align:center"><a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:#38bdf8">Open on MiClub directly</a></p>`;
+      }
+    }
+
+    loadCompetitionButton.addEventListener("click", loadLeaderboard);
+    competitionSelect.addEventListener("change", () => {
+      loadCompetitionButton.disabled = competitionSelect.value === "";
+    });
+
+    loadClubButton.addEventListener("click", resolveAndLoadClub);
+    clubInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") resolveAndLoadClub();
+    });
+
+    // Deep-link support: ?club=<name, slug, or MiClub link> pre-fills and
+    // auto-resolves on load. No club is loaded by default.
+    const presetClub = new URLSearchParams(location.search).get("club");
+    if (presetClub) {
+      clubInput.value = presetClub;
+      resolveAndLoadClub();
+    } else {
+      setClubStatus("Type the club's name to find its leaderboards.");
+    }
+  </script>
+</body>
+</html>
