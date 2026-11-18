@@ -1006,7 +1006,28 @@
         if (par[0] !== "Par" || strokes[0] !== "Strokes" || score[0] !== "Score") continue;
 
         const parValues = par.slice(1, -1);
-        const strokeValues = strokes.slice(1, -1);
+        const rawStrokeValues = strokes.slice(1, -1);
+        const rawPointValues = score.slice(1, -1);
+
+        // A hole marked "-" for strokes with no points recorded is a pickup:
+        // show it as "P" / 0 points. A hole marked "-" for both wasn't
+        // played at all, so leave it blank rather than showing hyphens.
+        const strokeValues = [];
+        const pointValues = [];
+        rawStrokeValues.forEach((s, i) => {
+          const p = rawPointValues[i];
+          if (s === "-" && p === "-") {
+            strokeValues.push("");
+            pointValues.push("");
+          } else if (s === "-" && p === "") {
+            strokeValues.push("P");
+            pointValues.push("0");
+          } else {
+            strokeValues.push(s);
+            pointValues.push(p);
+          }
+        });
+
         nines.push({
           label: label.toLowerCase() === "out" ? "Out" : "In",
           holeNumbers,
@@ -1018,7 +1039,7 @@
               total: strokes[strokes.length - 1],
               cellClasses: strokeValues.map((s, i) => strokeClassFromDiff(s, parValues[i]))
             },
-            { label: "Points", values: score.slice(1, -1), total: score[score.length - 1] }
+            { label: "Points", values: pointValues, total: score[score.length - 1] }
           ]
         });
         i += 3;
